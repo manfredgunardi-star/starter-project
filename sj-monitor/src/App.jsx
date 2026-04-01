@@ -9,6 +9,9 @@ import { useAuth } from './hooks/useAuth.js';
 import { useMasterData } from './hooks/useMasterData.js';
 import { useUsers } from './hooks/useUsers.js';
 import { useSettings } from './hooks/useSettings.js';
+import SearchableSelect from './components/SearchableSelect.jsx';
+import StatCard from './components/StatCard.jsx';
+import AlertBanner from './components/AlertBanner.jsx';
 import {
   sanitizeForFirestore,
   upsertItemToFirestore,
@@ -20,77 +23,6 @@ import {
 
 import { AlertCircle, Package, Truck, FileText, DollarSign, Users, LogOut, Plus, Edit, Trash2, Eye, CheckCircle, XCircle, Clock, Search, RefreshCw } from 'lucide-react';
 
-// Searchable Select Component
-const SearchableSelect = ({ options, value, onChange, placeholder, label, displayKey = 'name', valueKey = 'id' }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-
-  const filteredOptions = options.filter(option => {
-    const displayValue = option[displayKey]?.toLowerCase() || '';
-    return displayValue.includes(searchTerm.toLowerCase());
-  });
-
-  const selectedOption = options.find(opt => opt[valueKey] === value);
-
-  return (
-    <div className="relative">
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label} *</label>
-      <div className="relative">
-        <div
-          onClick={() => setIsOpen(!isOpen)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 cursor-pointer bg-white flex items-center justify-between"
-        >
-          <span className={selectedOption ? 'text-gray-800' : 'text-gray-400'}>
-            {selectedOption ? selectedOption[displayKey] : placeholder}
-          </span>
-          <Search className="w-4 h-4 text-gray-400" />
-        </div>
-
-        {isOpen && (
-          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-hidden">
-            <div className="p-2 border-b">
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Cari..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                autoFocus
-              />
-            </div>
-            <div className="overflow-y-auto max-h-48">
-              {filteredOptions.length === 0 ? (
-                <div className="p-3 text-gray-500 text-sm text-center">Tidak ada data</div>
-              ) : (
-                filteredOptions.map(option => (
-                  <div
-                    key={option[valueKey]}
-                    onClick={() => {
-                      onChange(option[valueKey]);
-                      setIsOpen(false);
-                      setSearchTerm('');
-                    }}
-                    className={`px-3 py-2 cursor-pointer hover:bg-blue-50 ${
-                      option[valueKey] === value ? 'bg-blue-100 font-semibold' : ''
-                    }`}
-                  >
-                    {option[displayKey]}
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-      </div>
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
-    </div>
-  );
-};
 
 // Laporan Kas Component
 const LaporanKas = ({ suratJalanList, transaksiList, formatCurrency }) => {
@@ -2558,22 +2490,7 @@ try { unsubTransaksi(); } catch {}
       </div>
 
       {/* Force Logout Warning Banner */}
-      {forceLogoutBanner && (
-        <div className="bg-amber-400 text-amber-900 px-6 py-3 flex items-center justify-between shadow">
-          <div className="flex items-center gap-3">
-            <Clock className="w-5 h-5 flex-shrink-0" />
-            <span className="font-semibold text-sm">
-              ⚠️ Sistem akan logout otomatis dalam{' '}
-              <strong>{forceLogoutBanner.minutesRemaining} menit</strong>
-              {forceLogoutBanner.reason ? ` — ${forceLogoutBanner.reason}` : ''}.
-              Segera simpan pekerjaan Anda.
-            </span>
-          </div>
-          <span className="text-xs font-mono opacity-75 ml-4 flex-shrink-0">
-            {forceLogoutBanner.scheduledAtLocal}
-          </span>
-        </div>
-      )}
+      <AlertBanner banner={forceLogoutBanner} />
 
       {/* Tab Navigation */}
       {effectiveRole && (
@@ -4352,19 +4269,6 @@ const LoginScreen = ({ onLogin, alertMessage, setAlertMessage, appSettings }) =>
   );
 };
 
-const StatCard = ({ title, value, icon, color }) => (
-  <div className="bg-white rounded-lg shadow-md p-6">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-gray-600 text-sm">{title}</p>
-        <p className="text-3xl font-bold text-gray-800 mt-1">{value}</p>
-      </div>
-      <div className={`${color} p-3 rounded-lg text-white`}>
-        {icon}
-      </div>
-    </div>
-  </div>
-);
 
 const SuratJalanCard = ({ 
   suratJalan, 
