@@ -2246,8 +2246,8 @@ try { unsubTransaksi(); } catch {}
         </div>
 
         {/* Actions & Filters */}
-        <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-          <div className="flex flex-wrap gap-3 items-center justify-between">
+        <div className="bg-white rounded-lg shadow-md p-3 sm:p-4 mb-4 sm:mb-6">
+          <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-between">
             <div className="flex gap-2 flex-wrap">
               {(effectiveRole === 'superadmin' || effectiveRole === 'admin_sj') && (
                 <>
@@ -2257,7 +2257,7 @@ try { unsubTransaksi(); } catch {}
                       setSelectedItem(null);
                       setShowModal(true);
                     }}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base transition"
                   >
                     <Plus className="w-4 h-4" />
                     <span>Tambah Surat Jalan</span>
@@ -2265,15 +2265,15 @@ try { unsubTransaksi(); } catch {}
                   
                   <button
                     onClick={() => downloadTemplate('suratjalan')}
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition"
+                    className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base transition"
                   >
                     <FileText className="w-4 h-4" />
-                    <span>Download Template</span>
+                    <span className="hidden sm:inline">Download Template</span><span className="sm:hidden">Template</span>
                   </button>
                   
-                  <label className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition cursor-pointer">
+                  <label className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base transition cursor-pointer">
                     <Package className="w-4 h-4" />
-                    <span>Import Data</span>
+                    <span className="hidden sm:inline">Import Data</span><span className="sm:hidden">Import</span>
                     <input
                       type="file"
                       accept=".csv"
@@ -2289,7 +2289,7 @@ try { unsubTransaksi(); } catch {}
 
                   <button
                     onClick={() => downloadSJRecapToExcel(suratJalanList, { startDate: sjRecapStartDate, endDate: sjRecapEndDate, dateField: sjRecapDateField })}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base transition"
                   >
                     <FileText className="w-4 h-4" />
                     <span>Download Rekapan</span>
@@ -2300,25 +2300,25 @@ try { unsubTransaksi(); } catch {}
             <div className="flex gap-2 flex-wrap">
               <button
                 onClick={() => setFilter('all')}
-                className={`px-4 py-2 rounded-lg transition ${filter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm sm:text-base transition ${filter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
               >
                 Semua
               </button>
               <button
                 onClick={() => setFilter('pending')}
-                className={`px-4 py-2 rounded-lg transition ${filter === 'pending' ? 'bg-yellow-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm sm:text-base transition ${filter === 'pending' ? 'bg-yellow-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
               >
                 Pending
               </button>
               <button
                 onClick={() => setFilter('terkirim')}
-                className={`px-4 py-2 rounded-lg transition ${filter === 'terkirim' ? 'bg-green-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm sm:text-base transition ${filter === 'terkirim' ? 'bg-green-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
               >
                 Terkirim
               </button>
               <button
                 onClick={() => setFilter('gagal')}
-                className={`px-4 py-2 rounded-lg transition ${filter === 'gagal' ? 'bg-red-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm sm:text-base transition ${filter === 'gagal' ? 'bg-red-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
               >
                 Gagal
               </button>
@@ -2327,7 +2327,7 @@ try { unsubTransaksi(); } catch {}
         </div>
 
         <div className="bg-blue-50 border border-blue-100 rounded-lg shadow-sm p-4 mb-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 items-end">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Berdasarkan Tanggal</label>
               <select
