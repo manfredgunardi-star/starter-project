@@ -247,7 +247,7 @@ const InvoiceManagement = ({
             </div>
           ) : (
             invoiceList.map(invoice => (
-              <div key={invoice.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+              <div key={invoice.id} className="bg-white rounded-lg shadow-md p-3 sm:p-6 hover:shadow-lg transition">
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <div className="flex items-center space-x-3 mb-2">
@@ -3079,7 +3079,7 @@ const SettingsManagement = ({ currentUser, appSettings, onUpdateSettings, forceL
         ) : (
           <div className="space-y-6">
             {/* Company Name */}
-            <div className="bg-blue-50 rounded-lg p-6">
+            <div className="bg-blue-50 rounded-lg p-3 sm:p-6">
               <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <Package className="w-5 h-5 text-blue-600" />
                 Nama Perusahaan
@@ -3102,7 +3102,7 @@ const SettingsManagement = ({ currentUser, appSettings, onUpdateSettings, forceL
             </div>
 
             {/* Logo Upload */}
-            <div className="bg-green-50 rounded-lg p-6">
+            <div className="bg-green-50 rounded-lg p-3 sm:p-6">
               <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <FileText className="w-5 h-5 text-green-600" />
                 Logo Perusahaan
@@ -3157,7 +3157,7 @@ const SettingsManagement = ({ currentUser, appSettings, onUpdateSettings, forceL
             </div>
 
             {/* Login Footer Text */}
-            <div className="bg-purple-50 rounded-lg p-6">
+            <div className="bg-purple-50 rounded-lg p-3 sm:p-6">
               <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <Edit className="w-5 h-5 text-purple-600" />
                 Text Halaman Login
@@ -3180,7 +3180,7 @@ const SettingsManagement = ({ currentUser, appSettings, onUpdateSettings, forceL
             </div>
 
             {/* Preview Section */}
-            <div className="bg-gray-50 rounded-lg p-6">
+            <div className="bg-gray-50 rounded-lg p-3 sm:p-6">
               <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <Eye className="w-5 h-5 text-gray-600" />
                 Preview Halaman Login
@@ -3270,7 +3270,7 @@ const SettingsManagement = ({ currentUser, appSettings, onUpdateSettings, forceL
             </div>
           </div>
 
-          <div className="bg-orange-50 rounded-lg p-6 space-y-5">
+          <div className="bg-orange-50 rounded-lg p-3 sm:p-6 space-y-5">
             {/* Toggle enable */}
             <div className="flex items-center gap-3">
               <input
