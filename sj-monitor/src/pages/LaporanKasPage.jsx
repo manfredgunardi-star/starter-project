@@ -284,7 +284,7 @@ const LaporanKasPage = ({ suratJalanList, transaksiList }) => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
           {rekapPerPT.map(item => (
-            <div key={item.pt} className="border-l-4 border-blue-500 bg-gray-50 rounded-lg p-4">
+            <div key={item.pt} className="border-l-4 border-blue-500 bg-gray-50 rounded-lg p-3 sm:p-4">
               <h4 className="font-bold text-gray-800 mb-2">{item.pt}</h4>
               <div className="text-sm text-gray-600 space-y-1">
                 <div className="flex justify-between"><span>Kas Masuk:</span><span className="text-green-600 font-semibold">{formatCurrency(item.kasMasuk)}</span></div>
