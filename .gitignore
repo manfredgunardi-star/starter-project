@@ -3,3 +3,6 @@ dist/
 *.zip
 .env
 .env.*
+env.txt
+build.log
+rules terupdate.txt
