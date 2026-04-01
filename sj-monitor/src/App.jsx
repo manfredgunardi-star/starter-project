@@ -2106,7 +2106,7 @@ try { unsubTransaksi(); } catch {}
 
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-6 pb-10">
+      <div className="max-w-7xl mx-auto px-3 pb-6 sm:px-6 sm:pb-10">
         {activeTab === 'settings' && effectiveRole === 'superadmin' ? (
           <SettingsManagement
             currentUser={currentUser}
