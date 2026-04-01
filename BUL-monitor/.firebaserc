@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "bul-monitor"
+  },
+  "targets": {
+    "bul-monitor": {
+      "hosting": {
+        "bul-monitor": [
+          "bul-monitor"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

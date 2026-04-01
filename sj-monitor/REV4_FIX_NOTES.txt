@@ -1,0 +1,25 @@
+REV4 FIX NOTES
+
+Issue fixed:
+- Manual pengeluaran created from Keuangan menu was saved to Firestore but did not appear in Laporan Kas.
+
+Root cause:
+- LaporanKas only counted:
+  1) pemasukan from collection transaksi
+  2) kas keluar from surat_jalan (uang jalan)
+- It did NOT include manual pengeluaran from collection transaksi.
+
+Fix applied:
+- Added filteredPengeluaranManual in LaporanKas
+- Included manual pengeluaran in:
+  - totalKasKeluar
+  - saldoKas
+  - rekap per PT
+- Added a dedicated detail table:
+  - Detail Kas Keluar (Transaksi Manual)
+- Prevented double counting by excluding transaksi pengeluaran that already have suratJalanId
+  because uang jalan from SJ is already counted from collection surat_jalan.
+
+Validation done:
+- src/App.jsx parses successfully after patch
+- Existing invoice/SJ logic was left untouched

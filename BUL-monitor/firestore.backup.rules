@@ -1,0 +1,160 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+
+    // --- Role lookup helpers ---
+    function userDocPath() {
+      return /databases/$(database)/documents/users/$(request.auth.uid);
+    }
+    function hasUserDoc() {
+      return signedIn() && exists(userDocPath());
+    }
+    function myUserDoc() {
+      return get(userDocPath());
+    }
+    function myRole() {
+      return hasUserDoc() ? myUserDoc().data.role : 'reader';
+    }
+    function inRoles(roles) {
+      return signedIn() && (myRole() in roles);
+    }
+
+    function isSuperAdmin() { return signedIn() && myRole() == 'superadmin'; }
+    function isOwner() { return signedIn() && myRole() == 'owner'; }
+    function isAdminSJ() { return signedIn() && myRole() == 'admin_sj'; }
+    function isAdminInv() { return signedIn() && myRole() == 'admin_invoice'; }
+    function isAdminKeu() { return signedIn() && myRole() == 'admin_keuangan'; }
+
+    function isStaff() {
+      return signedIn() && (myRole() in ['superadmin','owner','admin_sj','admin_invoice','admin_keuangan']);
+    }
+
+    // Admin Invoice boleh update Surat Jalan TERBATAS untuk menandai ter-invoice
+    function sjInvoiceFieldsOnly() {
+      return request.resource.data.diff(resource.data).changedKeys().hasOnly([
+        'statusInvoice',
+        'invoiceId',
+        'invoiceNo',
+        'updatedAt',
+        'updatedBy'
+      ]);
+    }
+
+    // --- USERS ---
+    match /users/{uid} {
+      // User boleh baca doc sendiri. Admin/staff boleh baca semua (untuk panel user).
+      allow read: if signedIn() && (request.auth.uid == uid || inRoles(['superadmin','owner','admin_sj','admin_invoice','admin_keuangan']));
+
+      // Bootstrap doc sendiri saat pertama login (default reader)
+      allow create: if signedIn()
+                    && request.auth.uid == uid
+                    && request.resource.data.role == 'reader';
+
+      // User boleh update doc sendiri SELAMA role tidak berubah
+      // (INI yang diperlukan untuk activeSessionId, lastLoginAt, dsb)
+      allow update: if signedIn()
+                    && request.auth.uid == uid
+                    && request.resource.data.role == resource.data.role;
+
+      // Superadmin manage user docs
+      allow update, delete: if isSuperAdmin();
+    }
+
+    // --- SETTINGS ---
+    match /settings/{docId} {
+  // settings/app boleh dibaca tanpa login (untuk login page)
+  allow read: if docId == "app" || signedIn();
+
+  // write tetap dibatasi sesuai rule Anda sebelumnya
+  allow write: if isSuperAdmin() || isOwner();
+    }
+
+    // --- MASTER DATA ---
+    match /trucks/{id} {
+      allow read: if signedIn();
+      allow write: if isSuperAdmin() || isAdminSJ();
+    }
+    match /supir/{id} {
+      allow read: if signedIn();
+      allow write: if isSuperAdmin() || isAdminSJ();
+    }
+    match /rute/{id} {
+      allow read: if signedIn();
+      allow write: if isSuperAdmin() || isAdminSJ();
+    }
+    match /material/{id} {
+      allow read: if signedIn();
+      allow write: if isSuperAdmin() || isAdminSJ();
+    }
+
+    // --- TRANSAKSI ---
+    match /surat_jalan/{id} {
+      allow read: if signedIn();
+      allow create: if isSuperAdmin() || isAdminSJ();
+      allow update: if isSuperAdmin() || isAdminSJ() || (isAdminInv() && sjInvoiceFieldsOnly());
+      allow delete: if isSuperAdmin();
+    }
+
+    // Backward compatibility
+    match /suratJalan/{id} {
+      allow read: if signedIn();
+      allow create: if isSuperAdmin() || isAdminSJ();
+      allow update: if isSuperAdmin() || isAdminSJ() || (isAdminInv() && sjInvoiceFieldsOnly());
+      allow delete: if isSuperAdmin();
+    }
+
+    match /invoice/{id} {
+      allow read: if signedIn();
+      allow create, update: if isSuperAdmin() || isAdminInv();
+      allow delete: if isSuperAdmin();
+    }
+
+    match /invoices/{id} {
+      allow read: if signedIn();
+      allow create, update: if isSuperAdmin() || isAdminInv();
+      allow delete: if isSuperAdmin();
+    }
+
+    match /biaya/{id} {
+      allow read: if signedIn();
+      allow create, update: if isSuperAdmin() || isAdminKeu();
+      allow delete: if isSuperAdmin();
+    }
+
+    match /transaksi/{id} {
+      allow read: if isStaff();
+
+      // Superadmin & Keuangan full access
+      allow create, update: if isSuperAdmin() || isAdminKeu();
+
+      // Admin SJ create pengeluaran uang jalan + soft delete
+      allow create: if isAdminSJ()
+        && request.resource.data.keys().hasAll(['id','tipe','nominal','pt','tanggal','keterangan','createdAt','createdBy','isActive','suratJalanId'])
+        && request.resource.data.tipe == 'pengeluaran'
+        && request.resource.data.isActive == true
+        && request.resource.data.nominal is int
+        && request.resource.data.nominal >= 0
+        && request.resource.data.suratJalanId is string;
+
+      allow update: if isAdminSJ()
+        && resource.data.suratJalanId is string
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly(['isActive','updatedAt','updatedBy']);
+
+      allow delete: if isSuperAdmin();
+    }
+
+    // --- HISTORY LOG ---
+    match /history_log/{id} {
+      allow read: if signedIn() && inRoles(['superadmin','owner','admin_sj','admin_invoice','admin_keuangan']);
+      allow create: if signedIn() && inRoles(['superadmin','admin_sj','admin_invoice','admin_keuangan']);
+      allow update, delete: if false;
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

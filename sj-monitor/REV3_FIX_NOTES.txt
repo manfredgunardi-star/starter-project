@@ -1,0 +1,4 @@
+REV3 fixes:
+- Fixed invoice crash: mergeById is now a shared top-level helper, so InvoiceManagement can use it safely.
+- Rechecked App.jsx with Babel parser: OK.
+- Firestore BloomFilterError warning remains non-blocking and comes from Firestore local cache/persistence, not from invoice logic.

@@ -1,0 +1,148 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: check if user is authenticated
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // Helper: get user role from users collection
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isSuperadmin() {
+      return isAuth() && getUserRole() == 'superadmin';
+    }
+
+    function isAdminOrAbove() {
+      return isAuth() && (getUserRole() == 'superadmin' || getUserRole() == 'admin');
+    }
+
+    // Users collection - only superadmin can manage
+    match /users/{userId} {
+      allow read: if isAuth();
+      allow create: if isSuperadmin() || !exists(/databases/$(database)/documents/users/$(request.auth.uid));
+      allow update, delete: if isSuperadmin();
+    }
+
+    // Journals - superadmin full access, admin can create, reader can read
+    match /journals/{journalId} {
+      allow read: if isAuth();
+      allow create: if isAdminOrAbove();
+      allow update, delete: if isSuperadmin();
+    }
+
+    // Trucks - superadmin full access, others can read
+    match /trucks/{truckId} {
+      allow read: if isAuth();
+      allow create, update, delete: if isSuperadmin();
+    }
+
+    // Assets - superadmin and admin can manage
+    match /assets/{assetId} {
+      allow read: if isAuth();
+      allow create: if isAdminOrAbove();
+      allow update, delete: if isSuperadmin();
+    }
+
+    // Invoices - superadmin and admin can manage
+    match /invoices/{invoiceId} {
+      allow read: if isAuth();
+      allow create: if isAdminOrAbove();
+      allow update, delete: if isSuperadmin();
+    }
+
+    // Recurring Templates - superadmin and admin can manage
+    match /recurring_templates/{templateId} {
+      allow read: if isAuth();
+      allow create: if isAdminOrAbove();
+      allow update, delete: if isSuperadmin();
+    }
+
+    // Customers
+    match /customers/{customerId} {
+      allow read: if isAuth();
+      allow create: if isAdminOrAbove();
+      allow update, delete: if isSuperadmin();
+    }
+
+    // Suppliers
+    match /suppliers/{supplierId} {
+      allow read: if isAuth();
+      allow create: if isAdminOrAbove();
+      allow update, delete: if isSuperadmin();
+    }
+
+    // Purchase Invoices
+    match /purchase_invoices/{invoiceId} {
+      allow read: if isAuth();
+      allow create: if isAdminOrAbove();
+      allow update, delete: if isSuperadmin();
+    }
+
+    // Custom COA accounts
+    match /coa/{accountId} {
+      allow read: if isAuth();
+      allow create, update, delete: if isSuperadmin();
+    }
+
+    // COA overrides (deactivate built-in accounts)
+    match /coa_overrides/{overrideId} {
+      allow read: if isAuth();
+      allow create, update, delete: if isSuperadmin();
+    }
+
+    // Karyawan (Employee cost center)
+    match /karyawan/{karyawanId} {
+      allow read: if isAuth();
+      allow create: if isAdminOrAbove();
+      allow update, delete: if isSuperadmin();
+    }
+
+    // Company settings - hanya superadmin yang bisa write
+    match /company_settings/{docId} {
+      allow read: if isAuth();
+      allow create, update, delete: if isSuperadmin();
+    }
+
+    // Integration queue — bridge collection dari bul-monitor
+    // Helper: cek apakah request berasal dari bridge service account bul-monitor
+    function isBridgeAccount() {
+      return isAuth() && request.auth.token.email == 'bridge@bul-accounting.internal';
+    }
+
+    match /integration_queue/{docId} {
+      // Akuntan (admin/superadmin) bisa baca semua item antrian
+      // Bridge account juga perlu baca untuk listener status approve/reject
+      allow read: if isAdminOrAbove() || isBridgeAccount();
+
+      // Bridge account bisa create item baru dengan status 'pending'
+      // Tipe yang diizinkan: uang_jalan, invoice, transaksi_kas
+      allow create: if isBridgeAccount()
+        && request.resource.data.status == 'pending'
+        && request.resource.data.sourceProject == 'bul-monitor'
+        && request.resource.data.type in ['uang_jalan', 'invoice', 'transaksi_kas'];
+
+      // Bridge account bisa update (re-send: reset ke pending)
+      // Akuntan bisa update status ke 'approved', 'rejected', atau 'cancelled'
+      allow update: if
+        (isBridgeAccount() && request.resource.data.status == 'pending')
+        ||
+        (isAdminOrAbove()
+          && request.resource.data.status in ['approved', 'rejected', 'cancelled']
+          && !isBridgeAccount());
+
+      // Tidak ada yang boleh delete
+      allow delete: if false;
+    }
+
+    // Audit log — hanya bisa dibuat oleh user terotentikasi, tidak bisa diubah/dihapus
+    match /audit_log/{logId} {
+      allow read: if isAdminOrAbove();
+      allow create: if isAuth() || isBridgeAccount();
+      allow update, delete: if false;
+    }
+  }
+}

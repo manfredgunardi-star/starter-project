@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(ls:*)",
+      "Bash(firebase:*)",
+      "Bash(node -e \"const x=require\\(''/c/Project/sj-monitor/node_modules/xlsx''\\); console.log\\(''xlsx version:'', x.version\\)\")",
+      "Bash(node:*)"
+    ]
+  }
+}

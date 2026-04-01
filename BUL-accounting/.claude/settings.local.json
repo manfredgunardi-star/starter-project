@@ -1,0 +1,36 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /c/Project/BUL-accounting/src -name \"*.jsx\" -o -name \"*.js\" | xargs wc -l | sort -n)",
+      "Bash(cd C:/Project/BUL-accounting && firebase deploy --only firestore:rules 2>&1)",
+      "Bash(cd C:/Project/BUL-accounting && npm run dev 2>&1)",
+      "Bash(cd C:/Project/BUL-accounting && npm run build 2>&1)",
+      "Bash(cd C:/Project/BUL-accounting && firebase deploy --only hosting 2>&1)",
+      "WebFetch(domain:bul-accounting.web.app)",
+      "Bash(firebase deploy:*)",
+      "Bash(netstat -ano)",
+      "Bash(npx vite:*)",
+      "Bash(ls /c/Project/BUL-accounting/src/App.jsx*)",
+      "Bash(ls /c/Project/BUL-accounting/src/*.bak)",
+      "Bash(git -C /c/Project/BUL-accounting status)",
+      "Bash(find /c/Users/m3m31/AppData/Roaming/Code -name *.jsx)",
+      "Bash(find C:/Users/m3m31/AppData/Roaming/Code/User/History -type f -name *.jsx)",
+      "Bash(cmd.exe /c \"dir C:\\\\Users\\\\m3m31\\\\AppData\\\\Roaming\\\\Code\\\\User\\\\History\")",
+      "Bash(cmd.exe /c \"dir /s C:\\\\Users\\\\m3m31\\\\AppData\\\\Roaming\\\\Code\\\\User\\\\History 2>&1\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem 'C:\\\\Users\\\\m3m31\\\\AppData\\\\Roaming\\\\Code\\\\User\\\\History' -Recurse -ErrorAction SilentlyContinue | Where-Object { \\\\$_.Length -gt 50000 } | Select-Object FullName, Length, LastWriteTime | Sort-Object LastWriteTime -Descending | Select-Object -First 20 | Format-Table -AutoSize\")",
+      "Bash(powershell.exe -Command \"Get-ChildItem 'C:\\\\Users\\\\m3m31\\\\AppData\\\\Roaming\\\\Code\\\\User\\\\History' -ErrorAction SilentlyContinue | Select-Object -First 5 | Format-List\")",
+      "Bash(powershell.exe -Command \"Test-Path 'C:\\\\Users\\\\m3m31\\\\AppData\\\\Roaming\\\\Code\\\\User\\\\History'\")",
+      "Bash(powershell.exe -Command \"\\(Get-ChildItem 'C:\\\\Users\\\\m3m31\\\\AppData\\\\Roaming\\\\Code\\\\User\\\\History' -Recurse | Measure-Object\\).Count\")",
+      "Bash(find C:/Project/BUL-accounting/node_modules/.cache -name *.jsx)",
+      "Bash(find C:/Project/BUL-accounting -name *.jsx.bak)",
+      "Bash(find C:/Project/BUL-accounting/node_modules/.vite/deps -name *app*)",
+      "Bash(find C:/Project/BUL-accounting -path */node_modules -prune -o -name *.js -newer C:/Project/BUL-accounting/src/App.jsx -print)",
+      "Bash(find C:/Project/BUL-accounting -name *.jsx.js -o -name App.jsx.*)",
+      "Bash(find C:/Project/BUL-accounting/dist -name *.js)",
+      "Bash(npm run:*)",
+      "Read(//tmp/**)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5173)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5174)"
+    ]
+  }
+}

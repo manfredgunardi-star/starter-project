@@ -1,0 +1,12 @@
+Revisi utama untuk BUL testing:
+1. Menambahkan helper softDeleteItemInFirestore lokal di App.jsx sehingga tombol batal/gagal tidak lagi error "softDeleteItemInFirestore is not defined".
+2. Memastikan transaksi nonaktif / soft-deleted tidak tampil di menu Keuangan.
+3. Memperbaiki logika invoice agar status "belum" tetap dianggap available untuk invoice ulang setelah invoice dibatalkan.
+4. Mengurangi potensi invoice dobel di UI dengan deduplikasi local state dan deduplikasi hasil subscription berdasarkan noInvoice/id.
+5. Memperbaiki checkbox pemilihan SJ pada modal invoice agar selectedSJIds selalu unique.
+6. Saat restore SJ dari gagal, transaksi uang jalan yang diaktifkan kembali juga membersihkan deletedAt/deletedBy.
+7. Edit invoice: SJ yang dilepas dari invoice sekarang diset eksplisit ke statusInvoice='belum', invoiceId=null, invoiceNo=null.
+
+Catatan verifikasi di environment ini:
+- Sintaks App.jsx sudah dicek ulang dengan Babel parser: OK.
+- Build Vite penuh tidak bisa dijalankan di container ini karena paket Vite tidak lengkap di dependensi yang tersedia dari file input.

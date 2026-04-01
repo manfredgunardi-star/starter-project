@@ -1,0 +1,9 @@
+{
+  "projects": {
+    "default": "surat-jalan-monitor",
+    "staging": "surat-jalan-monitor",
+    "newest": "surat-jalan-monitor"
+  },
+  "targets": {},
+  "etags": {}
+}
