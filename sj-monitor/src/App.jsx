@@ -8,6 +8,7 @@ import { downloadSJRecapToExcel } from './utils/excel.js';
 import { useAuth } from './hooks/useAuth.js';
 import { useMasterData } from './hooks/useMasterData.js';
 import { useUsers } from './hooks/useUsers.js';
+import { useSettings } from './hooks/useSettings.js';
 import {
   sanitizeForFirestore,
   upsertItemToFirestore,
@@ -884,11 +885,6 @@ const SuratJalanMonitor = () => {
   const [transaksiList, setTransaksiList] = useState([]);
   const [historyLog, setHistoryLog] = useState([]);
   const [invoiceList, setInvoiceList] = useState([]);
-  const [appSettings, setAppSettings] = useState({
-    companyName: '',
-    logoUrl: '',
-    loginFooterText: 'Masuk untuk mengakses dashboard monitoring'
-  });
   const { truckList, setTruckList, supirList, setSupirList, ruteList, setRuteList, materialList, setMaterialList } = useMasterData();
   const { usersList, setUsersList, addUser, updateUser, deleteUser: deleteUserFn, toggleUserActive } = useUsers({ currentUser, setAlertMessage });
   const deleteUser = (id) => deleteUserFn(id, setConfirmDialog);
@@ -902,14 +898,16 @@ const SuratJalanMonitor = () => {
   const didFirstLoadRef = useRef(false);
   const [activeTab, setActiveTab] = useState('surat-jalan');
   const [confirmDialog, setConfirmDialog] = useState({ show: false, message: '', onConfirm: null });
-
-  // Force logout terjadwal
-  const [forceLogoutConfig, setForceLogoutConfig] = useState(null);
-  const [forceLogoutBanner, setForceLogoutBanner] = useState(null);
-  // forceLogoutBanner: null | { minutesRemaining: number, reason: string, scheduledAtLocal: string }
-  const shownWarningThresholdsRef = useRef(new Set());
-  const prevForceLogoutScheduledAtRef = useRef(null);
-  const forceLogoutExecutedRef = useRef(false);
+  const {
+    appSettings, setAppSettings, forceLogoutConfig, forceLogoutBanner,
+    executeForcedLogout, updateSettings: updateSettingsFn, updateForceLogoutConfig: updateForceLogoutConfigFn,
+  } = useSettings({
+    currentUser,
+    setAlertMessage,
+    onForcedLogout: () => { setShowModal(false); },
+  });
+  const updateSettings = (newSettings) => updateSettingsFn(newSettings, currentUser?.name);
+  const updateForceLogoutConfig = (config) => updateForceLogoutConfigFn(config, currentUser?.name);
 
 
 
@@ -935,21 +933,6 @@ await upsertItemToFirestore(db, "history_log", { ...newLog, isActive: true });
   };
 
 
-  const executeForcedLogout = async () => {
-    if (forceLogoutExecutedRef.current) return; // idempotency guard
-    forceLogoutExecutedRef.current = true;
-
-    setShowModal(false);      // tutup modal → unsaved formData hilang (modal unmount)
-    setForceLogoutBanner(null);
-
-    // Audit: tulis executedAt ke Firestore (best-effort, jangan block signOut)
-    try {
-      await setDoc(doc(db, "settings", "forceLogout"),
-        { executedAt: new Date().toISOString() }, { merge: true });
-    } catch (_) {}
-
-    signOut(auth).catch(() => {}); // auth listener handles setCurrentUser(null)
-  };
 
 
 
@@ -1496,53 +1479,6 @@ try {
         setConfirmDialog({ show: false, message: '', onConfirm: null });
       },
     });
-  };
-
-// Update Settings
-  const updateSettings = async (newSettings) => {
-    const payload = {
-      ...(newSettings || {}),
-      updatedAt: new Date().toISOString(),
-      updatedBy: currentUser?.name || "system",
-    };
-
-    setAppSettings(payload);
-
-    // Cache lokal (offline)
-// Persist ke Firestore (source of truth)
-    try {
-      await ensureAuthed();
-      const batch = writeBatch(db);
-      batch.set(doc(db, "settings", "app"), sanitizeForFirestore(payload), { merge: true });
-      await batch.commit();
-    } catch (e) {
-      console.error("updateSettings -> Firestore failed", e);
-      if (e?.code === "NOT_AUTHENTICATED") {
-        setAlertMessage(
-          "⚠️ Sesi login Firebase tidak terdeteksi. Silakan Logout lalu Login lagi, kemudian coba simpan ulang."
-        );
-      } else {
-        setAlertMessage("⚠️ Gagal menyimpan settings ke Firebase. Settings tersimpan di cache lokal.");
-      }
-    }
-  };
-
-  const updateForceLogoutConfig = async (config) => {
-    const payload = sanitizeForFirestore({
-      enabled:     config.enabled ?? false,
-      scheduledAt: config.enabled ? (config.scheduledAt || null) : null,
-      reason:      config.reason || '',
-      updatedAt:   new Date().toISOString(),
-      updatedBy:   currentUser?.name || 'superadmin',
-      executedAt:  config.executedAt ?? null,
-    });
-    try {
-      await ensureAuthed();
-      await setDoc(doc(db, "settings", "forceLogout"), payload, { merge: true });
-    } catch (e) {
-      console.error("updateForceLogoutConfig failed", e);
-      setAlertMessage("⚠️ Gagal menyimpan konfigurasi Force Logout ke Firebase.");
-    }
   };
 
   // Import Functions
@@ -2381,50 +2317,6 @@ setTransaksiList(updatedTransaksiList);
     filter === 'all' || sj.status === filter
   );
 
-    // SETTINGS (login branding) - readable without auth (for login page branding)
-  useEffect(() => {
-    const unsub = onSnapshot(
-      doc(db, "settings", "app"),
-      (snap) => {
-        const data = snap.exists() ? (snap.data() || {}) : null;
-        if (data) setAppSettings(data);
-      },
-      (err) => {
-        console.warn("Failed to fetch settings/app:", err);
-      }
-    );
-    return () => {
-      try { unsub(); } catch {}
-    };
-  }, []);
-
-  // FORCE LOGOUT CONFIG — real-time listener
-  useEffect(() => {
-    const unsub = onSnapshot(
-      doc(db, "settings", "forceLogout"),
-      (snap) => {
-        const data = snap.exists() ? (snap.data() || {}) : null;
-
-        // Deteksi perubahan scheduledAt → reset deduplication warning
-        const newScheduledAt = data?.scheduledAt ?? null;
-        if (newScheduledAt !== prevForceLogoutScheduledAtRef.current) {
-          prevForceLogoutScheduledAtRef.current = newScheduledAt;
-          shownWarningThresholdsRef.current = new Set();
-          setForceLogoutBanner(null);
-          forceLogoutExecutedRef.current = false;
-        }
-
-        if (!data?.enabled) {
-          setForceLogoutBanner(null);
-          shownWarningThresholdsRef.current = new Set();
-        }
-
-        setForceLogoutConfig(data);
-      },
-      (err) => { console.warn("Failed to fetch settings/forceLogout:", err); }
-    );
-    return () => { try { unsub(); } catch {} };
-  }, []);
 
 // Firestore subscriptions (hanya setelah login DAN currentUser/role tersedia)
   useEffect(() => {
@@ -2558,38 +2450,6 @@ try { unsubTransaksi(); } catch {}
 // start only after role is available, and restart if the logged-in user changes.
 }, [authReady, firebaseUser, currentUser?.id]);
 
-  // FORCE LOGOUT — timer cek setiap 30 detik
-  useEffect(() => {
-    if (!currentUser || !forceLogoutConfig?.enabled || !forceLogoutConfig?.scheduledAt) return;
-
-    const tick = () => {
-      const diffMs = new Date(forceLogoutConfig.scheduledAt).getTime() - Date.now();
-      const diffMin = diffMs / 60000;
-
-      if (diffMs <= 0) {
-        if (currentUser.role !== 'superadmin') executeForcedLogout();
-        return;
-      }
-
-      for (const threshold of [20, 15, 10, 5]) {
-        if (diffMin <= threshold && !shownWarningThresholdsRef.current.has(threshold)) {
-          shownWarningThresholdsRef.current.add(threshold);
-          const scheduledAtLocal = new Date(forceLogoutConfig.scheduledAt)
-            .toLocaleString('id-ID', { dateStyle: 'short', timeStyle: 'short' });
-          setForceLogoutBanner({
-            minutesRemaining: Math.ceil(diffMin),
-            reason: forceLogoutConfig.reason || '',
-            scheduledAtLocal,
-          });
-          break;
-        }
-      }
-    };
-
-    tick(); // cek segera saat mount / config berubah
-    const id = setInterval(tick, 30_000);
-    return () => clearInterval(id);
-  }, [forceLogoutConfig, currentUser]);
 
   // Reconcile/backfill transaksi uang jalan dari Surat Jalan yang sudah terlanjur ada (mis. hasil import lama)
   // Aman dijalankan berulang karena menggunakan deterministic ID dan pengecekan transaksi existing.
