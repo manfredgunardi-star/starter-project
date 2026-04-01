@@ -6,6 +6,7 @@ import { formatCurrency, formatTanggalID } from './utils/currency.js';
 import { isSJTerinvoice, isSJBelumInvoice, mergeById } from './utils/sjHelpers.js';
 import { downloadSJRecapToExcel } from './utils/excel.js';
 import { useAuth } from './hooks/useAuth.js';
+import { useMasterData } from './hooks/useMasterData.js';
 import {
   sanitizeForFirestore,
   upsertItemToFirestore,
@@ -888,10 +889,7 @@ const SuratJalanMonitor = () => {
     loginFooterText: 'Masuk untuk mengakses dashboard monitoring'
   });
   const [usersList, setUsersList] = useState([]);
-  const [truckList, setTruckList] = useState([]);
-  const [supirList, setSupirList] = useState([]);
-  const [ruteList, setRuteList] = useState([]);
-  const [materialList, setMaterialList] = useState([]);
+  const { truckList, setTruckList, supirList, setSupirList, ruteList, setRuteList, materialList, setMaterialList } = useMasterData();
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
@@ -962,7 +960,6 @@ await upsertItemToFirestore(db, "history_log", { ...newLog, isActive: true });
       return false;
     }
 
-    setIsLoading(true);
     try {
       const result = await createUserWithRoleFn({ username, password, name, role });
       if (result?.data?.ok) {
@@ -981,8 +978,6 @@ await upsertItemToFirestore(db, "history_log", { ...newLog, isActive: true });
         setAlertMessage(`Gagal membuat user: ${err?.message || 'Unknown error'}`);
       }
       return false;
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -2520,71 +2515,6 @@ setTransaksiList(updatedTransaksiList);
     if (!authReady || !firebaseUser || !currentUser) {
       return;
     }
-  
-// Real-time updates dari Firestore untuk Master Data (sekaligus cache ke local storage)
-  const unsubTrucks = onSnapshot(collection(db, "trucks"), (snap) => {
-  const data = snap.docs
-    .map((d) => {
-      const row = d.data() || {};
-      const id = row.id || d.id;
-      return {
-        ...row,
-        id,
-        // Normalisasi field umum agar UI tidak error
-        isActive: row.isActive !== false,
-      };
-    })
-    .filter((x) => x?.isActive !== false && !x?.deletedAt);
-  setTruckList(data);
-});
-
-  const unsubSupir = onSnapshot(collection(db, "supir"), (snap) => {
-  const data = snap.docs
-    .map((d) => {
-      const row = d.data() || {};
-      const id = row.id || d.id;
-      return {
-        ...row,
-        id,
-        // Normalisasi field umum agar UI tidak error
-        isActive: row.isActive !== false,
-      };
-    })
-    .filter((x) => x?.isActive !== false && !x?.deletedAt);
-  setSupirList(data);
-});
-
-  const unsubRute = onSnapshot(collection(db, "rute"), (snap) => {
-  const data = snap.docs
-    .map((d) => {
-      const row = d.data() || {};
-      const id = row.id || d.id;
-      return {
-        ...row,
-        id,
-        // Normalisasi field umum agar UI tidak error
-        isActive: row.isActive !== false,
-      };
-    })
-    .filter((x) => x?.isActive !== false && !x?.deletedAt);
-  setRuteList(data);
-});
-
-  const unsubMaterial = onSnapshot(collection(db, "material"), (snap) => {
-  const data = snap.docs
-    .map((d) => {
-      const row = d.data() || {};
-      const id = row.id || d.id;
-      return {
-        ...row,
-        id,
-        // Normalisasi field umum agar UI tidak error
-        isActive: row.isActive !== false,
-      };
-    })
-    .filter((x) => x?.isActive !== false && !x?.deletedAt);
-  setMaterialList(data);
-});
 
 // DATA OPERASIONAL: source of truth dari Firestore
 let sjDocs = [];
@@ -2604,10 +2534,7 @@ const applySJ = () => {
   const list = sjDocs.filter((x) => !x?.deletedAt && x?.isActive !== false);
   list.sort((a, b) => (new Date(b?.tanggalSJ).getTime() || 0) - (new Date(a?.tanggalSJ).getTime() || 0));
   setSuratJalanList(list);
-  if (!didFirstLoadRef.current) {
-    setIsLoading(false);
-    didFirstLoadRef.current = true;
-  }
+  didFirstLoadRef.current = true;
 };
 
 const unsubSuratJalan = onSnapshot(collection(db, "surat_jalan"), (snap) => {
@@ -2717,10 +2644,6 @@ const unsubTransaksi = onSnapshot(collection(db, "transaksi"), (snap) => {
     setUsersList([]);
   });
   return () => {
-    try { unsubTrucks(); } catch {}
-    try { unsubSupir(); } catch {}
-    try { unsubRute(); } catch {}
-    try { unsubMaterial(); } catch {}
 try { unsubSuratJalan(); } catch {}
 try { unsubBiaya(); } catch {}
 try { unsubInvoice(); } catch {}
