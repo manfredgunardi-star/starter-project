@@ -1,5 +1,5 @@
 // src/components/SearchableSelect.jsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Search } from 'lucide-react';
 
 const SearchableSelect = ({ options, value, onChange, placeholder, label, displayKey = 'name', valueKey = 'id' }) => {
@@ -28,7 +28,7 @@ const SearchableSelect = ({ options, value, onChange, placeholder, label, displa
         </div>
 
         {isOpen && (
-          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-hidden">
+          <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-72 sm:max-h-60 overflow-hidden">
             <div className="p-2 border-b">
               <input
                 type="text"
@@ -39,7 +39,7 @@ const SearchableSelect = ({ options, value, onChange, placeholder, label, displa
                 autoFocus
               />
             </div>
-            <div className="overflow-y-auto max-h-48">
+            <div className="overflow-y-auto max-h-60 sm:max-h-48">
               {filteredOptions.length === 0 ? (
                 <div className="p-3 text-gray-500 text-sm text-center">Tidak ada data</div>
               ) : (
@@ -51,7 +51,7 @@ const SearchableSelect = ({ options, value, onChange, placeholder, label, displa
                       setIsOpen(false);
                       setSearchTerm('');
                     }}
-                    className={`px-3 py-2 cursor-pointer hover:bg-blue-50 ${
+                    className={`px-3 py-3 sm:py-2 cursor-pointer hover:bg-blue-50 ${
                       option[valueKey] === value ? 'bg-blue-100 font-semibold' : ''
                     }`}
                   >
