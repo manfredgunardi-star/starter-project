@@ -6,90 +6,12 @@ import { formatCurrency, formatTanggalID } from './utils/currency.js';
 import { generateSessionId } from './utils/session.js';
 import { isSJTerinvoice, isSJBelumInvoice, mergeById } from './utils/sjHelpers.js';
 import { downloadSJRecapToExcel } from './utils/excel.js';
-
-const resolveSuratJalanDocRef = async (sjId) => {
-  const businessId = String(sjId || '').trim();
-  if (!businessId) return null;
-
-  // Cek doc langsung by Firestore document ID
-  const directRef = doc(db, 'surat_jalan', businessId);
-  try {
-    const snap = await getDoc(directRef);
-    if (snap.exists()) return directRef;
-  } catch {}
-
-  // Fallback: cari by field 'id' (jika document ID berbeda dari business ID)
-  try {
-    const qs = await getDocs(query(collection(db, 'surat_jalan'), where('id', '==', businessId)));
-    if (!qs.empty) return qs.docs[0].ref;
-  } catch {}
-
-  return null;
-};
-
-// Remove undefined values recursively so Firestore doesn't reject the payload
-const sanitizeForFirestore = (input) => {
-  if (input === undefined) return undefined;
-  if (input === null) return null;
-
-  // Preserve primitives
-  const t = typeof input;
-  if (t === "string" || t === "number" || t === "boolean") return input;
-
-  // Convert Date -> ISO string
-  if (input instanceof Date) return input.toISOString();
-
-  // Arrays
-  if (Array.isArray(input)) {
-    return input
-      .map(sanitizeForFirestore)
-      .filter((v) => v !== undefined);
-  }
-
-  // Objects
-  if (t === "object") {
-    const out = {};
-    for (const [k, v] of Object.entries(input)) {
-      if (v === undefined) continue;
-      const sv = sanitizeForFirestore(v);
-      if (sv === undefined) continue;
-      out[k] = sv;
-    }
-    return out;
-  }
-
-  // Functions / symbols etc -> drop
-  return undefined;
-};
-
-// Upsert a document by id into a collection (single source of truth for Firestore writes)
-const upsertItemToFirestore = async (dbRef, collectionName, item) => {
-  if (!dbRef) throw new Error("Firestore db is not initialized");
-  if (!collectionName) throw new Error("collectionName is required");
-  const id = item?.id ? String(item.id).trim() : "";
-  if (!id) throw new Error(`Cannot upsert to ${collectionName}: missing item.id`);
-
-  const payload = sanitizeForFirestore(item);
-  await setDoc(doc(dbRef, collectionName, id), payload, { merge: true });
-  return id;
-};
-
-const softDeleteItemInFirestore = async (dbRef, collectionName, id, deletedBy = 'system') => {
-  if (!dbRef) throw new Error('Firestore db is not initialized');
-  if (!collectionName) throw new Error('collectionName is required');
-  const docId = String(id || '').trim();
-  if (!docId) throw new Error(`Cannot soft delete in ${collectionName}: missing id`);
-
-  const nowIso = new Date().toISOString();
-  await updateDoc(doc(dbRef, collectionName, docId), sanitizeForFirestore({
-    isActive: false,
-    deletedAt: nowIso,
-    deletedBy: deletedBy || 'system',
-    updatedAt: nowIso,
-    updatedBy: deletedBy || 'system',
-  }));
-  return docId;
-};
+import {
+  sanitizeForFirestore,
+  upsertItemToFirestore,
+  softDeleteItemInFirestore,
+  resolveSuratJalanDocRef,
+} from './firestoreService.js';
 
 
 
@@ -1612,7 +1534,7 @@ const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist }) => {
     }
     if (!invoiceSaved) throw lastErr || new Error('Gagal menyimpan invoice');
 
-    const resolved = await Promise.all((sjIdsToPersist || []).map(async (sjId) => ({ sjId, ref: await resolveSuratJalanDocRef(sjId) })));
+    const resolved = await Promise.all((sjIdsToPersist || []).map(async (sjId) => ({ sjId, ref: await resolveSuratJalanDocRef(db, sjId) })));
     for (const { sjId, ref } of resolved) {
       if (!ref) continue;
       await setDoc(ref, sanitizeForFirestore({
@@ -1784,7 +1706,7 @@ try {
           }
           if (!softDeleteOk) throw lastErr || new Error('Gagal membatalkan invoice');
 
-          const resolved = await Promise.all(sjIds.map(async (sjId) => ({ sjId, ref: await resolveSuratJalanDocRef(sjId) })));
+          const resolved = await Promise.all(sjIds.map(async (sjId) => ({ sjId, ref: await resolveSuratJalanDocRef(db, sjId) })));
           for (const { ref } of resolved) {
             if (!ref) continue;
             await setDoc(ref, sanitizeForFirestore({

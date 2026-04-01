@@ -1,6 +1,6 @@
 // src/firestoreService.js
-import { doc, setDoc, updateDoc } from "firebase/firestore";
-import { ensureAuthed } from "./config/firebase-config";
+import { doc, setDoc, updateDoc, collection, getDoc, getDocs, query, where } from "firebase/firestore";
+import { db, ensureAuthed } from "./config/firebase-config";
 
 /**
  * Bersihkan object supaya aman disimpan ke Firestore:
@@ -74,4 +74,22 @@ export const softDeleteItemInFirestore = async (db, collectionName, id, deletedB
     deletedAt: new Date().toISOString(),
     deletedBy: deletedBy || "unknown",
   });
+};
+
+export const resolveSuratJalanDocRef = async (dbRef, sjId) => {
+  const businessId = String(sjId || '').trim();
+  if (!businessId) return null;
+
+  const directRef = doc(dbRef, 'surat_jalan', businessId);
+  try {
+    const snap = await getDoc(directRef);
+    if (snap.exists()) return directRef;
+  } catch {}
+
+  try {
+    const qs = await getDocs(query(collection(dbRef, 'surat_jalan'), where('id', '==', businessId)));
+    if (!qs.empty) return qs.docs[0].ref;
+  } catch {}
+
+  return null;
 };
