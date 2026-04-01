@@ -1,5 +1,5 @@
 // src/components/SuratJalanCard.jsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { CheckCircle, XCircle, Edit, Trash2, Eye, RefreshCw } from 'lucide-react';
 
 const SuratJalanCard = ({
@@ -39,17 +39,17 @@ const SuratJalanCard = ({
 
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
-      <div className="p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
+      <div className="p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 gap-4">
+          <div className="flex-1 min-w-0">
             <div className="flex items-center space-x-3 mb-2">
-              <h3 className="text-xl font-bold text-gray-800">{suratJalan.nomorSJ}</h3>
+              <h3 className="text-lg sm:text-xl font-bold text-gray-800 truncate">{suratJalan.nomorSJ}</h3>
               <span className={`px-3 py-1 rounded-full text-sm font-semibold flex items-center space-x-1 ${getStatusColor(suratJalan.status)}`}>
                 {getStatusIcon(suratJalan.status)}
                 <span className="capitalize">{suratJalan.status}</span>
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm">
               <div>
                 <p className="text-gray-600">Tgl SJ:</p>
                 <p className="font-semibold text-gray-800">{suratJalan.tanggalSJ ? new Date(suratJalan.tanggalSJ).toLocaleDateString('id-ID') : '-'}</p>
@@ -89,11 +89,11 @@ const SuratJalanCard = ({
             </div>
           </div>
 
-          <div className="flex flex-col space-y-2 ml-4">
+          <div className="flex flex-wrap gap-2 sm:flex-col sm:gap-2 sm:ml-4">
             {canMarkTerkirim() && suratJalan.status === 'pending' && (
               <button
                 onClick={() => onUpdate(suratJalan)}
-                className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1 whitespace-nowrap"
+                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm transition flex items-center space-x-1 whitespace-nowrap"
               >
                 <CheckCircle className="w-4 h-4" />
                 <span>Tandai Terkirim</span>
@@ -102,7 +102,7 @@ const SuratJalanCard = ({
             {canEdit() && (
               <button
                 onClick={() => onEditTerkirim(suratJalan)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1 whitespace-nowrap"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm transition flex items-center space-x-1 whitespace-nowrap"
               >
                 <Edit className="w-4 h-4" />
                 <span>Edit</span>
@@ -111,7 +111,7 @@ const SuratJalanCard = ({
             {canMarkGagal() && suratJalan.status !== 'gagal' && (
               <button
                 onClick={() => onMarkGagal(suratJalan.id)}
-                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1 whitespace-nowrap"
+                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm transition flex items-center space-x-1 whitespace-nowrap"
               >
                 <XCircle className="w-4 h-4" />
                 <span>Tandai Gagal</span>
@@ -120,7 +120,7 @@ const SuratJalanCard = ({
             {effectiveRole === 'superadmin' && suratJalan.status === 'terkirim' && (
               <button
                 onClick={() => onMarkGagal(suratJalan.id)}
-                className="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1 whitespace-nowrap"
+                className="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm transition flex items-center space-x-1 whitespace-nowrap"
               >
                 <XCircle className="w-4 h-4" />
                 <span>Batalkan (Gagal)</span>
@@ -129,7 +129,7 @@ const SuratJalanCard = ({
             {effectiveRole === 'superadmin' && suratJalan.status === 'gagal' && (
               <button
                 onClick={() => onRestore(suratJalan.id)}
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1 whitespace-nowrap"
+                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm transition flex items-center space-x-1 whitespace-nowrap"
               >
                 <RefreshCw className="w-4 h-4" />
                 <span>Restore</span>
@@ -137,7 +137,7 @@ const SuratJalanCard = ({
             )}
             <button
               onClick={() => setExpanded(!expanded)}
-              className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1 whitespace-nowrap"
+              className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm transition flex items-center space-x-1 whitespace-nowrap"
             >
               <Eye className="w-4 h-4" />
               <span>{expanded ? 'Tutup' : 'Detail'}</span>
@@ -149,7 +149,7 @@ const SuratJalanCard = ({
           <div className="mt-6 pt-6 border-t border-gray-200">
             <div className="mb-4">
               <h4 className="font-semibold text-gray-800 mb-2">Detail Lengkap:</h4>
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 text-xs sm:text-sm">
                 <div>
                   <p className="text-gray-600">Dibuat oleh:</p>
                   <p className="font-semibold text-gray-800">{suratJalan.createdBy}</p>
