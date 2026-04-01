@@ -3,9 +3,9 @@ import { db, auth, ensureAuthed, createUserWithRoleFn } from "./config/firebase-
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import React, { useState, useEffect, useRef } from 'react';
 import { formatCurrency, formatTanggalID } from './utils/currency.js';
-import { generateSessionId } from './utils/session.js';
 import { isSJTerinvoice, isSJBelumInvoice, mergeById } from './utils/sjHelpers.js';
 import { downloadSJRecapToExcel } from './utils/excel.js';
+import { useAuth } from './hooks/useAuth.js';
 import {
   sanitizeForFirestore,
   upsertItemToFirestore,
@@ -869,12 +869,14 @@ const InvoiceManagement = ({
 };
 
 const SuratJalanMonitor = () => {
-  const [currentUser, setCurrentUser] = useState(null);
+  const {
+    currentUser, firebaseUser, authReady, isLoading, alertMessage, setAlertMessage,
+    handleLogin, handleLogout,
+  } = useAuth();
+
   const effectiveRole = currentUser?.role === 'owner' ? 'reader' : currentUser?.role;
   const canWriteTransaksi = effectiveRole === 'superadmin' || effectiveRole === 'admin_keuangan';
 
-  const [firebaseUser, setFirebaseUser] = useState(null);
-  const [authReady, setAuthReady] = useState(false);
   const [suratJalanList, setSuratJalanList] = useState([]);
   const [biayaList, setBiayaList] = useState([]);
   const [transaksiList, setTransaksiList] = useState([]);
@@ -897,14 +899,9 @@ const SuratJalanMonitor = () => {
   const [sjRecapDateField, setSjRecapDateField] = useState('tanggalSJ');
   const [sjRecapStartDate, setSjRecapStartDate] = useState('');
   const [sjRecapEndDate, setSjRecapEndDate] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
   const didFirstLoadRef = useRef(false);
   const [activeTab, setActiveTab] = useState('surat-jalan');
-  const [alertMessage, setAlertMessage] = useState('');
   const [confirmDialog, setConfirmDialog] = useState({ show: false, message: '', onConfirm: null });
-
-  // Enforce only one active session per account (if the same account logs in elsewhere, this client logs out)
-  const activeSessionIdRef = useRef(null);
 
   // Force logout terjadwal
   const [forceLogoutConfig, setForceLogoutConfig] = useState(null);
@@ -914,116 +911,6 @@ const SuratJalanMonitor = () => {
   const prevForceLogoutScheduledAtRef = useRef(null);
   const forceLogoutExecutedRef = useRef(false);
 
-  // Guard untuk mencegah setState setelah komponen unmount (terutama untuk operasi async panjang)
-  const isMountedRef = useRef(true);
-  useEffect(() => { return () => { isMountedRef.current = false; }; }, []);
-
-  // === AUTH + RBAC (Spark plan, tanpa Cloud Functions) ===
-  // Role source-of-truth: Firestore doc users/{uid}.role
-  // Bootstrap: saat user pertama login, jika doc users/{uid} belum ada, app akan membuat doc dengan role 'reader'.
-  useEffect(() => {
-    let unsubUser = null;
-
-    const unsubAuth = onAuthStateChanged(auth, async (user) => {
-      // cleanup previous user snapshot
-      if (typeof unsubUser === "function") {
-        try { unsubUser(); } catch (_) {}
-        unsubUser = null;
-      }
-
-      setFirebaseUser(user || null);
-
-      if (!user) {
-        setCurrentUser(null);
-        activeSessionIdRef.current = null;
-        setAuthReady(true);
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const userRef = doc(db, "users", user.uid);
-        const snap = await getDoc(userRef);
-
-        if (!snap.exists()) {
-          const email = user.email || "";
-          const username = email.includes("@") ? email.split("@")[0] : (user.displayName || "user");
-
-          // Bootstrap doc: role default reader (superadmin akan promote via UI)
-          await setDoc(
-            userRef,
-            {
-              username,
-              name: user.displayName || username,
-              email,
-              role: "reader",
-              isActive: true,
-              createdAt: new Date().toISOString(),
-              createdBy: "self-bootstrap",
-            },
-            { merge: true }
-          );
-        }
-
-        // Create/update active session id (used to force-logout older sessions for same account)
-        const sessionId = generateSessionId();
-        activeSessionIdRef.current = sessionId;
-        await setDoc(
-          userRef,
-          {
-            activeSessionId: sessionId,
-            activeSessionAt: new Date().toISOString(),
-            activeSessionUA: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
-          },
-          { merge: true }
-        );
-
-        // Subscribe realtime ke doc user untuk perubahan role/isActive
-        unsubUser = onSnapshot(doc(db, "users", user.uid), (d) => {
-          const data = d.data() || {};
-
-          // If this account is logged in somewhere else, end this session
-          const activeId = data.activeSessionId;
-          if (activeId && activeSessionIdRef.current && activeId !== activeSessionIdRef.current) {
-            setAlertMessage("Sesi Anda berakhir karena akun ini login di perangkat lain.");
-            activeSessionIdRef.current = null;
-            signOut(auth).catch(() => {});
-            return;
-          }
-
-          if (data.isActive === false) {
-            setAlertMessage("Akun Anda dinonaktifkan. Hubungi administrator.");
-            signOut(auth).catch(() => {});
-            return;
-          }
-
-          setCurrentUser({
-            id: user.uid,
-            username: data.username || (user.email ? user.email.split("@")[0] : ""),
-            name: data.name || user.displayName || data.username || "User",
-            role: data.role || "reader",
-            email: user.email || data.email || "",
-            isActive: data.isActive !== false,
-          });
-        });
-
-        setAlertMessage("");
-        setAuthReady(true);
-        setIsLoading(false);
-      } catch (err) {
-        console.error("Auth bootstrap error:", err);
-        setAlertMessage(`Auth error: ${err?.message || "Unknown error"}`);
-        setCurrentUser(null);
-        setAuthReady(true);
-        setIsLoading(false);
-      }
-    });
-
-    return () => {
-      try { if (typeof unsubUser === "function") unsubUser(); } catch (_) {}
-      unsubAuth();
-    };
-  }, []);
 
 
 
@@ -1047,44 +934,6 @@ const SuratJalanMonitor = () => {
 await upsertItemToFirestore(db, "history_log", { ...newLog, isActive: true });
   };
 
-
-  const handleLogin = async (username, password) => {
-    try {
-      const u = (username || "").trim();
-      const p = (password || "").trim();
-      if (!u || !p) {
-        setAlertMessage("Username/Email dan Password wajib diisi.");
-        return;
-      }
-
-      // Bisa input email langsung, atau username -> username@app.local
-      const email = u.includes("@") ? u : `${u}@app.local`;
-
-      await signInWithEmailAndPassword(auth, email, p);
-      setAlertMessage("");
-    } catch (err) {
-      console.error("Login error:", err);
-      const code = err?.code || "";
-      if (code.includes("auth/invalid-credential") || code.includes("auth/wrong-password")) {
-        setAlertMessage("Login gagal: password salah / akun tidak ditemukan.");
-      } else if (code.includes("auth/user-disabled")) {
-        setAlertMessage("Login gagal: akun dinonaktifkan.");
-      } else {
-        setAlertMessage(`Login gagal: ${err?.message || "Unknown error"}`);
-      }
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-    } catch (err) {
-      console.error("Logout error:", err);
-    } finally {
-      setCurrentUser(null);
-      setFirebaseUser(null);
-    }
-  };
 
   const executeForcedLogout = async () => {
     if (forceLogoutExecutedRef.current) return; // idempotency guard
