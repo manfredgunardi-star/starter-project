@@ -3515,7 +3515,7 @@ const KeuanganManagement = ({ transaksiList, currentUser, onAddTransaksi, onDele
           </div>
         ) : (
           filteredTransaksi.map(transaksi => (
-            <div key={transaksi.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
+            <div key={transaksi.id} className="bg-white rounded-lg shadow-md p-3 sm:p-6 hover:shadow-lg transition">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-2">
