@@ -2,103 +2,10 @@ import { collection, doc, writeBatch, onSnapshot, getDoc, setDoc, updateDoc, get
 import { db, auth, ensureAuthed, createUserWithRoleFn } from "./config/firebase-config";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import React, { useState, useEffect, useRef } from 'react';
-import * as XLSX from 'xlsx';
-
-// Generate a per-login session id used to enforce single active session per user
-const generateSessionId = () => {
-  try {
-    if (typeof crypto !== 'undefined' && crypto.randomUUID) return crypto.randomUUID();
-  } catch (_) {}
-  return `sess_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
-};
-
-// === Helpers (single source) ===
-const formatCurrency = (amount) => {
-  const n = Number(amount || 0);
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-  }).format(n);
-};
-
-
-const formatTanggalID = (value) => {
-  if (!value) return '-';
-  try {
-    if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
-      const [y, m, d] = value.split('-');
-      return `${d}/${m}/${y}`;
-    }
-    const d = value instanceof Date ? value : new Date(value);
-    if (Number.isNaN(d.getTime())) return String(value);
-    return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
-  } catch {
-    return String(value);
-  }
-};
-
-const downloadSJRecapToExcel = (suratJalanList = [], options = {}) => {
-  const { startDate = '', endDate = '', dateField = 'tanggalSJ' } = options || {};
-
-  const normDate = (v) => {
-    if (!v) return '';
-    if (typeof v === 'string') {
-      const m = v.match(/^(\d{4}-\d{2}-\d{2})/);
-      if (m) return m[1];
-    }
-    try {
-      return new Date(v).toISOString().slice(0, 10);
-    } catch {
-      return '';
-    }
-  };
-
-  const start = normDate(startDate);
-  const end = normDate(endDate);
-  const rows = (Array.isArray(suratJalanList) ? suratJalanList : [])
-    .filter((sj) => sj?.isActive !== false)
-    .filter((sj) => {
-      const d = normDate(sj?.[dateField]);
-      if (!d) return false;
-      if (start && d < start) return false;
-      if (end && d > end) return false;
-      return true;
-    })
-    .map((sj, i) => ({
-      No: i + 1,
-      'Nomor SJ': sj?.nomorSJ || '',
-      'Tanggal SJ': normDate(sj?.tanggalSJ),
-      'Tanggal Terkirim': normDate(sj?.tglTerkirim),
-      PT: sj?.pt || '',
-      Supir: sj?.namaSupir || sj?.supir || '',
-      'Nomor Polisi': sj?.nomorPolisi || '',
-      Rute: sj?.rute || '',
-      Material: sj?.material || '',
-      'Qty Isi': Number(sj?.qtyIsi || 0),
-      'Qty Bongkar': Number(sj?.qtyBongkar || 0),
-      Satuan: sj?.satuan || '',
-      'Uang Jalan': Number(sj?.uangJalan || 0),
-      Status: sj?.status || '',
-      'Status Invoice': sj?.statusInvoice || 'belum',
-      'Dibuat Oleh': sj?.createdBy || '',
-      'Dibuat Tanggal': normDate(sj?.createdAt),
-      'Diupdate Oleh': sj?.updatedBy || '',
-      'Diupdate Tanggal': normDate(sj?.updatedAt),
-    }));
-
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(rows);
-  ws['!cols'] = [
-    { wch: 6 }, { wch: 18 }, { wch: 14 }, { wch: 16 }, { wch: 10 }, { wch: 24 },
-    { wch: 16 }, { wch: 24 }, { wch: 16 }, { wch: 10 }, { wch: 12 }, { wch: 10 },
-    { wch: 14 }, { wch: 12 }, { wch: 14 }, { wch: 16 }, { wch: 14 }, { wch: 16 }, { wch: 14 }
-  ];
-  XLSX.utils.book_append_sheet(wb, ws, 'Rekap Surat Jalan');
-  const startLabel = start || 'all';
-  const endLabel = end || 'all';
-  XLSX.writeFile(wb, `Rekap_Surat_Jalan_${dateField}_${startLabel}_${endLabel}.xlsx`);
-};
+import { formatCurrency, formatTanggalID } from './utils/currency.js';
+import { generateSessionId } from './utils/session.js';
+import { isSJTerinvoice, isSJBelumInvoice, mergeById } from './utils/sjHelpers.js';
+import { downloadSJRecapToExcel } from './utils/excel.js';
 
 const resolveSuratJalanDocRef = async (sjId) => {
   const businessId = String(sjId || '').trim();
@@ -184,31 +91,6 @@ const softDeleteItemInFirestore = async (dbRef, collectionName, id, deletedBy = 
   return docId;
 };
 
-
-const mergeById = (a = [], b = []) => {
-  const m = new Map();
-  [...a, ...b].forEach((x) => {
-    if (!x) return;
-    const id = String(x.id ?? "");
-    if (!id) return;
-    const prev = m.get(id);
-    if (!prev) {
-      m.set(id, x);
-      return;
-    }
-    const prevTs = String(prev.updatedAt || prev.createdAt || "");
-    const nextTs = String(x.updatedAt || x.createdAt || "");
-    if (nextTs > prevTs) m.set(id, x);
-  });
-  return Array.from(m.values());
-};
-
-const isSJTerinvoice = (sj) => {
-  const statusInvoice = String(sj?.statusInvoice || '').toLowerCase();
-  return statusInvoice === 'terinvoice' || !!sj?.invoiceId || !!sj?.invoiceNo;
-};
-
-const isSJBelumInvoice = (sj) => String(sj?.status || '').toLowerCase() === 'terkirim' && !isSJTerinvoice(sj);
 
 
 import { AlertCircle, Package, Truck, FileText, DollarSign, Users, LogOut, Plus, Edit, Trash2, Eye, CheckCircle, XCircle, Clock, Search, RefreshCw } from 'lucide-react';
