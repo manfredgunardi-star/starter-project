@@ -1,5 +1,5 @@
 // src/pages/LoginPage.jsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Package, AlertCircle } from 'lucide-react';
 
 const LoginPage = ({ onLogin, alertMessage, setAlertMessage, appSettings }) => {
@@ -14,7 +14,7 @@ const LoginPage = ({ onLogin, alertMessage, setAlertMessage, appSettings }) => {
     }
   };
 
-  const handleKeyPress = (e) => {
+  const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       handleSubmit();
     }
@@ -51,7 +51,7 @@ const LoginPage = ({ onLogin, alertMessage, setAlertMessage, appSettings }) => {
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyDown}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Masukkan username"
               autoComplete="username"
@@ -64,7 +64,7 @@ const LoginPage = ({ onLogin, alertMessage, setAlertMessage, appSettings }) => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyDown}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Masukkan password"
               autoComplete="current-password"
@@ -91,8 +91,8 @@ const LoginPage = ({ onLogin, alertMessage, setAlertMessage, appSettings }) => {
 
       {/* Alert Dialog in Login */}
       {alertMessage && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center sm:p-4 z-50">
+          <div className="bg-white rounded-t-2xl sm:rounded-lg shadow-xl sm:max-w-md w-full p-4 sm:p-6">
             <div className="flex items-center space-x-3 mb-4">
               <AlertCircle className="w-6 h-6 text-blue-600" />
               <h2 className="text-xl font-bold text-gray-800">Informasi</h2>

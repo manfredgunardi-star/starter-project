@@ -2495,8 +2495,8 @@ try { unsubTransaksi(); } catch {}
 
       {/* Alert Dialog */}
       {alertMessage && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center sm:p-4 z-50">
+          <div className="bg-white rounded-t-2xl sm:rounded-lg shadow-xl sm:max-w-md w-full p-4 sm:p-6">
             <div className="flex items-center space-x-3 mb-4">
               <AlertCircle className="w-6 h-6 text-blue-600" />
               <h2 className="text-xl font-bold text-gray-800">Informasi</h2>
@@ -2514,8 +2514,8 @@ try { unsubTransaksi(); } catch {}
 
       {/* Confirm Dialog */}
       {confirmDialog.show && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center sm:p-4 z-50">
+          <div className="bg-white rounded-t-2xl sm:rounded-lg shadow-xl sm:max-w-md w-full p-4 sm:p-6">
             <div className="flex items-center space-x-3 mb-4">
               <AlertCircle className="w-6 h-6 text-orange-600" />
               <h2 className="text-xl font-bold text-gray-800">Konfirmasi</h2>
