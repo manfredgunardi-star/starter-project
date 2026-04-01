@@ -7,6 +7,7 @@ import { isSJTerinvoice, isSJBelumInvoice, mergeById } from './utils/sjHelpers.j
 import { downloadSJRecapToExcel } from './utils/excel.js';
 import { useAuth } from './hooks/useAuth.js';
 import { useMasterData } from './hooks/useMasterData.js';
+import { useUsers } from './hooks/useUsers.js';
 import {
   sanitizeForFirestore,
   upsertItemToFirestore,
@@ -888,8 +889,9 @@ const SuratJalanMonitor = () => {
     logoUrl: '',
     loginFooterText: 'Masuk untuk mengakses dashboard monitoring'
   });
-  const [usersList, setUsersList] = useState([]);
   const { truckList, setTruckList, supirList, setSupirList, ruteList, setRuteList, materialList, setMaterialList } = useMasterData();
+  const { usersList, setUsersList, addUser, updateUser, deleteUser: deleteUserFn, toggleUserActive } = useUsers({ currentUser, setAlertMessage });
+  const deleteUser = (id) => deleteUserFn(id, setConfirmDialog);
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
@@ -949,92 +951,6 @@ await upsertItemToFirestore(db, "history_log", { ...newLog, isActive: true });
     signOut(auth).catch(() => {}); // auth listener handles setCurrentUser(null)
   };
 
-  const addUser = async (data) => {
-    const username = (data?.username || '').trim();
-    const password = (data?.password || '').trim();
-    const name = (data?.name || '').trim();
-    const role = (data?.role || '').trim();
-
-    if (!username || !password || !name || !role) {
-      setAlertMessage('Username, Password, Nama Lengkap, dan Role harus diisi!');
-      return false;
-    }
-
-    try {
-      const result = await createUserWithRoleFn({ username, password, name, role });
-      if (result?.data?.ok) {
-        setAlertMessage(`User "${name}" berhasil dibuat dengan email ${result.data.email}.`);
-        return true;
-      }
-      setAlertMessage('Gagal membuat user. Coba lagi.');
-      return false;
-    } catch (err) {
-      console.error('[addUser] error:', err);
-      if (err?.code === 'functions/already-exists') {
-        setAlertMessage('Username sudah digunakan. Gunakan username lain.');
-      } else if (err?.code === 'functions/permission-denied') {
-        setAlertMessage('Akses ditolak. Hanya superadmin yang dapat menambah user.');
-      } else {
-        setAlertMessage(`Gagal membuat user: ${err?.message || 'Unknown error'}`);
-      }
-      return false;
-    }
-  };
-
-const updateUser = async (id, updates) => {
-    let updatedUser = null;
-
-    const newList = usersList.map((u) => {
-      if (u.id !== id) return u;
-      updatedUser = {
-        ...u,
-        ...updates,
-        updatedAt: new Date().toISOString(),
-        updatedBy: currentUser?.name || "system",
-      };
-      return updatedUser;
-    });
-
-    const sorted = [...newList].sort((a, b) => String(a?.username || "").localeCompare(String(b?.username || "")));
-    setUsersList(sorted);
-// Persist ke Firestore
-    if (updatedUser) {
-      try {
-        await upsertItemToFirestore(db, "users", updatedUser);
-      } catch (e) {
-        console.error("updateUser -> Firestore failed", e);
-        setAlertMessage("⚠️ Gagal update user ke Firebase. Perubahan tersimpan di cache lokal.");
-      }
-    }
-  };
-
-  const deleteUser = async (id) => {
-    setConfirmDialog({
-      show: true,
-      message: "Yakin ingin menghapus user ini?",
-      onConfirm: async () => {
-        // Soft delete di Firestore (biar ada audit trail)
-        try {
-          await softDeleteItemInFirestore(db, "users", id, currentUser?.name || "system");
-        } catch (e) {
-          console.error("deleteUser -> Firestore failed", e);
-          setAlertMessage("⚠️ Gagal menghapus user di Firebase. Perubahan tersimpan di cache lokal.");
-        }
-
-        // Hapus dari state/cache (doc akan ikut hilang dari UI via filter deletedAt)
-        const newList = usersList.filter((u) => u.id !== id);
-        setUsersList(newList);
-setConfirmDialog({ show: false, message: "", onConfirm: null });
-      },
-    });
-  };
-
-  const toggleUserActive = async (id) => {
-    const user = usersList.find((u) => u.id === id);
-    if (user) {
-      await updateUser(id, { isActive: !user.isActive });
-    }
-  };
 
 
 
@@ -2630,19 +2546,6 @@ const unsubTransaksi = onSnapshot(collection(db, "transaksi"), (snap) => {
 
 
 
-  // USERS: source of truth dari Firestore (tanpa password di Firestore).
-  // Dokumen users/{uid} dibuat otomatis saat user pertama login (bootstrap).
-  const unsubUsers = onSnapshot(collection(db, "users"), (snap) => {
-    const rows = snap.docs
-      .map((d) => ({ id: d.id, ...(d.data() || {}) }))
-      // sembunyikan soft-deleted (punya deletedAt). Nonaktif (isActive=false) tetap tampil.
-      .filter((u) => !(u && u.deletedAt));
-
-    setUsersList(rows);
-  }, (err) => {
-    console.warn('[subscription] users collection tidak dapat diakses (role tidak cukup):', err.code);
-    setUsersList([]);
-  });
   return () => {
 try { unsubSuratJalan(); } catch {}
 try { unsubBiaya(); } catch {}
@@ -2650,7 +2553,6 @@ try { unsubInvoice(); } catch {}
 try { unsubInvoiceLegacy(); } catch {}
 try { unsubHistory(); } catch {}
 try { unsubTransaksi(); } catch {}
-    try { unsubUsers(); } catch {}
   };
 // IMPORTANT: depend on authReady, firebaseUser, currentUser?.id so subscriptions
 // start only after role is available, and restart if the logged-in user changes.
