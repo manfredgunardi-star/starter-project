@@ -3905,16 +3905,16 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className={`bg-white rounded-lg shadow-xl ${(type === 'addSJ' || type === 'markTerkirim' || type === 'editTerkirim' || type === 'addInvoice') ? 'max-w-2xl' : 'max-w-md'} w-full p-6 max-h-[90vh] overflow-y-auto`}>
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center sm:p-4 z-50">
+      <div className={`bg-white rounded-t-2xl sm:rounded-lg shadow-xl ${(type === 'addSJ' || type === 'markTerkirim' || type === 'editTerkirim' || type === 'addInvoice') ? 'sm:max-w-2xl' : 'sm:max-w-md'} w-full p-4 sm:p-6 max-h-[95vh] sm:max-h-[90vh] overflow-y-auto`}>
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">
           {getModalTitle()}
         </h2>
         
         <div className="space-y-4">
           {type === 'addSJ' ? (
             <>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">1. Nomor SJ *</label>
                   <input
@@ -3990,7 +3990,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                 valueKey="id"
               />
               
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">8. Satuan (Auto-fill)</label>
                   <input
@@ -4030,7 +4030,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
               {/* Info Surat Jalan */}
               <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-lg mb-4">
                 <h3 className="font-semibold text-blue-900 mb-3">📋 Informasi Surat Jalan</h3>
-                <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 text-sm">
                   <div>
                     <p className="text-blue-700 font-medium">Nomor SJ:</p>
                     <p className="text-blue-900 font-bold">{selectedItem?.nomorSJ}</p>
