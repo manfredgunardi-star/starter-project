@@ -2035,12 +2035,12 @@ try { unsubTransaksi(); } catch {}
 
       {/* Tab Navigation */}
       {effectiveRole && (
-        <div className="max-w-7xl mx-auto px-6 py-4">
-          <div className="flex flex-wrap gap-3 bg-white/80 backdrop-blur rounded-2xl p-3 shadow-sm">
+        <div className="max-w-7xl mx-auto px-3 py-2 sm:px-6 sm:py-4">
+          <div className="flex gap-2 sm:gap-3 bg-white/80 backdrop-blur rounded-2xl p-2 sm:p-3 shadow-sm overflow-x-auto scrollbar-hide sm:flex-wrap">
             {/* Semua role yang login boleh lihat Surat Jalan (read-only untuk non-admin_sj) */}
             <button
               onClick={() => setActiveTab("surat-jalan")}
-              className={`px-4 py-2 rounded-xl font-medium flex items-center gap-2 ${activeTab === "surat-jalan" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-sm sm:text-base font-medium flex items-center gap-1.5 sm:gap-2 whitespace-nowrap flex-shrink-0 ${activeTab === "surat-jalan" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
             >
               <span>📦</span> Surat Jalan
             </button>
@@ -2049,7 +2049,7 @@ try { unsubTransaksi(); } catch {}
             {["superadmin", "admin_keuangan", "reader"].includes(effectiveRole) && (
               <button
                 onClick={() => setActiveTab("keuangan")}
-                className={`px-4 py-2 rounded-xl font-medium flex items-center gap-2 ${activeTab === "keuangan" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-sm sm:text-base font-medium flex items-center gap-1.5 sm:gap-2 whitespace-nowrap flex-shrink-0 ${activeTab === "keuangan" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
               >
                 <span>💵</span> Keuangan
               </button>
@@ -2059,7 +2059,7 @@ try { unsubTransaksi(); } catch {}
             {["superadmin", "admin_keuangan", "admin_invoice", "admin_sj", "reader"].includes(effectiveRole) && (
               <button
                 onClick={() => setActiveTab("laporan-kas")}
-                className={`px-4 py-2 rounded-xl font-medium flex items-center gap-2 ${activeTab === "laporan-kas" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-sm sm:text-base font-medium flex items-center gap-1.5 sm:gap-2 whitespace-nowrap flex-shrink-0 ${activeTab === "laporan-kas" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
               >
                 <span>📑</span> Laporan Kas
               </button>
@@ -2069,7 +2069,7 @@ try { unsubTransaksi(); } catch {}
             {["superadmin", "admin_invoice", "reader"].includes(effectiveRole) && (
               <button
                 onClick={() => setActiveTab("invoicing")}
-                className={`px-4 py-2 rounded-xl font-medium flex items-center gap-2 ${activeTab === "invoicing" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-sm sm:text-base font-medium flex items-center gap-1.5 sm:gap-2 whitespace-nowrap flex-shrink-0 ${activeTab === "invoicing" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
               >
                 <span>🧾</span> Invoicing
               </button>
@@ -2080,21 +2080,21 @@ try { unsubTransaksi(); } catch {}
               <>
                 <button
                   onClick={() => setActiveTab("master-data")}
-                  className={`px-4 py-2 rounded-xl font-medium flex items-center gap-2 ${activeTab === "master-data" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                  className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-sm sm:text-base font-medium flex items-center gap-1.5 sm:gap-2 whitespace-nowrap flex-shrink-0 ${activeTab === "master-data" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
                 >
                   <span>📋</span> Master Data
                 </button>
 
                 <button
                   onClick={() => setActiveTab("users")}
-                  className={`px-4 py-2 rounded-xl font-medium flex items-center gap-2 ${activeTab === "users" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                  className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-sm sm:text-base font-medium flex items-center gap-1.5 sm:gap-2 whitespace-nowrap flex-shrink-0 ${activeTab === "users" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
                 >
                   <span>👥</span> Kelola User
                 </button>
 
                 <button
                   onClick={() => setActiveTab("settings")}
-                  className={`px-4 py-2 rounded-xl font-medium flex items-center gap-2 ${activeTab === "settings" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
+                  className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-sm sm:text-base font-medium flex items-center gap-1.5 sm:gap-2 whitespace-nowrap flex-shrink-0 ${activeTab === "settings" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
                 >
                   <span>⚙️</span> Settings
                 </button>
