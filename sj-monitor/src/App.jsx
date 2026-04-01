@@ -2218,7 +2218,7 @@ try { unsubTransaksi(); } catch {}
         ) : (
           <>
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
           <StatCard
             title="Total Surat Jalan"
             value={suratJalanList.length}
