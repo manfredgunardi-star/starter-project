@@ -93,7 +93,7 @@ const InvoiceManagement = ({
   
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h2 className="text-2xl font-bold text-gray-800">📄 Invoice Management</h2>
@@ -142,8 +142,8 @@ const InvoiceManagement = ({
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-md p-6 text-white">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-md p-3 sm:p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-blue-100 text-sm mb-1">Total Invoice</p>
@@ -152,7 +152,7 @@ const InvoiceManagement = ({
             <FileText className="w-12 h-12 text-blue-200" />
           </div>
         </div>
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-md p-6 text-white">
+        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-md p-3 sm:p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-orange-100 text-sm mb-1">Belum Terinvoice</p>
@@ -161,7 +161,7 @@ const InvoiceManagement = ({
             <Package className="w-12 h-12 text-orange-200" />
           </div>
         </div>
-        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-md p-6 text-white">
+        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-md p-3 sm:p-6 text-white">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-green-100 text-sm mb-1">Sudah Terinvoice</p>
@@ -173,7 +173,7 @@ const InvoiceManagement = ({
       </div>
       
       {activeFilter === 'belum-terinvoice' ? (
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
           <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
             <Package className="w-5 h-5 text-orange-600" />
             Surat Jalan Terkirim - Belum Terinvoice
@@ -195,29 +195,29 @@ const InvoiceManagement = ({
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nomor SJ</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tgl SJ</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tgl Terkirim</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nomor Polisi</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rute</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Material</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Qty Bongkar</th>
+                      <th className="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase">Nomor SJ</th>
+                      <th className="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase">Tgl SJ</th>
+                      <th className="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase">Tgl Terkirim</th>
+                      <th className="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase">Nomor Polisi</th>
+                      <th className="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase">Rute</th>
+                      <th className="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase">Material</th>
+                      <th className="px-2 py-2 sm:px-6 sm:py-3 text-right text-xs font-medium text-gray-500 uppercase">Qty Bongkar</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredSJ.map(sj => (
                       <tr key={sj.id} className="hover:bg-orange-50 transition">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">{sj.nomorSJ}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-medium text-blue-600">{sj.nomorSJ}</td>
+                        <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
                           {new Date(sj.tanggalSJ).toLocaleDateString('id-ID')}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-green-700 font-semibold">
+                        <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-green-700 font-semibold">
                           {sj.tglTerkirim ? new Date(sj.tglTerkirim).toLocaleDateString('id-ID') : '-'}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{sj.nomorPolisi}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{sj.rute}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{sj.material}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-right font-semibold">
+                        <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">{sj.nomorPolisi}</td>
+                        <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">{sj.rute}</td>
+                        <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">{sj.material}</td>
+                        <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 text-right font-semibold">
                           {sj.qtyBongkar || 0} {sj.satuan}
                         </td>
                       </tr>
@@ -3062,7 +3062,7 @@ const SettingsManagement = ({ currentUser, appSettings, onUpdateSettings, forceL
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h2 className="text-2xl font-bold text-gray-800">⚙️ Pengaturan Aplikasi</h2>
@@ -3107,7 +3107,7 @@ const SettingsManagement = ({ currentUser, appSettings, onUpdateSettings, forceL
                 <FileText className="w-5 h-5 text-green-600" />
                 Logo Perusahaan
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Upload Logo
@@ -3257,7 +3257,7 @@ const SettingsManagement = ({ currentUser, appSettings, onUpdateSettings, forceL
 
       {/* Force Logout Card — hanya superadmin */}
       {canManageSettings && (
-        <div className="bg-white rounded-lg shadow-md p-6">
+        <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
@@ -3414,8 +3414,8 @@ const KeuanganManagement = ({ transaksiList, currentUser, onAddTransaksi, onDele
   return (
     <div>
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow-md p-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+        <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600 text-sm">Total Pemasukan</p>
@@ -3426,8 +3426,8 @@ const KeuanganManagement = ({ transaksiList, currentUser, onAddTransaksi, onDele
             </div>
           </div>
         </div>
-        
-        <div className="bg-white rounded-lg shadow-md p-6">
+
+        <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600 text-sm">Total Pengeluaran</p>
@@ -3438,8 +3438,8 @@ const KeuanganManagement = ({ transaksiList, currentUser, onAddTransaksi, onDele
             </div>
           </div>
         </div>
-        
-        <div className="bg-white rounded-lg shadow-md p-6">
+
+        <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600 text-sm">Saldo Kas</p>
