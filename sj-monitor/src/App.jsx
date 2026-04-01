@@ -301,28 +301,28 @@ const InvoiceManagement = ({
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">No</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">No SJ</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Rute</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Material</th>
-                          <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Qty Bongkar</th>
+                          <th className="px-2 py-2 sm:px-4 text-left text-xs font-medium text-gray-500 uppercase">No</th>
+                          <th className="px-2 py-2 sm:px-4 text-left text-xs font-medium text-gray-500 uppercase">No SJ</th>
+                          <th className="px-2 py-2 sm:px-4 text-left text-xs font-medium text-gray-500 uppercase">Rute</th>
+                          <th className="px-2 py-2 sm:px-4 text-left text-xs font-medium text-gray-500 uppercase">Material</th>
+                          <th className="px-2 py-2 sm:px-4 text-right text-xs font-medium text-gray-500 uppercase">Qty Bongkar</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-200">
                         {invoice.suratJalanList.map((sj, idx) => (
                           <tr key={sj.id} className="hover:bg-gray-50">
-                            <td className="px-4 py-2 text-sm text-gray-600">{idx + 1}</td>
-                            <td className="px-4 py-2 text-sm font-medium text-blue-600">{sj.nomorSJ}</td>
-                            <td className="px-4 py-2 text-sm text-gray-900">{sj.rute}</td>
-                            <td className="px-4 py-2 text-sm text-gray-900">{sj.material}</td>
-                            <td className="px-4 py-2 text-sm text-gray-900 text-right font-semibold">
+                            <td className="px-2 py-2 sm:px-4 text-xs sm:text-sm text-gray-600">{idx + 1}</td>
+                            <td className="px-2 py-2 sm:px-4 text-xs sm:text-sm font-medium text-blue-600">{sj.nomorSJ}</td>
+                            <td className="px-2 py-2 sm:px-4 text-xs sm:text-sm text-gray-900">{sj.rute}</td>
+                            <td className="px-2 py-2 sm:px-4 text-xs sm:text-sm text-gray-900">{sj.material}</td>
+                            <td className="px-2 py-2 sm:px-4 text-xs sm:text-sm text-gray-900 text-right font-semibold">
                               {sj.qtyBongkar} {sj.satuan}
                             </td>
                           </tr>
                         ))}
                         <tr className="bg-gray-100 font-bold">
-                          <td colSpan="4" className="px-4 py-2 text-sm text-gray-900 text-right">TOTAL:</td>
-                          <td className="px-4 py-2 text-sm text-gray-900 text-right">
+                          <td colSpan="4" className="px-2 py-2 sm:px-4 text-xs sm:text-sm text-gray-900 text-right">TOTAL:</td>
+                          <td className="px-2 py-2 sm:px-4 text-xs sm:text-sm text-gray-900 text-right">
                             {invoice.totalQty.toFixed(2)}
                           </td>
                         </tr>
@@ -3456,23 +3456,23 @@ const KeuanganManagement = ({ transaksiList, currentUser, onAddTransaksi, onDele
 
       {/* Actions & Filters */}
       <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-        <div className="flex justify-between items-center mb-3">
-          <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 items-center mb-3">
+          <div className="flex gap-2 flex-wrap">
             <button
               onClick={() => setFilter('all')}
-              className={`px-4 py-2 rounded-lg transition ${filter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm transition ${filter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
             >
               Semua
             </button>
             <button
               onClick={() => setFilter('pemasukan')}
-              className={`px-4 py-2 rounded-lg transition ${filter === 'pemasukan' ? 'bg-green-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm transition ${filter === 'pemasukan' ? 'bg-green-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
             >
               Pemasukan
             </button>
             <button
               onClick={() => setFilter('pengeluaran')}
-              className={`px-4 py-2 rounded-lg transition ${filter === 'pengeluaran' ? 'bg-red-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm transition ${filter === 'pengeluaran' ? 'bg-red-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
             >
               Pengeluaran
             </button>
@@ -3480,7 +3480,7 @@ const KeuanganManagement = ({ transaksiList, currentUser, onAddTransaksi, onDele
           {canAddTransaksi && (
             <button
               onClick={onAddTransaksi}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg flex items-center space-x-2 text-sm transition ml-auto"
             >
               <Plus className="w-4 h-4" />
               <span>Tambah Transaksi</span>
