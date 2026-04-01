@@ -22,7 +22,7 @@ const LoginPage = ({ onLogin, alertMessage, setAlertMessage, appSettings }) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md">
+      <div className="bg-white rounded-2xl shadow-2xl p-5 sm:p-8 w-full max-w-md">
         <div className="text-center mb-8">
           {/* Logo */}
           {appSettings?.logoUrl ? (
@@ -40,7 +40,7 @@ const LoginPage = ({ onLogin, alertMessage, setAlertMessage, appSettings }) => {
             <h1 className="text-2xl font-bold text-gray-800 mb-2">{appSettings.companyName}</h1>
           )}
 
-          <h2 className="text-3xl font-bold text-gray-800">Monitoring Surat Jalan</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-800">Monitoring Surat Jalan</h2>
           <p className="text-gray-600 mt-2">Silakan login untuk melanjutkan</p>
         </div>
 
