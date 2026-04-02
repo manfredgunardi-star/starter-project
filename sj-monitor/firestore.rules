@@ -83,7 +83,8 @@ service cloud.firestore {
     }
     match /rute/{id} {
       allow read: if signedIn();
-      allow write: if isSuperAdmin() || isAdminSJ();
+      // Only superadmin can edit ritasi field
+      allow write: if isSuperAdmin();
     }
     match /material/{id} {
       allow read: if signedIn();
@@ -94,6 +95,7 @@ service cloud.firestore {
     match /surat_jalan/{id} {
       allow read: if signedIn();
       allow create: if isSuperAdmin() || isAdminSJ();
+      // Allow editing SJ with new fields (quantityLoss, abolishPenalty, bonusAdjustment)
       allow update: if isSuperAdmin() || isAdminSJ() || (isAdminInv() && sjInvoiceFieldsOnly());
       allow delete: if isSuperAdmin();
     }
@@ -151,6 +153,16 @@ service cloud.firestore {
       allow read: if signedIn() && inRoles(['superadmin','owner','admin_sj','admin_invoice','admin_keuangan']);
       allow create: if signedIn() && inRoles(['superadmin','admin_sj','admin_invoice','admin_keuangan']);
       allow update, delete: if false;
+    }
+
+    // --- PAYSLIPS ---
+    // Payslip structure: payslips/{driverId}/{document}
+    match /payslips/{driverId}/{document=**} {
+      // Read: Superadmin, Reader, Admin Keuangan
+      allow read: if signedIn() && inRoles(['superadmin', 'reader', 'admin_keuangan']);
+
+      // Write bonus: Superadmin, Admin Keuangan
+      allow write: if signedIn() && inRoles(['superadmin', 'admin_keuangan']);
     }
 
     // Default deny
