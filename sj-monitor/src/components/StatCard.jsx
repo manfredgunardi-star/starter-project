@@ -1,16 +1,19 @@
 // src/components/StatCard.jsx
 
+const VALUE_COLOR = {
+  'bg-blue-500':   'text-blue-600',
+  'bg-yellow-500': 'text-yellow-600',
+  'bg-green-500':  'text-green-600',
+  'bg-red-500':    'text-red-600',
+};
+
 const StatCard = ({ title, value, icon, color }) => (
-  <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-gray-600 text-xs sm:text-sm">{title}</p>
-        <p className="text-xl sm:text-3xl font-bold text-gray-800 mt-1">{value}</p>
-      </div>
-      <div className={`${color} p-2 sm:p-3 rounded-lg text-white`}>
-        {icon}
-      </div>
+  <div className="bg-white rounded-xl border border-slate-100 shadow-sm p-4">
+    <div className="flex items-center justify-between mb-1">
+      <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{title}</p>
+      <span className={`${VALUE_COLOR[color] ?? 'text-slate-400'} opacity-60`}>{icon}</span>
     </div>
+    <p className={`text-2xl font-bold ${VALUE_COLOR[color] ?? 'text-slate-800'}`}>{value}</p>
   </div>
 );
 
