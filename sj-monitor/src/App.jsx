@@ -15,6 +15,7 @@ import AlertBanner from './components/AlertBanner.jsx';
 import SuratJalanCard from './components/SuratJalanCard.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 import LaporanKasPage from './pages/LaporanKasPage.jsx';
+import LaporanTrukPage from './pages/LaporanTrukPage.jsx';
 import {
   sanitizeForFirestore,
   upsertItemToFirestore,
@@ -2009,6 +2010,7 @@ try { unsubTransaksi(); } catch {}
     'surat-jalan': 'Surat Jalan',
     'keuangan': 'Keuangan',
     'laporan-kas': 'Laporan Kas',
+    'laporan-truk': 'Laporan Truk',
     'invoicing': 'Invoicing',
     'master-data': 'Master Data',
     'users': 'Kelola User',
@@ -2019,6 +2021,7 @@ try { unsubTransaksi(); } catch {}
     { tab: 'surat-jalan', icon: Package,     label: 'SJ',       roles: ['superadmin','admin_sj','admin_keuangan','admin_invoice','reader'] },
     { tab: 'keuangan',    icon: DollarSign,  label: 'Keuangan', roles: ['superadmin','admin_keuangan','reader'] },
     { tab: 'laporan-kas', icon: FileText,    label: 'Laporan',  roles: ['superadmin','admin_keuangan','admin_invoice','admin_sj','reader'] },
+    { tab: 'laporan-truk', icon: Truck,     label: 'Laporan Truk', roles: ['superadmin', 'admin_sj'] },
     { tab: 'invoicing',   icon: FileText,    label: 'Invoice',  roles: ['superadmin','admin_invoice','reader'] },
     { tab: 'master-data', icon: Database,    label: 'Data',     roles: ['superadmin'] },
     { tab: 'users',       icon: Users,       label: 'Users',    roles: ['superadmin'] },
@@ -2139,6 +2142,12 @@ try { unsubTransaksi(); } catch {}
           <LaporanKasPage
             suratJalanList={suratJalanList}
             transaksiList={transaksiList}
+          />
+        ) : activeTab === 'laporan-truk' ? (
+          <LaporanTrukPage
+            suratJalanList={suratJalanList}
+            truckList={truckList}
+            currentUser={currentUser}
           />
         ) : activeTab === 'invoicing' ? (
           <InvoiceManagement
