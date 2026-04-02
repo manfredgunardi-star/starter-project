@@ -24,7 +24,7 @@ import {
 
 
 
-import { AlertCircle, Package, Truck, FileText, DollarSign, Users, LogOut, Plus, Edit, Trash2, Eye, CheckCircle, XCircle, Clock, Search, RefreshCw } from 'lucide-react';
+import { AlertCircle, Package, Truck, FileText, DollarSign, Users, User, LogOut, Plus, Edit, Trash2, Eye, CheckCircle, XCircle, Clock, Search, RefreshCw } from 'lucide-react';
 
 
 // Invoice Management Component
@@ -1985,50 +1985,30 @@ try { unsubTransaksi(); } catch {}
     );
   }
 
+  const PAGE_TITLES = {
+    'surat-jalan': 'Surat Jalan',
+    'keuangan': 'Keuangan',
+    'laporan-kas': 'Laporan Kas',
+    'invoicing': 'Invoicing',
+    'master-data': 'Master Data',
+    'users': 'Kelola User',
+    'settings': 'Pengaturan',
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-3 py-3 sm:px-4 sm:py-4">
-          <div className="flex justify-between items-center gap-2">
-            <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
-              {/* Logo or Icon */}
-              {appSettings?.logoUrl ? (
-                <img 
-                  src={appSettings.logoUrl} 
-                  alt="Logo" 
-                  className="h-10 object-contain bg-white rounded p-1"
-                />
-              ) : (
-                <Package className="w-8 h-8" />
-              )}
-              
-              <div>
-                {/* Company Name */}
-                {appSettings?.companyName && (
-                  <p className="text-sm text-blue-100 font-semibold">{appSettings.companyName}</p>
-                )}
-                <h1 className="text-base sm:text-2xl font-bold truncate">Monitoring Surat Jalan</h1>
-                <p className="text-blue-100 text-xs sm:text-sm hidden sm:block">Sistem Tracking & Monitoring Biaya</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
-              <div className="text-right hidden sm:block">
-                <p className="font-semibold">{currentUser.name}</p>
-                <p className="text-blue-100 text-sm capitalize">{effectiveRole}</p>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="bg-blue-700 hover:bg-blue-600 p-2 sm:px-4 sm:py-2 rounded-lg flex items-center space-x-2 transition"
-                title={`${currentUser.name} (${effectiveRole}) - Logout`}
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Logout</span>
-              </button>
-            </div>
+      {/* Minimal top bar */}
+      {effectiveRole && (
+        <div className="sticky top-0 z-20 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between">
+          <h1 className="text-lg font-bold text-slate-900">
+            {PAGE_TITLES[activeTab] ?? 'Monitoring SJ'}
+          </h1>
+          <div className="flex items-center gap-2 bg-blue-50 text-blue-600 rounded-full px-3 py-1 text-xs font-semibold">
+            <User className="w-3 h-3" />
+            <span>{currentUser?.name ?? ''}</span>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Force Logout Warning Banner */}
       <AlertBanner banner={forceLogoutBanner} />
