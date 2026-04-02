@@ -38,7 +38,7 @@ const SuratJalanCard = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
+    <div className="border-0 rounded-none overflow-hidden transition">
       <div className="p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-4 gap-4">
           <div className="flex-1 min-w-0">

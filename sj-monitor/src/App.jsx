@@ -27,8 +27,22 @@ import {
 import { AlertCircle, Package, Truck, FileText, DollarSign, Users, User, Settings, Database, LogOut, Plus, Edit, Trash2, Eye, CheckCircle, XCircle, Clock, Search, RefreshCw } from 'lucide-react';
 
 
+// Compact status badge for table rows
+const STATUS_BADGE_STYLES = {
+  'dalam perjalanan': 'bg-orange-50 text-orange-600',
+  'terkirim':         'bg-green-50 text-green-600',
+  'gagal':            'bg-red-50 text-red-600',
+  'pending':          'bg-slate-100 text-slate-500',
+};
+
+const StatusBadge = ({ status }) => (
+  <span className={`inline-block rounded-lg px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap ${STATUS_BADGE_STYLES[status?.toLowerCase()] ?? 'bg-slate-100 text-slate-500'}`}>
+    {status ?? '—'}
+  </span>
+);
+
 // Invoice Management Component
-const InvoiceManagement = ({ 
+const InvoiceManagement = ({
   invoiceList, 
   suratJalanList, 
   currentUser,
@@ -2290,19 +2304,26 @@ try { unsubTransaksi(); } catch {}
         </div>
 
         {/* Surat Jalan List */}
-        <div className="space-y-4">
+        <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          {/* Table header */}
+          <div className="hidden sm:grid grid-cols-[1fr_1.5fr_1.2fr_100px] px-4 py-2.5 bg-slate-50 border-b border-slate-100 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            <span>No. SJ</span>
+            <span>Rute</span>
+            <span>Supir · Truk</span>
+            <span>Status</span>
+          </div>
           {filteredSuratJalan.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-md p-8 text-center">
-              <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-              <p className="text-gray-500">Belum ada data Surat Jalan</p>
-              {(effectiveRole === 'admin' || effectiveRole === 'gudang') && (
+            <div className="p-8 text-center">
+              <Package className="w-12 h-12 mx-auto text-slate-200 mb-3" />
+              <p className="text-slate-400 text-sm">Belum ada data Surat Jalan</p>
+              {(effectiveRole === 'superadmin' || effectiveRole === 'admin_sj') && (
                 <button
                   onClick={() => {
                     setModalType('addSJ');
                     setSelectedItem(null);
                     setShowModal(true);
                   }}
-                  className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg inline-flex items-center space-x-2"
+                  className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-lg inline-flex items-center gap-2 text-sm"
                 >
                   <Plus className="w-4 h-4" />
                   <span>Tambah Surat Jalan Pertama</span>
@@ -2310,31 +2331,33 @@ try { unsubTransaksi(); } catch {}
               )}
             </div>
           ) : (
-            filteredSuratJalan.map(sj => (
-              <SuratJalanCard
-                key={sj.id}
-                suratJalan={sj}
-                biayaList={biayaList.filter(b => b.suratJalanId === sj.id)}
-                totalBiaya={getTotalBiaya(sj.id)}
-                currentUser={currentUser}
-                onUpdate={(sj) => {
-                  setSelectedItem(sj);
-                  setModalType('markTerkirim');
-                  setShowModal(true);
-                }}
-                onEditTerkirim={(sj) => {
-                  setSelectedItem(sj);
-                  setModalType('editTerkirim');
-                  setShowModal(true);
-                }}
-                onMarkGagal={markAsGagal}
-                onRestore={restoreFromGagal}
-                onDeleteBiaya={deleteBiaya}
-                formatCurrency={formatCurrency}
-                getStatusColor={getStatusColor}
-                getStatusIcon={getStatusIcon}
-              />
-            ))
+            <div className="divide-y divide-slate-50">
+              {filteredSuratJalan.map(sj => (
+                <SuratJalanCard
+                  key={sj.id}
+                  suratJalan={sj}
+                  biayaList={biayaList.filter(b => b.suratJalanId === sj.id)}
+                  totalBiaya={getTotalBiaya(sj.id)}
+                  currentUser={currentUser}
+                  onUpdate={(sj) => {
+                    setSelectedItem(sj);
+                    setModalType('markTerkirim');
+                    setShowModal(true);
+                  }}
+                  onEditTerkirim={(sj) => {
+                    setSelectedItem(sj);
+                    setModalType('editTerkirim');
+                    setShowModal(true);
+                  }}
+                  onMarkGagal={markAsGagal}
+                  onRestore={restoreFromGagal}
+                  onDeleteBiaya={deleteBiaya}
+                  formatCurrency={formatCurrency}
+                  getStatusColor={getStatusColor}
+                  getStatusIcon={getStatusIcon}
+                />
+              ))}
+            </div>
           )}
         </div>
         </>
