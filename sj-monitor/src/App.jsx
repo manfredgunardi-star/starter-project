@@ -4,6 +4,7 @@ import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebas
 import React, { useState, useEffect, useRef } from 'react';
 import { formatCurrency, formatTanggalID } from './utils/currency.js';
 import { isSJTerinvoice, isSJBelumInvoice, mergeById } from './utils/sjHelpers.js';
+import { calculateSJPenalty } from './utils/payslipHelpers.js';
 import { downloadSJRecapToExcel } from './utils/excel.js';
 import { useAuth } from './hooks/useAuth.js';
 import { useMasterData } from './hooks/useMasterData.js';
@@ -1529,6 +1530,8 @@ if (newItems.length > 0) {
       qtyIsi: parseFloat(data.qtyIsi),
       tglTerkirim: null,
       qtyBongkar: null,
+      quantityLoss: 0,
+      abolishPenalty: false,
       status: 'pending',
       createdAt: new Date().toISOString(),
       createdBy: currentUser.name
@@ -2397,10 +2400,16 @@ try { unsubTransaksi(); } catch {}
               addSuratJalan(data);
               setShowModal(false);
             } else if (modalType === 'markTerkirim' || modalType === 'editTerkirim') {
+              const qtyBongkar = parseFloat(data.qtyBongkar);
+              const qtyIsi = parseFloat(selectedItem.qtyIsi);
+              const quantityLoss = qtyIsi - qtyBongkar;
+
               await updateSuratJalan(selectedItem.id, {
                 status: 'terkirim',
                 tglTerkirim: data.tglTerkirim,
-                qtyBongkar: parseFloat(data.qtyBongkar)
+                qtyBongkar: qtyBongkar,
+                quantityLoss: Math.max(0, quantityLoss),
+                abolishPenalty: data.abolishPenalty || false
               });
               setShowModal(false);
             } else if (modalType === 'addTransaksi') {
@@ -3712,6 +3721,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
     qtyIsi: '',
     tglTerkirim: selectedItem?.tglTerkirim || new Date().toISOString().split('T')[0],
     qtyBongkar: selectedItem?.qtyBongkar || '',
+    abolishPenalty: selectedItem?.abolishPenalty || false,
     noInvoice: '',
     tglInvoice: new Date().toISOString().split('T')[0],
     selectedSJIds: [],
@@ -4095,6 +4105,58 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Penalty Tracking Section */}
+              <div className="border-t pt-4 mt-4">
+                {(() => {
+                  const qtyBongkar = parseFloat(formData.qtyBongkar) || 0;
+                  const qtyIsi = parseFloat(selectedItem?.qtyIsi) || 0;
+                  const quantityLoss = Math.max(0, qtyIsi - qtyBongkar);
+                  const estimatedPenalty = calculateSJPenalty(quantityLoss, formData.abolishPenalty);
+
+                  return (
+                    <>
+                      <label className="flex items-center gap-2 cursor-pointer mb-3">
+                        <input
+                          type="checkbox"
+                          checked={formData.abolishPenalty || false}
+                          onChange={(e) =>
+                            setFormData({ ...formData, abolishPenalty: e.target.checked })
+                          }
+                          className="w-4 h-4"
+                        />
+                        <span className="text-sm font-medium">Abolish Penalty for This Delivery</span>
+                      </label>
+
+                      {quantityLoss > 0 && (
+                        <div className={`p-3 rounded-lg mb-2 ${
+                          formData.abolishPenalty
+                            ? 'bg-green-50 border border-green-200'
+                            : 'bg-red-50 border border-red-200'
+                        }`}>
+                          <p className={`text-sm font-semibold ${
+                            formData.abolishPenalty
+                              ? 'text-green-800'
+                              : 'text-red-800'
+                          }`}>
+                            Quantity Loss: {quantityLoss} {selectedItem?.satuan}
+                          </p>
+                          {!formData.abolishPenalty && estimatedPenalty > 0 && (
+                            <p className="text-sm text-red-600 mt-2">
+                              ⚠ Estimated Penalty: {formatCurrency(estimatedPenalty)}
+                            </p>
+                          )}
+                          {formData.abolishPenalty && (
+                            <p className="text-sm text-green-600 mt-2">
+                              ✓ Penalty abolished for this delivery
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
 
               {/* Warning Info */}
