@@ -24,7 +24,7 @@ import {
 
 
 
-import { AlertCircle, Package, Truck, FileText, DollarSign, Users, User, LogOut, Plus, Edit, Trash2, Eye, CheckCircle, XCircle, Clock, Search, RefreshCw } from 'lucide-react';
+import { AlertCircle, Package, Truck, FileText, DollarSign, Users, User, Settings, Database, LogOut, Plus, Edit, Trash2, Eye, CheckCircle, XCircle, Clock, Search, RefreshCw } from 'lucide-react';
 
 
 // Invoice Management Component
@@ -1995,6 +1995,16 @@ try { unsubTransaksi(); } catch {}
     'settings': 'Pengaturan',
   };
 
+  const DOCK_ITEMS = [
+    { tab: 'surat-jalan', icon: Package,     label: 'SJ',       roles: ['superadmin','admin_sj','admin_keuangan','admin_invoice','reader'] },
+    { tab: 'keuangan',    icon: DollarSign,  label: 'Keuangan', roles: ['superadmin','admin_keuangan','reader'] },
+    { tab: 'laporan-kas', icon: FileText,    label: 'Laporan',  roles: ['superadmin','admin_keuangan','admin_invoice','admin_sj','reader'] },
+    { tab: 'invoicing',   icon: FileText,    label: 'Invoice',  roles: ['superadmin','admin_invoice','reader'] },
+    { tab: 'master-data', icon: Database,    label: 'Data',     roles: ['superadmin'] },
+    { tab: 'users',       icon: Users,       label: 'Users',    roles: ['superadmin'] },
+    { tab: 'settings',    icon: Settings,    label: 'Settings', roles: ['superadmin'] },
+  ].filter(item => item.roles.includes(effectiveRole ?? ''));
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Minimal top bar */}
@@ -2013,80 +2023,8 @@ try { unsubTransaksi(); } catch {}
       {/* Force Logout Warning Banner */}
       <AlertBanner banner={forceLogoutBanner} />
 
-      {/* Tab Navigation */}
-      {effectiveRole && (
-        <div className="max-w-7xl mx-auto px-3 py-2 sm:px-6 sm:py-4">
-          <div className="flex gap-2 sm:gap-3 bg-white/80 backdrop-blur rounded-2xl p-2 sm:p-3 shadow-sm overflow-x-auto scrollbar-hide sm:flex-wrap">
-            {/* Semua role yang login boleh lihat Surat Jalan (read-only untuk non-admin_sj) */}
-            <button
-              onClick={() => setActiveTab("surat-jalan")}
-              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-sm sm:text-base font-medium flex items-center gap-1.5 sm:gap-2 whitespace-nowrap flex-shrink-0 ${activeTab === "surat-jalan" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
-            >
-              <span>📦</span> Surat Jalan
-            </button>
-
-            {/* Keuangan: superadmin/admin_keuangan + reader(owner=reader) */}
-            {["superadmin", "admin_keuangan", "reader"].includes(effectiveRole) && (
-              <button
-                onClick={() => setActiveTab("keuangan")}
-                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-sm sm:text-base font-medium flex items-center gap-1.5 sm:gap-2 whitespace-nowrap flex-shrink-0 ${activeTab === "keuangan" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
-              >
-                <span>💵</span> Keuangan
-              </button>
-            )}
-
-            {/* Laporan Kas: semua role yang login */}
-            {["superadmin", "admin_keuangan", "admin_invoice", "admin_sj", "reader"].includes(effectiveRole) && (
-              <button
-                onClick={() => setActiveTab("laporan-kas")}
-                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-sm sm:text-base font-medium flex items-center gap-1.5 sm:gap-2 whitespace-nowrap flex-shrink-0 ${activeTab === "laporan-kas" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
-              >
-                <span>📑</span> Laporan Kas
-              </button>
-            )}
-
-            {/* Invoicing: superadmin/admin_invoice + reader(owner=reader) */}
-            {["superadmin", "admin_invoice", "reader"].includes(effectiveRole) && (
-              <button
-                onClick={() => setActiveTab("invoicing")}
-                className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-sm sm:text-base font-medium flex items-center gap-1.5 sm:gap-2 whitespace-nowrap flex-shrink-0 ${activeTab === "invoicing" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
-              >
-                <span>🧾</span> Invoicing
-              </button>
-            )}
-
-            {/* Menu admin-only */}
-            {effectiveRole === "superadmin" && (
-              <>
-                <button
-                  onClick={() => setActiveTab("master-data")}
-                  className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-sm sm:text-base font-medium flex items-center gap-1.5 sm:gap-2 whitespace-nowrap flex-shrink-0 ${activeTab === "master-data" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
-                >
-                  <span>📋</span> Master Data
-                </button>
-
-                <button
-                  onClick={() => setActiveTab("users")}
-                  className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-sm sm:text-base font-medium flex items-center gap-1.5 sm:gap-2 whitespace-nowrap flex-shrink-0 ${activeTab === "users" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
-                >
-                  <span>👥</span> Kelola User
-                </button>
-
-                <button
-                  onClick={() => setActiveTab("settings")}
-                  className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-sm sm:text-base font-medium flex items-center gap-1.5 sm:gap-2 whitespace-nowrap flex-shrink-0 ${activeTab === "settings" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-700 hover:bg-gray-200"}`}
-                >
-                  <span>⚙️</span> Settings
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-3 pb-6 sm:px-6 sm:pb-10">
+      <div className="max-w-7xl mx-auto px-3 pb-24 sm:px-6 sm:pb-28">
         {activeTab === 'settings' && effectiveRole === 'superadmin' ? (
           <SettingsManagement
             currentUser={currentUser}
@@ -2518,11 +2456,46 @@ try { unsubTransaksi(); } catch {}
           </div>
         </div>
       )}
+
+      {/* Floating bottom dock */}
+      {effectiveRole && (
+        <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-lg">
+          <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-xl shadow-black/10 ring-1 ring-white/80 flex items-center justify-around px-2 py-2">
+            {DOCK_ITEMS.map(item => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.tab;
+              return (
+                <button
+                  key={item.tab}
+                  onClick={() => setActiveTab(item.tab)}
+                  className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl transition-colors duration-150 min-w-[48px] cursor-pointer ${
+                    isActive ? 'bg-blue-50' : 'hover:bg-slate-50'
+                  }`}
+                  title={item.label}
+                >
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
+                    isActive ? 'bg-blue-600' : ''
+                  }`}>
+                    <Icon className={`w-[18px] h-[18px] ${
+                      isActive ? 'text-white' : 'text-slate-400'
+                    }`} />
+                  </div>
+                  <span className={`text-[10px] font-semibold leading-none ${
+                    isActive ? 'text-blue-600' : 'text-slate-400'
+                  }`}>
+                    {item.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+      )}
     </div>
   );
 };
 
-const MasterDataManagement = ({ 
+const MasterDataManagement = ({
   truckList, supirList, ruteList, materialList, currentUser,
   onAddTruck, onEditTruck, onDeleteTruck,
   onAddSupir, onEditSupir, onDeleteSupir,
