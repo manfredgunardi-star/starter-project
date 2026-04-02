@@ -103,37 +103,62 @@ const LaporanTrukPage = ({ suratJalanList = [], truckList = [], currentUser = {}
         @media print {
           body {
             margin: 0;
-            padding: 0;
-            font-size: 12px;
+            padding: 8px;
+            font-size: 11px;
+            line-height: 1.4;
           }
-          .no-print {
+
+          .no-print, button {
             display: none !important;
           }
+
           table {
-            border-collapse: collapse;
+            page-break-inside: avoid;
             width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
           }
-          th, td {
-            border: 1px solid #ddd;
-            padding: 6px;
+
+          th {
+            background-color: #f3f4f6;
+            border: 1px solid #d1d5db;
+            padding: 4px 6px;
+            font-weight: bold;
             text-align: left;
           }
-          h1, h2 {
-            page-break-after: avoid;
-            margin: 10px 0;
+
+          td {
+            border: 1px solid #e5e7eb;
+            padding: 4px 6px;
           }
+
           tr {
             page-break-inside: avoid;
           }
-          .card-section {
+
+          .bg-amber-50 {
+            background-color: #fff5e6 !important;
             page-break-inside: avoid;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+          }
+
+          h1, h2, h3 {
+            page-break-after: avoid;
+            margin: 0 0 6px 0;
+            font-size: 14px;
+            font-weight: bold;
+          }
+
+          textarea {
+            border: 1px solid #d1d5db !important;
+            width: 100%;
+            padding: 4px;
           }
         }
       `}</style>
 
       {/* Header Section */}
-      <div className="bg-white rounded-xl shadow-sm p-3 sm:p-6">
+      <div className="bg-white rounded-xl shadow-sm p-3 sm:p-6 print:shadow-none print:rounded-none">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-start gap-3">
             <Truck className="w-8 h-8 text-blue-600 flex-shrink-0" />
@@ -150,7 +175,7 @@ const LaporanTrukPage = ({ suratJalanList = [], truckList = [], currentUser = {}
       </div>
 
       {/* Date Picker Section */}
-      <div className="bg-white rounded-xl shadow-sm p-3 sm:p-6">
+      <div className="bg-white rounded-xl shadow-sm p-3 sm:p-6 print:shadow-none print:rounded-none">
         <div className="flex flex-col sm:items-center gap-3">
           <label className="block text-sm font-medium text-gray-700">
             Tanggal Laporan
@@ -171,7 +196,7 @@ const LaporanTrukPage = ({ suratJalanList = [], truckList = [], currentUser = {}
       </div>
 
       {/* Active Trucks Section */}
-      <div className="bg-white rounded-xl shadow-sm p-3 sm:p-6">
+      <div className="bg-white rounded-xl shadow-sm p-3 sm:p-6 print:shadow-none print:rounded-none">
         <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
           <FileText className="w-5 h-5 text-green-600" />
           Kendaraan Aktif ({activeTrucks.length})
@@ -186,22 +211,22 @@ const LaporanTrukPage = ({ suratJalanList = [], truckList = [], currentUser = {}
             <table className="w-full min-w-full">
               <thead>
                 <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="px-3 py-3 sm:px-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-3 py-2 sm:px-4 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">
                     No. Polisi
                   </th>
-                  <th className="px-3 py-3 sm:px-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider hidden sm:table-cell">
+                  <th className="px-3 py-2 sm:px-4 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider hidden sm:table-cell">
                     Nama Supir
                   </th>
-                  <th className="px-3 py-3 sm:px-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider hidden sm:table-cell">
+                  <th className="px-3 py-2 sm:px-4 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider hidden sm:table-cell">
                     Rute
                   </th>
-                  <th className="px-3 py-3 sm:px-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider hidden lg:table-cell">
+                  <th className="px-3 py-2 sm:px-4 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider hidden lg:table-cell">
                     Material
                   </th>
-                  <th className="px-3 py-3 sm:px-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                  <th className="px-3 py-2 sm:px-4 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-3 py-3 sm:px-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider hidden sm:table-cell">
+                  <th className="px-3 py-2 sm:px-4 sm:py-3 text-left text-xs sm:text-sm font-semibold text-gray-600 uppercase tracking-wider hidden sm:table-cell">
                     Qty
                   </th>
                 </tr>
@@ -224,28 +249,28 @@ const LaporanTrukPage = ({ suratJalanList = [], truckList = [], currentUser = {}
 
                   return (
                     <tr key={truck.nomorPolisi} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-3 py-3 sm:px-4 text-xs sm:text-sm font-semibold text-gray-900">
+                      <td className="px-3 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm font-semibold text-gray-900">
                         {truck.nomorPolisi}
                       </td>
-                      <td className="px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-700 hidden sm:table-cell">
+                      <td className="px-3 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm text-gray-700 hidden sm:table-cell">
                         {truck.namaSupir || '—'}
                       </td>
-                      <td className="px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-700 hidden sm:table-cell">
+                      <td className="px-3 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm text-gray-700 hidden sm:table-cell">
                         {truck.sjList[0]?.rute || '—'}
                       </td>
-                      <td className="px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-700 hidden lg:table-cell">
+                      <td className="px-3 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm text-gray-700 hidden lg:table-cell">
                         {truck.sjList[0]?.material || '—'}
                       </td>
-                      <td className="px-3 py-3 sm:px-4">
+                      <td className="px-3 py-2 sm:px-4 sm:py-3">
                         <span
-                          className={`inline-block rounded-md px-2.5 py-1 text-xs font-semibold whitespace-nowrap ${getStatusBadgeColor(
+                          className={`inline-block rounded-md px-2.5 py-1 text-xs sm:text-sm font-semibold whitespace-nowrap ${getStatusBadgeColor(
                             displayStatus
                           )}`}
                         >
                           {displayStatus}
                         </span>
                       </td>
-                      <td className="px-3 py-3 sm:px-4 text-xs sm:text-sm text-gray-700 hidden sm:table-cell">
+                      <td className="px-3 py-2 sm:px-4 sm:py-3 text-xs sm:text-sm text-gray-700 hidden sm:table-cell">
                         {totalQty} {truck.sjList[0]?.satuan || ''}
                       </td>
                     </tr>
@@ -258,7 +283,7 @@ const LaporanTrukPage = ({ suratJalanList = [], truckList = [], currentUser = {}
       </div>
 
       {/* Inactive Trucks Section */}
-      <div className="bg-white rounded-xl shadow-sm p-3 sm:p-6">
+      <div className="bg-white rounded-xl shadow-sm p-3 sm:p-6 print:shadow-none print:rounded-none">
         <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
           <AlertCircle className="w-5 h-5 text-amber-600" />
           Kendaraan Tidak Aktif ({inactiveTrucks.length})
@@ -272,11 +297,11 @@ const LaporanTrukPage = ({ suratJalanList = [], truckList = [], currentUser = {}
           <div>
             {/* Validation Error Message */}
             {showValidationError && (
-              <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                <p className="text-red-800 font-semibold text-sm mb-2">
+              <div className="mb-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-red-800 font-semibold text-xs sm:text-sm mb-2">
                   Harap isi penjelasan untuk kendaraan berikut sebelum mencetak:
                 </p>
-                <ul className="list-disc list-inside text-red-700 text-sm space-y-1">
+                <ul className="list-disc list-inside text-red-700 text-xs sm:text-sm space-y-1">
                   {inactiveTrucks
                     .filter((truck) => !hasExplanation(truck.nomorPolisi))
                     .map((truck) => (
@@ -293,18 +318,18 @@ const LaporanTrukPage = ({ suratJalanList = [], truckList = [], currentUser = {}
               {inactiveTrucks.map((truck) => (
                 <div
                   key={truck.nomorPolisi}
-                  className="card-section bg-amber-50 border-2 border-amber-200 rounded-lg p-4 sm:p-6"
+                  className="card-section bg-amber-50 border-2 border-amber-200 rounded-lg p-3 sm:p-4"
                 >
                   <div className="mb-4">
                     <h3 className="text-base sm:text-lg font-semibold text-gray-800">
                       {truck.nomorPolisi}
                     </h3>
-                    <p className="text-sm text-gray-600 mt-1">
+                    <p className="text-xs sm:text-sm text-gray-600 mt-1">
                       Supir: {truck.namaSupir || '—'}
                     </p>
                   </div>
 
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-2">
                     Penjelasan (Mengapa kendaraan tidak aktif?)
                   </label>
                   <textarea
@@ -314,7 +339,7 @@ const LaporanTrukPage = ({ suratJalanList = [], truckList = [], currentUser = {}
                     }
                     placeholder="Contoh: Service berkala, cuaca buruk, driver izin, dll."
                     rows="3"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-xs sm:text-sm"
                   />
                   {showValidationError && !hasExplanation(truck.nomorPolisi) && (
                     <p className="text-red-600 text-xs mt-2">
@@ -329,14 +354,16 @@ const LaporanTrukPage = ({ suratJalanList = [], truckList = [], currentUser = {}
       </div>
 
       {/* Action Buttons */}
-      <div className="bg-white rounded-xl shadow-sm p-3 sm:p-6 no-print">
-        <button
-          onClick={validateAndPrint}
-          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 sm:px-6 py-3 rounded-lg transition-colors"
-        >
-          <Printer className="w-5 h-5" />
-          Print / PDF
-        </button>
+      <div className="bg-white rounded-xl shadow-sm p-3 sm:p-6 no-print print:shadow-none print:rounded-none">
+        <div className="flex flex-col sm:flex-row justify-center sm:justify-start gap-3">
+          <button
+            onClick={validateAndPrint}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 sm:px-6 py-3 rounded-lg transition-colors"
+          >
+            <Printer className="w-5 h-5" />
+            Print / PDF
+          </button>
+        </div>
       </div>
     </div>
   );
