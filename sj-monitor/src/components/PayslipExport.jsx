@@ -169,18 +169,18 @@ export default function PayslipExport({ payslip }) {
   };
 
   return (
-    <div className="bg-white p-4 rounded border flex gap-2">
+    <div className="bg-white p-3 sm:p-4 rounded border flex flex-col sm:flex-row gap-2">
       <button
         onClick={handleExportExcel}
         disabled={exporting === "excel"}
-        className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400 flex items-center gap-2"
+        className="flex-1 sm:flex-none px-4 py-2 bg-green-600 text-white text-sm sm:text-base rounded hover:bg-green-700 disabled:bg-gray-400 flex items-center justify-center gap-2 min-h-[44px]"
       >
         {exporting === "excel" ? "Exporting..." : "Export to Excel"}
       </button>
       <button
         onClick={handleExportPDF}
         disabled={exporting === "pdf"}
-        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-gray-400 flex items-center gap-2"
+        className="flex-1 sm:flex-none px-4 py-2 bg-red-600 text-white text-sm sm:text-base rounded hover:bg-red-700 disabled:bg-gray-400 flex items-center justify-center gap-2 min-h-[44px]"
       >
         {exporting === "pdf" ? "Exporting..." : "Export to PDF"}
       </button>

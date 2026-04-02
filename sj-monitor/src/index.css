@@ -21,4 +21,33 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  /* Mobile-friendly button sizing */
+  .btn-touch {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.5rem 1rem;
+  }
+
+  /* Print-friendly styles */
+  @media print {
+    body {
+      font-size: 12pt;
+      line-height: 1.4;
+    }
+
+    .no-print {
+      display: none;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    th, td {
+      border: 1px solid #000;
+      padding: 8px;
+    }
+  }
 }

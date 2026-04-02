@@ -50,7 +50,7 @@ export default function PayslipTable({ payslip, canEdit = false, onSave }) {
       {/* Message */}
       {message && (
         <div
-          className={`p-3 border-b ${
+          className={`p-2 sm:p-3 border-b text-xs sm:text-sm ${
             message.includes("✓")
               ? "bg-green-50 text-green-700"
               : "bg-red-50 text-red-700"
@@ -61,18 +61,18 @@ export default function PayslipTable({ payslip, canEdit = false, onSave }) {
       )}
 
       {/* Table Header */}
-      <table className="w-full text-sm">
+      <table className="w-full text-xs sm:text-sm">
         <thead className="bg-gray-100 border-b">
           <tr>
-            <th className="text-left p-3">Tgl SJ</th>
-            <th className="text-left p-3">No SJ</th>
-            <th className="text-left p-3">Rute</th>
-            <th className="text-right p-3">Uang Jalan</th>
-            <th className="text-right p-3">Ritasi</th>
-            <th className="text-right p-3">Qty Loss</th>
-            <th className="text-right p-3">Penalti</th>
-            {canEdit && <th className="text-right p-3">Bonus Edit</th>}
-            <th className="text-right p-3">Total</th>
+            <th className="text-left p-2 sm:p-3">Tgl SJ</th>
+            <th className="text-left p-2 sm:p-3">No SJ</th>
+            <th className="text-left p-2 sm:p-3">Rute</th>
+            <th className="text-right p-2 sm:p-3">Uang Jalan</th>
+            <th className="text-right p-2 sm:p-3">Ritasi</th>
+            <th className="text-right p-2 sm:p-3">Qty Loss</th>
+            <th className="text-right p-2 sm:p-3">Penalti</th>
+            {canEdit && <th className="text-right p-2 sm:p-3">Bonus Edit</th>}
+            <th className="text-right p-2 sm:p-3">Total</th>
           </tr>
         </thead>
         <tbody>
@@ -83,12 +83,12 @@ export default function PayslipTable({ payslip, canEdit = false, onSave }) {
 
             return (
               <tr key={sj.id} className="border-b hover:bg-gray-50">
-                <td className="p-3">{formatDate(sj.tanggalSJ)}</td>
-                <td className="p-3 font-medium">{sj.nomorSJ}</td>
-                <td className="p-3">{sj.rute}</td>
-                <td className="text-right p-3">{formatCurrency(sj.uangJalan || 0)}</td>
-                <td className="text-right p-3">{formatCurrency(sj.ritasi || 0)}</td>
-                <td className="text-right p-3">
+                <td className="p-2 sm:p-3">{formatDate(sj.tanggalSJ)}</td>
+                <td className="p-2 sm:p-3 font-medium">{sj.nomorSJ}</td>
+                <td className="p-2 sm:p-3">{sj.rute}</td>
+                <td className="text-right p-2 sm:p-3">{formatCurrency(sj.uangJalan || 0)}</td>
+                <td className="text-right p-2 sm:p-3">{formatCurrency(sj.ritasi || 0)}</td>
+                <td className="text-right p-2 sm:p-3">
                   {sj.quantityLoss > 0 ? (
                     <>
                       {sj.quantityLoss}
@@ -103,23 +103,23 @@ export default function PayslipTable({ payslip, canEdit = false, onSave }) {
                     "-"
                   )}
                 </td>
-                <td className="text-right p-3 text-red-600">
+                <td className="text-right p-2 sm:p-3 text-red-600">
                   {penalty > 0 ? formatCurrency(-penalty) : "-"}
                 </td>
                 {canEdit && (
-                  <td className="text-right p-3">
+                  <td className="text-right p-2 sm:p-3">
                     <input
                       type="number"
                       value={bonus}
                       onChange={(e) =>
                         handleBonusChange(sj.id, parseInt(e.target.value) || 0)
                       }
-                      className="w-20 border border-gray-300 rounded px-2 py-1 text-right"
+                      className="w-16 sm:w-20 border border-gray-300 rounded px-2 py-1 text-right text-xs sm:text-sm min-h-[40px]"
                       placeholder="0"
                     />
                   </td>
                 )}
-                <td className="text-right p-3 font-bold">{formatCurrency(total)}</td>
+                <td className="text-right p-2 sm:p-3 font-bold">{formatCurrency(total)}</td>
               </tr>
             );
           })}
@@ -128,11 +128,11 @@ export default function PayslipTable({ payslip, canEdit = false, onSave }) {
 
       {/* Save Button */}
       {canEdit && (
-        <div className="p-3 bg-gray-50 border-t">
+        <div className="p-2 sm:p-3 bg-gray-50 border-t">
           <button
             onClick={handleSaveBonus}
             disabled={saving}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400"
+            className="w-full sm:w-auto px-4 py-2 bg-blue-600 text-white text-sm sm:text-base rounded hover:bg-blue-700 disabled:bg-gray-400 min-h-[44px]"
           >
             {saving ? "Menyimpan..." : "Simpan Bonus"}
           </button>
