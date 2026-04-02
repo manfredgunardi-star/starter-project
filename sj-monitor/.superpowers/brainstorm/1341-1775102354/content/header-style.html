@@ -1,0 +1,77 @@
+<h2>Header Style</h2>
+<p class="subtitle">With the dock handling navigation, how should the top header look?</p>
+
+<div class="cards">
+
+  <!-- Option A: Keep current (compact blue gradient) -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#F1F5F9; padding:12px; border-radius:8px 8px 0 0; min-height:120px;">
+      <div style="background:linear-gradient(to right,#2563EB,#1E40AF); color:white; border-radius:10px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 4px 12px rgba(37,99,235,0.3);">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="background:rgba(255,255,255,0.2); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:16px;">📦</div>
+          <div>
+            <div style="font-size:9px; color:#BFDBFE; font-weight:500;">PT Berkah Jaya</div>
+            <div style="font-size:13px; font-weight:700;">Monitoring Surat Jalan</div>
+            <div style="font-size:9px; color:#93C5FD; display:none;">Sistem Tracking & Monitoring</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="text-align:right;">
+            <div style="font-size:11px; font-weight:600;">Manfred</div>
+            <div style="font-size:9px; color:#BFDBFE;">superadmin</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.15); border-radius:8px; padding:6px; font-size:12px; cursor:pointer;">↩</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Keep current header (refined)</h3>
+      <p>Keep the blue gradient header, but make it more compact and polished. Company name + app title + user info + logout. Familiar to current users.</p>
+    </div>
+  </div>
+
+  <!-- Option B: Minimal sticky header, just brand + user -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#F1F5F9; padding:12px; border-radius:8px 8px 0 0; min-height:120px;">
+      <div style="background:#fff; border-radius:10px; padding:10px 14px; display:flex; justify-content:space-between; align-items:center; box-shadow:0 1px 4px rgba(0,0,0,0.08); border-bottom:2px solid #2563EB;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <div style="background:#EFF6FF; border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; font-size:16px;">📦</div>
+          <div>
+            <div style="font-size:13px; font-weight:700; color:#1E293B;">Monitoring SJ</div>
+            <div style="font-size:9px; color:#64748B;">PT Berkah Jaya</div>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div style="background:#EFF6FF; border-radius:20px; padding:4px 10px; font-size:10px; font-weight:600; color:#2563EB;">Manfred ▾</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Minimal white header</h3>
+      <p>Clean white header with a blue bottom accent line. Light, airy feel. Company + app title on the left, user avatar/name on the right. No gradient — lets the content breathe.</p>
+    </div>
+  </div>
+
+  <!-- Option C: No separate header — brand inside the dock -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#F1F5F9; padding:12px; border-radius:8px 8px 0 0; min-height:120px; position:relative;">
+      <!-- No header — content starts immediately -->
+      <div style="background:#fff; border-radius:10px; padding:12px; box-shadow:0 1px 4px rgba(0,0,0,0.06);">
+        <div style="font-size:11px; color:#94A3B8; margin-bottom:4px;">Rabu, 2 April 2026</div>
+        <div style="font-size:13px; font-weight:700; color:#1E293B; margin-bottom:8px;">Surat Jalan Aktif</div>
+        <div style="background:#EFF6FF; border-radius:6px; padding:8px; font-size:10px; color:#1E40AF;">SJ-001 · AB 1234 CD · Dalam Perjalanan</div>
+      </div>
+      <!-- Dock at bottom shows brand -->
+      <div style="margin-top:10px; background:rgba(15,23,42,0.06); border-radius:10px; padding:6px 12px; display:flex; align-items:center; justify-content:center; gap:6px;">
+        <span style="font-size:10px; color:#64748B;">⚓ Dock area — brand logo here</span>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — No fixed header (full-screen content)</h3>
+      <p>Remove the top header entirely. Content starts at the top of the viewport. Brand/logo lives in the dock. User info accessible via a profile icon in the dock. Maximum reading space.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px; text-align:center;">Click to select, or tell me in the terminal.</p>

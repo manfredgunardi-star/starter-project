@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { AlertCircle, Truck, FileText, Download, Printer } from 'lucide-react';
+import { AlertCircle, Truck, FileText, Printer } from 'lucide-react';
 import {
   groupSJByTruck,
   getUniqueTrucks,
@@ -53,8 +53,7 @@ const LaporanTrukPage = ({ suratJalanList = [], truckList = [], currentUser = {}
 
     // Check each inactive truck
     inactiveTrucks.forEach((truck) => {
-      const explanation = explanations[truck.nomorPolisi] || '';
-      if (!explanation || explanation.trim() === '') {
+      if (!hasExplanation(truck.nomorPolisi)) {
         missingExplanations.push(truck.nomorPolisi);
       }
     });
@@ -78,6 +77,8 @@ const LaporanTrukPage = ({ suratJalanList = [], truckList = [], currentUser = {}
   };
 
   // ===== Status Color Mapping =====
+  // Status color mapping - must match SJ status values from firestore
+  // Valid statuses: pending, dalam perjalanan, terkirim, gagal
   const getStatusBadgeColor = (status) => {
     const normalizedStatus = (status || '').toLowerCase();
     const colors = {
@@ -87,6 +88,12 @@ const LaporanTrukPage = ({ suratJalanList = [], truckList = [], currentUser = {}
       'gagal': 'bg-red-100 text-red-700',
     };
     return colors[normalizedStatus] || 'bg-slate-100 text-slate-700';
+  };
+
+  // Helper to check if explanation is provided and non-empty
+  const hasExplanation = (nomorPolisi) => {
+    const explanation = explanations[nomorPolisi] || '';
+    return explanation.trim() !== '';
   };
 
   // ===== Render =====
@@ -271,11 +278,7 @@ const LaporanTrukPage = ({ suratJalanList = [], truckList = [], currentUser = {}
                 </p>
                 <ul className="list-disc list-inside text-red-700 text-sm space-y-1">
                   {inactiveTrucks
-                    .filter(
-                      (truck) =>
-                        !explanations[truck.nomorPolisi] ||
-                        explanations[truck.nomorPolisi].trim() === ''
-                    )
+                    .filter((truck) => !hasExplanation(truck.nomorPolisi))
                     .map((truck) => (
                       <li key={truck.nomorPolisi}>
                         {truck.nomorPolisi} - {truck.namaSupir || 'Supir'}
@@ -313,13 +316,11 @@ const LaporanTrukPage = ({ suratJalanList = [], truckList = [], currentUser = {}
                     rows="3"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none text-sm"
                   />
-                  {showValidationError &&
-                    (!explanations[truck.nomorPolisi] ||
-                      explanations[truck.nomorPolisi].trim() === '') && (
-                      <p className="text-red-600 text-xs mt-2">
-                        Penjelasan harus diisi
-                      </p>
-                    )}
+                  {showValidationError && !hasExplanation(truck.nomorPolisi) && (
+                    <p className="text-red-600 text-xs mt-2">
+                      Penjelasan harus diisi
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
@@ -329,22 +330,13 @@ const LaporanTrukPage = ({ suratJalanList = [], truckList = [], currentUser = {}
 
       {/* Action Buttons */}
       <div className="bg-white rounded-xl shadow-sm p-3 sm:p-6 no-print">
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-          <button
-            onClick={validateAndPrint}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 sm:px-6 py-3 rounded-lg transition-colors"
-          >
-            <Printer className="w-5 h-5" />
-            Print / PDF
-          </button>
-          <button
-            onClick={validateAndPrint}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-4 sm:px-6 py-3 rounded-lg transition-colors"
-          >
-            <Download className="w-5 h-5" />
-            Download
-          </button>
-        </div>
+        <button
+          onClick={validateAndPrint}
+          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 sm:px-6 py-3 rounded-lg transition-colors"
+        >
+          <Printer className="w-5 h-5" />
+          Print / PDF
+        </button>
       </div>
     </div>
   );

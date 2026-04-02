@@ -17,18 +17,19 @@ export const useMasterData = () => {
     };
     const activeOnly = (x) => x?.isActive !== false && !x?.deletedAt;
 
+    const noop = () => {};
     const unsubTrucks = onSnapshot(collection(db, 'trucks'), (snap) => {
       setTruckList(snap.docs.map(normalizeItem).filter(activeOnly));
-    });
+    }, noop);
     const unsubSupir = onSnapshot(collection(db, 'supir'), (snap) => {
       setSupirList(snap.docs.map(normalizeItem).filter(activeOnly));
-    });
+    }, noop);
     const unsubRute = onSnapshot(collection(db, 'rute'), (snap) => {
       setRuteList(snap.docs.map(normalizeItem).filter(activeOnly));
-    });
+    }, noop);
     const unsubMaterial = onSnapshot(collection(db, 'material'), (snap) => {
       setMaterialList(snap.docs.map(normalizeItem).filter(activeOnly));
-    });
+    }, noop);
 
     return () => {
       try { unsubTrucks(); } catch {}

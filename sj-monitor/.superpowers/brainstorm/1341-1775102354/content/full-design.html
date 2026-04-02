@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SJ Monitor — Design Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: #F1F5F9; color: #1E293B; font-size: 16px; line-height: 1.6; }
+
+  /* ── Page wrapper ── */
+  .page { max-width: 480px; margin: 0 auto; min-height: 100vh; background: #F8FAFC; position: relative; }
+
+  /* ── Top bar (no gradient header — just a minimal page title) ── */
+  .top-bar {
+    background: #fff;
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid #E2E8F0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .top-bar .page-title { font-size: 18px; font-weight: 700; color: #0F172A; }
+  .top-bar .user-pill {
+    background: #EFF6FF; color: #2563EB;
+    border-radius: 20px; padding: 4px 12px;
+    font-size: 12px; font-weight: 600;
+    display: flex; align-items: center; gap: 6px;
+  }
+
+  /* ── Stat cards row ── */
+  .stats { display: flex; gap: 10px; padding: 14px 16px 0; overflow-x: auto; }
+  .stat-card {
+    flex: 1; min-width: 110px;
+    background: #fff; border-radius: 12px;
+    padding: 12px 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+  }
+  .stat-card .stat-label { font-size: 11px; color: #64748B; font-weight: 500; margin-bottom: 2px; }
+  .stat-card .stat-value { font-size: 22px; font-weight: 700; }
+  .stat-card.blue .stat-value { color: #2563EB; }
+  .stat-card.orange .stat-value { color: #EA580C; }
+  .stat-card.green .stat-value { color: #16A34A; }
+
+  /* ── Section title ── */
+  .section-title {
+    padding: 16px 16px 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  /* ── Filter chips ── */
+  .filter-row { display: flex; gap: 8px; padding: 0 16px 12px; overflow-x: auto; }
+  .chip {
+    border-radius: 20px; padding: 5px 14px;
+    font-size: 12px; font-weight: 600;
+    white-space: nowrap; cursor: pointer; border: none;
+  }
+  .chip.active { background: #2563EB; color: #fff; }
+  .chip.inactive { background: #F1F5F9; color: #475569; }
+
+  /* ── Table card ── */
+  .table-card {
+    margin: 0 16px 16px;
+    background: #fff;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 1px 6px rgba(0,0,0,0.06);
+  }
+  .table-head {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr 1fr 90px;
+    padding: 9px 14px;
+    background: #F8FAFC;
+    border-bottom: 1px solid #E2E8F0;
+    font-size: 10px;
+    font-weight: 700;
+    color: #94A3B8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .table-row {
+    display: grid;
+    grid-template-columns: 1fr 1.4fr 1fr 90px;
+    padding: 11px 14px;
+    border-bottom: 1px solid #F1F5F9;
+    align-items: center;
+    font-size: 13px;
+    transition: background 0.15s;
+  }
+  .table-row:last-child { border-bottom: none; }
+  .table-row:hover { background: #F8FAFC; cursor: pointer; }
+  .sj-num { font-weight: 700; color: #0F172A; }
+  .sj-route { color: #475569; font-size: 12px; }
+  .sj-driver { color: #475569; font-size: 12px; }
+  .badge {
+    border-radius: 8px;
+    padding: 3px 9px;
+    font-size: 11px;
+    font-weight: 600;
+    text-align: center;
+    width: fit-content;
+  }
+  .badge.jalan { background: #FFF7ED; color: #EA580C; }
+  .badge.terkirim { background: #F0FDF4; color: #16A34A; }
+  .badge.masalah { background: #FEF2F2; color: #DC2626; }
+  .badge.menunggu { background: #F8FAFC; color: #64748B; }
+
+  /* ── Floating bottom dock ── */
+  .dock-wrapper {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 32px);
+    max-width: 448px;
+    z-index: 50;
+  }
+  .dock {
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 24px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.14), 0 0 0 1px rgba(255,255,255,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    padding: 8px 6px;
+  }
+  .dock-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 4px 10px;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: background 0.15s;
+    min-width: 52px;
+  }
+  .dock-item.active { background: #EFF6FF; }
+  .dock-icon {
+    width: 32px; height: 32px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .dock-item.active .dock-icon { background: #2563EB; }
+  .dock-label {
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .dock-item.active .dock-label { color: #2563EB; }
+  .dock-item:not(.active) .dock-label { color: #94A3B8; }
+
+  /* Content bottom padding so dock doesn't obscure last row */
+  .content-area { padding-bottom: 100px; }
+
+  /* Desktop: widen to show side-by-side with dock staying centered */
+  @media (min-width: 768px) {
+    .page { max-width: 900px; }
+    .table-head, .table-row {
+      grid-template-columns: 1fr 1.6fr 1.2fr 1fr 100px;
+    }
+    .stats { gap: 14px; }
+    .stat-card { min-width: 150px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Minimal top bar (no gradient, no heavy header) -->
+  <div class="top-bar">
+    <div class="page-title">Surat Jalan</div>
+    <div class="user-pill">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      Manfred
+    </div>
+  </div>
+
+  <div class="content-area">
+
+    <!-- Stat cards -->
+    <div class="stats">
+      <div class="stat-card blue">
+        <div class="stat-label">Total SJ</div>
+        <div class="stat-value">48</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="stat-label">Di Jalan</div>
+        <div class="stat-value">12</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-label">Terkirim</div>
+        <div class="stat-value">34</div>
+      </div>
+    </div>
+
+    <!-- Filter chips -->
+    <div class="section-title">Daftar Surat Jalan</div>
+    <div class="filter-row">
+      <button class="chip active">Semua</button>
+      <button class="chip inactive">Dalam Perjalanan</button>
+      <button class="chip inactive">Terkirim</button>
+      <button class="chip inactive">Menunggu</button>
+      <button class="chip inactive">Masalah</button>
+    </div>
+
+    <!-- Table card -->
+    <div class="table-card">
+      <div class="table-head">
+        <span>No. SJ</span>
+        <span>Rute</span>
+        <span>Supir</span>
+        <span>Status</span>
+      </div>
+      <div class="table-row">
+        <span class="sj-num">SJ-001</span>
+        <span class="sj-route">Smg → Sby</span>
+        <span class="sj-driver">Ahmad</span>
+        <span><div class="badge jalan">Di Jalan</div></span>
+      </div>
+      <div class="table-row">
+        <span class="sj-num">SJ-002</span>
+        <span class="sj-route">Solo → Jog</span>
+        <span class="sj-driver">Budi</span>
+        <span><div class="badge terkirim">Terkirim</div></span>
+      </div>
+      <div class="table-row">
+        <span class="sj-num">SJ-003</span>
+        <span class="sj-route">Jkt → Bdg</span>
+        <span class="sj-driver">Candra</span>
+        <span><div class="badge masalah">Masalah</div></span>
+      </div>
+      <div class="table-row">
+        <span class="sj-num">SJ-004</span>
+        <span class="sj-route">Sby → Mlg</span>
+        <span class="sj-driver">Deni</span>
+        <span><div class="badge menunggu">Menunggu</div></span>
+      </div>
+      <div class="table-row">
+        <span class="sj-num">SJ-005</span>
+        <span class="sj-route">Smg → Ptr</span>
+        <span class="sj-driver">Eko</span>
+        <span><div class="badge jalan">Di Jalan</div></span>
+      </div>
+      <div class="table-row">
+        <span class="sj-num">SJ-006</span>
+        <span class="sj-route">Bdg → Jkt</span>
+        <span class="sj-driver">Fajar</span>
+        <span><div class="badge terkirim">Terkirim</div></span>
+      </div>
+    </div>
+
+  </div><!-- end content-area -->
+
+  <!-- Floating bottom dock -->
+  <div class="dock-wrapper">
+    <nav class="dock">
+      <div class="dock-item active">
+        <div class="dock-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/><path d="M16 3H8L6 7h12l-2-4z" fill="white"/></svg>
+        </div>
+        <span class="dock-label">SJ</span>
+      </div>
+      <div class="dock-item">
+        <div class="dock-icon" style="font-size:18px;">💵</div>
+        <span class="dock-label">Keuangan</span>
+      </div>
+      <div class="dock-item">
+        <div class="dock-icon" style="font-size:18px;">📑</div>
+        <span class="dock-label">Laporan</span>
+      </div>
+      <div class="dock-item">
+        <div class="dock-icon" style="font-size:18px;">🧾</div>
+        <span class="dock-label">Invoice</span>
+      </div>
+      <div class="dock-item">
+        <div class="dock-icon" style="font-size:18px;">⚙️</div>
+        <span class="dock-label">Lainnya</span>
+      </div>
+    </nav>
+  </div>
+
+</div>
+
+<div style="position:fixed;top:12px;right:12px;background:rgba(0,0,0,0.7);color:white;border-radius:8px;padding:8px 12px;font-size:11px;font-family:Inter,sans-serif;z-index:100;line-height:1.5;">
+  <strong>Design Preview</strong><br>
+  Inter font · No top header<br>
+  Table-style cards · Bottom dock<br>
+  <span style="color:#86EFAC;">Resize window to test responsive</span>
+</div>
+
+</body>
+</html>

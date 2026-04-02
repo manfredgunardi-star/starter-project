@@ -22,7 +22,6 @@ service cloud.firestore {
     }
 
     function isSuperAdmin() { return signedIn() && myRole() == 'superadmin'; }
-    function isOwner() { return signedIn() && myRole() == 'owner'; }
     function isAdminSJ() { return signedIn() && myRole() == 'admin_sj'; }
     function isAdminInv() { return signedIn() && myRole() == 'admin_invoice'; }
     function isAdminKeu() { return signedIn() && myRole() == 'admin_keuangan'; }

@@ -1,0 +1,25 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "Bash(uipro init:*)",
+      "Bash(npm root:*)",
+      "Read(//c/Project/**)",
+      "Bash(npx uipro-cli:*)",
+      "Bash(npm exec:*)",
+      "Bash(npx ccstatusline@latest)",
+      "Bash(python skills/ui-ux-pro-max/scripts/search.py \"logistics operations dashboard SaaS mobile-first Indonesia\" --design-system -p \"SJ Monitor\")",
+      "Bash(python \"c:\\\\Project\\\\.claude\\\\skills\\\\ui-ux-pro-max\\\\scripts\\\\search.py\" \"logistics operations dashboard SaaS mobile-first Indonesia\" --design-system -p \"SJ Monitor\")",
+      "Bash(python \"c:\\\\Project\\\\.claude\\\\skills\\\\ui-ux-pro-max\\\\scripts\\\\search.py\" \"floating dock bottom navigation mobile tab bar\" --domain ux)",
+      "Bash(python \"c:\\\\Project\\\\.claude\\\\skills\\\\ui-ux-pro-max\\\\scripts\\\\search.py\" \"touch target accessibility readable mobile\" --domain ux)",
+      "Bash(python \"c:\\\\Project\\\\.claude\\\\skills\\\\ui-ux-pro-max\\\\scripts\\\\search.py\" \"dashboard data readability typography\" --domain typography)",
+      "Bash(bash \"C:/Users/m3m31/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/skills/brainstorming/scripts/start-server.sh\" --project-dir \"c:/Project/sj-monitor\")",
+      "Bash(xargs grep:*)",
+      "Bash(xargs head:*)",
+      "Read(//tmp/**)"
+    ],
+    "additionalDirectories": [
+      "C:\\Users\\m3m31\\.claude"
+    ]
+  }
+}

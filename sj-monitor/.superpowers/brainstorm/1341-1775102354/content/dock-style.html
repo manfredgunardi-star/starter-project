@@ -1,0 +1,180 @@
+<h2>Floating Dock Navigation Style</h2>
+<p class="subtitle">Which style fits best for SJ Monitor? This replaces the current horizontal tab bar.</p>
+
+<div class="cards">
+
+  <!-- Option A: Bottom Floating Dock -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#F8FAFF; padding: 16px; min-height: 220px; position:relative; overflow:hidden; border-radius:8px 8px 0 0;">
+      <!-- Simulated phone screen -->
+      <div style="background:#fff; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.12); height:180px; position:relative; overflow:hidden;">
+        <!-- Top header -->
+        <div style="background:linear-gradient(to right,#2563EB,#1E40AF); color:white; padding:8px 12px; font-size:11px; font-weight:600;">
+          📦 Monitoring Surat Jalan
+        </div>
+        <!-- Content area -->
+        <div style="padding:10px; font-size:10px; color:#374151;">
+          <div style="background:#EFF6FF; border-radius:6px; padding:8px; margin-bottom:6px;">
+            <div style="font-weight:600; color:#1E40AF;">SJ-001 · AB 1234 CD</div>
+            <div style="color:#6B7280; font-size:9px;">Dalam Perjalanan → Semarang</div>
+          </div>
+          <div style="background:#F0FDF4; border-radius:6px; padding:8px;">
+            <div style="font-weight:600; color:#166534;">SJ-002 · B 5678 EF</div>
+            <div style="color:#6B7280; font-size:9px;">Terkirim → Solo</div>
+          </div>
+        </div>
+        <!-- Floating bottom dock -->
+        <div style="position:absolute; bottom:8px; left:8px; right:8px; background:rgba(255,255,255,0.92); backdrop-filter:blur(12px); border-radius:20px; box-shadow:0 4px 20px rgba(0,0,0,0.15); display:flex; align-items:center; justify-content:space-around; padding:6px 4px; border:1px solid rgba(255,255,255,0.8);">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+            <div style="background:#2563EB;border-radius:10px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:13px;">📦</div>
+            <span style="font-size:8px;font-weight:600;color:#2563EB;">SJ</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+            <div style="border-radius:10px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:13px;">💵</div>
+            <span style="font-size:8px;color:#6B7280;">Keuangan</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+            <div style="border-radius:10px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:13px;">📑</div>
+            <span style="font-size:8px;color:#6B7280;">Laporan</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+            <div style="border-radius:10px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:13px;">🧾</div>
+            <span style="font-size:8px;color:#6B7280;">Invoice</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+            <div style="border-radius:10px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:13px;">⚙️</div>
+            <span style="font-size:8px;color:#6B7280;">More</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Bottom Floating Dock</h3>
+      <p>iOS/macOS inspired. Floats above content at the bottom. Active item has filled pill background. On desktop, stays at the bottom of the viewport. Clean pill shape with blur effect.</p>
+      <div class="pros-cons" style="margin-top:8px; font-size:12px;">
+        <div class="pros"><h4>Pros</h4><ul><li>Thumb-friendly on mobile</li><li>Always visible, never scrolls away</li><li>Modern, premium feel</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Takes ~60px of screen real estate</li><li>Needs pb-20 on content</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option B: Responsive — Desktop top, Mobile bottom dock -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#F8FAFF; padding:16px; min-height:220px; position:relative; border-radius:8px 8px 0 0;">
+      <div style="display:flex; gap:10px; height:180px;">
+        <!-- Mobile view -->
+        <div style="flex:1; background:#fff; border-radius:10px; box-shadow:0 2px 12px rgba(0,0,0,0.1); position:relative; overflow:hidden;">
+          <div style="text-align:center; font-size:9px; color:#6B7280; padding:4px; background:#F9FAFB; border-bottom:1px solid #E5E7EB;">📱 Mobile</div>
+          <div style="background:linear-gradient(to right,#2563EB,#1E40AF); color:white; padding:6px 8px; font-size:9px; font-weight:600;">Monitoring SJ</div>
+          <div style="padding:8px; font-size:9px; color:#374151; height:90px; overflow:hidden;">
+            <div style="background:#EFF6FF; border-radius:5px; padding:6px; margin-bottom:4px;">SJ-001 · AB 1234 CD</div>
+            <div style="background:#F0FDF4; border-radius:5px; padding:6px;">SJ-002 · B 5678 EF</div>
+          </div>
+          <!-- bottom dock mobile -->
+          <div style="position:absolute;bottom:4px;left:4px;right:4px;background:rgba(255,255,255,0.95);border-radius:14px;box-shadow:0 3px 12px rgba(0,0,0,0.12);display:flex;justify-content:space-around;padding:4px 2px;">
+            <div style="display:flex;flex-direction:column;align-items:center;">
+              <div style="background:#2563EB;border-radius:8px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;">📦</div>
+              <span style="font-size:7px;font-weight:600;color:#2563EB;">SJ</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;">
+              <div style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;">💵</div>
+              <span style="font-size:7px;color:#9CA3AF;">Keu</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;">
+              <div style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;">📑</div>
+              <span style="font-size:7px;color:#9CA3AF;">Lap</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;">
+              <div style="width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:10px;">🧾</div>
+              <span style="font-size:7px;color:#9CA3AF;">Inv</span>
+            </div>
+          </div>
+        </div>
+        <!-- Desktop view -->
+        <div style="flex:1.6; background:#fff; border-radius:10px; box-shadow:0 2px 12px rgba(0,0,0,0.1); overflow:hidden;">
+          <div style="text-align:center; font-size:9px; color:#6B7280; padding:4px; background:#F9FAFB; border-bottom:1px solid #E5E7EB;">💻 Desktop</div>
+          <div style="background:linear-gradient(to right,#2563EB,#1E40AF); color:white; padding:6px 10px; font-size:9px; font-weight:600; display:flex; justify-content:space-between; align-items:center;">
+            <span>📦 Monitoring Surat Jalan</span>
+            <span style="font-size:8px; color:#BFDBFE;">Admin</span>
+          </div>
+          <!-- Top tab bar on desktop -->
+          <div style="display:flex; gap:4px; padding:6px; background:#F9FAFB; border-bottom:1px solid #E5E7EB; overflow:hidden;">
+            <div style="background:#2563EB; color:white; border-radius:8px; padding:3px 7px; font-size:8px; font-weight:600; white-space:nowrap;">📦 Surat Jalan</div>
+            <div style="background:#F3F4F6; color:#374151; border-radius:8px; padding:3px 7px; font-size:8px; white-space:nowrap;">💵 Keuangan</div>
+            <div style="background:#F3F4F6; color:#374151; border-radius:8px; padding:3px 7px; font-size:8px; white-space:nowrap;">📑 Laporan</div>
+            <div style="background:#F3F4F6; color:#374151; border-radius:8px; padding:3px 7px; font-size:8px; white-space:nowrap;">🧾 Invoice</div>
+          </div>
+          <div style="padding:8px; font-size:9px; color:#374151;">
+            <div style="background:#EFF6FF; border-radius:5px; padding:6px; margin-bottom:4px;">SJ-001 · AB 1234 CD · Dalam Perjalanan</div>
+            <div style="background:#F0FDF4; border-radius:5px; padding:6px;">SJ-002 · B 5678 EF · Terkirim → Solo</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Responsive Hybrid (Bottom on Mobile, Top Tabs on Desktop)</h3>
+      <p>Bottom floating dock on mobile (≤768px). Reverts to top tab bar on desktop (≥768px). Best of both worlds — ergonomic on phone, spacious on laptop.</p>
+      <div class="pros-cons" style="margin-top:8px; font-size:12px;">
+        <div class="pros"><h4>Pros</h4><ul><li>Optimized per device type</li><li>Desktop keeps full label width</li><li>Natural thumb zone on mobile</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Two navigation modes to maintain</li><li>Slightly more complex CSS</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option C: Floating Pill (center-anchored, always visible) -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#F8FAFF; padding:16px; min-height:220px; position:relative; border-radius:8px 8px 0 0;">
+      <div style="background:#fff; border-radius:12px; box-shadow:0 2px 12px rgba(0,0,0,0.12); height:180px; position:relative; overflow:hidden;">
+        <div style="background:linear-gradient(to right,#2563EB,#1E40AF); color:white; padding:8px 12px; font-size:11px; font-weight:600; display:flex; justify-content:space-between;">
+          <span>📦 Monitoring SJ</span>
+          <span style="font-size:9px; color:#BFDBFE; align-self:center;">Manfred</span>
+        </div>
+        <div style="padding:10px; font-size:10px; color:#374151;">
+          <div style="background:#EFF6FF; border-radius:6px; padding:8px; margin-bottom:6px;">
+            <div style="font-weight:600; color:#1E40AF;">SJ-001 · AB 1234 CD</div>
+            <div style="color:#6B7280; font-size:9px;">Dalam Perjalanan → Semarang</div>
+          </div>
+          <div style="background:#F0FDF4; border-radius:6px; padding:8px;">
+            <div style="font-weight:600; color:#166534;">SJ-002 · B 5678 EF</div>
+            <div style="color:#6B7280; font-size:9px;">Terkirim → Solo</div>
+          </div>
+        </div>
+        <!-- Floating center pill dock (like macOS-style dock) -->
+        <div style="position:absolute; bottom:10px; left:50%; transform:translateX(-50%); background:rgba(15,23,42,0.88); backdrop-filter:blur(16px); border-radius:24px; box-shadow:0 8px 32px rgba(0,0,0,0.25); display:flex; align-items:center; gap:2px; padding:6px 10px;">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:1px;padding:2px 6px;background:rgba(255,255,255,0.15);border-radius:14px;">
+            <span style="font-size:14px;">📦</span>
+            <span style="font-size:7px;font-weight:700;color:#fff;">SJ</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:1px;padding:2px 6px;">
+            <span style="font-size:14px;">💵</span>
+            <span style="font-size:7px;color:rgba(255,255,255,0.6);">Keu</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:1px;padding:2px 6px;">
+            <span style="font-size:14px;">📑</span>
+            <span style="font-size:7px;color:rgba(255,255,255,0.6);">Lap</span>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:1px;padding:2px 6px;">
+            <span style="font-size:14px;">🧾</span>
+            <span style="font-size:7px;color:rgba(255,255,255,0.6);">Inv</span>
+          </div>
+          <div style="width:1px;height:20px;background:rgba(255,255,255,0.2);margin:0 2px;"></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:1px;padding:2px 6px;">
+            <span style="font-size:14px;">⚙️</span>
+            <span style="font-size:7px;color:rgba(255,255,255,0.6);">More</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — Dark Floating Pill (macOS-style)</h3>
+      <p>Center-anchored dark translucent pill dock. Bold, modern, premium feel. Works great on both mobile and desktop without changing style. Icons float above content at all times.</p>
+      <div class="pros-cons" style="margin-top:8px; font-size:12px;">
+        <div class="pros"><h4>Pros</h4><ul><li>Very distinctive & premium</li><li>Same design on all screen sizes</li><li>High contrast — easy to find</li></ul></div>
+        <div class="cons"><h4>Cons</h4><ul><li>Dark pill may feel heavy</li><li>Center anchor less ergonomic on large phones</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px; text-align:center;">Click a card to select. You can also just tell me in the terminal which style you prefer.</p>

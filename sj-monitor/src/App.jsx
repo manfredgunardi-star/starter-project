@@ -382,6 +382,7 @@ const SuratJalanMonitor = () => {
   const [sjRecapStartDate, setSjRecapStartDate] = useState('');
   const [sjRecapEndDate, setSjRecapEndDate] = useState('');
   const didFirstLoadRef = useRef(false);
+  const isMountedRef = useRef(true);
   const [activeTab, setActiveTab] = useState('surat-jalan');
   const [confirmDialog, setConfirmDialog] = useState({ show: false, message: '', onConfirm: null });
   const {
@@ -1013,7 +1014,7 @@ try {
     reader.onload = async (e) => {
       if (!isMountedRef.current) return;
       try {
-        const text = e.target.result;
+        const text = e.target.result.replace(/^\uFEFF/, '');
 
         // Detect delimiter (semicolon vs comma) — pilih yang lebih banyak muncul di baris pertama
         const firstLine = text.split('\n')[0];
@@ -1803,6 +1804,11 @@ setTransaksiList(updatedTransaksiList);
     filter === 'all' || sj.status === filter
   );
 
+
+// Cleanup on unmount
+  useEffect(() => {
+    return () => { isMountedRef.current = false; };
+  }, []);
 
 // Firestore subscriptions (hanya setelah login DAN currentUser/role tersedia)
   useEffect(() => {
