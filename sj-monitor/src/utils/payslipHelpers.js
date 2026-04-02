@@ -1,3 +1,6 @@
+// Penalty constant - IDR per 1 unit quantity loss
+const PENALTY_PER_POINT = 500000;
+
 /**
  * Get the payslip period based on current or specified date
  * Period: 26th of previous month to 25th of current month
@@ -36,7 +39,6 @@ export function calculateDriverPayslip(deliveries, ruteData) {
   let totalUangJalan = 0;
   let totalRitasi = 0;
   let totalPenalty = 0;
-  let totalBonus = 0;
   let successfulDeliveries = 0;
 
   deliveries.forEach((sj) => {
@@ -53,7 +55,7 @@ export function calculateDriverPayslip(deliveries, ruteData) {
       // Calculate penalty if not abolished
       if (!sj.abolishPenalty && sj.quantityLoss && sj.quantityLoss > 1) {
         const penaltyPoints = sj.quantityLoss - 1;
-        totalPenalty += penaltyPoints * 500000;
+        totalPenalty += penaltyPoints * PENALTY_PER_POINT;
       }
     }
   });
@@ -66,32 +68,39 @@ export function calculateDriverPayslip(deliveries, ruteData) {
     totalRitasi,
     totalPenalty,
     grossSalary,
-    bonusAdjustments: totalBonus,
-    netSalary: grossSalary + totalBonus,
+    bonusAdjustments: 0,
+    netSalary: grossSalary,
   };
 }
 
 /**
  * Calculate penalty for a single Surat Jalan
- * Penalty = (quantityLoss - 1) * 500000 if quantityLoss > 1 and not abolished
+ * Penalty = (quantityLoss - 1) * PENALTY_PER_POINT if quantityLoss > 1 and not abolished
  */
 export function calculateSJPenalty(quantityLoss, abolishPenalty = false) {
   if (abolishPenalty || !quantityLoss || quantityLoss <= 1) {
     return 0;
   }
   const penaltyPoints = quantityLoss - 1;
-  return penaltyPoints * 500000;
+  return penaltyPoints * PENALTY_PER_POINT;
 }
 
 /**
  * Filter deliveries for a driver within the payslip period
  */
 export function filterDeliveriesByPeriod(deliveries, driverId, startDate, endDate) {
+  if (!Array.isArray(deliveries) || !(startDate instanceof Date) || !(endDate instanceof Date)) {
+    return [];
+  }
+
+  const endOfDay = new Date(endDate);
+  endOfDay.setHours(23, 59, 59, 999);
+
   return deliveries.filter((sj) => {
     if (sj.supir !== driverId) return false;
 
     const sjDate = new Date(sj.tanggalSJ);
-    return sjDate >= startDate && sjDate <= endDate;
+    return sjDate >= startDate && sjDate <= endOfDay;
   });
 }
 
