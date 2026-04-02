@@ -2830,6 +2830,10 @@ const MasterDataManagement = ({
                           <p className="text-gray-600">Uang Jalan:</p>
                           <p className="font-semibold text-blue-600">{formatCurrency(rute.uangJalan)}</p>
                         </div>
+                        <div>
+                          <p className="text-gray-600">Ritasi:</p>
+                          <p className="font-semibold text-green-600">{formatCurrency(rute.ritasi || 0)}</p>
+                        </div>
                       </div>
                       {rute.createdBy && (
                         <p className="text-xs text-gray-500 mt-2">
@@ -3701,6 +3705,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
     nomorSJ: '',
     tanggalSJ: new Date().toISOString().split('T')[0],
     truckId: '',
+    ritasi: '',
     supirId: '',
     ruteId: '',
     materialId: '',
@@ -3726,6 +3731,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
     pt: selectedItem?.pt || '',
     rute: selectedItem?.rute || '',
     uangJalan: selectedItem?.uangJalan || '',
+    ritasi: selectedItem?.ritasi || '',
     material: selectedItem?.material || '',
     satuan: selectedItem?.satuan || ''
   });
@@ -3861,7 +3867,8 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
       }
       onSubmit({
         rute: formData.rute,
-        uangJalan: parseFloat(formData.uangJalan)
+        uangJalan: parseFloat(formData.uangJalan),
+        ritasi: parseFloat(formData.ritasi) || 0
       });
     } else if (type === 'addMaterial' || type === 'editMaterial') {
       if (!formData.material || !formData.satuan) {
@@ -4480,6 +4487,19 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                   min="0"
                   step="10000"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Ritasi (Rp)</label>
+                <input
+                  type="number"
+                  value={formData.ritasi}
+                  onChange={(e) => setFormData({ ...formData, ritasi: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Jumlah ritasi per pengiriman"
+                  min="0"
+                  step="10000"
+                />
+                <small className="text-gray-500">Bonus per pengiriman sukses untuk rute ini</small>
               </div>
             </>
           )}
