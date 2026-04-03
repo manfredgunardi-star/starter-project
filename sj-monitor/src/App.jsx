@@ -18,6 +18,7 @@ import LoginPage from './pages/LoginPage.jsx';
 import LaporanKasPage from './pages/LaporanKasPage.jsx';
 import LaporanTrukPage from './pages/LaporanTrukPage.jsx';
 import PayslipReport from './components/PayslipReport.jsx';
+import RitasiBulkUpload from './components/RitasiBulkUpload.jsx';
 import {
   sanitizeForFirestore,
   upsertItemToFirestore,
@@ -378,6 +379,7 @@ const SuratJalanMonitor = () => {
   const { usersList, setUsersList, addUser, updateUser, deleteUser: deleteUserFn, toggleUserActive } = useUsers({ currentUser, setAlertMessage });
   const deleteUser = (id) => deleteUserFn(id, setConfirmDialog);
   const [showModal, setShowModal] = useState(false);
+  const [showRitasiBulkUpload, setShowRitasiBulkUpload] = useState(false);
   const [modalType, setModalType] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
   const [filter, setFilter] = useState('all');
@@ -676,6 +678,20 @@ return newList;
 setConfirmDialog({ show: false, message: '', onConfirm: null });
       }
     });
+  };
+
+  const loadRuteData = async () => {
+    try {
+      const snapshot = await getDocs(collection(db, "rute"));
+      const routes = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setRuteList(routes);
+    } catch (error) {
+      console.error("Error loading rute data:", error);
+      setAlertMessage("⚠️ Gagal memuat data rute dari Firebase. Cek koneksi / Console (F12).");
+    }
   };
 
   // Master Data Material Functions
@@ -2511,6 +2527,32 @@ try { unsubTransaksi(); } catch {}
         </div>
       )}
 
+      {/* Ritasi Bulk Upload Modal */}
+      {showRitasiBulkUpload && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-96 overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold">Bulk Upload Ritasi</h2>
+                <button
+                  onClick={() => setShowRitasiBulkUpload(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+              <RitasiBulkUpload
+                ruteList={ruteList}
+                onSuccess={() => {
+                  setShowRitasiBulkUpload(false);
+                  loadRuteData();
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Floating bottom dock */}
       {effectiveRole && (
         <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-lg">
@@ -2821,6 +2863,15 @@ const MasterDataManagement = ({
                   <Plus className="w-4 h-4" />
                   <span>Tambah Rute</span>
                 </button>
+                {effectiveRole === 'superadmin' && (
+                  <button
+                    onClick={() => setShowRitasiBulkUpload(true)}
+                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center space-x-2 transition"
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span>📊 Bulk Upload Ritasi</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
