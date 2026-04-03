@@ -6,7 +6,7 @@ export function generateRitasiTemplate(ruteList) {
   const headers = ['ID Rute', 'Nama Rute', 'Asal', 'Tujuan', 'Uang Jalan', 'Ritasi Saat Ini', 'Ritasi Baru'];
   const data = ruteList.map(rute => [
     rute.id,
-    rute.nama,
+    rute.rute,
     rute.asal,
     rute.tujuan,
     rute.uangJalan || 0,
