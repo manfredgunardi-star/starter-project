@@ -42,7 +42,7 @@ export default function PayslipTable({ payslip, canEdit = false, onSave }) {
   };
 
   const successfulDeliveries = payslip.deliveries.filter(
-    (sj) => sj.status === "selesai"
+    (sj) => sj.status?.toLowerCase() === "terkirim"
   );
 
   return (
