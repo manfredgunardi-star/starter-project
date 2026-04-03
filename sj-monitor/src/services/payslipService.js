@@ -14,10 +14,11 @@ import {
 } from "../utils/payslipHelpers";
 
 export async function fetchAllDrivers() {
-  const q = query(collection(db, "users"), where("role", "==", "driver"));
-  const snapshot = await getDocs(q);
+  // Fetch drivers from supir (master data) collection
+  const snapshot = await getDocs(collection(db, "supir"));
   return snapshot.docs.map((doc) => ({
     id: doc.id,
+    nama: doc.data().nama,
     ...doc.data(),
   }));
 }
