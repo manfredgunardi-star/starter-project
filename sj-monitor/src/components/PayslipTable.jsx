@@ -46,7 +46,7 @@ export default function PayslipTable({ payslip, canEdit = false, onSave }) {
   );
 
   return (
-    <div className="bg-white rounded border overflow-x-auto">
+    <div className="bg-white rounded border">
       {/* Message */}
       {message && (
         <div
@@ -60,8 +60,9 @@ export default function PayslipTable({ payslip, canEdit = false, onSave }) {
         </div>
       )}
 
-      {/* Table Header */}
-      <table className="w-full text-xs sm:text-sm">
+      {/* Table Wrapper with responsive overflow handling */}
+      <div className="overflow-x-auto -mx-3 px-3 md:overflow-visible md:mx-0 md:px-0">
+        <table className="w-full text-xs sm:text-sm min-w-max md:min-w-0">
         <thead className="bg-gray-100 border-b">
           <tr>
             <th className="text-left p-2 sm:p-3">Tgl SJ</th>
@@ -124,7 +125,8 @@ export default function PayslipTable({ payslip, canEdit = false, onSave }) {
             );
           })}
         </tbody>
-      </table>
+        </table>
+      </div>
 
       {/* Save Button */}
       {canEdit && (
