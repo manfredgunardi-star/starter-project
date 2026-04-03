@@ -52,10 +52,10 @@ export function calculateDriverPayslip(deliveries, ruteData) {
       // Add ritasi
       totalRitasi += rute?.ritasi || 0;
 
-      // Calculate penalty if not abolished
-      if (!sj.abolishPenalty && sj.quantityLoss && sj.quantityLoss > 1) {
-        const penaltyPoints = sj.quantityLoss - 1;
-        totalPenalty += penaltyPoints * PENALTY_PER_POINT;
+      // Calculate penalty if not abolished: each full 1 M3/ton lost = 500,000
+      if (!sj.abolishPenalty && sj.quantityLoss && sj.quantityLoss >= 1) {
+        const penaltyUnits = Math.floor(sj.quantityLoss);
+        totalPenalty += penaltyUnits * PENALTY_PER_POINT;
       }
     }
   });
@@ -78,11 +78,11 @@ export function calculateDriverPayslip(deliveries, ruteData) {
  * Penalty = (quantityLoss - 1) * PENALTY_PER_POINT if quantityLoss > 1 and not abolished
  */
 export function calculateSJPenalty(quantityLoss, abolishPenalty = false) {
-  if (abolishPenalty || !quantityLoss || quantityLoss <= 1) {
+  if (abolishPenalty || !quantityLoss || quantityLoss < 1) {
     return 0;
   }
-  const penaltyPoints = quantityLoss - 1;
-  return penaltyPoints * PENALTY_PER_POINT;
+  const penaltyUnits = Math.floor(quantityLoss);
+  return penaltyUnits * PENALTY_PER_POINT;
 }
 
 /**
