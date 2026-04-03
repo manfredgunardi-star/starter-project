@@ -2863,7 +2863,7 @@ const MasterDataManagement = ({
                   <Plus className="w-4 h-4" />
                   <span>Tambah Rute</span>
                 </button>
-                {effectiveRole === 'superadmin' && (
+                {currentUser?.role?.toLowerCase() === 'superadmin' && (
                   <button
                     onClick={() => setShowRitasiBulkUpload(true)}
                     className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center space-x-2 transition"
