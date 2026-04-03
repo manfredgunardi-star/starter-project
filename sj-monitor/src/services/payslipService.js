@@ -15,12 +15,15 @@ import {
 
 export async function fetchAllDrivers() {
   // Fetch drivers from supir (master data) collection
+  // Normalize data to match useMasterData pattern
   const snapshot = await getDocs(collection(db, "supir"));
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    nama: doc.data().nama,
-    ...doc.data(),
-  }));
+  return snapshot.docs
+    .map((doc) => {
+      const data = doc.data() || {};
+      const id = data.id || doc.id;
+      return { ...data, id, isActive: data.isActive !== false };
+    })
+    .filter((x) => x?.isActive !== false && !x?.deletedAt);
 }
 
 export async function fetchAllRute() {
