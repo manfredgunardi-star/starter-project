@@ -30,17 +30,27 @@ export async function fetchAllRute() {
   const snapshot = await getDocs(collection(db, "rute"));
   const ruteData = {};
   snapshot.docs.forEach((doc) => {
-    ruteData[doc.id] = doc.data();
+    const data = doc.data();
+    // Index by both doc.id and data.id to handle both cases
+    ruteData[doc.id] = data;
+    if (data.id && data.id !== doc.id) {
+      ruteData[data.id] = data;
+    }
   });
   return ruteData;
 }
 
 export async function fetchAllSJ() {
   const snapshot = await getDocs(collection(db, "surat_jalan"));
-  return snapshot.docs.map((doc) => ({
-    id: doc.id,
-    ...doc.data(),
-  }));
+  return snapshot.docs.map((doc) => {
+    const data = doc.data();
+    const sj = { id: doc.id, ...data };
+    // Compute quantityLoss on-the-fly for imported SJ records that don't have it
+    if ((sj.quantityLoss === undefined || sj.quantityLoss === null) && sj.qtyIsi && sj.qtyBongkar) {
+      sj.quantityLoss = Math.max(0, sj.qtyIsi - sj.qtyBongkar);
+    }
+    return sj;
+  });
 }
 
 export async function getPayslipData(startDateOrCurrentDate = new Date(), explicitEndDate = null) {
@@ -76,10 +86,17 @@ export async function getPayslipData(startDateOrCurrentDate = new Date(), explic
       endDate
     );
 
+    // Enrich each delivery with ritasi from route lookup
+    // (ritasi is not stored in SJ documents, only in rute)
+    const enrichedDeliveries = driverDeliveries.map((sj) => {
+      const rute = ruteData[sj.ruteId] || ruteData[sj.rute];
+      return { ...sj, ritasi: rute?.ritasi || 0 };
+    });
+
     payslipsByDriver[driver.id] = {
       driver,
-      deliveries: driverDeliveries,
-      summary: calculateDriverPayslip(driverDeliveries, ruteData),
+      deliveries: enrichedDeliveries,
+      summary: calculateDriverPayslip(enrichedDeliveries, ruteData),
       periodLabel,
       startDate,
       endDate,
