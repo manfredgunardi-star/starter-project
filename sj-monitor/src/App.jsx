@@ -2148,6 +2148,8 @@ try { unsubTransaksi(); } catch {}
             onDeleteMaterial={deleteMaterial}
             onDownloadTemplate={downloadTemplate}
             onImportData={importData}
+            showRitasiBulkUpload={showRitasiBulkUpload}
+            setShowRitasiBulkUpload={setShowRitasiBulkUpload}
           />
         ) : activeTab === 'keuangan' ? (
           <KeuanganManagement
@@ -2597,7 +2599,8 @@ const MasterDataManagement = ({
   onAddSupir, onEditSupir, onDeleteSupir,
   onAddRute, onEditRute, onDeleteRute,
   onAddMaterial, onEditMaterial, onDeleteMaterial,
-  onDownloadTemplate, onImportData
+  onDownloadTemplate, onImportData,
+  showRitasiBulkUpload, setShowRitasiBulkUpload
 }) => {
   const [masterTab, setMasterTab] = useState('truck');
   const [alertMessage, setAlertMessage] = useState('');
