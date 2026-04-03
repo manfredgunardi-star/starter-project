@@ -42,9 +42,9 @@ export function calculateDriverPayslip(deliveries, ruteData) {
   let successfulDeliveries = 0;
 
   deliveries.forEach((sj) => {
-    if (sj.status === "selesai") {
+    if (sj.status?.toLowerCase() === "terkirim") {
       successfulDeliveries++;
-      const rute = ruteData[sj.rute];
+      const rute = ruteData[sj.ruteId] || ruteData[sj.rute];
 
       // Add uang jalan
       totalUangJalan += rute?.uangJalan || 0;

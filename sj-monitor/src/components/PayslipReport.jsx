@@ -44,7 +44,8 @@ export default function PayslipReport({ currentUser }) {
       const drivers = await fetchAllDrivers();
       setAllDrivers(drivers);
 
-      const data = await getPayslipData();
+      const { startDate: sd, endDate: ed } = getPayslipPeriod(new Date());
+      const data = await getPayslipData(sd, ed);
       setPayslips(data);
 
       // Get period label from first entry
@@ -79,9 +80,11 @@ export default function PayslipReport({ currentUser }) {
         return;
       }
 
-      const data = await getPayslipData(end);
+      const data = await getPayslipData(start, end);
       setPayslips(data);
-      setPeriodLabel(`${startDate} hingga ${endDate}`);
+
+      const firstEntry = Object.values(data)[0];
+      if (firstEntry) setPeriodLabel(firstEntry.periodLabel);
     } catch (err) {
       setError("Gagal memuat data gaji: " + err.message);
     } finally {

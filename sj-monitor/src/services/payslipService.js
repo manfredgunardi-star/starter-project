@@ -43,8 +43,22 @@ export async function fetchAllSJ() {
   }));
 }
 
-export async function getPayslipData(currentDate = new Date()) {
-  const { startDate, endDate, periodLabel } = getPayslipPeriod(currentDate);
+export async function getPayslipData(startDateOrCurrentDate = new Date(), explicitEndDate = null) {
+  let startDate, endDate, periodLabel;
+
+  if (explicitEndDate) {
+    // Explicit date range provided
+    startDate = startDateOrCurrentDate;
+    endDate = explicitEndDate;
+    const fmt = (d) => d.toLocaleDateString("id-ID");
+    periodLabel = `${fmt(startDate)} hingga ${fmt(endDate)}`;
+  } else {
+    // Auto-calculate period based on reference date
+    const period = getPayslipPeriod(startDateOrCurrentDate);
+    startDate = period.startDate;
+    endDate = period.endDate;
+    periodLabel = period.periodLabel;
+  }
 
   const [drivers, ruteData, allSJ] = await Promise.all([
     fetchAllDrivers(),
