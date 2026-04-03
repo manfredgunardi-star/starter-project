@@ -19,10 +19,26 @@
       "Read(//tmp/**)",
       "Bash(node test-payslip-helpers.js)",
       "Bash(node -e ':*)",
-      "Bash(npm start:*)"
+      "Bash(npm start:*)",
+      "Bash(node --input-type=module -e \"import * as payslipService from './src/services/payslipService.js'; console.log\\('Exported functions:', Object.keys\\(payslipService\\).sort\\(\\)\\); console.log\\('✓ All imports successful'\\);\")",
+      "Bash(npm list:*)",
+      "mcp__plugin_playwright_playwright__browser_navigate",
+      "mcp__plugin_playwright_playwright__browser_take_screenshot",
+      "mcp__plugin_playwright_playwright__browser_snapshot",
+      "mcp__plugin_playwright_playwright__browser_click",
+      "mcp__plugin_playwright_playwright__browser_wait_for",
+      "mcp__plugin_playwright_playwright__browser_run_code",
+      "Bash(tee /tmp/build-output.log)",
+      "mcp__plugin_playwright_playwright__browser_fill_form",
+      "mcp__plugin_playwright_playwright__browser_console_messages",
+      "Bash(node -c /c/Project/sj-monitor/src/services/ritasiBulkService.js)",
+      "Bash(ls -lh /c/Project/TASK_5*)",
+      "Bash(ls -1 /c/Project/TASK_5*.md)",
+      "Bash(du -h /c/Project/TASK_5*.md)"
     ],
     "additionalDirectories": [
-      "C:\\Users\\m3m31\\.claude"
+      "C:\\Users\\m3m31\\.claude",
+      "\\tmp"
     ]
   }
 }

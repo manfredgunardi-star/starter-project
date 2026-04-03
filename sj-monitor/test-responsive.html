@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Responsive Design Test - PayslipReport</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
+    .device-frame { 
+      border: 10px solid #333; 
+      border-radius: 15px; 
+      background: white;
+      margin: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    }
+    .device-header { 
+      background: #333; 
+      color: white; 
+      padding: 10px; 
+      text-align: center;
+      border-radius: 10px 10px 0 0;
+      font-size: 12px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 p-4">
+  <h1 class="text-2xl font-bold mb-6">PayslipReport Responsive Design Testing</h1>
+  
+  <div class="space-y-8">
+    <!-- Desktop (1200px+) -->
+    <div>
+      <h2 class="text-xl font-bold mb-4">Desktop Testing (1200px)</h2>
+      <iframe width="1200" height="800" src="http://localhost:5173" style="border: 2px solid #333;"></iframe>
+      <div class="mt-2 p-3 bg-blue-100 text-blue-700 rounded">
+        <strong>Expected:</strong> Summary cards in 4-column grid, PayslipTable with all columns visible
+      </div>
+    </div>
+
+    <!-- Tablet (768px) -->
+    <div>
+      <h2 class="text-xl font-bold mb-4">Tablet Testing (768px)</h2>
+      <div style="width: 768px; margin: 0 auto;">
+        <iframe width="768" height="800" src="http://localhost:5173" style="border: 2px solid #333;"></iframe>
+      </div>
+      <div class="mt-2 p-3 bg-green-100 text-green-700 rounded">
+        <strong>Expected:</strong> Summary cards in 2 columns, PayslipTable readable with horizontal scroll OK
+      </div>
+    </div>
+
+    <!-- Mobile (375px) -->
+    <div>
+      <h2 class="text-xl font-bold mb-4">Mobile Testing (375px)</h2>
+      <div style="width: 375px; margin: 0 auto;">
+        <iframe width="375" height="800" src="http://localhost:5173" style="border: 2px solid #333;"></iframe>
+      </div>
+      <div class="mt-2 p-3 bg-orange-100 text-orange-700 rounded">
+        <strong>Expected:</strong> Summary cards in 1 column, text readable, PayslipTable accessible with scroll
+      </div>
+    </div>
+  </div>
+</body>
+</html>

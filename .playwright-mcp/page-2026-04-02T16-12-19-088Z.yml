@@ -1,0 +1,15 @@
+- generic [ref=e4]:
+  - generic [ref=e5]:
+    - img "Logo" [ref=e22]
+    - heading "PT. Tri Manggala Putra" [level=1] [ref=e23]
+    - heading "Monitoring Surat Jalan" [level=2] [ref=e10]
+    - paragraph [ref=e11]: Silakan login untuk melanjutkan
+  - generic [ref=e12]:
+    - generic [ref=e13]:
+      - generic [ref=e14]: Username
+      - textbox "Masukkan username" [ref=e15]: superadmin
+    - generic [ref=e16]:
+      - generic [ref=e17]: Password
+      - textbox "Masukkan password" [ref=e18]: "@35010368Aa"
+    - button "Login" [active] [ref=e19] [cursor=pointer]
+  - paragraph [ref=e21]: Login untuk input dan akses dashboard
