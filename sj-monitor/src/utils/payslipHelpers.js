@@ -97,7 +97,7 @@ export function filterDeliveriesByPeriod(deliveries, driverId, startDate, endDat
   endOfDay.setHours(23, 59, 59, 999);
 
   return deliveries.filter((sj) => {
-    if (sj.supir !== driverId) return false;
+    if (sj.supirId !== driverId) return false;
 
     const sjDate = new Date(sj.tanggalSJ);
     return sjDate >= startDate && sjDate <= endOfDay;

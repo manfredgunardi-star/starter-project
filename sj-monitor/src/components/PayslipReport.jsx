@@ -120,9 +120,10 @@ export default function PayslipReport({ currentUser }) {
   }
 
   // Use all drivers from Firestore, not just from payslips
+  // supir collection uses 'namaSupir' field
   const driverOptions = allDrivers.map((d) => ({
     id: d.id,
-    nama: d.nama || d.email,
+    nama: d.namaSupir || d.nama || d.email || d.id,
   }));
 
   const selectedPayslip = selectedDriver
