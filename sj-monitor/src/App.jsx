@@ -3721,7 +3721,6 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
     nomorSJ: '',
     tanggalSJ: new Date().toISOString().split('T')[0],
     truckId: '',
-    ritasi: '',
     supirId: '',
     ruteId: '',
     materialId: '',
