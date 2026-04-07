@@ -375,6 +375,7 @@ const SuratJalanMonitor = () => {
   const [transaksiList, setTransaksiList] = useState([]);
   const [historyLog, setHistoryLog] = useState([]);
   const [invoiceList, setInvoiceList] = useState([]);
+  const [uangMukaList, setUangMukaList] = useState([]);
   const { truckList, setTruckList, supirList, setSupirList, ruteList, setRuteList, materialList, setMaterialList } = useMasterData();
   const { usersList, setUsersList, addUser, updateUser, deleteUser: deleteUserFn, toggleUserActive } = useUsers({ currentUser, setAlertMessage });
   const deleteUser = (id) => deleteUserFn(id, setConfirmDialog);
@@ -1919,6 +1920,20 @@ const unsubInvoiceLegacy = onSnapshot(collection(db, "invoices"), (snap) => {
   applyInv();
 });
 
+const unsubUangMuka = onSnapshot(collection(db, "uang_muka"), (snap) => {
+  const data = snap.docs
+    .map((d) => {
+      const row = d.data() || {};
+      return { ...row, id: row.id || d.id };
+    })
+    .filter((x) => !x?.deletedAt && x?.isActive !== false);
+  data.sort((a, b) => (new Date(b?.tanggal).getTime() || 0) - (new Date(a?.tanggal).getTime() || 0));
+  setUangMukaList(data);
+}, (err) => {
+  console.warn('[subscription] uang_muka error:', err.code);
+  setUangMukaList([]);
+});
+
 const unsubHistory = onSnapshot(collection(db, "history_log"), (snap) => {
   const data = snap.docs
     .map((d) => {
@@ -1956,6 +1971,7 @@ try { unsubSuratJalan(); } catch {}
 try { unsubBiaya(); } catch {}
 try { unsubInvoice(); } catch {}
 try { unsubInvoiceLegacy(); } catch {}
+try { unsubUangMuka(); } catch {}
 try { unsubHistory(); } catch {}
 try { unsubTransaksi(); } catch {}
   };
@@ -2058,9 +2074,18 @@ try { unsubTransaksi(); } catch {}
           <h1 className="text-lg font-bold text-slate-900">
             {PAGE_TITLES[activeTab] ?? 'Monitoring SJ'}
           </h1>
-          <div className="flex items-center gap-2 bg-blue-50 text-blue-600 rounded-full px-3 py-1 text-xs font-semibold">
-            <User className="w-3 h-3" />
-            <span>{currentUser?.name ?? ''}</span>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 bg-blue-50 text-blue-600 rounded-full px-3 py-1 text-xs font-semibold">
+              <User className="w-3 h-3" />
+              <span>{currentUser?.name ?? ''}</span>
+            </div>
+            <button
+              onClick={handleLogout}
+              title="Keluar"
+              className="flex items-center justify-center w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 active:bg-red-800 text-white transition-colors duration-150 shadow-sm"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}
@@ -2557,7 +2582,7 @@ try { unsubTransaksi(); } catch {}
 
       {/* Floating bottom dock */}
       {effectiveRole && (
-        <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-lg">
+        <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2rem)] max-w-lg">
           <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-xl shadow-black/10 ring-1 ring-white/80 flex items-center justify-around px-2 py-2">
             {DOCK_ITEMS.map(item => {
               const Icon = item.icon;
