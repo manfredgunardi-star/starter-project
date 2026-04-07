@@ -80,23 +80,35 @@ const InvoiceManagement = ({
 
   // Export to Excel function
   const exportInvoiceToExcel = (invoice) => {
-    const headers = ['No SJ', 'Tgl SJ', 'No. Polisi', 'Nama Supir', 'Rute', 'Material', 'Qty Bongkar', 'Satuan'];
-    const rows = invoice.suratJalanList.map(sj => [
-      sj.nomorSJ,
-      new Date(sj.tanggalSJ).toLocaleDateString('id-ID'),
-      sj.nomorPolisi,
-      sj.namaSupir,
-      sj.rute,
-      sj.material,
-      sj.qtyBongkar,
-      sj.satuan
-    ]);
+    const headers = ['No SJ', 'Tgl SJ', 'No. Polisi', 'Nama Supir', 'Rute', 'Material', 'Qty Bongkar', 'Harga/Qty', 'Subtotal', 'Satuan'];
+    const rows = invoice.suratJalanList.map(sj => {
+      const hargaPerQty = Number(invoice.ruteHarga?.[sj.rute] || 0);
+      const subtotal = Number(sj.qtyBongkar || 0) * hargaPerQty;
+      return [
+        sj.nomorSJ,
+        new Date(sj.tanggalSJ).toLocaleDateString('id-ID'),
+        sj.nomorPolisi,
+        sj.namaSupir,
+        sj.rute,
+        sj.material,
+        sj.qtyBongkar,
+        formatCurrency(hargaPerQty),
+        formatCurrency(subtotal),
+        sj.satuan
+      ];
+    });
+
+    const totalHarga = invoice.totalHarga || 0;
+    const totalUM = invoice.totalUM || 0;
+    const totalHargaAfterUM = invoice.totalHargaAfterUM || (totalHarga - totalUM);
 
     let csvContent = headers.join(';') + '\n';
     rows.forEach(row => {
       csvContent += row.map(escapeCsvValue).join(';') + '\n';
     });
-    csvContent += `\nTOTAL;;;;;${invoice.totalQty.toFixed(2)};;`;
+    csvContent += `\nTOTAL;;;;;${invoice.totalQty.toFixed(2)};;${escapeCsvValue(formatCurrency(totalHarga))};;`;
+    csvContent += `\nUang Muka;;;;;;;;${escapeCsvValue('- ' + formatCurrency(totalUM))};`;
+    csvContent += `\nNett (setelah UM);;;;;;;;${escapeCsvValue(formatCurrency(totalHargaAfterUM))};`;
     
     const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -347,6 +359,24 @@ const InvoiceManagement = ({
                       </tbody>
                     </table>
                   </div>
+                  {invoice.totalHarga > 0 && (
+                    <div className="mt-2 pt-2 border-t border-gray-100 text-sm space-y-1">
+                      <div className="flex justify-between">
+                        <span className="text-gray-600">Total Harga:</span>
+                        <span className="font-semibold text-gray-800">{formatCurrency(invoice.totalHarga)}</span>
+                      </div>
+                      {invoice.totalUM > 0 && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Uang Muka:</span>
+                          <span className="font-semibold text-red-600">- {formatCurrency(invoice.totalUM)}</span>
+                        </div>
+                      )}
+                      <div className="flex justify-between border-t pt-1">
+                        <span className="font-bold text-gray-800">Nett:</span>
+                        <span className="font-bold text-green-700">{formatCurrency(invoice.totalHargaAfterUM ?? (invoice.totalHarga - (invoice.totalUM || 0)))}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="mt-4 text-xs text-gray-500 border-t pt-3">
