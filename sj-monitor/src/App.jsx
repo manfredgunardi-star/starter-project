@@ -969,6 +969,7 @@ const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist }) => {
 
   const addInvoice = async (data) => {
     const who = currentUser?.name || currentUser?.username || 'User';
+    const selectedSJIds = data.selectedSJIds;
     const newInvoice = {
       id: 'INV-' + Date.now(),
       noInvoice: data.noInvoice,
@@ -978,6 +979,41 @@ const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist }) => {
       totalQty: suratJalanList
         .filter(sj => data.selectedSJIds.includes(sj.id))
         .reduce((sum, sj) => sum + Number(sj.qtyBongkar || 0), 0),
+      ruteHarga: data.ruteHarga || {},
+      totalHarga: (() => {
+        const selectedSJs = suratJalanList.filter(sj => selectedSJIds.includes(sj.id));
+        const ruteQtys = {};
+        selectedSJs.forEach(sj => {
+          if (!ruteQtys[sj.rute]) ruteQtys[sj.rute] = 0;
+          ruteQtys[sj.rute] += Number(sj.qtyBongkar || 0);
+        });
+        return Object.entries(data.ruteHarga || {}).reduce((sum, [rute, harga]) => {
+          return sum + (ruteQtys[rute] || 0) * Number(harga || 0);
+        }, 0);
+      })(),
+      totalUM: (() => {
+        const selectedSJs = suratJalanList.filter(sj => selectedSJIds.includes(sj.id));
+        return selectedSJs.reduce((sum, sj) => {
+          const umForSJ = uangMukaList.filter(um => um.sjId === sj.id);
+          return sum + umForSJ.reduce((s, um) => s + (um.jumlah || 0), 0);
+        }, 0);
+      })(),
+      totalHargaAfterUM: (() => {
+        const selectedSJs = suratJalanList.filter(sj => selectedSJIds.includes(sj.id));
+        const ruteQtys = {};
+        selectedSJs.forEach(sj => {
+          if (!ruteQtys[sj.rute]) ruteQtys[sj.rute] = 0;
+          ruteQtys[sj.rute] += Number(sj.qtyBongkar || 0);
+        });
+        const total = Object.entries(data.ruteHarga || {}).reduce((sum, [rute, harga]) => {
+          return sum + (ruteQtys[rute] || 0) * Number(harga || 0);
+        }, 0);
+        const totalUMVal = selectedSJs.reduce((sum, sj) => {
+          const umForSJ = uangMukaList.filter(um => um.sjId === sj.id);
+          return sum + umForSJ.reduce((s, um) => s + (um.jumlah || 0), 0);
+        }, 0);
+        return total - totalUMVal;
+      })(),
       createdAt: new Date().toISOString(),
       createdBy: who,
       isActive: true,
@@ -1063,6 +1099,44 @@ const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist }) => {
       totalQty: updatedSJList
         .filter(sj => newSJIds.includes(sj.id))
         .reduce((sum, sj) => sum + (sj.qtyBongkar || 0), 0),
+      ruteHarga: data.ruteHarga || {},
+      totalHarga: (() => {
+        const currentSJIds = data.suratJalanIds || newSJIds;
+        const selectedSJs = suratJalanList.filter(sj => currentSJIds.includes(sj.id));
+        const ruteQtys = {};
+        selectedSJs.forEach(sj => {
+          if (!ruteQtys[sj.rute]) ruteQtys[sj.rute] = 0;
+          ruteQtys[sj.rute] += Number(sj.qtyBongkar || 0);
+        });
+        return Object.entries(data.ruteHarga || {}).reduce((sum, [rute, harga]) => {
+          return sum + (ruteQtys[rute] || 0) * Number(harga || 0);
+        }, 0);
+      })(),
+      totalUM: (() => {
+        const currentSJIds = data.suratJalanIds || newSJIds;
+        const selectedSJs = suratJalanList.filter(sj => currentSJIds.includes(sj.id));
+        return selectedSJs.reduce((sum, sj) => {
+          const umForSJ = uangMukaList.filter(um => um.sjId === sj.id);
+          return sum + umForSJ.reduce((s, um) => s + (um.jumlah || 0), 0);
+        }, 0);
+      })(),
+      totalHargaAfterUM: (() => {
+        const currentSJIds = data.suratJalanIds || newSJIds;
+        const selectedSJs = suratJalanList.filter(sj => currentSJIds.includes(sj.id));
+        const ruteQtys = {};
+        selectedSJs.forEach(sj => {
+          if (!ruteQtys[sj.rute]) ruteQtys[sj.rute] = 0;
+          ruteQtys[sj.rute] += Number(sj.qtyBongkar || 0);
+        });
+        const total = Object.entries(data.ruteHarga || {}).reduce((sum, [rute, harga]) => {
+          return sum + (ruteQtys[rute] || 0) * Number(harga || 0);
+        }, 0);
+        const totalUMVal = selectedSJs.reduce((sum, sj) => {
+          const umForSJ = uangMukaList.filter(um => um.sjId === sj.id);
+          return sum + umForSJ.reduce((s, um) => s + (um.jumlah || 0), 0);
+        }, 0);
+        return total - totalUMVal;
+      })(),
       updatedAt: new Date().toISOString(),
       updatedBy: currentUser.name
     };
