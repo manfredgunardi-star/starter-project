@@ -2691,6 +2691,7 @@ try { unsubTransaksi(); } catch {}
           ruteList={ruteList}
           materialList={materialList}
           suratJalanList={suratJalanList}
+          uangMukaList={uangMukaList}
           onClose={() => setShowModal(false)}
           onSubmit={async (data) => {
             if (modalType === 'addSJ') {
@@ -2749,6 +2750,9 @@ try { unsubTransaksi(); } catch {}
               setShowModal(false);
             } else if (modalType === 'editInvoice') {
               await editInvoice(selectedItem.id, data);
+              setShowModal(false);
+            } else if (modalType === 'addUangMuka') {
+              await addUangMuka(data);
               setShowModal(false);
             }
           }}
@@ -4040,7 +4044,7 @@ const UsersManagement = ({ usersList, currentUser, onAddUser, onEditUser, onDele
 
 
 
-const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [], supirList = [], ruteList = [], materialList = [], suratJalanList = [], onClose, onSubmit }) => {
+const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [], supirList = [], ruteList = [], materialList = [], suratJalanList = [], uangMukaList = [], onClose, onSubmit }) => {
   const [searchInvoiceSJ, setSearchInvoiceSJ] = useState('');
   const initializedRef = React.useRef(false);
   const [formData, setFormData] = useState({
@@ -4075,7 +4079,12 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
     uangJalan: selectedItem?.uangJalan || '',
     ritasi: selectedItem?.ritasi || '',
     material: selectedItem?.material || '',
-    satuan: selectedItem?.satuan || ''
+    satuan: selectedItem?.satuan || '',
+    sjIdUM: '',
+    nomorSJUM: '',
+    jumlahUM: '',
+    tanggalUM: new Date().toISOString().split('T')[0],
+    keteranganUM: '',
   });
 
   // Initialize selectedSJIds untuk editInvoice
@@ -4150,6 +4159,22 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
         return;
       }
       onSubmit(formData);
+    } else if (type === 'addUangMuka') {
+      if (!formData.sjIdUM || !formData.jumlahUM || !formData.tanggalUM) {
+        setAlertMessage('Surat Jalan, Jumlah, dan Tanggal wajib diisi!');
+        return;
+      }
+      if (parseFloat(formData.jumlahUM) <= 0) {
+        setAlertMessage('Jumlah harus lebih besar dari 0!');
+        return;
+      }
+      onSubmit({
+        sjId: formData.sjIdUM,
+        nomorSJ: formData.nomorSJUM,
+        jumlah: formData.jumlahUM,
+        tanggal: formData.tanggalUM,
+        keterangan: formData.keteranganUM,
+      });
     } else if (type === 'addTransaksi') {
       if (!formData.tipe || !formData.pt || !formData.nominal || !formData.keteranganTransaksi) {
         setAlertMessage('Tipe, PT, Nominal, dan Keterangan harus diisi!');
@@ -4230,6 +4255,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
     if (type === 'editTerkirim') return 'Edit Data Pengiriman';
     if (type === 'addInvoice') return 'Buat Invoice Baru';
     if (type === 'editInvoice') return 'Edit Invoice';
+    if (type === 'addUangMuka') return 'Tambah Uang Muka';
     if (type === 'addTransaksi') return 'Tambah Transaksi Kas';
     if (type === 'addUser') return 'Tambah User Baru';
     if (type === 'editUser') return 'Edit User';
@@ -4676,6 +4702,74 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
               <div className="bg-blue-50 border-l-4 border-blue-500 p-3 rounded-lg">
                 <p className="text-sm text-blue-800">
                   💡 <strong>Info:</strong> Pilih satu atau lebih Surat Jalan yang sudah terkirim untuk dibuatkan invoice. Setelah invoice dibuat, Surat Jalan akan berstatus "Terinvoice".
+                </p>
+              </div>
+            </>
+          ) : type === 'addUangMuka' ? (
+            <>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Surat Jalan *</label>
+                <select
+                  value={formData.sjIdUM}
+                  onChange={(e) => {
+                    const sj = suratJalanList.find(s => s.id === e.target.value);
+                    setFormData({
+                      ...formData,
+                      sjIdUM: e.target.value,
+                      nomorSJUM: sj?.nomorSJ || ''
+                    });
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Pilih Surat Jalan...</option>
+                  {suratJalanList
+                    .filter(sj => String(sj?.status || '').toLowerCase() === 'terkirim')
+                    .map(sj => (
+                      <option key={sj.id} value={sj.id}>
+                        {sj.nomorSJ} — {sj.rute} — {sj.qtyBongkar} {sj.satuan}
+                      </option>
+                    ))
+                  }
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Jumlah (Rp) *</label>
+                  <input
+                    type="number"
+                    value={formData.jumlahUM}
+                    onChange={(e) => setFormData({ ...formData, jumlahUM: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Contoh: 5000000"
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tanggal *</label>
+                  <input
+                    type="date"
+                    value={formData.tanggalUM}
+                    onChange={(e) => setFormData({ ...formData, tanggalUM: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Keterangan</label>
+                <input
+                  type="text"
+                  value={formData.keteranganUM}
+                  onChange={(e) => setFormData({ ...formData, keteranganUM: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Keterangan opsional..."
+                />
+              </div>
+
+              <div className="bg-blue-50 border-l-4 border-blue-500 p-3 rounded-lg">
+                <p className="text-sm text-blue-800">
+                  💡 <strong>Info:</strong> Uang Muka akan mengurangi total harga pada invoice terkait Surat Jalan ini.
                 </p>
               </div>
             </>
