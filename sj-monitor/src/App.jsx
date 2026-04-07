@@ -4683,6 +4683,36 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                                     {sj.tglTerkirim ? new Date(sj.tglTerkirim).toLocaleDateString('id-ID') : '-'}
                                   </p>
                                 </div>
+                                {(() => {
+                                  const umForSJ = uangMukaList.filter(um => um.sjId === sj.id);
+                                  const totalUM = umForSJ.reduce((sum, um) => sum + (um.jumlah || 0), 0);
+                                  const harga = Number(formData.ruteHarga[sj.rute] || 0);
+                                  const subtotal = Number(sj.qtyBongkar || 0) * harga;
+                                  const nett = subtotal - totalUM;
+                                  if (totalUM === 0 && harga === 0) return null;
+                                  return (
+                                    <>
+                                      {harga > 0 && (
+                                        <div>
+                                          <p className="text-gray-600">Subtotal:</p>
+                                          <p className="font-semibold text-gray-800">{formatCurrency(subtotal)}</p>
+                                        </div>
+                                      )}
+                                      {totalUM > 0 && (
+                                        <div>
+                                          <p className="text-gray-600">Uang Muka:</p>
+                                          <p className="font-semibold text-red-600">- {formatCurrency(totalUM)}</p>
+                                        </div>
+                                      )}
+                                      {harga > 0 && (
+                                        <div className="col-span-2 bg-green-50 rounded p-1 mt-1">
+                                          <p className="text-gray-600 text-xs">Nett setelah UM:</p>
+                                          <p className="font-bold text-green-700">{formatCurrency(nett)}</p>
+                                        </div>
+                                      )}
+                                    </>
+                                  );
+                                })()}
                               </div>
                             </div>
                           </label>
