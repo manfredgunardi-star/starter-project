@@ -4061,6 +4061,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
     noInvoice: '',
     tglInvoice: new Date().toISOString().split('T')[0],
     selectedSJIds: [],
+    ruteHarga: {},
     jenisBiaya: '',
     nominal: '',
     keteranganBiaya: '',
@@ -4094,7 +4095,8 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
         ...prev,
         noInvoice: selectedItem.noInvoice || '',
         tglInvoice: selectedItem.tglInvoice || new Date().toISOString().split('T')[0],
-        selectedSJIds: selectedItem.suratJalanIds || []
+        selectedSJIds: selectedItem.suratJalanIds || [],
+        ruteHarga: selectedItem.ruteHarga || {}
       }));
       initializedRef.current = true;
     }
@@ -4697,6 +4699,83 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                   </div>
                 )}
               </div>
+
+              {/* Harga Per Rute */}
+              {formData.selectedSJIds.length > 0 && (() => {
+                const selectedSJs = suratJalanList.filter(sj => formData.selectedSJIds.includes(sj.id));
+                const uniqueRutes = [...new Set(selectedSJs.map(sj => sj.rute))].filter(Boolean);
+                if (uniqueRutes.length === 0) return null;
+
+                const ruteQtys = {};
+                selectedSJs.forEach(sj => {
+                  if (!ruteQtys[sj.rute]) ruteQtys[sj.rute] = 0;
+                  ruteQtys[sj.rute] += Number(sj.qtyBongkar || 0);
+                });
+
+                const totalHarga = uniqueRutes.reduce((sum, rute) => {
+                  return sum + (ruteQtys[rute] * Number(formData.ruteHarga[rute] || 0));
+                }, 0);
+
+                const totalUM = selectedSJs.reduce((sum, sj) => {
+                  const umForSJ = uangMukaList.filter(um => um.sjId === sj.id);
+                  return sum + umForSJ.reduce((s, um) => s + (um.jumlah || 0), 0);
+                }, 0);
+
+                return (
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Harga Per Qty (per Rute)
+                    </label>
+                    <div className="border border-gray-300 rounded-lg p-4 bg-gray-50 space-y-3">
+                      {uniqueRutes.map(rute => (
+                        <div key={rute} className="flex items-center gap-3 bg-white p-3 rounded-lg border border-gray-200">
+                          <div className="flex-1">
+                            <p className="font-semibold text-gray-800 text-sm">{rute}</p>
+                            <p className="text-xs text-gray-500">Total Qty: {ruteQtys[rute]?.toFixed(2)}</p>
+                          </div>
+                          <div className="w-40">
+                            <input
+                              type="number"
+                              value={formData.ruteHarga[rute] || ''}
+                              onChange={(e) => {
+                                setFormData(prev => ({
+                                  ...prev,
+                                  ruteHarga: { ...prev.ruteHarga, [rute]: e.target.value }
+                                }));
+                              }}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                              placeholder="Harga/qty"
+                              min="0"
+                            />
+                          </div>
+                          <div className="w-36 text-right">
+                            <p className="text-sm font-semibold text-blue-600">
+                              {formatCurrency(ruteQtys[rute] * Number(formData.ruteHarga[rute] || 0))}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+
+                      <div className="border-t pt-3 mt-3 space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span className="font-semibold text-gray-700">Total Harga:</span>
+                          <span className="font-bold text-gray-900">{formatCurrency(totalHarga)}</span>
+                        </div>
+                        {totalUM > 0 && (
+                          <div className="flex justify-between text-sm">
+                            <span className="font-semibold text-red-600">Total Uang Muka:</span>
+                            <span className="font-bold text-red-600">- {formatCurrency(totalUM)}</span>
+                          </div>
+                        )}
+                        <div className="flex justify-between text-sm border-t pt-1">
+                          <span className="font-bold text-gray-900">Total Setelah UM:</span>
+                          <span className="font-bold text-green-700">{formatCurrency(totalHarga - totalUM)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {/* Info */}
               <div className="bg-blue-50 border-l-4 border-blue-500 p-3 rounded-lg">
