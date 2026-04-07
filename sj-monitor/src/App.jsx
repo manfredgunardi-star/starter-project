@@ -988,6 +988,69 @@ try {
     });
   };
 
+  const addUangMuka = async (data) => {
+    const who = currentUser?.name || currentUser?.username || 'User';
+    const nowIso = new Date().toISOString();
+    const newUM = {
+      id: 'UM-' + Date.now(),
+      sjId: data.sjId,
+      nomorSJ: data.nomorSJ,
+      jumlah: parseFloat(data.jumlah),
+      tanggal: data.tanggal,
+      keterangan: data.keterangan || '',
+      isActive: true,
+      createdAt: nowIso,
+      createdBy: who,
+      updatedAt: nowIso,
+      updatedBy: who,
+    };
+
+    try {
+      await ensureAuthed();
+      await setDoc(
+        doc(db, 'uang_muka', String(newUM.id)),
+        sanitizeForFirestore(newUM),
+        { merge: true }
+      );
+      setUangMukaList((prev) => [newUM, ...prev]);
+      setAlertMessage('✅ Uang Muka berhasil ditambahkan!');
+    } catch (e) {
+      console.error('Add uang muka failed:', e);
+      if (e?.code === 'NOT_AUTHENTICATED') {
+        setAlertMessage('⚠️ Sesi login habis. Silakan login ulang lalu coba lagi.');
+      } else {
+        setAlertMessage('⚠️ Gagal menyimpan Uang Muka. Cek Console (F12).');
+      }
+    }
+  };
+
+  const deleteUangMuka = async (id) => {
+    setConfirmDialog({
+      show: true,
+      message: 'Yakin ingin menghapus Uang Muka ini?',
+      onConfirm: async () => {
+        try {
+          await ensureAuthed();
+          const nowIso = new Date().toISOString();
+          const who = currentUser?.name || currentUser?.username || 'system';
+          await setDoc(doc(db, 'uang_muka', String(id)), sanitizeForFirestore({
+            isActive: false,
+            deletedAt: nowIso,
+            deletedBy: who,
+            updatedAt: nowIso,
+            updatedBy: who,
+          }), { merge: true });
+          setUangMukaList((prev) => prev.filter((um) => um.id !== id));
+          setAlertMessage('✅ Uang Muka berhasil dihapus!');
+        } catch (e) {
+          console.error('Delete uang muka failed:', e);
+          setAlertMessage('⚠️ Gagal menghapus Uang Muka. Cek Console (F12).');
+        }
+        setConfirmDialog({ show: false, message: '', onConfirm: null });
+      },
+    });
+  };
+
   // Import Functions
   const downloadTemplate = (type) => {
     let csvContent = '';
