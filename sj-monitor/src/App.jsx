@@ -2112,6 +2112,7 @@ try { unsubTransaksi(); } catch {}
     'laporan-truk': 'Laporan Truk',
     'payslip': 'Laporan Gaji',
     'invoicing': 'Invoicing',
+    'uang-muka': 'Uang Muka',
     'master-data': 'Master Data',
     'users': 'Kelola User',
     'settings': 'Pengaturan',
@@ -2124,6 +2125,7 @@ try { unsubTransaksi(); } catch {}
     { tab: 'laporan-truk', icon: Truck,     label: 'Laporan Truk', roles: ['superadmin', 'admin_sj'] },
     { tab: 'payslip',     icon: DollarSign,  label: 'Gaji',     roles: ['superadmin', 'admin_keuangan', 'reader'] },
     { tab: 'invoicing',   icon: FileText,    label: 'Invoice',  roles: ['superadmin','admin_invoice','reader'] },
+    { tab: 'uang-muka',   icon: DollarSign,  label: 'UM',       roles: ['superadmin','admin_invoice','reader'] },
     { tab: 'master-data', icon: Database,    label: 'Data',     roles: ['superadmin'] },
     { tab: 'users',       icon: Users,       label: 'Users',    roles: ['superadmin'] },
     { tab: 'settings',    icon: Settings,    label: 'Settings', roles: ['superadmin'] },
@@ -2264,6 +2266,19 @@ try { unsubTransaksi(); } catch {}
         ) : activeTab === 'payslip' ? (
           <PayslipReport
             currentUser={currentUser}
+          />
+        ) : activeTab === 'uang-muka' ? (
+          <UangMukaManagement
+            uangMukaList={uangMukaList}
+            suratJalanList={suratJalanList}
+            currentUser={currentUser}
+            onAddUangMuka={() => {
+              setModalType('addUangMuka');
+              setSelectedItem(null);
+              setShowModal(true);
+            }}
+            onDeleteUangMuka={deleteUangMuka}
+            formatCurrency={formatCurrency}
           />
         ) : activeTab === 'invoicing' ? (
           <InvoiceManagement
