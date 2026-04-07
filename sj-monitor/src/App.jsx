@@ -1101,8 +1101,7 @@ const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist }) => {
         .reduce((sum, sj) => sum + (sj.qtyBongkar || 0), 0),
       ruteHarga: data.ruteHarga || {},
       totalHarga: (() => {
-        const currentSJIds = data.suratJalanIds || newSJIds;
-        const selectedSJs = suratJalanList.filter(sj => currentSJIds.includes(sj.id));
+        const selectedSJs = suratJalanList.filter(sj => newSJIds.includes(sj.id));
         const ruteQtys = {};
         selectedSJs.forEach(sj => {
           if (!ruteQtys[sj.rute]) ruteQtys[sj.rute] = 0;
@@ -1113,16 +1112,14 @@ const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist }) => {
         }, 0);
       })(),
       totalUM: (() => {
-        const currentSJIds = data.suratJalanIds || newSJIds;
-        const selectedSJs = suratJalanList.filter(sj => currentSJIds.includes(sj.id));
+        const selectedSJs = suratJalanList.filter(sj => newSJIds.includes(sj.id));
         return selectedSJs.reduce((sum, sj) => {
           const umForSJ = uangMukaList.filter(um => um.sjId === sj.id);
           return sum + umForSJ.reduce((s, um) => s + (um.jumlah || 0), 0);
         }, 0);
       })(),
       totalHargaAfterUM: (() => {
-        const currentSJIds = data.suratJalanIds || newSJIds;
-        const selectedSJs = suratJalanList.filter(sj => currentSJIds.includes(sj.id));
+        const selectedSJs = suratJalanList.filter(sj => newSJIds.includes(sj.id));
         const ruteQtys = {};
         selectedSJs.forEach(sj => {
           if (!ruteQtys[sj.rute]) ruteQtys[sj.rute] = 0;
