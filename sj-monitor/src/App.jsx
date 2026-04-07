@@ -100,7 +100,7 @@ const InvoiceManagement = ({
 
     const totalHarga = invoice.totalHarga || 0;
     const totalUM = invoice.totalUM || 0;
-    const totalHargaAfterUM = invoice.totalHargaAfterUM || (totalHarga - totalUM);
+    const totalHargaAfterUM = invoice.totalHargaAfterUM ?? (totalHarga - totalUM);
 
     let csvContent = headers.join(';') + '\n';
     rows.forEach(row => {
