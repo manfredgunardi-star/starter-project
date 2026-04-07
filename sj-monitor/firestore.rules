@@ -120,6 +120,13 @@ service cloud.firestore {
       allow delete: if isSuperAdmin();
     }
 
+    // --- UANG MUKA (Advance Payments) ---
+    match /uang_muka/{id} {
+      allow read: if signedIn();
+      allow create, update: if isSuperAdmin() || isAdminInv();
+      allow delete: if isSuperAdmin();
+    }
+
     match /biaya/{id} {
       allow read: if signedIn();
       allow create, update: if isSuperAdmin() || isAdminKeu();
