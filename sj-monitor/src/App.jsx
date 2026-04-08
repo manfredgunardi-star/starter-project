@@ -1025,7 +1025,7 @@ const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist }) => {
         const selectedSJs = suratJalanList.filter(sj => selectedSJIds.includes(sj.id));
         return selectedSJs.reduce((sum, sj) => {
           const umForSJ = uangMukaList.filter(um => um.sjId === sj.id);
-          return sum + umForSJ.reduce((s, um) => s + (um.jumlah || 0), 0);
+          return sum + umForSJ.reduce((s, um) => s + Number(um.jumlah || 0), 0);
         }, 0);
       })(),
       totalHargaAfterUM: (() => {
@@ -1040,7 +1040,7 @@ const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist }) => {
         }, 0);
         const totalUMVal = selectedSJs.reduce((sum, sj) => {
           const umForSJ = uangMukaList.filter(um => um.sjId === sj.id);
-          return sum + umForSJ.reduce((s, um) => s + (um.jumlah || 0), 0);
+          return sum + umForSJ.reduce((s, um) => s + Number(um.jumlah || 0), 0);
         }, 0);
         return total - totalUMVal;
       })(),
@@ -1128,7 +1128,7 @@ const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist }) => {
       suratJalanList: updatedSJList.filter(sj => newSJIds.includes(sj.id)),
       totalQty: updatedSJList
         .filter(sj => newSJIds.includes(sj.id))
-        .reduce((sum, sj) => sum + (sj.qtyBongkar || 0), 0),
+        .reduce((sum, sj) => sum + Number(sj.qtyBongkar || 0), 0),
       ruteHarga: data.ruteHarga || {},
       totalHarga: (() => {
         const selectedSJs = suratJalanList.filter(sj => newSJIds.includes(sj.id));
@@ -1145,7 +1145,7 @@ const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist }) => {
         const selectedSJs = suratJalanList.filter(sj => newSJIds.includes(sj.id));
         return selectedSJs.reduce((sum, sj) => {
           const umForSJ = uangMukaList.filter(um => um.sjId === sj.id);
-          return sum + umForSJ.reduce((s, um) => s + (um.jumlah || 0), 0);
+          return sum + umForSJ.reduce((s, um) => s + Number(um.jumlah || 0), 0);
         }, 0);
       })(),
       totalHargaAfterUM: (() => {
@@ -1160,7 +1160,7 @@ const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist }) => {
         }, 0);
         const totalUMVal = selectedSJs.reduce((sum, sj) => {
           const umForSJ = uangMukaList.filter(um => um.sjId === sj.id);
-          return sum + umForSJ.reduce((s, um) => s + (um.jumlah || 0), 0);
+          return sum + umForSJ.reduce((s, um) => s + Number(um.jumlah || 0), 0);
         }, 0);
         return total - totalUMVal;
       })(),
