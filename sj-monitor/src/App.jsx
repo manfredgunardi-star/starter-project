@@ -4313,6 +4313,10 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
         setAlertMessage('Tipe, PT, Nominal, dan Keterangan harus diisi!');
         return;
       }
+      if (parseFloat(formData.nominal) <= 0) {
+        setAlertMessage('Nominal harus lebih besar dari 0!');
+        return;
+      }
       onSubmit({
         tipe: formData.tipe,
         pt: formData.pt,
@@ -4363,6 +4367,10 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
     } else if (type === 'addRute' || type === 'editRute') {
       if (!formData.rute || !formData.uangJalan) {
         setAlertMessage('Rute dan Uang Jalan harus diisi!');
+        return;
+      }
+      if (parseFloat(formData.uangJalan) < 0 || parseFloat(formData.ritasi) < 0 || parseFloat(formData.uangMuka) < 0) {
+        setAlertMessage('Uang Jalan, Ritasi, dan Uang Muka tidak boleh negatif!');
         return;
       }
       onSubmit({
