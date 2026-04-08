@@ -770,13 +770,13 @@ const SuratJalanMonitor = () => {
       show: true,
       message: "Yakin ingin menghapus truck ini?",
       onConfirm: async () => {
-        await softDeleteItemInFirestore(db, "trucks", id, currentUser?.name || "system").catch(() => {});
-
-        setTruckList((prevList) => {
-          const newList = prevList.filter((t) => t.id !== id);
-return newList;
-        });
-
+        try {
+          await softDeleteItemInFirestore(db, "trucks", id, currentUser?.name || "system");
+          setTruckList((prevList) => prevList.filter((t) => t.id !== id));
+        } catch (err) {
+          console.error('[deleteTruck] Firestore error:', err);
+          setAlertMessage("⚠️ Gagal menghapus truck. Cek koneksi / Console (F12).");
+        }
         setConfirmDialog({ show: false, message: "", onConfirm: null });
       },
     });
@@ -821,12 +821,12 @@ return newList;
       message: "Yakin ingin menghapus supir ini?",
       onConfirm: async () => {
         try {
-          await softDeleteItemInFirestore(db, "supir", id, currentUser?.name || "system").catch(() => {});
+          await softDeleteItemInFirestore(db, "supir", id, currentUser?.name || "system");
+          setSupirList((prevList) => prevList.filter((s) => s.id !== id));
         } catch (err) {
-          console.error("Error soft-deleting supir:", err);
+          console.error('[deleteSupir] Firestore error:', err);
+          setAlertMessage("⚠️ Gagal menghapus supir. Cek koneksi / Console (F12).");
         }
-
-        setSupirList((prevList) => prevList.filter((s) => s.id !== id));
         setConfirmDialog({ show: false, message: "", onConfirm: null });
       },
     });
