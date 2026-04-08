@@ -987,16 +987,27 @@ const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist }) => {
     }
     if (!invoiceSaved) throw lastErr || new Error('Gagal menyimpan invoice');
 
-    const resolved = await Promise.all((sjIdsToPersist || []).map(async (sjId) => ({ sjId, ref: await resolveSuratJalanDocRef(db, sjId) })));
+    const resolveResults = await Promise.allSettled((sjIdsToPersist || []).map(async (sjId) => ({ sjId, ref: await resolveSuratJalanDocRef(db, sjId) })));
+    const resolved = resolveResults
+      .filter(r => r.status === 'fulfilled')
+      .map(r => r.value);
+    const failedResolves = resolveResults.filter(r => r.status === 'rejected');
+    if (failedResolves.length > 0) {
+      console.warn(`[persistInvoice] ${failedResolves.length} SJ gagal resolve:`, failedResolves.map(r => r.reason));
+    }
     for (const { sjId, ref } of resolved) {
       if (!ref) continue;
-      await setDoc(ref, sanitizeForFirestore({
-        statusInvoice: 'terinvoice',
-        invoiceId: invoiceDoc.id,
-        invoiceNo: invoiceDoc.noInvoice,
-        updatedAt: nowIso,
-        updatedBy: who,
-      }), { merge: true });
+      try {
+        await setDoc(ref, sanitizeForFirestore({
+          statusInvoice: 'terinvoice',
+          invoiceId: invoiceDoc.id,
+          invoiceNo: invoiceDoc.noInvoice,
+          updatedAt: nowIso,
+          updatedBy: who,
+        }), { merge: true });
+      } catch (err) {
+        console.error(`[persistInvoice] Gagal update SJ ${sjId}:`, err);
+      }
     }
     return true;
   };
