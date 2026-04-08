@@ -2806,7 +2806,7 @@ try { unsubTransaksi(); } catch {}
           onClose={() => setShowModal(false)}
           onSubmit={async (data) => {
             if (modalType === 'addSJ') {
-              addSuratJalan(data);
+              await addSuratJalan(data);
               setShowModal(false);
             } else if (modalType === 'markTerkirim' || modalType === 'editTerkirim') {
               const qtyBongkar = parseFloat(data.qtyBongkar);
