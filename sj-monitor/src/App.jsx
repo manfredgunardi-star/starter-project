@@ -3268,7 +3268,7 @@ const MasterDataManagement = ({
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h3 className="text-lg font-bold text-gray-800 mb-2">{rute.rute}</h3>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                         <div>
                           <p className="text-gray-600">Rute ID:</p>
                           <p className="font-semibold text-gray-800">{rute.id}</p>
@@ -3280,6 +3280,10 @@ const MasterDataManagement = ({
                         <div>
                           <p className="text-gray-600">Ritasi:</p>
                           <p className="font-semibold text-green-600">{formatCurrency(rute.ritasi || 0)}</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-600">Uang Muka:</p>
+                          <p className="font-semibold text-orange-600">{formatCurrency(rute.uangMuka || 0)}</p>
                         </div>
                       </div>
                       {rute.createdBy && (
