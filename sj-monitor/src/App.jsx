@@ -4180,6 +4180,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
     rute: selectedItem?.rute || '',
     uangJalan: selectedItem?.uangJalan || '',
     ritasi: selectedItem?.ritasi || '',
+    uangMuka: selectedItem?.uangMuka || '',
     material: selectedItem?.material || '',
     satuan: selectedItem?.satuan || '',
     sjIdUM: '',
@@ -4338,7 +4339,8 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
       onSubmit({
         rute: formData.rute,
         uangJalan: parseFloat(formData.uangJalan),
-        ritasi: parseFloat(formData.ritasi) || 0
+        ritasi: parseFloat(formData.ritasi) || 0,
+        uangMuka: parseFloat(formData.uangMuka) || 0
       });
     } else if (type === 'addMaterial' || type === 'editMaterial') {
       if (!formData.material || !formData.satuan) {
