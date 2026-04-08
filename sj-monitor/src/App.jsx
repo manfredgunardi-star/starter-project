@@ -1787,6 +1787,7 @@ if (newItems.length > 0) {
                   rute: values[0],
                   uangJalan: uangJalan,
                   uangMuka: uangMuka,
+                  isActive: true,
                   createdAt: new Date().toISOString(),
                   createdBy: currentUser.name
                 };
@@ -1832,6 +1833,7 @@ if (newItems.length > 0) {
                   id: 'MTR-' + Date.now() + '-' + i + '-' + Math.random().toString(36).substr(2, 9),
                   material: values[0],
                   satuan: values[1],
+                  isActive: true,
                   createdAt: new Date().toISOString(),
                   createdBy: currentUser.name
                 };
