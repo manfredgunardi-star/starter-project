@@ -615,13 +615,17 @@ const SuratJalanMonitor = () => {
       suratJalanNo,
       details, // Additional info
       timestamp: new Date().toISOString(),
-      user: currentUser.name,
-      userRole: currentUser.role
+      user: currentUser?.name || 'system',
+      userRole: currentUser?.role || 'unknown'
     };
-    
+
     const newHistoryLog = [...historyLog, newLog];
     setHistoryLog(newHistoryLog);
-await upsertItemToFirestore(db, "history_log", { ...newLog, isActive: true });
+    try {
+      await upsertItemToFirestore(db, "history_log", { ...newLog, isActive: true });
+    } catch (err) {
+      console.error('[addHistoryLog] Firestore error:', err);
+    }
   };
 
 
