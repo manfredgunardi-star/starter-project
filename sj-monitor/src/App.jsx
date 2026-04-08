@@ -1341,7 +1341,7 @@ try {
       csvContent = 'Nama Supir;PT;Aktif (Ya/Tidak)\nJohn Doe;PT Maju Jaya;Ya\nJane Smith;PT Sejahtera;Ya\nBob Wilson;PT Makmur;Tidak';
       filename = 'template_supir.csv';
     } else if (type === 'rute') {
-      csvContent = 'Rute;Uang Jalan\nJakarta - Surabaya;500000\nBandung - Semarang;350000\nJakarta - Medan;1200000';
+      csvContent = 'Rute;Uang Jalan;Uang Muka\nJakarta - Surabaya;500000;100000\nBandung - Semarang;350000;75000\nJakarta - Medan;1200000;200000';
       filename = 'template_rute.csv';
     } else if (type === 'material') {
       csvContent = 'Material;Satuan\nSemen;Ton\nPasir;m³\nBesi;Kg\nBatu Bata;Pcs';
@@ -1413,8 +1413,8 @@ try {
                          headersLower[1] === 'pt' &&
                          headersLower[2].includes('aktif');
         } else if (type === 'rute') {
-          expectedHeader = 'Rute;Uang Jalan';
-          isValidHeader = headers.length === 2 && 
+          expectedHeader = 'Rute;Uang Jalan;Uang Muka';
+          isValidHeader = headers.length >= 2 && headers.length <= 3 &&
                          headersLower[0] === 'rute' &&
                          (headersLower[1].includes('uang') && headersLower[1].includes('jalan'));
         } else if (type === 'material') {
@@ -1757,11 +1757,21 @@ if (newItems.length > 0) {
                 if (isNaN(uangJalan)) {
                   throw new Error('Uang Jalan harus berupa angka');
                 }
-                
+
+                // Parse Uang Muka (kolom ke-3, opsional)
+                let uangMuka = 0;
+                if (values.length >= 3 && values[2]) {
+                  uangMuka = parseFloat(values[2].replace(/\./g, '').replace(/,/g, ''));
+                  if (isNaN(uangMuka)) {
+                    uangMuka = 0;
+                  }
+                }
+
                 const newRute = {
                   id: 'RUT-' + Date.now() + '-' + i + '-' + Math.random().toString(36).substr(2, 9),
                   rute: values[0],
                   uangJalan: uangJalan,
+                  uangMuka: uangMuka,
                   createdAt: new Date().toISOString(),
                   createdBy: currentUser.name
                 };
