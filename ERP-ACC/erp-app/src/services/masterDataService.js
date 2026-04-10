@@ -163,7 +163,7 @@ export function coaNormalBalance(type) {
 export async function getCOA() {
   const { data, error } = await supabase
     .from('coa')
-    .select('*, parent:coa!coa_parent_id_fkey(id, code, name)')
+    .select('id, code, name, type, normal_balance, parent_id, is_active, deleted_at, created_at')
     .eq('is_active', true)
     .order('code')
   if (error) throw error

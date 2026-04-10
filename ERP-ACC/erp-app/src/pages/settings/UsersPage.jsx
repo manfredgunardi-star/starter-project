@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { getUsers, updateUserProfile, deactivateUser, reactivateUser } from '../../services/userService'
+import { useToast } from '../../components/ui/ToastContext'
 import { formatDate } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
@@ -17,14 +18,14 @@ const ROLE_BADGE = {
   viewer: 'bg-gray-100 text-gray-700',
 }
 
-function UserForm({ user, onSave, onCancel, isSaving }) {
+function UserForm({ user, onSave, onCancel, isSaving, onError }) {
   const [fullName, setFullName] = useState(user?.full_name || '')
   const [role, setRole] = useState(user?.role || 'viewer')
 
   const handleSubmit = (e) => {
     e.preventDefault()
     if (!fullName.trim()) {
-      alert('Nama lengkap tidak boleh kosong')
+      onError('Nama lengkap tidak boleh kosong')
       return
     }
     onSave({ full_name: fullName, role })
@@ -99,7 +100,7 @@ function UserRow({ user, onEdit, onDeactivate, onReactivate, isProcessing }) {
             onClick={() => onDeactivate(user.id)}
             className="text-red-600 hover:text-red-800 disabled:text-gray-400"
             disabled={isProcessing}
-            title="Deactivate"
+            title="Nonaktifkan"
           >
             <Trash2 size={16} />
           </button>
@@ -108,7 +109,7 @@ function UserRow({ user, onEdit, onDeactivate, onReactivate, isProcessing }) {
             onClick={() => onReactivate(user.id)}
             className="text-green-600 hover:text-green-800 disabled:text-gray-400"
             disabled={isProcessing}
-            title="Reactivate"
+            title="Aktifkan kembali"
           >
             <RotateCcw size={16} />
           </button>
@@ -119,6 +120,7 @@ function UserRow({ user, onEdit, onDeactivate, onReactivate, isProcessing }) {
 }
 
 export default function UsersPage() {
+  const toast = useToast()
   const [users, setUsers] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -150,32 +152,35 @@ export default function UsersPage() {
     setIsSaving(true)
     try {
       await updateUserProfile(editingUser.id, { ...editingUser, ...updates, is_active: true })
+      toast.success('User berhasil diperbarui')
       setEditingUser(null)
       await loadUsers()
     } catch (err) {
-      alert('Gagal menyimpan: ' + err.message)
+      toast.error('Gagal menyimpan: ' + err.message)
     } finally {
       setIsSaving(false)
     }
   }
 
   const handleDeactivate = async (id) => {
-    if (!confirm('Nonaktifkan user ini?')) return
+    if (!window.confirm('Nonaktifkan user ini?')) return
     try {
       await deactivateUser(id)
+      toast.success('User berhasil dinonaktifkan')
       await loadUsers()
     } catch (err) {
-      alert('Gagal: ' + err.message)
+      toast.error('Gagal menonaktifkan: ' + err.message)
     }
   }
 
   const handleReactivate = async (id) => {
-    if (!confirm('Aktifkan kembali user ini?')) return
+    if (!window.confirm('Aktifkan kembali user ini?')) return
     try {
       await reactivateUser(id)
+      toast.success('User berhasil diaktifkan kembali')
       await loadUsers()
     } catch (err) {
-      alert('Gagal: ' + err.message)
+      toast.error('Gagal mengaktifkan: ' + err.message)
     }
   }
 
@@ -194,6 +199,7 @@ export default function UsersPage() {
             onSave={handleSave}
             onCancel={() => setEditingUser(null)}
             isSaving={isSaving}
+            onError={(msg) => toast.error(msg)}
           />
         </div>
       )}

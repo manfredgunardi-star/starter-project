@@ -144,7 +144,7 @@ function AppContent() {
           <Route path="settings/audit-log" element={<AuditLogPage />} />
 
           {/* Default */}
-          <Route path="/" element={<DashboardPage />} />
+          <Route index element={<DashboardPage />} />
         </Route>
       </Routes>
     </Suspense>

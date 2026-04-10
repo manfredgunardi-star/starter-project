@@ -42,15 +42,15 @@ export async function getDashboardMetrics() {
       .eq('type', 'purchase')
       .in('status', ['posted', 'partial']),
 
-    // Stok menipis: qty_on_hand <= 10 (ambil semua, filter di sisi klien)
+    // Stok menipis: quantity_on_hand <= 10
     supabase
       .from('inventory_stock')
       .select(`
-        qty_on_hand,
+        quantity_on_hand,
         product:products(id, name, sku, base_unit:units!products_base_unit_id_fkey(name))
       `)
-      .lte('qty_on_hand', 10)
-      .order('qty_on_hand', { ascending: true })
+      .lte('quantity_on_hand', 10)
+      .order('quantity_on_hand', { ascending: true })
       .limit(8),
 
     // 5 invoice penjualan terbaru
@@ -94,7 +94,7 @@ export async function getDashboardMetrics() {
     totalPiutang,
     totalHutang,
     totalKas,
-    lowStock: stockResult.data || [],
+    lowStock: (stockResult.data || []).map(s => ({ ...s, qty_on_hand: s.quantity_on_hand })),
     recentSales: recentSalesResult.data || [],
     recentPayments: recentPaymentsResult.data || [],
     accounts: cashResult.data || [],

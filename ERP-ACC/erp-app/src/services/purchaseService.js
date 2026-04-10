@@ -197,7 +197,6 @@ export async function getPurchaseOrders() {
       *,
       supplier:suppliers(name)
     `)
-    .eq('is_active', true)
     .order('date', { ascending: false })
   if (error) throw error
   return data
