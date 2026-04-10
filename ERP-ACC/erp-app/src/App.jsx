@@ -12,6 +12,7 @@ import SuppliersPage from './pages/master/SuppliersPage'
 import COAPage from './pages/master/COAPage'
 import CashBankAccountsPage from './pages/cash/AccountsPage'
 import StockPage from './pages/inventory/StockPage'
+import StockCardPage from './pages/inventory/StockCardPage'
 
 // Placeholder component for pages under development
 function Page({ title }) {
@@ -62,7 +63,7 @@ function AppContent() {
 
           {/* Inventory routes */}
           <Route path="inventory/stock" element={<StockPage />} />
-          <Route path="inventory/stock-card" element={<Page title="Kartu Stok" />} />
+          <Route path="inventory/stock-card" element={<StockCardPage />} />
 
           {/* Sales routes */}
           <Route path="sales/orders" element={<Page title="Sales Order" />} />
