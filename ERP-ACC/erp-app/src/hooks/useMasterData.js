@@ -36,3 +36,13 @@ export function useProducts() {
   const { data: products, loading, error, refetch } = useFetchList(svc.getProducts)
   return { products, loading, error, refetch }
 }
+
+export function useCustomers() {
+  const { data: customers, loading, error, refetch } = useFetchList(svc.getCustomers)
+  return { customers, loading, error, refetch }
+}
+
+export function useSuppliers() {
+  const { data: suppliers, loading, error, refetch } = useFetchList(svc.getSuppliers)
+  return { suppliers, loading, error, refetch }
+}

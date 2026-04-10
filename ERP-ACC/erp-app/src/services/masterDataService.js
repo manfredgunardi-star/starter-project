@@ -152,3 +152,117 @@ export async function softDeleteProduct(id) {
     .eq('id', id)
   if (error) throw error
 }
+
+// ---- CUSTOMERS ----
+export async function getCustomers() {
+  const { data, error } = await supabase
+    .from('customers')
+    .select('*')
+    .eq('is_active', true)
+    .order('name')
+  if (error) throw error
+  return data
+}
+
+export async function createCustomer(customer) {
+  const { data, error } = await supabase
+    .from('customers')
+    .insert({
+      name: customer.name,
+      address: customer.address || null,
+      phone: customer.phone || null,
+      email: customer.email || null,
+      npwp: customer.npwp || null,
+    })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateCustomer(id, customer) {
+  const { data, error } = await supabase
+    .from('customers')
+    .update({
+      name: customer.name,
+      address: customer.address || null,
+      phone: customer.phone || null,
+      email: customer.email || null,
+      npwp: customer.npwp || null,
+    })
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function softDeleteCustomer(id) {
+  const { data: { user } } = await supabase.auth.getUser()
+  const { error } = await supabase
+    .from('customers')
+    .update({
+      is_active: false,
+      deleted_at: new Date().toISOString(),
+      deleted_by: user?.id ?? null,
+    })
+    .eq('id', id)
+  if (error) throw error
+}
+
+// ---- SUPPLIERS ----
+export async function getSuppliers() {
+  const { data, error } = await supabase
+    .from('suppliers')
+    .select('*')
+    .eq('is_active', true)
+    .order('name')
+  if (error) throw error
+  return data
+}
+
+export async function createSupplier(supplier) {
+  const { data, error } = await supabase
+    .from('suppliers')
+    .insert({
+      name: supplier.name,
+      address: supplier.address || null,
+      phone: supplier.phone || null,
+      email: supplier.email || null,
+      npwp: supplier.npwp || null,
+    })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateSupplier(id, supplier) {
+  const { data, error } = await supabase
+    .from('suppliers')
+    .update({
+      name: supplier.name,
+      address: supplier.address || null,
+      phone: supplier.phone || null,
+      email: supplier.email || null,
+      npwp: supplier.npwp || null,
+    })
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function softDeleteSupplier(id) {
+  const { data: { user } } = await supabase.auth.getUser()
+  const { error } = await supabase
+    .from('suppliers')
+    .update({
+      is_active: false,
+      deleted_at: new Date().toISOString(),
+      deleted_by: user?.id ?? null,
+    })
+    .eq('id', id)
+  if (error) throw error
+}
