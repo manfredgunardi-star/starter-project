@@ -97,7 +97,8 @@ function CreateUserForm({ onSave, onCancel, isSaving, onError }) {
       onError('Format email tidak valid')
       return
     }
-    if (password.trim().length < 6) {
+    const trimmedPassword = password.trim()
+    if (trimmedPassword.length < 6) {
       onError('Password minimal 6 karakter')
       return
     }
@@ -108,7 +109,7 @@ function CreateUserForm({ onSave, onCancel, isSaving, onError }) {
 
     onSave({
       email: trimmedEmail,
-      password,
+      password: trimmedPassword,
       full_name: trimmedName,
       role,
     })
@@ -117,8 +118,9 @@ function CreateUserForm({ onSave, onCancel, isSaving, onError }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+        <label htmlFor="create-email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
         <input
+          id="create-email"
           type="email"
           value={email}
           onChange={e => setEmail(e.target.value)}
@@ -129,11 +131,12 @@ function CreateUserForm({ onSave, onCancel, isSaving, onError }) {
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label htmlFor="create-password" className="block text-sm font-medium text-gray-700 mb-1">
           Password Sementara
         </label>
         <div className="flex gap-2">
           <input
+            id="create-password"
             type="text"
             value={password}
             onChange={e => setPassword(e.target.value)}
@@ -156,8 +159,9 @@ function CreateUserForm({ onSave, onCancel, isSaving, onError }) {
         </p>
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+        <label htmlFor="create-fullname" className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
         <input
+          id="create-fullname"
           type="text"
           value={fullName}
           onChange={e => setFullName(e.target.value)}
@@ -166,8 +170,9 @@ function CreateUserForm({ onSave, onCancel, isSaving, onError }) {
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+        <label htmlFor="create-role" className="block text-sm font-medium text-gray-700 mb-1">Role</label>
         <select
+          id="create-role"
           value={role}
           onChange={e => setRole(e.target.value)}
           className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
