@@ -56,6 +56,43 @@ export async function getAccounts() {
   return data
 }
 
+export async function saveTransfer({ from_account_id, to_account_id, amount, date, notes }) {
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data, error } = await supabase.rpc('post_transfer', {
+    p_from_account_id: from_account_id,
+    p_to_account_id: to_account_id,
+    p_amount: Number(amount),
+    p_date: date,
+    p_notes: notes || null,
+    p_user_id: user?.id ?? null,
+  })
+  if (error) throw error
+  return data
+}
+
+export async function saveReconciliation({ account_id, date, statement_balance }) {
+  const { data: account, error: accErr } = await supabase
+    .from('accounts')
+    .select('balance')
+    .eq('id', account_id)
+    .single()
+  if (accErr) throw accErr
+
+  const { data, error } = await supabase
+    .from('bank_reconciliations')
+    .insert({
+      account_id,
+      date,
+      statement_balance: Number(statement_balance),
+      system_balance: account.balance,
+      is_reconciled: Math.abs(Number(statement_balance) - account.balance) < 0.01,
+    })
+    .select('id, statement_balance, system_balance, is_reconciled')
+    .single()
+  if (error) throw error
+  return data
+}
+
 export async function getOutstandingInvoicesByCustomer(customerId) {
   const { data, error } = await supabase
     .from('invoices')

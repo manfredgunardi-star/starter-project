@@ -56,7 +56,7 @@ const menuGroups = [
     items: [
       { label: 'Akun', path: '/cash/accounts' },
       { label: 'Pembayaran', path: '/cash/payments' },
-      { label: 'Transfer', path: '/cash/transfers' },
+      { label: 'Transfer', path: '/cash/transfers/new' },
       { label: 'Rekonsiliasi', path: '/cash/reconciliation' }
     ]
   },

@@ -37,6 +37,18 @@ import PurchaseInvoiceFormPage from './pages/purchase/PurchaseInvoiceFormPage'
 import CashBankAccountsPage from './pages/cash/AccountsPage'
 import PaymentsPage from './pages/cash/PaymentsPage'
 import PaymentFormPage from './pages/cash/PaymentFormPage'
+import TransferFormPage from './pages/cash/TransferFormPage'
+import ReconciliationPage from './pages/cash/ReconciliationPage'
+
+// Accounting
+import JournalsPage from './pages/accounting/JournalsPage'
+import ManualJournalFormPage from './pages/accounting/ManualJournalFormPage'
+import LedgerPage from './pages/accounting/LedgerPage'
+
+// Reports
+import BalanceSheetPage from './pages/reports/BalanceSheetPage'
+import IncomeStatementPage from './pages/reports/IncomeStatementPage'
+import CashFlowPage from './pages/reports/CashFlowPage'
 
 // Placeholder for pages not yet implemented
 function Page({ title }) {
@@ -115,17 +127,19 @@ function AppContent() {
           <Route path="cash/accounts" element={<CashBankAccountsPage />} />
           <Route path="cash/payments" element={<PaymentsPage />} />
           <Route path="cash/payments/new" element={<PaymentFormPage />} />
-          <Route path="cash/transfers" element={<Page title="Transfer" />} />
-          <Route path="cash/reconciliation" element={<Page title="Rekonsiliasi Bank" />} />
+          <Route path="cash/transfers/new" element={<TransferFormPage />} />
+          <Route path="cash/reconciliation" element={<ReconciliationPage />} />
 
-          {/* Accounting (coming soon) */}
-          <Route path="accounting/journals" element={<Page title="Jurnal" />} />
-          <Route path="accounting/ledger" element={<Page title="Buku Besar" />} />
+          {/* Accounting */}
+          <Route path="accounting/journals" element={<JournalsPage />} />
+          <Route path="accounting/journals/new" element={<ManualJournalFormPage />} />
+          <Route path="accounting/journals/:id" element={<ManualJournalFormPage />} />
+          <Route path="accounting/ledger" element={<LedgerPage />} />
 
-          {/* Reports (coming soon) */}
-          <Route path="reports/balance-sheet" element={<Page title="Neraca" />} />
-          <Route path="reports/income-statement" element={<Page title="Laba Rugi" />} />
-          <Route path="reports/cash-flow" element={<Page title="Arus Kas" />} />
+          {/* Reports */}
+          <Route path="reports/balance-sheet" element={<BalanceSheetPage />} />
+          <Route path="reports/income-statement" element={<IncomeStatementPage />} />
+          <Route path="reports/cash-flow" element={<CashFlowPage />} />
 
           {/* Settings (coming soon) */}
           <Route path="settings/users" element={<Page title="Manajemen Users" />} />
