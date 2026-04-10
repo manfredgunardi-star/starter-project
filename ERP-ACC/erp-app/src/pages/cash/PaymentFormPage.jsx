@@ -4,7 +4,7 @@ import { useToast } from '../../components/ui/ToastContext'
 import { useAccounts } from '../../hooks/useCashBank'
 import { useCustomers, useSuppliers } from '../../hooks/useMasterData'
 import { savePayment, getOutstandingInvoicesByCustomer } from '../../services/cashBankService'
-import { getOutstandingPurchaseInvoicesBySupplier } from '../../services/purchaseService'
+import { getOutstandingPurchaseInvoicesBySupplier, getPurchaseInvoice } from '../../services/purchaseService'
 import { formatCurrency } from '../../utils/currency'
 import { today } from '../../utils/date'
 import Button from '../../components/ui/Button'
@@ -39,6 +39,19 @@ export default function PaymentFormPage() {
   })
 
   const field = (key, value) => setForm(f => ({ ...f, [key]: value }))
+
+  // Pre-load supplier if purchase invoice is passed as param (outgoing payment)
+  useEffect(() => {
+    const invoiceId = searchParams.get('invoice')
+    const paymentType = searchParams.get('type')
+    if (invoiceId && paymentType === 'outgoing') {
+      getPurchaseInvoice(invoiceId)
+        .then(inv => {
+          setForm(f => ({ ...f, supplier_id: inv.supplier_id }))
+        })
+        .catch(err => toast.error(err.message))
+    }
+  }, [])
 
   // Load outstanding invoices when customer/supplier changes
   useEffect(() => {
