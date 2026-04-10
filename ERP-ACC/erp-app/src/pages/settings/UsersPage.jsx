@@ -300,8 +300,8 @@ export default function UsersPage() {
     try {
       await createUser({ email, password, full_name, role })
       toast.success(`User ${email} berhasil dibuat`)
-      setCreatingUser(false)
       await loadUsers()
+      setCreatingUser(false)
     } catch (err) {
       toast.error('Gagal membuat user: ' + err.message)
     } finally {
