@@ -337,3 +337,68 @@ export async function softDeleteSupplier(id) {
     .eq('id', id)
   if (error) throw error
 }
+
+// ---- CASH/BANK ACCOUNTS ----
+export async function getCashBankAccounts() {
+  const { data, error } = await supabase
+    .from('accounts')
+    .select('*, coa:coa_id(id, code, name)')
+    .eq('is_active', true)
+    .order('name')
+  if (error) throw error
+  return data
+}
+
+export async function createCashBankAccount(account) {
+  const { data, error } = await supabase
+    .from('accounts')
+    .insert({
+      name: account.name,
+      type: account.type,
+      coa_id: account.coa_id,
+    })
+    .select('*, coa:coa_id(id, code, name)')
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateCashBankAccount(id, account) {
+  const { data, error } = await supabase
+    .from('accounts')
+    .update({
+      name: account.name,
+      type: account.type,
+      coa_id: account.coa_id,
+    })
+    .eq('id', id)
+    .select('*, coa:coa_id(id, code, name)')
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function softDeleteCashBankAccount(id) {
+  const { data: { user } } = await supabase.auth.getUser()
+  const { error } = await supabase
+    .from('accounts')
+    .update({
+      is_active: false,
+      deleted_at: new Date().toISOString(),
+      deleted_by: user?.id ?? null,
+    })
+    .eq('id', id)
+  if (error) throw error
+}
+
+// Get COA accounts filtered for Kas/Bank (codes starting with 1-11xxx or 1-12xxx)
+export async function getCOAForCashBank() {
+  const { data, error } = await supabase
+    .from('coa')
+    .select('id, code, name')
+    .eq('is_active', true)
+    .or('code.ilike.1-11%,code.ilike.1-12%')
+    .order('code')
+  if (error) throw error
+  return data
+}

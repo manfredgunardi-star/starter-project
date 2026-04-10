@@ -51,3 +51,13 @@ export function useSuppliers() {
   const { data: suppliers, loading, error, refetch } = useFetchList(svc.getSuppliers)
   return { suppliers, loading, error, refetch }
 }
+
+export function useCashBankAccounts() {
+  const { data: accounts, loading, error, refetch } = useFetchList(svc.getCashBankAccounts)
+  return { accounts, loading, error, refetch }
+}
+
+export function useCOAForCashBank() {
+  const { data: coaOptions, loading, error } = useFetchList(svc.getCOAForCashBank)
+  return { coaOptions, loading, error }
+}

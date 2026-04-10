@@ -10,6 +10,7 @@ import ProductsPage from './pages/master/ProductsPage'
 import CustomersPage from './pages/master/CustomersPage'
 import SuppliersPage from './pages/master/SuppliersPage'
 import COAPage from './pages/master/COAPage'
+import CashBankAccountsPage from './pages/cash/AccountsPage'
 
 // Placeholder component for pages under development
 function Page({ title }) {
@@ -73,7 +74,7 @@ function AppContent() {
           <Route path="purchase/invoices" element={<Page title="Invoice Pembelian" />} />
 
           {/* Cash & Bank routes */}
-          <Route path="cash/accounts" element={<Page title="Akun Kas/Bank" />} />
+          <Route path="cash/accounts" element={<CashBankAccountsPage />} />
           <Route path="cash/payments" element={<Page title="Pembayaran" />} />
           <Route path="cash/transfers" element={<Page title="Transfer" />} />
           <Route path="cash/reconciliation" element={<Page title="Rekonsiliasi Bank" />} />
