@@ -5,16 +5,32 @@ import { ToastProvider } from './components/ui/ToastContext'
 import LoginPage from './pages/LoginPage'
 import AppLayout from './components/layout/AppLayout'
 import ProtectedRoute from './components/layout/ProtectedRoute'
+
+// Master Data
 import UnitsPage from './pages/master/UnitsPage'
 import ProductsPage from './pages/master/ProductsPage'
 import CustomersPage from './pages/master/CustomersPage'
 import SuppliersPage from './pages/master/SuppliersPage'
 import COAPage from './pages/master/COAPage'
-import CashBankAccountsPage from './pages/cash/AccountsPage'
+
+// Inventory
 import StockPage from './pages/inventory/StockPage'
 import StockCardPage from './pages/inventory/StockCardPage'
 
-// Placeholder component for pages under development
+// Sales
+import SalesOrdersPage from './pages/sales/SalesOrdersPage'
+import SalesOrderFormPage from './pages/sales/SalesOrderFormPage'
+import GoodsDeliveriesPage from './pages/sales/GoodsDeliveriesPage'
+import GoodsDeliveryFormPage from './pages/sales/GoodsDeliveryFormPage'
+import SalesInvoicesPage from './pages/sales/SalesInvoicesPage'
+import SalesInvoiceFormPage from './pages/sales/SalesInvoiceFormPage'
+
+// Cash & Bank
+import CashBankAccountsPage from './pages/cash/AccountsPage'
+import PaymentsPage from './pages/cash/PaymentsPage'
+import PaymentFormPage from './pages/cash/PaymentFormPage'
+
+// Placeholder for pages not yet implemented
 function Page({ title }) {
   return (
     <div className="space-y-4">
@@ -54,46 +70,53 @@ function AppContent() {
             </ProtectedRoute>
           }
         >
-          {/* Master Data routes */}
+          {/* Master Data */}
           <Route path="master/units" element={<UnitsPage />} />
           <Route path="master/products" element={<ProductsPage />} />
           <Route path="master/customers" element={<CustomersPage />} />
           <Route path="master/suppliers" element={<SuppliersPage />} />
           <Route path="master/coa" element={<COAPage />} />
 
-          {/* Inventory routes */}
+          {/* Inventory */}
           <Route path="inventory/stock" element={<StockPage />} />
           <Route path="inventory/stock-card" element={<StockCardPage />} />
 
-          {/* Sales routes */}
-          <Route path="sales/orders" element={<Page title="Sales Order" />} />
-          <Route path="sales/deliveries" element={<Page title="Pengiriman" />} />
-          <Route path="sales/invoices" element={<Page title="Invoice Penjualan" />} />
+          {/* Sales */}
+          <Route path="sales/orders" element={<SalesOrdersPage />} />
+          <Route path="sales/orders/new" element={<SalesOrderFormPage />} />
+          <Route path="sales/orders/:id" element={<SalesOrderFormPage />} />
+          <Route path="sales/deliveries" element={<GoodsDeliveriesPage />} />
+          <Route path="sales/deliveries/new" element={<GoodsDeliveryFormPage />} />
+          <Route path="sales/deliveries/:id" element={<GoodsDeliveryFormPage />} />
+          <Route path="sales/invoices" element={<SalesInvoicesPage />} />
+          <Route path="sales/invoices/new" element={<SalesInvoiceFormPage />} />
+          <Route path="sales/invoices/:id" element={<SalesInvoiceFormPage />} />
 
-          {/* Purchase routes */}
+          {/* Purchase (coming soon) */}
           <Route path="purchase/orders" element={<Page title="Purchase Order" />} />
           <Route path="purchase/receipts" element={<Page title="Penerimaan Barang" />} />
           <Route path="purchase/invoices" element={<Page title="Invoice Pembelian" />} />
 
-          {/* Cash & Bank routes */}
+          {/* Cash & Bank */}
           <Route path="cash/accounts" element={<CashBankAccountsPage />} />
-          <Route path="cash/payments" element={<Page title="Pembayaran" />} />
+          <Route path="cash/payments" element={<PaymentsPage />} />
+          <Route path="cash/payments/new" element={<PaymentFormPage />} />
           <Route path="cash/transfers" element={<Page title="Transfer" />} />
           <Route path="cash/reconciliation" element={<Page title="Rekonsiliasi Bank" />} />
 
-          {/* Accounting routes */}
+          {/* Accounting (coming soon) */}
           <Route path="accounting/journals" element={<Page title="Jurnal" />} />
           <Route path="accounting/ledger" element={<Page title="Buku Besar" />} />
 
-          {/* Reports routes */}
+          {/* Reports (coming soon) */}
           <Route path="reports/balance-sheet" element={<Page title="Neraca" />} />
           <Route path="reports/income-statement" element={<Page title="Laba Rugi" />} />
           <Route path="reports/cash-flow" element={<Page title="Arus Kas" />} />
 
-          {/* Settings routes */}
+          {/* Settings (coming soon) */}
           <Route path="settings/users" element={<Page title="Manajemen Users" />} />
 
-          {/* Default route */}
+          {/* Default */}
           <Route path="/" element={<Page title="Dashboard" />} />
         </Route>
       </Routes>
