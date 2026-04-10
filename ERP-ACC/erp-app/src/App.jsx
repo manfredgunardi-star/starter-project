@@ -25,6 +25,10 @@ import GoodsDeliveryFormPage from './pages/sales/GoodsDeliveryFormPage'
 import SalesInvoicesPage from './pages/sales/SalesInvoicesPage'
 import SalesInvoiceFormPage from './pages/sales/SalesInvoiceFormPage'
 
+// Purchase
+import PurchaseOrdersPage from './pages/purchase/PurchaseOrdersPage'
+import PurchaseOrderFormPage from './pages/purchase/PurchaseOrderFormPage'
+
 // Cash & Bank
 import CashBankAccountsPage from './pages/cash/AccountsPage'
 import PaymentsPage from './pages/cash/PaymentsPage'
@@ -92,8 +96,10 @@ function AppContent() {
           <Route path="sales/invoices/new" element={<SalesInvoiceFormPage />} />
           <Route path="sales/invoices/:id" element={<SalesInvoiceFormPage />} />
 
-          {/* Purchase (coming soon) */}
-          <Route path="purchase/orders" element={<Page title="Purchase Order" />} />
+          {/* Purchase */}
+          <Route path="purchase/orders" element={<PurchaseOrdersPage />} />
+          <Route path="purchase/orders/new" element={<PurchaseOrderFormPage />} />
+          <Route path="purchase/orders/:id" element={<PurchaseOrderFormPage />} />
           <Route path="purchase/receipts" element={<Page title="Penerimaan Barang" />} />
           <Route path="purchase/invoices" element={<Page title="Invoice Pembelian" />} />
 
