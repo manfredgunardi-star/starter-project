@@ -11,6 +11,7 @@ import CustomersPage from './pages/master/CustomersPage'
 import SuppliersPage from './pages/master/SuppliersPage'
 import COAPage from './pages/master/COAPage'
 import CashBankAccountsPage from './pages/cash/AccountsPage'
+import StockPage from './pages/inventory/StockPage'
 
 // Placeholder component for pages under development
 function Page({ title }) {
@@ -60,7 +61,7 @@ function AppContent() {
           <Route path="master/coa" element={<COAPage />} />
 
           {/* Inventory routes */}
-          <Route path="inventory/stock" element={<Page title="Stok" />} />
+          <Route path="inventory/stock" element={<StockPage />} />
           <Route path="inventory/stock-card" element={<Page title="Kartu Stok" />} />
 
           {/* Sales routes */}
