@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
-import { getUsers, updateUserProfile, deactivateUser, reactivateUser } from '../../services/userService'
+import { getUsers, createUser, updateUserProfile, deactivateUser, reactivateUser } from '../../services/userService'
 import { useToast } from '../../components/ui/ToastContext'
 import { formatDate } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
-import { Edit2, Trash2, RotateCcw } from 'lucide-react'
+import { Edit2, Trash2, RotateCcw, Plus } from 'lucide-react'
 
 const ROLE_LABELS = {
   admin: 'Admin',
@@ -59,6 +59,133 @@ function UserForm({ user, onSave, onCancel, isSaving, onError }) {
       <div className="flex gap-2">
         <Button type="submit" variant="primary" loading={isSaving}>
           Simpan
+        </Button>
+        <Button type="button" variant="secondary" onClick={onCancel} disabled={isSaving}>
+          Batal
+        </Button>
+      </div>
+    </form>
+  )
+}
+
+function CreateUserForm({ onSave, onCancel, isSaving, onError }) {
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [fullName, setFullName] = useState('')
+  const [role, setRole] = useState('viewer')
+
+  const generatePassword = () => {
+    // Exclude ambiguous chars: 0/O, 1/l/I
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
+    let p = ''
+    for (let i = 0; i < 10; i++) {
+      p += chars[Math.floor(Math.random() * chars.length)]
+    }
+    setPassword(p)
+  }
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    const trimmedEmail = email.trim()
+    const trimmedName = fullName.trim()
+
+    if (!trimmedEmail) {
+      onError('Email tidak boleh kosong')
+      return
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      onError('Format email tidak valid')
+      return
+    }
+    if (password.trim().length < 6) {
+      onError('Password minimal 6 karakter')
+      return
+    }
+    if (!trimmedName) {
+      onError('Nama lengkap tidak boleh kosong')
+      return
+    }
+
+    onSave({
+      email: trimmedEmail,
+      password,
+      full_name: trimmedName,
+      role,
+    })
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+        <input
+          type="email"
+          value={email}
+          onChange={e => setEmail(e.target.value)}
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+          disabled={isSaving}
+          placeholder="user@contoh.com"
+          autoComplete="off"
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Password Sementara
+        </label>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono"
+            disabled={isSaving}
+            placeholder="Minimal 6 karakter"
+            autoComplete="new-password"
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={generatePassword}
+            disabled={isSaving}
+          >
+            Generate
+          </Button>
+        </div>
+        <p className="text-xs text-gray-500 mt-1">
+          Berikan password ini kepada user. Mereka dapat mengubahnya setelah login.
+        </p>
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
+        <input
+          type="text"
+          value={fullName}
+          onChange={e => setFullName(e.target.value)}
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+          disabled={isSaving}
+        />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+        <select
+          value={role}
+          onChange={e => setRole(e.target.value)}
+          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+          disabled={isSaving}
+        >
+          <option value="viewer">Viewer — hanya bisa melihat data</option>
+          <option value="staff">Staff — bisa input &amp; edit transaksi</option>
+          <option value="admin">Admin — akses penuh termasuk manajemen user</option>
+        </select>
+        <div className="mt-2 text-xs text-gray-600 bg-blue-50 border border-blue-100 rounded p-2 space-y-1">
+          <p><strong>Viewer:</strong> read-only. Bisa lihat semua data &amp; laporan.</p>
+          <p><strong>Staff:</strong> bisa input transaksi (PO, invoice, payment, dll).</p>
+          <p><strong>Admin:</strong> akses penuh + manajemen user + audit log.</p>
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <Button type="submit" variant="primary" loading={isSaving}>
+          Buat User
         </Button>
         <Button type="button" variant="secondary" onClick={onCancel} disabled={isSaving}>
           Batal
