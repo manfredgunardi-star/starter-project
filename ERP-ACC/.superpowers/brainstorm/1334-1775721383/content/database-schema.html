@@ -1,0 +1,230 @@
+<h2>Database Schema — Entity Relationship</h2>
+<p class="subtitle">Relasi antar tabel utama dalam aplikasi ERP</p>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+
+  <!-- Master Data Group -->
+  <div style="background: #0f172a; border: 1px solid #1e40af; border-radius: 12px; padding: 16px;">
+    <div style="color: #60a5fa; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">Master Data</div>
+
+    <div style="background: #1e293b; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+      <h3 style="margin: 0 0 8px; font-size: 15px; color: #e2e8f0;">products</h3>
+      <div style="font-size: 12px; color: #94a3b8; line-height: 1.8;">
+        id, sku, name, category<br>
+        base_unit_id → <span style="color: #60a5fa;">units</span><br>
+        buy_price, sell_price<br>
+        is_taxable (PPN toggle), tax_rate<br>
+        is_active, created_at
+      </div>
+    </div>
+
+    <div style="background: #1e293b; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+      <h3 style="margin: 0 0 8px; font-size: 15px; color: #e2e8f0;">units</h3>
+      <div style="font-size: 12px; color: #94a3b8; line-height: 1.8;">
+        id, name (pcs, dus, kg, liter...)
+      </div>
+    </div>
+
+    <div style="background: #1e293b; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+      <h3 style="margin: 0 0 8px; font-size: 15px; color: #e2e8f0;">unit_conversions</h3>
+      <div style="font-size: 12px; color: #94a3b8; line-height: 1.8;">
+        id, product_id → <span style="color: #60a5fa;">products</span><br>
+        from_unit_id → <span style="color: #60a5fa;">units</span><br>
+        to_unit_id → <span style="color: #60a5fa;">units</span><br>
+        conversion_factor (misal: 1 dus = 12 pcs → factor = 12)
+      </div>
+    </div>
+
+    <div style="background: #1e293b; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+      <h3 style="margin: 0 0 8px; font-size: 15px; color: #e2e8f0;">customers</h3>
+      <div style="font-size: 12px; color: #94a3b8; line-height: 1.8;">
+        id, name, address, phone, email<br>
+        npwp, is_active, created_at
+      </div>
+    </div>
+
+    <div style="background: #1e293b; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+      <h3 style="margin: 0 0 8px; font-size: 15px; color: #e2e8f0;">suppliers</h3>
+      <div style="font-size: 12px; color: #94a3b8; line-height: 1.8;">
+        id, name, address, phone, email<br>
+        npwp, is_active, created_at
+      </div>
+    </div>
+
+    <div style="background: #1e293b; border-radius: 8px; padding: 12px;">
+      <h3 style="margin: 0 0 8px; font-size: 15px; color: #e2e8f0;">coa (Chart of Accounts)</h3>
+      <div style="font-size: 12px; color: #94a3b8; line-height: 1.8;">
+        id, code (1-10000), name<br>
+        type (asset, liability, equity, revenue, expense)<br>
+        normal_balance (debit/credit)<br>
+        parent_id → <span style="color: #60a5fa;">coa</span> (self-ref, hirarki)<br>
+        is_active, created_at
+      </div>
+    </div>
+  </div>
+
+  <!-- Transactions Group -->
+  <div style="background: #0f172a; border: 1px solid #065f46; border-radius: 12px; padding: 16px;">
+    <div style="color: #34d399; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">Transaksi</div>
+
+    <div style="background: #1e293b; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+      <h3 style="margin: 0 0 8px; font-size: 15px; color: #e2e8f0;">sales_orders</h3>
+      <div style="font-size: 12px; color: #94a3b8; line-height: 1.8;">
+        id, so_number, date<br>
+        customer_id → <span style="color: #60a5fa;">customers</span><br>
+        status (draft, confirmed, invoiced, done)<br>
+        subtotal, tax_amount, total
+      </div>
+    </div>
+
+    <div style="background: #1e293b; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+      <h3 style="margin: 0 0 8px; font-size: 15px; color: #e2e8f0;">sales_order_items</h3>
+      <div style="font-size: 12px; color: #94a3b8; line-height: 1.8;">
+        id, sales_order_id → <span style="color: #34d399;">sales_orders</span><br>
+        product_id → <span style="color: #60a5fa;">products</span><br>
+        unit_id → <span style="color: #60a5fa;">units</span><br>
+        quantity, unit_price, tax_amount, total
+      </div>
+    </div>
+
+    <div style="background: #1e293b; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+      <h3 style="margin: 0 0 8px; font-size: 15px; color: #e2e8f0;">invoices</h3>
+      <div style="font-size: 12px; color: #94a3b8; line-height: 1.8;">
+        id, invoice_number, date, due_date<br>
+        type (sales / purchase)<br>
+        customer_id / supplier_id<br>
+        sales_order_id → <span style="color: #34d399;">sales_orders</span> (nullable)<br>
+        subtotal, tax_amount, total<br>
+        amount_paid, status (draft, posted, paid, partial)
+      </div>
+    </div>
+
+    <div style="background: #1e293b; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+      <h3 style="margin: 0 0 8px; font-size: 15px; color: #e2e8f0;">purchase_orders</h3>
+      <div style="font-size: 12px; color: #94a3b8; line-height: 1.8;">
+        id, po_number, date<br>
+        supplier_id → <span style="color: #60a5fa;">suppliers</span><br>
+        status (draft, confirmed, received, done)<br>
+        subtotal, tax_amount, total
+      </div>
+    </div>
+
+    <div style="background: #1e293b; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+      <h3 style="margin: 0 0 8px; font-size: 15px; color: #e2e8f0;">purchase_order_items</h3>
+      <div style="font-size: 12px; color: #94a3b8; line-height: 1.8;">
+        id, purchase_order_id → <span style="color: #34d399;">purchase_orders</span><br>
+        product_id → <span style="color: #60a5fa;">products</span><br>
+        unit_id → <span style="color: #60a5fa;">units</span><br>
+        quantity, unit_price, tax_amount, total
+      </div>
+    </div>
+
+    <div style="background: #1e293b; border-radius: 8px; padding: 12px;">
+      <h3 style="margin: 0 0 8px; font-size: 15px; color: #e2e8f0;">payments</h3>
+      <div style="font-size: 12px; color: #94a3b8; line-height: 1.8;">
+        id, payment_number, date<br>
+        type (incoming / outgoing)<br>
+        invoice_id → <span style="color: #34d399;">invoices</span><br>
+        account_id → <span style="color: #fbbf24;">accounts</span><br>
+        amount, notes
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Second Row -->
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+
+  <!-- Inventory Group -->
+  <div style="background: #0f172a; border: 1px solid #92400e; border-radius: 12px; padding: 16px;">
+    <div style="color: #fbbf24; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">Inventory</div>
+
+    <div style="background: #1e293b; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+      <h3 style="margin: 0 0 8px; font-size: 15px; color: #e2e8f0;">inventory_movements</h3>
+      <div style="font-size: 12px; color: #94a3b8; line-height: 1.8;">
+        id, date, product_id → <span style="color: #60a5fa;">products</span><br>
+        type (in / out / adjustment)<br>
+        quantity_base (selalu dalam satuan dasar)<br>
+        unit_id, quantity_original<br>
+        reference_type (purchase, sale, adjustment)<br>
+        reference_id, notes
+      </div>
+    </div>
+
+    <div style="background: #1e293b; border-radius: 8px; padding: 12px;">
+      <h3 style="margin: 0 0 8px; font-size: 15px; color: #e2e8f0;">inventory_stock</h3>
+      <div style="font-size: 12px; color: #94a3b8; line-height: 1.8;">
+        id, product_id → <span style="color: #60a5fa;">products</span><br>
+        quantity_on_hand (satuan dasar)<br>
+        last_updated
+      </div>
+    </div>
+  </div>
+
+  <!-- Accounting Group -->
+  <div style="background: #0f172a; border: 1px solid #7e22ce; border-radius: 12px; padding: 16px;">
+    <div style="color: #c084fc; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">Kas/Bank & Accounting</div>
+
+    <div style="background: #1e293b; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+      <h3 style="margin: 0 0 8px; font-size: 15px; color: #e2e8f0;">accounts (Kas/Bank)</h3>
+      <div style="font-size: 12px; color: #94a3b8; line-height: 1.8;">
+        id, name (Kas Besar, BCA, Mandiri...)<br>
+        type (cash / bank)<br>
+        coa_id → <span style="color: #60a5fa;">coa</span><br>
+        balance, is_active
+      </div>
+    </div>
+
+    <div style="background: #1e293b; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+      <h3 style="margin: 0 0 8px; font-size: 15px; color: #e2e8f0;">journals</h3>
+      <div style="font-size: 12px; color: #94a3b8; line-height: 1.8;">
+        id, journal_number, date, description<br>
+        source (auto / manual)<br>
+        reference_type, reference_id<br>
+        is_posted, created_by
+      </div>
+    </div>
+
+    <div style="background: #1e293b; border-radius: 8px; padding: 12px; margin-bottom: 10px;">
+      <h3 style="margin: 0 0 8px; font-size: 15px; color: #e2e8f0;">journal_items</h3>
+      <div style="font-size: 12px; color: #94a3b8; line-height: 1.8;">
+        id, journal_id → <span style="color: #c084fc;">journals</span><br>
+        coa_id → <span style="color: #60a5fa;">coa</span><br>
+        debit, credit, description
+      </div>
+    </div>
+
+    <div style="background: #1e293b; border-radius: 8px; padding: 12px;">
+      <h3 style="margin: 0 0 8px; font-size: 15px; color: #e2e8f0;">bank_reconciliations</h3>
+      <div style="font-size: 12px; color: #94a3b8; line-height: 1.8;">
+        id, account_id → <span style="color: #fbbf24;">accounts</span><br>
+        date, statement_balance<br>
+        system_balance, is_reconciled
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Auth -->
+<div style="background: #0f172a; border: 1px solid #475569; border-radius: 12px; padding: 16px;">
+  <div style="color: #94a3b8; font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px;">Auth & System</div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+    <div style="background: #1e293b; border-radius: 8px; padding: 12px;">
+      <h3 style="margin: 0 0 8px; font-size: 15px; color: #e2e8f0;">profiles</h3>
+      <div style="font-size: 12px; color: #94a3b8; line-height: 1.8;">
+        id → <span style="color: #60a5fa;">auth.users</span> (Supabase Auth)<br>
+        full_name, role (admin, staff, viewer)<br>
+        is_active, created_at
+      </div>
+    </div>
+    <div style="background: #1e293b; border-radius: 8px; padding: 12px;">
+      <h3 style="margin: 0 0 8px; font-size: 15px; color: #e2e8f0;">audit_logs</h3>
+      <div style="font-size: 12px; color: #94a3b8; line-height: 1.8;">
+        id, table_name, record_id<br>
+        action (create, update, delete)<br>
+        old_data, new_data (JSONB)<br>
+        user_id → <span style="color: #60a5fa;">profiles</span>, created_at
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,175 @@
+<h2>Perbandingan Pricing — 3 Pendekatan Tech Stack</h2>
+<p class="subtitle">Klik pendekatan yang menurut Anda paling cocok dari segi biaya</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>React + Supabase (PostgreSQL) — Rekomendasi</h3>
+      <div style="margin: 12px 0;">
+        <div style="background: #065f46; color: #d1fae5; padding: 8px 14px; border-radius: 8px; display: inline-block; font-weight: 600; margin-bottom: 10px;">FREE TIER: $0/bulan</div>
+      </div>
+      <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 12px;">
+        <tr style="border-bottom: 1px solid #334155;">
+          <td style="padding: 6px 0; color: #94a3b8;">Database</td>
+          <td style="padding: 6px 0; text-align: right;">500 MB storage</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #334155;">
+          <td style="padding: 6px 0; color: #94a3b8;">Auth</td>
+          <td style="padding: 6px 0; text-align: right;">50.000 MAU</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #334155;">
+          <td style="padding: 6px 0; color: #94a3b8;">API Requests</td>
+          <td style="padding: 6px 0; text-align: right;">Unlimited</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #334155;">
+          <td style="padding: 6px 0; color: #94a3b8;">Realtime</td>
+          <td style="padding: 6px 0; text-align: right;">Unlimited connections</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #334155;">
+          <td style="padding: 6px 0; color: #94a3b8;">File Storage</td>
+          <td style="padding: 6px 0; text-align: right;">1 GB</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #334155;">
+          <td style="padding: 6px 0; color: #94a3b8;">Edge Functions</td>
+          <td style="padding: 6px 0; text-align: right;">500K invocations/bulan</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; color: #94a3b8;">Proyek</td>
+          <td style="padding: 6px 0; text-align: right;">Maks 2 proyek</td>
+        </tr>
+      </table>
+      <div style="background: #1e293b; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 8px;">
+        <span style="color: #fbbf24;">⚠</span> Proyek di-pause otomatis setelah 7 hari tidak aktif
+      </div>
+      <div style="font-size: 13px; color: #94a3b8;">
+        <strong style="color: #e2e8f0;">Upgrade:</strong> Pro plan $25/bulan → 8 GB database, 100K MAU, tidak ada auto-pause
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>React + Firebase/Firestore — Stack Familiar</h3>
+      <div style="margin: 12px 0;">
+        <div style="background: #065f46; color: #d1fae5; padding: 8px 14px; border-radius: 8px; display: inline-block; font-weight: 600; margin-bottom: 10px;">FREE TIER: $0/bulan (Spark Plan)</div>
+      </div>
+      <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 12px;">
+        <tr style="border-bottom: 1px solid #334155;">
+          <td style="padding: 6px 0; color: #94a3b8;">Firestore Storage</td>
+          <td style="padding: 6px 0; text-align: right;">1 GB</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #334155;">
+          <td style="padding: 6px 0; color: #94a3b8;">Reads</td>
+          <td style="padding: 6px 0; text-align: right;">50.000/hari</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #334155;">
+          <td style="padding: 6px 0; color: #94a3b8;">Writes</td>
+          <td style="padding: 6px 0; text-align: right;">20.000/hari</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #334155;">
+          <td style="padding: 6px 0; color: #94a3b8;">Deletes</td>
+          <td style="padding: 6px 0; text-align: right;">20.000/hari</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #334155;">
+          <td style="padding: 6px 0; color: #94a3b8;">Auth</td>
+          <td style="padding: 6px 0; text-align: right;">50.000 MAU (3K DAU)</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #334155;">
+          <td style="padding: 6px 0; color: #94a3b8;">Hosting</td>
+          <td style="padding: 6px 0; text-align: right;">10 GB transfer/bulan</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; color: #94a3b8;">Cloud Storage</td>
+          <td style="padding: 6px 0; text-align: right;">5 GB (butuh Blaze sejak Feb 2026)</td>
+        </tr>
+      </table>
+      <div style="background: #1e293b; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 8px;">
+        <span style="color: #fbbf24;">⚠</span> Jika melebihi quota harian, layanan dimatikan sampai hari berikutnya
+      </div>
+      <div style="font-size: 13px; color: #94a3b8;">
+        <strong style="color: #e2e8f0;">Upgrade:</strong> Blaze plan (pay-as-you-go) — bayar per penggunaan, mulai ~$0.06/100K reads
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>React + Custom Backend (Express/Hono + PostgreSQL)</h3>
+      <div style="margin: 12px 0;">
+        <div style="background: #713f12; color: #fef3c7; padding: 8px 14px; border-radius: 8px; display: inline-block; font-weight: 600; margin-bottom: 10px;">MINIMAL: ~$5-12/bulan</div>
+      </div>
+      <table style="width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 12px;">
+        <tr style="border-bottom: 1px solid #334155; background: #1e293b;">
+          <td style="padding: 8px 6px; color: #e2e8f0;" colspan="2"><strong>Opsi 1: Railway</strong></td>
+        </tr>
+        <tr style="border-bottom: 1px solid #334155;">
+          <td style="padding: 6px 0; color: #94a3b8;">Hobby Plan</td>
+          <td style="padding: 6px 0; text-align: right;">$5/bulan (termasuk $5 credit)</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #334155;">
+          <td style="padding: 6px 0; color: #94a3b8;">PostgreSQL</td>
+          <td style="padding: 6px 0; text-align: right;">Termasuk, ~&lt;$1/bulan untuk kecil</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #334155;">
+          <td style="padding: 6px 0; color: #94a3b8;">Free trial</td>
+          <td style="padding: 6px 0; text-align: right;">$5 credit / 30 hari (bukan free tier permanen)</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #334155; background: #1e293b;">
+          <td style="padding: 8px 6px; color: #e2e8f0;" colspan="2"><strong>Opsi 2: Render</strong></td>
+        </tr>
+        <tr style="border-bottom: 1px solid #334155;">
+          <td style="padding: 6px 0; color: #94a3b8;">Web Service</td>
+          <td style="padding: 6px 0; text-align: right;">Gratis (spin down saat idle)</td>
+        </tr>
+        <tr style="border-bottom: 1px solid #334155;">
+          <td style="padding: 6px 0; color: #94a3b8;">PostgreSQL</td>
+          <td style="padding: 6px 0; text-align: right;">Gratis 1 GB, tapi expire 90 hari</td>
+        </tr>
+        <tr>
+          <td style="padding: 6px 0; color: #94a3b8;">Paid PostgreSQL</td>
+          <td style="padding: 6px 0; text-align: right;">Mulai $7/bulan</td>
+        </tr>
+      </table>
+      <div style="background: #1e293b; padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 8px;">
+        <span style="color: #fbbf24;">⚠</span> Tidak ada free tier permanen. Perlu bayar hosting API + database terpisah. Auth harus dibangun sendiri atau pakai layanan tambahan.
+      </div>
+      <div style="font-size: 13px; color: #94a3b8;">
+        <strong style="color: #e2e8f0;">Realistis:</strong> Railway Hobby $5 + usage ~$2-5 = ~$7-10/bulan untuk project kecil
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top: 24px; padding: 16px; background: #0f172a; border: 1px solid #1e40af; border-radius: 12px;">
+  <h3 style="margin-top: 0; color: #60a5fa;">Ringkasan Rekomendasi</h3>
+  <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+    <tr style="border-bottom: 1px solid #334155;">
+      <td style="padding: 8px 0; color: #94a3b8;">Gratis permanen?</td>
+      <td style="padding: 8px; text-align: center;">✅ Ya*</td>
+      <td style="padding: 8px; text-align: center;">✅ Ya</td>
+      <td style="padding: 8px; text-align: center;">❌ Tidak</td>
+    </tr>
+    <tr style="border-bottom: 1px solid #334155;">
+      <td style="padding: 8px 0; color: #94a3b8;">Cocok untuk accounting?</td>
+      <td style="padding: 8px; text-align: center;">✅ SQL</td>
+      <td style="padding: 8px; text-align: center;">⚠ NoSQL</td>
+      <td style="padding: 8px; text-align: center;">✅ SQL</td>
+    </tr>
+    <tr style="border-bottom: 1px solid #334155;">
+      <td style="padding: 8px 0; color: #94a3b8;">Biaya upgrade</td>
+      <td style="padding: 8px; text-align: center;">$25/bln</td>
+      <td style="padding: 8px; text-align: center;">Pay-per-use</td>
+      <td style="padding: 8px; text-align: center;">~$7-10/bln</td>
+    </tr>
+    <tr>
+      <td style="padding: 8px 0; color: #94a3b8;"></td>
+      <td style="padding: 8px; text-align: center; font-weight: bold; color: #60a5fa;">A: Supabase</td>
+      <td style="padding: 8px; text-align: center; font-weight: bold; color: #e2e8f0;">B: Firebase</td>
+      <td style="padding: 8px; text-align: center; font-weight: bold; color: #e2e8f0;">C: Custom</td>
+    </tr>
+  </table>
+  <p style="font-size: 12px; color: #64748b; margin-bottom: 0;">*Supabase free tier pause proyek setelah 7 hari idle — perlu login berkala agar tetap aktif</p>
+</div>

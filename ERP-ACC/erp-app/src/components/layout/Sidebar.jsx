@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useLocation, Link } from 'react-router-dom'
 import {
   ChevronDown,
+  LayoutDashboard,
   Database,
   Package,
   ShoppingCart,
@@ -81,10 +82,29 @@ const menuGroups = [
     label: 'Settings',
     icon: Settings,
     items: [
-      { label: 'Users', path: '/settings/users' }
+      { label: 'Users', path: '/settings/users' },
+      { label: 'Audit Log', path: '/settings/audit-log' }
     ]
   }
 ]
+
+function DashboardLink() {
+  const location = useLocation()
+  const isActive = location.pathname === '/'
+  return (
+    <div className="mb-2">
+      <Link
+        to="/"
+        className={`w-full flex items-center gap-2 px-4 py-2 rounded text-sm font-medium transition ${
+          isActive ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'
+        }`}
+      >
+        <LayoutDashboard size={18} />
+        <span>Dashboard</span>
+      </Link>
+    </div>
+  )
+}
 
 function MenuGroup({ group }) {
   const [isOpen, setIsOpen] = useState(true)
@@ -143,6 +163,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 overflow-y-auto p-4">
+        <DashboardLink />
         {menuGroups.map(group => (
           <MenuGroup key={group.label} group={group} />
         ))}

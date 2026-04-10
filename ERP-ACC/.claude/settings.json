@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bash \"C:/Users/m3m31/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/skills/brainstorming/scripts/start-server.sh\" --project-dir \"c:/Project/ERP-ACC\")",
+      "WebSearch",
+      "Bash(python -c \" import sys, json for line in sys.stdin: try: obj = json.loads\\(line.strip\\(\\)\\) if obj.get\\('type'\\) == 'human': msg = obj.get\\('message', {}\\) if isinstance\\(msg, dict\\): content = msg.get\\('content', ''\\) if isinstance\\(content, str\\) and len\\(content\\) > 50: print\\(content[:300]\\) elif isinstance\\(content, list\\): for c in content: if isinstance\\(c, dict\\) and c.get\\('type'\\) == 'text' and len\\(c.get\\('text',''\\)\\) > 50: print\\(c['text'][:300]\\) except: pass \")",
+      "Bash(python -c ':*)",
+      "Bash(python3 -c ':*)",
+      "Bash(node -e ':*)",
+      "Bash(npm create:*)",
+      "Bash(rm -rf /c/Project/erp-app)",
+      "Bash(mv /c/Project/ERP-ACC/erp-app-temp /c/Project/ERP-ACC/erp-app)",
+      "Bash(git reset:*)"
+    ],
+    "additionalDirectories": [
+      "C:\\Project\\ERP-ACC\\erp-app\\supabase"
+    ]
+  }
+}

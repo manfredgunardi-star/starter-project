@@ -50,15 +50,13 @@ import BalanceSheetPage from './pages/reports/BalanceSheetPage'
 import IncomeStatementPage from './pages/reports/IncomeStatementPage'
 import CashFlowPage from './pages/reports/CashFlowPage'
 
-// Placeholder for pages not yet implemented
-function Page({ title }) {
-  return (
-    <div className="space-y-4">
-      <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
-      <p className="text-gray-600">Halaman ini sedang dalam pengembangan...</p>
-    </div>
-  )
-}
+// Dashboard
+import DashboardPage from './pages/DashboardPage'
+
+// Settings
+import AuditLogPage from './pages/settings/AuditLogPage'
+import UsersPage from './pages/settings/UsersPage'
+
 
 function AppContent() {
   const { user, loading } = useAuth()
@@ -141,11 +139,12 @@ function AppContent() {
           <Route path="reports/income-statement" element={<IncomeStatementPage />} />
           <Route path="reports/cash-flow" element={<CashFlowPage />} />
 
-          {/* Settings (coming soon) */}
-          <Route path="settings/users" element={<Page title="Manajemen Users" />} />
+          {/* Settings */}
+          <Route path="settings/users" element={<UsersPage />} />
+          <Route path="settings/audit-log" element={<AuditLogPage />} />
 
           {/* Default */}
-          <Route path="/" element={<Page title="Dashboard" />} />
+          <Route path="/" element={<DashboardPage />} />
         </Route>
       </Routes>
     </Suspense>

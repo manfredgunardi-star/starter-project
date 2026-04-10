@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find /c/Project/ERP-ACC -maxdepth 2 -name *.json -o -name *.md -o -name *.yaml -o -name *.yml)",
+      "Bash(head:*)",
+      "Bash(npm list:*)"
+    ]
+  }
+}
