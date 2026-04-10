@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
     if (!authHeader) {
       return jsonResponse({ error: 'Missing authorization header' }, 401)
     }
-    const token = authHeader.replace('Bearer ', '')
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader
 
     // 2. Create admin client using service role key
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
@@ -83,7 +83,7 @@ Deno.serve(async (req) => {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return jsonResponse({ error: 'Format email tidak valid' }, 400)
     }
-    if (password.length < 6) {
+    if (password.trim().length < 6) {
       return jsonResponse({ error: 'Password minimal 6 karakter' }, 400)
     }
     if (!full_name) return jsonResponse({ error: 'Nama lengkap wajib diisi' }, 400)
@@ -112,12 +112,14 @@ Deno.serve(async (req) => {
     //    (handle_new_user trigger already created the row with default role 'viewer')
     const { error: updateErr } = await supabaseAdmin
       .from('profiles')
-      .update({ full_name, role })
-      .eq('id', newUserId)
+      .upsert({ id: newUserId, full_name, role })
 
     if (updateErr) {
       // Rollback: delete the auth user to avoid orphaned accounts
-      await supabaseAdmin.auth.admin.deleteUser(newUserId)
+      const { error: deleteErr } = await supabaseAdmin.auth.admin.deleteUser(newUserId)
+      if (deleteErr) {
+        console.error('Rollback failed — orphaned auth user:', newUserId, deleteErr.message)
+      }
       return jsonResponse(
         { error: 'Gagal set role user: ' + updateErr.message },
         500,
