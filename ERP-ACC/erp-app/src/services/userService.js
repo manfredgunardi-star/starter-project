@@ -71,3 +71,28 @@ export async function reactivateUser(id) {
   if (error) throw error
   return data
 }
+
+export async function createUser({ email, password, full_name, role }) {
+  const { data, error } = await supabase.functions.invoke('create-user', {
+    body: { email, password, full_name, role },
+  })
+
+  // Two error paths:
+  // 1. Network / invocation error → `error` is set
+  // 2. Edge function returned 4xx/5xx → `data` contains `{ error: "..." }`
+  if (error) {
+    // Try to extract the JSON body which contains our custom error message
+    let message = error.message
+    try {
+      const ctx = await error.context?.json?.()
+      if (ctx?.error) message = ctx.error
+    } catch {
+      // ignore, fall back to generic message
+    }
+    throw new Error(message)
+  }
+  if (data?.error) {
+    throw new Error(data.error)
+  }
+  return data?.user
+}
