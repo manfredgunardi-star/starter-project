@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
 import * as svc from '../services/masterDataService'
 
-export function useUnits() {
-  const [units, setUnits] = useState([])
+function useFetchList(fetcher) {
+  const [data, setData] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -10,19 +10,29 @@ export function useUnits() {
     setLoading(true)
     setError(null)
     try {
-      const data = await svc.getUnits()
-      setUnits(data || [])
+      const result = await fetcher()
+      setData(result || [])
     } catch (err) {
       setError(err.message)
-      setUnits([])
+      setData([])
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [fetcher])
 
   useEffect(() => {
     fetch()
   }, [fetch])
 
-  return { units, loading, error, refetch: fetch }
+  return { data, loading, error, refetch: fetch }
+}
+
+export function useUnits() {
+  const { data: units, loading, error, refetch } = useFetchList(svc.getUnits)
+  return { units, loading, error, refetch }
+}
+
+export function useProducts() {
+  const { data: products, loading, error, refetch } = useFetchList(svc.getProducts)
+  return { products, loading, error, refetch }
 }

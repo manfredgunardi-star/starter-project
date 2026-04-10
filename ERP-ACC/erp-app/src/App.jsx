@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage'
 import AppLayout from './components/layout/AppLayout'
 import ProtectedRoute from './components/layout/ProtectedRoute'
 import UnitsPage from './pages/master/UnitsPage'
+import ProductsPage from './pages/master/ProductsPage'
 
 // Placeholder component for pages under development
 function Page({ title }) {
@@ -49,7 +50,7 @@ function AppContent() {
         >
           {/* Master Data routes */}
           <Route path="master/units" element={<UnitsPage />} />
-          <Route path="master/products" element={<Page title="Produk" />} />
+          <Route path="master/products" element={<ProductsPage />} />
           <Route path="master/customers" element={<Page title="Customer" />} />
           <Route path="master/suppliers" element={<Page title="Supplier" />} />
           <Route path="master/coa" element={<Page title="Chart of Accounts" />} />

@@ -1,11 +1,11 @@
 import { supabase } from '../lib/supabase'
 
 // ---- UNITS ----
+// units table: id, name, created_at (no is_active, no updated_at)
 export async function getUnits() {
   const { data, error } = await supabase
     .from('units')
     .select('*')
-    .eq('is_active', true)
     .order('name')
   if (error) throw error
   return data
@@ -14,11 +14,7 @@ export async function getUnits() {
 export async function createUnit(unit) {
   const { data, error } = await supabase
     .from('units')
-    .insert({
-      ...unit,
-      is_active: true,
-      created_at: new Date().toISOString()
-    })
+    .insert({ name: unit.name })
     .select()
     .single()
   if (error) throw error
@@ -28,10 +24,7 @@ export async function createUnit(unit) {
 export async function updateUnit(id, unit) {
   const { data, error } = await supabase
     .from('units')
-    .update({
-      ...unit,
-      updated_at: new Date().toISOString()
-    })
+    .update({ name: unit.name })
     .eq('id', id)
     .select()
     .single()
@@ -40,11 +33,121 @@ export async function updateUnit(id, unit) {
 }
 
 export async function deleteUnit(id) {
+  // units has no is_active — hard delete (units are reference/config data)
   const { error } = await supabase
     .from('units')
+    .delete()
+    .eq('id', id)
+  if (error) throw error
+}
+
+// ---- PRODUCTS ----
+export async function getProducts() {
+  const { data, error } = await supabase
+    .from('products')
+    .select(`
+      *,
+      base_unit:units!products_base_unit_id_fkey(id, name),
+      conversions:unit_conversions(
+        id,
+        from_unit_id,
+        to_unit_id,
+        conversion_factor,
+        from_unit:units!unit_conversions_from_unit_id_fkey(id, name),
+        to_unit:units!unit_conversions_to_unit_id_fkey(id, name)
+      )
+    `)
+    .eq('is_active', true)
+    .order('name')
+  if (error) throw error
+  return data
+}
+
+export async function createProduct(product, conversions = []) {
+  // Insert product
+  const { data: newProduct, error: productError } = await supabase
+    .from('products')
+    .insert({
+      sku: product.sku || null,
+      name: product.name,
+      category: product.category || null,
+      base_unit_id: product.base_unit_id,
+      buy_price: product.buy_price || 0,
+      sell_price: product.sell_price || 0,
+      is_taxable: product.is_taxable || false,
+      tax_rate: product.is_taxable ? (product.tax_rate || 11) : 11,
+    })
+    .select()
+    .single()
+  if (productError) throw productError
+
+  // Insert unit conversions
+  if (conversions.length > 0) {
+    const conversionRows = conversions.map(c => ({
+      product_id: newProduct.id,
+      from_unit_id: c.from_unit_id,
+      to_unit_id: newProduct.base_unit_id,
+      conversion_factor: Number(c.conversion_factor),
+    }))
+    const { error: convError } = await supabase
+      .from('unit_conversions')
+      .insert(conversionRows)
+    if (convError) throw convError
+  }
+
+  return newProduct
+}
+
+export async function updateProduct(id, product, conversions = []) {
+  // Update product
+  const { data: updatedProduct, error: productError } = await supabase
+    .from('products')
+    .update({
+      sku: product.sku || null,
+      name: product.name,
+      category: product.category || null,
+      base_unit_id: product.base_unit_id,
+      buy_price: product.buy_price || 0,
+      sell_price: product.sell_price || 0,
+      is_taxable: product.is_taxable || false,
+      tax_rate: product.is_taxable ? (product.tax_rate || 11) : 11,
+    })
+    .eq('id', id)
+    .select()
+    .single()
+  if (productError) throw productError
+
+  // Replace all conversions: delete old, insert new
+  const { error: delError } = await supabase
+    .from('unit_conversions')
+    .delete()
+    .eq('product_id', id)
+  if (delError) throw delError
+
+  if (conversions.length > 0) {
+    const conversionRows = conversions.map(c => ({
+      product_id: id,
+      from_unit_id: c.from_unit_id,
+      to_unit_id: updatedProduct.base_unit_id,
+      conversion_factor: Number(c.conversion_factor),
+    }))
+    const { error: convError } = await supabase
+      .from('unit_conversions')
+      .insert(conversionRows)
+    if (convError) throw convError
+  }
+
+  return updatedProduct
+}
+
+export async function softDeleteProduct(id) {
+  const { data: { user } } = await supabase.auth.getUser()
+  const { error } = await supabase
+    .from('products')
     .update({
       is_active: false,
-      deleted_at: new Date().toISOString()
+      deleted_at: new Date().toISOString(),
+      deleted_by: user?.id ?? null,
     })
     .eq('id', id)
   if (error) throw error
