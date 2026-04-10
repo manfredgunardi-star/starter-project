@@ -2,14 +2,14 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useToast } from '../../components/ui/ToastContext'
 import { useAccounts } from '../../hooks/useCashBank'
-import { useCustomers } from '../../hooks/useMasterData'
+import { useCustomers, useSuppliers } from '../../hooks/useMasterData'
 import { savePayment, getOutstandingInvoicesByCustomer } from '../../services/cashBankService'
+import { getOutstandingPurchaseInvoicesBySupplier } from '../../services/purchaseService'
 import { formatCurrency } from '../../utils/currency'
 import { today } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
 import Select from '../../components/ui/Select'
-import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { ArrowLeft, Save } from 'lucide-react'
 
 export default function PaymentFormPage() {
@@ -18,16 +18,20 @@ export default function PaymentFormPage() {
   const toast = useToast()
 
   const { customers } = useCustomers()
+  const { suppliers } = useSuppliers()
   const { accounts } = useAccounts()
 
   const [submitting, setSubmitting] = useState(false)
   const [invoices, setInvoices] = useState([])
   const [loadingInvoices, setLoadingInvoices] = useState(false)
 
+  const initialType = searchParams.get('type') === 'outgoing' ? 'outgoing' : 'incoming'
+
   const [form, setForm] = useState({
-    type: 'incoming',
+    type: initialType,
     date: today(),
     customer_id: '',
+    supplier_id: '',
     invoice_id: searchParams.get('invoice') || '',
     account_id: '',
     amount: '',
@@ -36,15 +40,24 @@ export default function PaymentFormPage() {
 
   const field = (key, value) => setForm(f => ({ ...f, [key]: value }))
 
-  // Load outstanding invoices when customer changes
+  // Load outstanding invoices when customer/supplier changes
   useEffect(() => {
-    if (!form.customer_id) { setInvoices([]); return }
-    setLoadingInvoices(true)
-    getOutstandingInvoicesByCustomer(form.customer_id)
-      .then(setInvoices)
-      .catch(err => toast.error(err.message))
-      .finally(() => setLoadingInvoices(false))
-  }, [form.customer_id])
+    if (form.type === 'incoming') {
+      if (!form.customer_id) { setInvoices([]); return }
+      setLoadingInvoices(true)
+      getOutstandingInvoicesByCustomer(form.customer_id)
+        .then(setInvoices)
+        .catch(err => toast.error(err.message))
+        .finally(() => setLoadingInvoices(false))
+    } else {
+      if (!form.supplier_id) { setInvoices([]); return }
+      setLoadingInvoices(true)
+      getOutstandingPurchaseInvoicesBySupplier(form.supplier_id)
+        .then(setInvoices)
+        .catch(err => toast.error(err.message))
+        .finally(() => setLoadingInvoices(false))
+    }
+  }, [form.customer_id, form.supplier_id, form.type])
 
   // Auto-fill amount from selected invoice remaining balance
   useEffect(() => {
@@ -64,8 +77,11 @@ export default function PaymentFormPage() {
     if (!form.account_id) { toast.error('Pilih akun kas/bank'); return false }
     if (!form.amount || Number(form.amount) <= 0) { toast.error('Jumlah harus lebih dari 0'); return false }
     if (form.type === 'incoming' && !form.customer_id) { toast.error('Pilih customer'); return false }
+    if (form.type === 'outgoing' && !form.supplier_id) { toast.error('Pilih supplier'); return false }
     if (remaining !== null && Number(form.amount) > remaining + 0.01) {
-      toast.error(`Jumlah melebihi sisa piutang ${formatCurrency(remaining)}`); return false
+      const label = form.type === 'incoming' ? 'sisa piutang' : 'sisa hutang'
+      toast.error(`Jumlah melebihi ${label} ${formatCurrency(remaining)}`)
+      return false
     }
     return true
   }
@@ -90,6 +106,7 @@ export default function PaymentFormPage() {
   }
 
   const customerOptions = customers.map(c => ({ value: c.id, label: c.name }))
+  const supplierOptions = suppliers.map(s => ({ value: s.id, label: s.name }))
   const accountOptions = accounts.map(a => ({ value: a.id, label: `${a.name} (${formatCurrency(a.balance)})` }))
   const invoiceOptions = invoices.map(i => ({
     value: i.id,
@@ -114,7 +131,11 @@ export default function PaymentFormPage() {
                 type="radio"
                 value={t}
                 checked={form.type === t}
-                onChange={() => field('type', t)}
+                onChange={() => {
+                  field('type', t)
+                  setForm(f => ({ ...f, type: t, customer_id: '', supplier_id: '', invoice_id: '' }))
+                  setInvoices([])
+                }}
                 className="text-blue-600"
               />
               <span className="text-sm font-medium text-gray-700">
@@ -142,8 +163,19 @@ export default function PaymentFormPage() {
           />
         )}
 
+        {/* Supplier (for outgoing) */}
+        {form.type === 'outgoing' && (
+          <Select
+            label="Supplier *"
+            options={supplierOptions}
+            value={form.supplier_id}
+            onChange={e => { field('supplier_id', e.target.value); field('invoice_id', '') }}
+            placeholder="Pilih supplier..."
+          />
+        )}
+
         {/* Invoice reference */}
-        {form.type === 'incoming' && form.customer_id && (
+        {((form.type === 'incoming' && form.customer_id) || (form.type === 'outgoing' && form.supplier_id)) && (
           <div className="space-y-1">
             <Select
               label="Invoice (opsional)"
@@ -154,7 +186,7 @@ export default function PaymentFormPage() {
             />
             {selectedInvoice && (
               <p className="text-xs text-blue-600">
-                Sisa piutang: {formatCurrency(remaining)}
+                {form.type === 'incoming' ? 'Sisa piutang' : 'Sisa hutang'}: {formatCurrency(remaining)}
               </p>
             )}
           </div>

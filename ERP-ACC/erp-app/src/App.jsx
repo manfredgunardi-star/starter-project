@@ -28,6 +28,10 @@ import SalesInvoiceFormPage from './pages/sales/SalesInvoiceFormPage'
 // Purchase
 import PurchaseOrdersPage from './pages/purchase/PurchaseOrdersPage'
 import PurchaseOrderFormPage from './pages/purchase/PurchaseOrderFormPage'
+import GoodsReceiptsPage from './pages/purchase/GoodsReceiptsPage'
+import GoodsReceiptFormPage from './pages/purchase/GoodsReceiptFormPage'
+import PurchaseInvoicesPage from './pages/purchase/PurchaseInvoicesPage'
+import PurchaseInvoiceFormPage from './pages/purchase/PurchaseInvoiceFormPage'
 
 // Cash & Bank
 import CashBankAccountsPage from './pages/cash/AccountsPage'
@@ -100,8 +104,12 @@ function AppContent() {
           <Route path="purchase/orders" element={<PurchaseOrdersPage />} />
           <Route path="purchase/orders/new" element={<PurchaseOrderFormPage />} />
           <Route path="purchase/orders/:id" element={<PurchaseOrderFormPage />} />
-          <Route path="purchase/receipts" element={<Page title="Penerimaan Barang" />} />
-          <Route path="purchase/invoices" element={<Page title="Invoice Pembelian" />} />
+          <Route path="purchase/receipts" element={<GoodsReceiptsPage />} />
+          <Route path="purchase/receipts/new" element={<GoodsReceiptFormPage />} />
+          <Route path="purchase/receipts/:id" element={<GoodsReceiptFormPage />} />
+          <Route path="purchase/invoices" element={<PurchaseInvoicesPage />} />
+          <Route path="purchase/invoices/new" element={<PurchaseInvoiceFormPage />} />
+          <Route path="purchase/invoices/:id" element={<PurchaseInvoiceFormPage />} />
 
           {/* Cash & Bank */}
           <Route path="cash/accounts" element={<CashBankAccountsPage />} />
