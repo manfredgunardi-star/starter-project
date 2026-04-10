@@ -9,6 +9,7 @@ import UnitsPage from './pages/master/UnitsPage'
 import ProductsPage from './pages/master/ProductsPage'
 import CustomersPage from './pages/master/CustomersPage'
 import SuppliersPage from './pages/master/SuppliersPage'
+import COAPage from './pages/master/COAPage'
 
 // Placeholder component for pages under development
 function Page({ title }) {
@@ -55,7 +56,7 @@ function AppContent() {
           <Route path="master/products" element={<ProductsPage />} />
           <Route path="master/customers" element={<CustomersPage />} />
           <Route path="master/suppliers" element={<SuppliersPage />} />
-          <Route path="master/coa" element={<Page title="Chart of Accounts" />} />
+          <Route path="master/coa" element={<COAPage />} />
 
           {/* Inventory routes */}
           <Route path="inventory/stock" element={<Page title="Stok" />} />

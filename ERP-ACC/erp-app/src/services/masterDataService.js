@@ -153,6 +153,77 @@ export async function softDeleteProduct(id) {
   if (error) throw error
 }
 
+// ---- COA (Chart of Accounts) ----
+
+// auto-determines normal_balance from account type
+export function coaNormalBalance(type) {
+  return type === 'asset' || type === 'expense' ? 'debit' : 'credit'
+}
+
+export async function getCOA() {
+  const { data, error } = await supabase
+    .from('coa')
+    .select('*, parent:coa!coa_parent_id_fkey(id, code, name)')
+    .eq('is_active', true)
+    .order('code')
+  if (error) throw error
+  return data
+}
+
+export async function createCOA(coa) {
+  const { data, error } = await supabase
+    .from('coa')
+    .insert({
+      code: coa.code,
+      name: coa.name,
+      type: coa.type,
+      normal_balance: coaNormalBalance(coa.type),
+      parent_id: coa.parent_id || null,
+    })
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function updateCOA(id, coa) {
+  const { data, error } = await supabase
+    .from('coa')
+    .update({
+      code: coa.code,
+      name: coa.name,
+      type: coa.type,
+      normal_balance: coaNormalBalance(coa.type),
+      parent_id: coa.parent_id || null,
+    })
+    .eq('id', id)
+    .select()
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function softDeleteCOA(id) {
+  // Check if this account is referenced in journal_items
+  const { count, error: checkError } = await supabase
+    .from('journal_items')
+    .select('id', { count: 'exact', head: true })
+    .eq('coa_id', id)
+  if (checkError) throw checkError
+  if (count > 0) throw new Error('Akun ini sudah digunakan dalam jurnal dan tidak dapat dihapus')
+
+  const { data: { user } } = await supabase.auth.getUser()
+  const { error } = await supabase
+    .from('coa')
+    .update({
+      is_active: false,
+      deleted_at: new Date().toISOString(),
+      deleted_by: user?.id ?? null,
+    })
+    .eq('id', id)
+  if (error) throw error
+}
+
 // ---- CUSTOMERS ----
 export async function getCustomers() {
   const { data, error } = await supabase

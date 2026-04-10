@@ -37,6 +37,11 @@ export function useProducts() {
   return { products, loading, error, refetch }
 }
 
+export function useCOA() {
+  const { data: coa, loading, error, refetch } = useFetchList(svc.getCOA)
+  return { coa, loading, error, refetch }
+}
+
 export function useCustomers() {
   const { data: customers, loading, error, refetch } = useFetchList(svc.getCustomers)
   return { customers, loading, error, refetch }
