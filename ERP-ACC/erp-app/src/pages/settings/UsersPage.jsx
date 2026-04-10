@@ -257,6 +257,7 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [editingUser, setEditingUser] = useState(null)
+  const [creatingUser, setCreatingUser] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
@@ -294,6 +295,20 @@ export default function UsersPage() {
     }
   }
 
+  const handleCreate = async ({ email, password, full_name, role }) => {
+    setIsSaving(true)
+    try {
+      await createUser({ email, password, full_name, role })
+      toast.success(`User ${email} berhasil dibuat`)
+      setCreatingUser(false)
+      await loadUsers()
+    } catch (err) {
+      toast.error('Gagal membuat user: ' + err.message)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   const handleDeactivate = async (id) => {
     if (!window.confirm('Nonaktifkan user ini?')) return
     try {
@@ -318,10 +333,33 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">Manajemen Users</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-3xl font-bold text-gray-900">Manajemen Users</h1>
+        {!creatingUser && !editingUser && (
+          <Button
+            variant="primary"
+            onClick={() => setCreatingUser(true)}
+          >
+            <Plus size={16} className="inline mr-1" />
+            Tambah User
+          </Button>
+        )}
+      </div>
 
       {loading && <LoadingSpinner message="Memuat users..." />}
       {error && <div className="text-red-600 text-sm">{error}</div>}
+
+      {creatingUser && (
+        <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Tambah User Baru</h2>
+          <CreateUserForm
+            onSave={handleCreate}
+            onCancel={() => setCreatingUser(false)}
+            isSaving={isSaving}
+            onError={(msg) => toast.error(msg)}
+          />
+        </div>
+      )}
 
       {editingUser && (
         <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
