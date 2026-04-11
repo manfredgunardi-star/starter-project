@@ -205,3 +205,72 @@ begin
 
   return v_prefix || lpad(v_next_num::text, 4, '0');
 end $$;
+
+-- ============================================================
+-- RPC: generate_depreciation_schedule
+-- Idempotent: deletes existing 'pending' rows, regenerates full schedule.
+-- Preserves 'posted' and 'cancelled' rows (raises exception if posted exist).
+-- Formula: straight-line, last month absorbs rounding.
+-- ============================================================
+create or replace function generate_depreciation_schedule(p_asset_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_asset record;
+  v_total_depreciable numeric(18,2);
+  v_monthly numeric(18,2);
+  v_accumulated numeric(18,2) := 0;
+  v_book_value numeric(18,2);
+  v_period_date date;
+  v_amount numeric(18,2);
+  i int;
+begin
+  if not is_admin_or_staff() then
+    raise exception 'permission denied';
+  end if;
+
+  select * into v_asset from assets where id = p_asset_id;
+  if v_asset is null then
+    raise exception 'asset % not found', p_asset_id;
+  end if;
+
+  -- Block if any 'posted' row exists — caller must handle reverse first
+  if exists (select 1 from depreciation_schedules
+             where asset_id = p_asset_id and status = 'posted') then
+    raise exception 'cannot regenerate: posted rows exist for asset %', p_asset_id;
+  end if;
+
+  delete from depreciation_schedules
+    where asset_id = p_asset_id and status in ('pending', 'cancelled');
+
+  v_total_depreciable := v_asset.acquisition_cost - v_asset.salvage_value;
+  v_monthly := round(v_total_depreciable / v_asset.useful_life_months, 2);
+  v_book_value := v_asset.acquisition_cost;
+
+  for i in 1..v_asset.useful_life_months loop
+    -- period_date = last day of the i-th month from depreciation_start_date
+    v_period_date := (date_trunc('month', v_asset.depreciation_start_date)
+                      + make_interval(months => i - 1)
+                      + interval '1 month' - interval '1 day')::date;
+
+    -- Last period absorbs rounding remainder
+    if i = v_asset.useful_life_months then
+      v_amount := v_total_depreciable - (v_monthly * (v_asset.useful_life_months - 1));
+    else
+      v_amount := v_monthly;
+    end if;
+
+    v_accumulated := v_accumulated + v_amount;
+    v_book_value := v_asset.acquisition_cost - v_accumulated;
+
+    insert into depreciation_schedules
+      (asset_id, period, period_date, sequence_no, amount,
+       accumulated_amount, book_value_end, status)
+    values
+      (p_asset_id, to_char(v_period_date, 'YYYY-MM'), v_period_date, i, v_amount,
+       v_accumulated, v_book_value, 'pending');
+  end loop;
+end $$;
