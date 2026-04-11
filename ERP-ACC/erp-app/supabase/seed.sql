@@ -26,6 +26,9 @@ insert into coa (code, name, type, normal_balance) values
   ('1-20000', 'Aset Tetap', 'asset', 'debit'),
   ('1-21000', 'Peralatan', 'asset', 'debit'),
   ('1-22000', 'Kendaraan', 'asset', 'debit'),
+  ('1-23000', 'Mesin', 'asset', 'debit'),
+  ('1-24000', 'Bangunan', 'asset', 'debit'),
+  ('1-25000', 'Inventaris Kantor', 'asset', 'debit'),
   ('1-29000', 'Akumulasi Penyusutan', 'asset', 'debit');
 
 -- Set parent-child relationships untuk Aset
@@ -34,7 +37,18 @@ update coa set parent_id = (select id from coa where code = '1-00000')
 update coa set parent_id = (select id from coa where code = '1-10000')
   where code in ('1-11000', '1-12000', '1-13000', '1-14000', '1-15000', '1-16000', '1-19000');
 update coa set parent_id = (select id from coa where code = '1-20000')
-  where code in ('1-21000', '1-22000', '1-29000');
+  where code in ('1-21000', '1-22000', '1-23000', '1-24000', '1-25000', '1-29000');
+
+-- Accumulated depreciation sub-accounts per category
+insert into coa (code, name, type, normal_balance) values
+  ('1-29100', 'Akum. Penyusutan Peralatan', 'asset', 'debit'),
+  ('1-29200', 'Akum. Penyusutan Kendaraan', 'asset', 'debit'),
+  ('1-29300', 'Akum. Penyusutan Mesin', 'asset', 'debit'),
+  ('1-29400', 'Akum. Penyusutan Bangunan', 'asset', 'debit'),
+  ('1-29500', 'Akum. Penyusutan Inventaris Kantor', 'asset', 'debit');
+
+update coa set parent_id = (select id from coa where code = '1-29000')
+  where code in ('1-29100', '1-29200', '1-29300', '1-29400', '1-29500');
 
 -- 2-xxxxx: KEWAJIBAN
 insert into coa (code, name, type, normal_balance) values
@@ -87,3 +101,50 @@ insert into coa (code, name, type, normal_balance) values
 
 update coa set parent_id = (select id from coa where code = '5-00000')
   where code like '5-1%' or code like '5-9%';
+
+-- Depreciation expense sub-accounts per category
+insert into coa (code, name, type, normal_balance) values
+  ('5-17100', 'Beban Penyusutan Peralatan', 'expense', 'debit'),
+  ('5-17200', 'Beban Penyusutan Kendaraan', 'expense', 'debit'),
+  ('5-17300', 'Beban Penyusutan Mesin', 'expense', 'debit'),
+  ('5-17400', 'Beban Penyusutan Bangunan', 'expense', 'debit'),
+  ('5-17500', 'Beban Penyusutan Inventaris Kantor', 'expense', 'debit');
+
+update coa set parent_id = (select id from coa where code = '5-17000')
+  where code in ('5-17100', '5-17200', '5-17300', '5-17400', '5-17500');
+
+-- Gain/Loss on Asset Disposal accounts
+insert into coa (code, name, type, normal_balance) values
+  ('4-19100', 'Keuntungan Penjualan Aset Tetap', 'revenue', 'credit'),
+  ('5-99100', 'Kerugian Pelepasan Aset Tetap', 'expense', 'debit');
+
+update coa set parent_id = (select id from coa where code = '4-19000')
+  where code = '4-19100';
+update coa set parent_id = (select id from coa where code = '5-99000')
+  where code = '5-99100';
+
+-- ============================================================
+-- Seed: Asset Categories (requires migration 014 tables)
+-- ============================================================
+insert into asset_categories (code, name, default_useful_life_months,
+  asset_account_id, accumulated_depreciation_account_id, depreciation_expense_account_id) values
+  ('EQP', 'Peralatan', 48,
+    (select id from coa where code = '1-21000'),
+    (select id from coa where code = '1-29100'),
+    (select id from coa where code = '5-17100')),
+  ('VHC', 'Kendaraan', 96,
+    (select id from coa where code = '1-22000'),
+    (select id from coa where code = '1-29200'),
+    (select id from coa where code = '5-17200')),
+  ('MCH', 'Mesin', 96,
+    (select id from coa where code = '1-23000'),
+    (select id from coa where code = '1-29300'),
+    (select id from coa where code = '5-17300')),
+  ('BLD', 'Bangunan', 240,
+    (select id from coa where code = '1-24000'),
+    (select id from coa where code = '1-29400'),
+    (select id from coa where code = '5-17400')),
+  ('OFI', 'Inventaris Kantor', 48,
+    (select id from coa where code = '1-25000'),
+    (select id from coa where code = '1-29500'),
+    (select id from coa where code = '5-17500'));
