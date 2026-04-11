@@ -350,3 +350,89 @@ begin
 
   return v_journal_id;
 end $$;
+
+-- ============================================================
+-- RPC: post_depreciation_batch
+-- Posts all pending schedules in [p_period_from .. p_period_to].
+-- Creates one journal per (asset, period). Idempotent via status check.
+-- Returns JSON summary: { posted, skipped, errors }.
+-- ============================================================
+create or replace function post_depreciation_batch(
+  p_period_from text,
+  p_period_to text,
+  p_posting_date date,
+  p_description_template text
+) returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_row record;
+  v_category record;
+  v_journal_id uuid;
+  v_journal_number text;
+  v_posted int := 0;
+  v_skipped int := 0;
+  v_errors jsonb := '[]'::jsonb;
+  v_desc text;
+begin
+  if not is_admin_or_staff() then
+    raise exception 'permission denied';
+  end if;
+
+  for v_row in
+    select ds.*, a.name as asset_name, a.code as asset_code, a.category_id
+    from depreciation_schedules ds
+    join assets a on a.id = ds.asset_id
+    where ds.period between p_period_from and p_period_to
+      and ds.status = 'pending'
+      and a.status = 'active'
+      and a.is_active = true
+    order by ds.period, a.code
+  loop
+    begin
+      select * into v_category from asset_categories where id = v_row.category_id;
+
+      v_journal_number := generate_number('JRN');
+      v_desc := replace(
+        replace(p_description_template, '{asset}', v_row.asset_name),
+        '{period}', v_row.period
+      );
+
+      insert into journals (journal_number, date, description, source, is_posted, created_by)
+        values (v_journal_number, p_posting_date, v_desc,
+                'asset_depreciation', true, auth.uid())
+        returning id into v_journal_id;
+
+      -- Dr depreciation expense (debit > 0, credit = 0)
+      insert into journal_items (journal_id, coa_id, debit, credit, description)
+        values (v_journal_id, v_category.depreciation_expense_account_id,
+                v_row.amount, 0, 'Penyusutan ' || v_row.asset_code);
+
+      -- Cr accumulated depreciation (debit = 0, credit > 0)
+      insert into journal_items (journal_id, coa_id, debit, credit, description)
+        values (v_journal_id, v_category.accumulated_depreciation_account_id,
+                0, v_row.amount, 'Akum penyusutan ' || v_row.asset_code);
+
+      update depreciation_schedules
+        set status = 'posted', journal_id = v_journal_id,
+            posted_at = now(), posted_by = auth.uid()
+        where id = v_row.id;
+
+      -- Auto-update asset status to fully_depreciated if this was last row
+      if v_row.sequence_no = (select useful_life_months from assets where id = v_row.asset_id) then
+        update assets set status = 'fully_depreciated'
+          where id = v_row.asset_id and status = 'active';
+      end if;
+
+      v_posted := v_posted + 1;
+    exception when others then
+      v_errors := v_errors || jsonb_build_object(
+        'asset_id', v_row.asset_id, 'period', v_row.period, 'error', sqlerrm);
+      v_skipped := v_skipped + 1;
+    end;
+  end loop;
+
+  return jsonb_build_object('posted', v_posted, 'skipped', v_skipped, 'errors', v_errors);
+end $$;
