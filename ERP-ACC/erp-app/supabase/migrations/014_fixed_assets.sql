@@ -3,7 +3,22 @@
 -- RLS, triggers, and RPC functions are in subsequent migrations.
 
 -- Extend journals.source to allow asset transaction types
-alter table journals drop constraint journals_source_check;
+do $$
+declare
+  v_constraint_name text;
+begin
+  select c.conname into v_constraint_name
+    from pg_constraint c
+    join pg_class t on c.conrelid = t.oid
+    where t.relname = 'journals'
+      and c.contype = 'c'
+      and pg_get_constraintdef(c.oid) like '%auto%manual%';
+
+  if v_constraint_name is not null then
+    execute 'alter table journals drop constraint ' || quote_ident(v_constraint_name);
+  end if;
+end $$;
+
 alter table journals add constraint journals_source_check
   check (source in ('auto', 'manual', 'asset_acquisition', 'asset_depreciation', 'asset_disposal'));
 
@@ -61,7 +76,11 @@ create table assets (
   updated_by uuid references auth.users(id),
   deleted_at timestamptz,
   deleted_by uuid references auth.users(id),
-  constraint chk_depreciable_positive check (acquisition_cost > salvage_value)
+  constraint chk_depreciable_positive check (acquisition_cost > salvage_value),
+  constraint chk_disposal_consistency check (
+    (status = 'disposed' and disposed_at is not null and disposal_type is not null)
+    or (status != 'disposed')
+  )
 );
 create index idx_assets_category on assets(category_id) where is_active;
 create index idx_assets_status on assets(status) where is_active;
@@ -72,7 +91,7 @@ create index idx_assets_code on assets(code);
 -- ============================================================
 create table depreciation_schedules (
   id uuid primary key default gen_random_uuid(),
-  asset_id uuid not null references assets(id) on delete cascade,
+  asset_id uuid not null references assets(id),
   period text not null,
   period_date date not null,
   sequence_no int not null check (sequence_no > 0),
@@ -106,7 +125,10 @@ create table asset_disposals (
   journal_id uuid not null references journals(id),
   notes text,
   created_at timestamptz not null default now(),
-  created_by uuid references auth.users(id)
+  created_by uuid references auth.users(id),
+  constraint chk_sale_requires_price check (
+    disposal_type != 'sale' or (sale_price is not null and payment_account_id is not null)
+  )
 );
 create index idx_asset_disposals_asset on asset_disposals(asset_id);
 create index idx_asset_disposals_date on asset_disposals(disposal_date);
