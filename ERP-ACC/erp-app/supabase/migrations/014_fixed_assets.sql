@@ -132,3 +132,49 @@ create table asset_disposals (
 );
 create index idx_asset_disposals_asset on asset_disposals(asset_id);
 create index idx_asset_disposals_date on asset_disposals(disposal_date);
+
+-- ============================================================
+-- RLS
+-- ============================================================
+alter table asset_categories       enable row level security;
+alter table assets                 enable row level security;
+alter table depreciation_schedules enable row level security;
+alter table asset_disposals        enable row level security;
+
+-- asset_categories: standard master data pattern
+create policy "auth read asset_categories" on asset_categories
+  for select to authenticated using (true);
+create policy "staff insert asset_categories" on asset_categories
+  for insert to authenticated with check (is_admin_or_staff());
+create policy "staff update asset_categories" on asset_categories
+  for update to authenticated using (is_admin_or_staff());
+create policy "admin delete asset_categories" on asset_categories
+  for delete to authenticated using (is_admin());
+
+-- assets: standard master data pattern
+create policy "auth read assets" on assets
+  for select to authenticated using (true);
+create policy "staff insert assets" on assets
+  for insert to authenticated with check (is_admin_or_staff());
+create policy "staff update assets" on assets
+  for update to authenticated using (is_admin_or_staff());
+create policy "admin delete assets" on assets
+  for delete to authenticated using (is_admin());
+
+-- depreciation_schedules & asset_disposals: RPC-only write
+-- (no insert/update policy exposed to client; RPC with security definer handles writes)
+create policy "auth read depreciation_schedules" on depreciation_schedules
+  for select to authenticated using (true);
+create policy "auth read asset_disposals" on asset_disposals
+  for select to authenticated using (true);
+
+-- ============================================================
+-- Audit triggers (reuse fn_audit_log function from migration 013)
+-- ============================================================
+create trigger audit_assets_trigger
+  after insert or update or delete on assets
+  for each row execute function fn_audit_log();
+
+create trigger audit_asset_categories_trigger
+  after insert or update or delete on asset_categories
+  for each row execute function fn_audit_log();
