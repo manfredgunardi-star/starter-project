@@ -178,3 +178,30 @@ create trigger audit_assets_trigger
 create trigger audit_asset_categories_trigger
   after insert or update or delete on asset_categories
   for each row execute function fn_audit_log();
+
+-- ============================================================
+-- RPC: generate_asset_code
+-- Returns next code in format '{CATEGORY}-{YYYY}-{NNNN}' (4 digits)
+-- ============================================================
+create or replace function generate_asset_code(p_category_code text)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_year text := to_char(now(), 'YYYY');
+  v_prefix text := p_category_code || '-' || v_year || '-';
+  v_next_num int;
+begin
+  if not is_admin_or_staff() then
+    raise exception 'permission denied';
+  end if;
+
+  select coalesce(max(cast(substring(code from length(v_prefix) + 1) as int)), 0) + 1
+    into v_next_num
+    from assets
+    where code like v_prefix || '%';
+
+  return v_prefix || lpad(v_next_num::text, 4, '0');
+end $$;
