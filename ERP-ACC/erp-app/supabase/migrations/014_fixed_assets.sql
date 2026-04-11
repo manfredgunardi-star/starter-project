@@ -274,3 +274,79 @@ begin
        v_accumulated, v_book_value, 'pending');
   end loop;
 end $$;
+
+-- ============================================================
+-- RPC: create_asset_acquisition_journal
+-- Creates balanced journal for asset acquisition. Returns journal_id.
+-- ============================================================
+create or replace function create_asset_acquisition_journal(
+  p_asset_id uuid,
+  p_payment jsonb
+) returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_asset record;
+  v_category record;
+  v_journal_id uuid;
+  v_journal_number text;
+  v_cash_amt numeric := coalesce((p_payment->>'cash_bank_amount')::numeric, 0);
+  v_hutang_amt numeric := coalesce((p_payment->>'hutang_amount')::numeric, 0);
+  v_um_amt numeric := coalesce((p_payment->>'uang_muka_amount')::numeric, 0);
+begin
+  if not is_admin_or_staff() then
+    raise exception 'permission denied';
+  end if;
+
+  select * into v_asset from assets where id = p_asset_id;
+  if v_asset is null then raise exception 'asset not found'; end if;
+
+  select * into v_category from asset_categories where id = v_asset.category_id;
+
+  if abs((v_cash_amt + v_hutang_amt + v_um_amt) - v_asset.acquisition_cost) > 0.01 then
+    raise exception 'payment sum (%) does not match acquisition_cost (%)',
+      (v_cash_amt + v_hutang_amt + v_um_amt), v_asset.acquisition_cost;
+  end if;
+
+  v_journal_number := generate_number('JRN');
+
+  insert into journals (journal_number, date, description, source, is_posted, created_by)
+    values (v_journal_number, v_asset.acquisition_date,
+            'Perolehan ' || v_asset.name || ' (' || v_asset.code || ')',
+            'asset_acquisition', true, auth.uid())
+    returning id into v_journal_id;
+
+  -- Dr asset account (debit = acquisition_cost, credit = 0)
+  insert into journal_items (journal_id, coa_id, debit, credit, description)
+    values (v_journal_id, v_category.asset_account_id,
+            v_asset.acquisition_cost, 0,
+            'Perolehan ' || v_asset.code);
+
+  -- Cr cash/bank (debit = 0, credit = amount)
+  if v_cash_amt > 0 then
+    insert into journal_items (journal_id, coa_id, debit, credit, description)
+      values (v_journal_id,
+              (p_payment->>'cash_bank_account_id')::uuid,
+              0, v_cash_amt, 'Pembayaran tunai/bank');
+  end if;
+
+  -- Cr hutang (debit = 0, credit = amount)
+  if v_hutang_amt > 0 then
+    insert into journal_items (journal_id, coa_id, debit, credit, description)
+      values (v_journal_id,
+              (p_payment->>'hutang_account_id')::uuid,
+              0, v_hutang_amt, 'Hutang pembelian aset');
+  end if;
+
+  -- Cr uang muka (debit = 0, credit = amount)
+  if v_um_amt > 0 then
+    insert into journal_items (journal_id, coa_id, debit, credit, description)
+      values (v_journal_id,
+              (p_payment->>'uang_muka_account_id')::uuid,
+              0, v_um_amt, 'Pemakaian uang muka');
+  end if;
+
+  return v_journal_id;
+end $$;
