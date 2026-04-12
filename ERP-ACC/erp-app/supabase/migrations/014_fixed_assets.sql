@@ -514,9 +514,11 @@ begin
       values (v_journal_id, p_payment_account_id, p_sale_price, 0,
               'Penerimaan penjualan ' || v_asset.code);
     -- Dr accumulated depreciation
-    insert into journal_items (journal_id, coa_id, debit, credit, description)
-      values (v_journal_id, v_category.accumulated_depreciation_account_id, v_accumulated, 0,
-              'Eliminasi akum penyusutan');
+    if v_accumulated > 0 then
+      insert into journal_items (journal_id, coa_id, debit, credit, description)
+        values (v_journal_id, v_category.accumulated_depreciation_account_id, v_accumulated, 0,
+                'Eliminasi akum penyusutan');
+    end if;
     -- Cr asset account
     insert into journal_items (journal_id, coa_id, debit, credit, description)
       values (v_journal_id, v_category.asset_account_id, 0, v_asset.acquisition_cost,
@@ -536,9 +538,11 @@ begin
   else
     -- writeoff
     -- Dr accumulated depreciation
-    insert into journal_items (journal_id, coa_id, debit, credit, description)
-      values (v_journal_id, v_category.accumulated_depreciation_account_id, v_accumulated, 0,
-              'Eliminasi akum penyusutan');
+    if v_accumulated > 0 then
+      insert into journal_items (journal_id, coa_id, debit, credit, description)
+        values (v_journal_id, v_category.accumulated_depreciation_account_id, v_accumulated, 0,
+                'Eliminasi akum penyusutan');
+    end if;
     -- Dr loss on disposal (only if book_value > 0)
     if v_book_value > 0 then
       insert into journal_items (journal_id, coa_id, debit, credit, description)
