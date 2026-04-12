@@ -60,6 +60,7 @@ import AssetFormPage from './pages/assets/AssetFormPage'
 import AssetDetailPage from './pages/assets/AssetDetailPage'
 import DepreciationRunPage from './pages/assets/DepreciationRunPage'
 import AssetDisposalFormPage from './pages/assets/AssetDisposalFormPage'
+import AssetBulkImportPage from './pages/assets/AssetBulkImportPage'
 
 // Settings
 import AuditLogPage from './pages/settings/AuditLogPage'
@@ -151,6 +152,7 @@ function AppContent() {
           <Route path="assets" element={<AssetsPage />} />
           <Route path="assets/categories" element={<AssetCategoriesPage />} />
           <Route path="assets/new" element={<AssetFormPage />} />
+          <Route path="assets/bulk-import" element={<AssetBulkImportPage />} />
           <Route path="assets/depreciation" element={<DepreciationRunPage />} />
           <Route path="assets/:id" element={<AssetDetailPage />} />
           <Route path="assets/:id/edit" element={<AssetFormPage />} />
