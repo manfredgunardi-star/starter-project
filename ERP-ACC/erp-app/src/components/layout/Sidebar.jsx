@@ -10,7 +10,8 @@ import {
   DollarSign,
   BookOpen,
   BarChart3,
-  Settings
+  Settings,
+  Building2
 } from 'lucide-react'
 
 const menuGroups = [
@@ -70,12 +71,26 @@ const menuGroups = [
     ]
   },
   {
+    label: 'Aset Tetap',
+    icon: Building2,
+    items: [
+      { label: 'Daftar Aset', path: '/assets' },
+      { label: 'Kategori Aset', path: '/assets/categories' },
+      { label: 'Post Penyusutan', path: '/assets/depreciation' },
+      { label: 'Import Aset', path: '/assets/bulk-import' }
+    ]
+  },
+  {
     label: 'Laporan',
     icon: BarChart3,
     items: [
       { label: 'Neraca', path: '/reports/balance-sheet' },
       { label: 'Laba Rugi', path: '/reports/income-statement' },
-      { label: 'Arus Kas', path: '/reports/cash-flow' }
+      { label: 'Arus Kas', path: '/reports/cash-flow' },
+      { label: 'Daftar Aset Tetap', path: '/reports/assets-list' },
+      { label: 'Penyusutan per Periode', path: '/reports/depreciation-period' },
+      { label: 'Disposal Aset', path: '/reports/asset-disposals' },
+      { label: 'Summary Aset per Kategori', path: '/reports/assets-summary' }
     ]
   },
   {

@@ -62,6 +62,12 @@ import DepreciationRunPage from './pages/assets/DepreciationRunPage'
 import AssetDisposalFormPage from './pages/assets/AssetDisposalFormPage'
 import AssetBulkImportPage from './pages/assets/AssetBulkImportPage'
 
+// Fixed Assets Reports
+import AssetsListReportPage from './pages/reports/AssetsListReportPage'
+import DepreciationPeriodReportPage from './pages/reports/DepreciationPeriodReportPage'
+import AssetDisposalsReportPage from './pages/reports/AssetDisposalsReportPage'
+import AssetsSummaryReportPage from './pages/reports/AssetsSummaryReportPage'
+
 // Settings
 import AuditLogPage from './pages/settings/AuditLogPage'
 import UsersPage from './pages/settings/UsersPage'
@@ -147,6 +153,10 @@ function AppContent() {
           <Route path="reports/balance-sheet" element={<BalanceSheetPage />} />
           <Route path="reports/income-statement" element={<IncomeStatementPage />} />
           <Route path="reports/cash-flow" element={<CashFlowPage />} />
+          <Route path="reports/assets-list" element={<AssetsListReportPage />} />
+          <Route path="reports/depreciation-period" element={<DepreciationPeriodReportPage />} />
+          <Route path="reports/asset-disposals" element={<AssetDisposalsReportPage />} />
+          <Route path="reports/assets-summary" element={<AssetsSummaryReportPage />} />
 
           {/* Fixed Assets */}
           <Route path="assets" element={<AssetsPage />} />
