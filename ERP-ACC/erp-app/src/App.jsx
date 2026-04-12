@@ -57,6 +57,7 @@ import DashboardPage from './pages/DashboardPage'
 import AssetsPage from './pages/assets/AssetsPage'
 import AssetCategoriesPage from './pages/assets/AssetCategoriesPage'
 import AssetFormPage from './pages/assets/AssetFormPage'
+import AssetDetailPage from './pages/assets/AssetDetailPage'
 
 // Settings
 import AuditLogPage from './pages/settings/AuditLogPage'
@@ -148,6 +149,7 @@ function AppContent() {
           <Route path="assets" element={<AssetsPage />} />
           <Route path="assets/categories" element={<AssetCategoriesPage />} />
           <Route path="assets/new" element={<AssetFormPage />} />
+          <Route path="assets/:id" element={<AssetDetailPage />} />
           <Route path="assets/:id/edit" element={<AssetFormPage />} />
 
           {/* Settings */}
