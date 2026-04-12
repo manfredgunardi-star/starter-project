@@ -53,6 +53,11 @@ import CashFlowPage from './pages/reports/CashFlowPage'
 // Dashboard
 import DashboardPage from './pages/DashboardPage'
 
+// Fixed Assets
+import AssetsPage from './pages/assets/AssetsPage'
+import AssetCategoriesPage from './pages/assets/AssetCategoriesPage'
+import AssetFormPage from './pages/assets/AssetFormPage'
+
 // Settings
 import AuditLogPage from './pages/settings/AuditLogPage'
 import UsersPage from './pages/settings/UsersPage'
@@ -138,6 +143,12 @@ function AppContent() {
           <Route path="reports/balance-sheet" element={<BalanceSheetPage />} />
           <Route path="reports/income-statement" element={<IncomeStatementPage />} />
           <Route path="reports/cash-flow" element={<CashFlowPage />} />
+
+          {/* Fixed Assets */}
+          <Route path="assets" element={<AssetsPage />} />
+          <Route path="assets/categories" element={<AssetCategoriesPage />} />
+          <Route path="assets/new" element={<AssetFormPage />} />
+          <Route path="assets/:id/edit" element={<AssetFormPage />} />
 
           {/* Settings */}
           <Route path="settings/users" element={<UsersPage />} />
