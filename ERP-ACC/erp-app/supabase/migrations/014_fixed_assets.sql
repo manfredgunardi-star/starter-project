@@ -436,3 +436,145 @@ begin
 
   return jsonb_build_object('posted', v_posted, 'skipped', v_skipped, 'errors', v_errors);
 end $$;
+
+-- ============================================================
+-- RPC: execute_asset_disposal
+-- 1. Auto-posts pending depreciation up to period before disposal_date
+-- 2. Creates disposal journal (sale or writeoff)
+-- 3. Inserts asset_disposals row
+-- 4. Cancels remaining schedule rows after disposal period
+-- 5. Updates asset status to 'disposed'
+-- Returns: disposal journal_id
+-- ============================================================
+create or replace function execute_asset_disposal(
+  p_asset_id uuid,
+  p_disposal_date date,
+  p_disposal_type text,
+  p_sale_price numeric,
+  p_payment_account_id uuid,
+  p_notes text
+) returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_asset record;
+  v_category record;
+  v_journal_id uuid;
+  v_journal_number text;
+  v_accumulated numeric(18,2);
+  v_book_value numeric(18,2);
+  v_gain_loss numeric(18,2);
+  v_cutoff text := to_char(p_disposal_date, 'YYYY-MM');
+  v_prev_period text := to_char(p_disposal_date - interval '1 month', 'YYYY-MM');
+begin
+  if not is_admin_or_staff() then
+    raise exception 'permission denied';
+  end if;
+
+  if p_disposal_type not in ('sale', 'writeoff') then
+    raise exception 'invalid disposal_type';
+  end if;
+
+  select * into v_asset from assets where id = p_asset_id for update;
+  if v_asset is null then raise exception 'asset not found'; end if;
+  if v_asset.status = 'disposed' then raise exception 'asset already disposed'; end if;
+
+  select * into v_category from asset_categories where id = v_asset.category_id;
+
+  -- 1. Auto-post pending depreciation up to month before disposal
+  perform post_depreciation_batch(
+    '1900-01',
+    v_prev_period,
+    p_disposal_date,
+    'Penyusutan {asset} – {period} (catch-up disposal)'
+  );
+
+  -- 2. Snapshot accumulated & book value (after auto-post)
+  select coalesce(sum(amount), 0) into v_accumulated
+    from depreciation_schedules
+    where asset_id = p_asset_id and status = 'posted';
+  v_book_value := v_asset.acquisition_cost - v_accumulated;
+  v_gain_loss := coalesce(p_sale_price, 0) - v_book_value;
+
+  v_journal_number := generate_number('JRN');
+
+  insert into journals (journal_number, date, description, source, is_posted, created_by)
+    values (v_journal_number, p_disposal_date,
+            case p_disposal_type
+              when 'sale' then 'Penjualan aset ' || v_asset.code
+              else 'Penghapusan aset ' || v_asset.code end,
+            'asset_disposal', true, auth.uid())
+    returning id into v_journal_id;
+
+  if p_disposal_type = 'sale' then
+    -- Dr cash/bank
+    insert into journal_items (journal_id, coa_id, debit, credit, description)
+      values (v_journal_id, p_payment_account_id, p_sale_price, 0,
+              'Penerimaan penjualan ' || v_asset.code);
+    -- Dr accumulated depreciation
+    insert into journal_items (journal_id, coa_id, debit, credit, description)
+      values (v_journal_id, v_category.accumulated_depreciation_account_id, v_accumulated, 0,
+              'Eliminasi akum penyusutan');
+    -- Cr asset account
+    insert into journal_items (journal_id, coa_id, debit, credit, description)
+      values (v_journal_id, v_category.asset_account_id, 0, v_asset.acquisition_cost,
+              'Eliminasi aset');
+    -- Gain or Loss (only insert if non-zero to comply with debit>0 OR credit>0 constraint)
+    if v_gain_loss > 0 then
+      insert into journal_items (journal_id, coa_id, debit, credit, description)
+        values (v_journal_id,
+                (select id from coa where code = '4-19100'),
+                0, v_gain_loss, 'Keuntungan penjualan aset');
+    elsif v_gain_loss < 0 then
+      insert into journal_items (journal_id, coa_id, debit, credit, description)
+        values (v_journal_id,
+                (select id from coa where code = '5-99100'),
+                -v_gain_loss, 0, 'Kerugian penjualan aset');
+    end if;
+  else
+    -- writeoff
+    -- Dr accumulated depreciation
+    insert into journal_items (journal_id, coa_id, debit, credit, description)
+      values (v_journal_id, v_category.accumulated_depreciation_account_id, v_accumulated, 0,
+              'Eliminasi akum penyusutan');
+    -- Dr loss on disposal (only if book_value > 0)
+    if v_book_value > 0 then
+      insert into journal_items (journal_id, coa_id, debit, credit, description)
+        values (v_journal_id, (select id from coa where code = '5-99100'),
+                v_book_value, 0, 'Kerugian penghapusan aset');
+    end if;
+    -- Cr asset account
+    insert into journal_items (journal_id, coa_id, debit, credit, description)
+      values (v_journal_id, v_category.asset_account_id, 0, v_asset.acquisition_cost,
+              'Eliminasi aset');
+    v_gain_loss := -v_book_value;
+  end if;
+
+  -- 3. Insert asset_disposals record
+  insert into asset_disposals (asset_id, disposal_date, disposal_type,
+    sale_price, payment_account_id, book_value_at_disposal,
+    accumulated_at_disposal, gain_loss, journal_id, notes, created_by)
+  values (p_asset_id, p_disposal_date, p_disposal_type,
+    p_sale_price, p_payment_account_id, v_book_value,
+    v_accumulated, v_gain_loss, v_journal_id, p_notes, auth.uid());
+
+  -- 4. Cancel remaining pending schedules after disposal period
+  update depreciation_schedules
+    set status = 'cancelled'
+    where asset_id = p_asset_id and status = 'pending'
+      and period > v_cutoff;
+
+  -- 5. Update asset to disposed
+  update assets
+    set status = 'disposed',
+        disposed_at = p_disposal_date,
+        disposal_type = p_disposal_type,
+        disposal_journal_id = v_journal_id,
+        updated_at = now(),
+        updated_by = auth.uid()
+    where id = p_asset_id;
+
+  return v_journal_id;
+end $$;
