@@ -10,6 +10,14 @@ import { useAuth } from '../../contexts/AuthContext'
 export default function RoleGuard({ require, children }) {
   const auth = useAuth()
 
+  if (auth.loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p className="text-gray-600">Memuat...</p>
+      </div>
+    )
+  }
+
   if (!auth[require]) {
     return <Navigate to="/" replace />
   }
