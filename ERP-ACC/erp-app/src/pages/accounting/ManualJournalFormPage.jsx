@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useCOA } from '../../hooks/useMasterData'
 import { saveManualJournal, postManualJournal, getJournal } from '../../services/journalService'
@@ -15,6 +16,7 @@ const emptyRow = () => ({ _key: Date.now() + Math.random(), coa_id: '', descript
 export default function ManualJournalFormPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { canPost } = useAuth()
   const toast = useToast()
   const isNew = !id || id === 'new'
   const { coa } = useCOA()
@@ -118,12 +120,12 @@ export default function ManualJournalFormPage() {
           </h1>
         </div>
         <div className="flex gap-3">
-          {!readOnly && (
+          {!readOnly && canPost && (
             <Button variant="secondary" onClick={handleSave} loading={submitting}>
               <Save size={18} /> Simpan Draft
             </Button>
           )}
-          {!isNew && !readOnly && (
+          {!isNew && !readOnly && canPost && (
             <Button variant="primary" onClick={handlePost} loading={submitting} disabled={!isBalanced}>
               <Send size={18} /> Post Jurnal
             </Button>
