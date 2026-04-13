@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGoodsReceipts } from '../../hooks/usePurchase'
+import { useAuth } from '../../contexts/AuthContext'
 import { formatDate } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
@@ -8,6 +9,7 @@ import { Plus, Search } from 'lucide-react'
 
 export default function GoodsReceiptsPage() {
   const navigate = useNavigate()
+  const { canWrite } = useAuth()
   const { goodsReceipts, loading, error } = useGoodsReceipts()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
@@ -29,9 +31,11 @@ export default function GoodsReceiptsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Penerimaan Barang</h1>
-        <Button variant="primary" onClick={() => navigate('/purchase/receipts/new')}>
-          <Plus size={20} /> Tambah GR
-        </Button>
+        {canWrite && (
+          <Button variant="primary" onClick={() => navigate('/purchase/receipts/new')}>
+            <Plus size={20} /> Tambah GR
+          </Button>
+        )}
       </div>
 
       <div className="flex gap-3">

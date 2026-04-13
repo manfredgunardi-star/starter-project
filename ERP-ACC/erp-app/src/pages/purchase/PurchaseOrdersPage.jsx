@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePurchaseOrders } from '../../hooks/usePurchase'
+import { useAuth } from '../../contexts/AuthContext'
 import { formatCurrency } from '../../utils/currency'
 import { formatDate } from '../../utils/date'
 import Button from '../../components/ui/Button'
@@ -9,6 +10,7 @@ import { Plus, Search } from 'lucide-react'
 
 export default function PurchaseOrdersPage() {
   const navigate = useNavigate()
+  const { canWrite } = useAuth()
   const { purchaseOrders, loading, error } = usePurchaseOrders()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
@@ -30,9 +32,11 @@ export default function PurchaseOrdersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Purchase Order</h1>
-        <Button variant="primary" onClick={() => navigate('/purchase/orders/new')}>
-          <Plus size={20} /> Buat PO
-        </Button>
+        {canWrite && (
+          <Button variant="primary" onClick={() => navigate('/purchase/orders/new')}>
+            <Plus size={20} /> Buat PO
+          </Button>
+        )}
       </div>
 
       <div className="flex gap-3">
