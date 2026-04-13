@@ -99,9 +99,11 @@ export default function AssetsPage() {
               <Plus size={20} /> Bulk Import
             </Button>
           )}
-          <Button variant="secondary" onClick={() => navigate('/assets/depreciation')}>
-            Post Penyusutan
-          </Button>
+          {isAdmin && (
+            <Button variant="secondary" onClick={() => navigate('/assets/depreciation')}>
+              Post Penyusutan
+            </Button>
+          )}
         </div>
       </div>
 

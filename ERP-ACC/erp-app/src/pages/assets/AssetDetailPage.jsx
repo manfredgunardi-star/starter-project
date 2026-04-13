@@ -172,7 +172,7 @@ export default function AssetDetailPage() {
               <Edit2 size={16} /> Edit
             </button>
           )}
-          {canWrite && (
+          {isAdmin && (
             <button
               onClick={() => navigate(`/assets/${id}/dispose`)}
               disabled={asset.status === 'disposed'}
