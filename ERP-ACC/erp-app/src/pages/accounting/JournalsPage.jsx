@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { getJournals } from '../../services/journalService'
+import { useAuth } from '../../contexts/AuthContext'
 import { formatDate } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
@@ -8,6 +9,7 @@ import { Plus, Search } from 'lucide-react'
 
 export default function JournalsPage() {
   const navigate = useNavigate()
+  const { canPost } = useAuth()
   const [journals, setJournals] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -38,9 +40,11 @@ export default function JournalsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Jurnal</h1>
-        <Button variant="primary" onClick={() => navigate('/accounting/journals/new')}>
-          <Plus size={20} /> Jurnal Manual
-        </Button>
+        {canPost && (
+          <Button variant="primary" onClick={() => navigate('/accounting/journals/new')}>
+            <Plus size={20} /> Jurnal Manual
+          </Button>
+        )}
       </div>
 
       <div className="flex gap-3">

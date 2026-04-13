@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { usePayments } from '../../hooks/useCashBank'
+import { useAuth } from '../../contexts/AuthContext'
 import { formatCurrency } from '../../utils/currency'
 import { formatDate } from '../../utils/date'
 import Button from '../../components/ui/Button'
@@ -9,6 +10,7 @@ import { Plus, Search } from 'lucide-react'
 
 export default function PaymentsPage() {
   const navigate = useNavigate()
+  const { canWrite } = useAuth()
   const { payments, loading, error } = usePayments()
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
@@ -31,9 +33,11 @@ export default function PaymentsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Pembayaran</h1>
-        <Button variant="primary" onClick={() => navigate('/cash/payments/new')}>
-          <Plus size={20} /> Tambah Pembayaran
-        </Button>
+        {canWrite && (
+          <Button variant="primary" onClick={() => navigate('/cash/payments/new')}>
+            <Plus size={20} /> Tambah Pembayaran
+          </Button>
+        )}
       </div>
 
       <div className="flex gap-3">
