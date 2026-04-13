@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useAccounts } from '../../hooks/useCashBank'
 import { saveTransfer } from '../../services/cashBankService'
@@ -12,6 +13,7 @@ import { ArrowLeft, ArrowRight, Save } from 'lucide-react'
 
 export default function TransferFormPage() {
   const navigate = useNavigate()
+  const { canWrite } = useAuth()
   const toast = useToast()
   const { accounts } = useAccounts()
 
@@ -136,9 +138,11 @@ export default function TransferFormPage() {
 
         <div className="flex gap-3 justify-end pt-2">
           <Button variant="secondary" onClick={() => navigate('/cash/payments')}>Batal</Button>
-          <Button variant="primary" onClick={handleSave} loading={submitting}>
-            <Save size={18} /> Simpan & Post
-          </Button>
+          {canWrite && (
+            <Button variant="primary" onClick={handleSave} loading={submitting}>
+              <Save size={18} /> Simpan & Post
+            </Button>
+          )}
         </div>
       </div>
     </div>

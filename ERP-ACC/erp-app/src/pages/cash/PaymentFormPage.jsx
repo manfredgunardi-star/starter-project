@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useAccounts } from '../../hooks/useCashBank'
 import { useCustomers, useSuppliers } from '../../hooks/useMasterData'
@@ -15,6 +16,7 @@ import { ArrowLeft, Save } from 'lucide-react'
 export default function PaymentFormPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const { canWrite } = useAuth()
   const toast = useToast()
 
   const { customers } = useCustomers()
@@ -245,9 +247,11 @@ export default function PaymentFormPage() {
           <Button variant="secondary" onClick={() => navigate('/cash/payments')}>
             Batal
           </Button>
-          <Button variant="primary" onClick={handleSave} loading={submitting}>
-            <Save size={18} /> Simpan & Post
-          </Button>
+          {canWrite && (
+            <Button variant="primary" onClick={handleSave} loading={submitting}>
+              <Save size={18} /> Simpan & Post
+            </Button>
+          )}
         </div>
       </div>
     </div>
