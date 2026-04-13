@@ -127,6 +127,7 @@ export default function AssetBulkImportPage() {
           payment: {
             method: 'cash_bank',
             cash_bank_account_id: paymentAccountId,
+            cash_bank_amount: row.data.acquisition_cost,
           },
         })
         success++

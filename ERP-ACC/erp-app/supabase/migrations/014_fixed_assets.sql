@@ -568,7 +568,7 @@ begin
   update depreciation_schedules
     set status = 'cancelled'
     where asset_id = p_asset_id and status = 'pending'
-      and period > v_cutoff;
+      and period >= v_cutoff;
 
   -- 5. Update asset to disposed
   update assets
