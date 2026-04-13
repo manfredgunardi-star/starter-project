@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { ArrowLeft, Edit2, Trash2 } from 'lucide-react'
+import { useAuth } from '../../contexts/AuthContext'
 import { getAssetWithSchedule } from '../../services/assetService'
 import { supabase } from '../../lib/supabase'
 import { formatCurrency } from '../../utils/currency'
@@ -24,6 +25,7 @@ const SOURCE_BADGE = {
 export default function AssetDetailPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { canWrite, isAdmin } = useAuth()
 
   const [asset, setAsset] = useState(null)
   const [journals, setJournals] = useState([])
@@ -162,23 +164,27 @@ export default function AssetDetailPage() {
         </div>
 
         <div className="flex gap-3">
-          <button
-            onClick={() => navigate(`/assets/${id}/edit`)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-          >
-            <Edit2 size={16} /> Edit
-          </button>
-          <button
-            onClick={() => navigate(`/assets/${id}/dispose`)}
-            disabled={asset.status === 'disposed'}
-            className={`flex items-center gap-2 px-4 py-2 rounded transition-colors ${
-              asset.status === 'disposed'
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                : 'bg-red-100 text-red-600 hover:bg-red-200'
-            }`}
-          >
-            <Trash2 size={16} /> Lepas Aset
-          </button>
+          {canWrite && (
+            <button
+              onClick={() => navigate(`/assets/${id}/edit`)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+            >
+              <Edit2 size={16} /> Edit
+            </button>
+          )}
+          {canWrite && (
+            <button
+              onClick={() => navigate(`/assets/${id}/dispose`)}
+              disabled={asset.status === 'disposed'}
+              className={`flex items-center gap-2 px-4 py-2 rounded transition-colors ${
+                asset.status === 'disposed'
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-red-100 text-red-600 hover:bg-red-200'
+              }`}
+            >
+              <Trash2 size={16} /> Lepas Aset
+            </button>
+          )}
         </div>
       </div>
 

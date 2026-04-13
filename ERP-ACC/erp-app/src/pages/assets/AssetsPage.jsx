@@ -7,9 +7,11 @@ import { formatDate } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { Plus, Search, Eye, Edit2, Trash2 } from 'lucide-react'
+import { useAuth } from '../../contexts/AuthContext'
 
 export default function AssetsPage() {
   const navigate = useNavigate()
+  const { canWrite, isAdmin } = useAuth()
 
   // State
   const [assets, setAssets] = useState([])
@@ -87,12 +89,16 @@ export default function AssetsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Aset Tetap</h1>
         <div className="flex gap-2">
-          <Button variant="primary" onClick={() => navigate('/assets/new')}>
-            <Plus size={20} /> Tambah Aset
-          </Button>
-          <Button variant="secondary" onClick={() => navigate('/assets/bulk-import')}>
-            <Plus size={20} /> Bulk Import
-          </Button>
+          {canWrite && (
+            <Button variant="primary" onClick={() => navigate('/assets/new')}>
+              <Plus size={20} /> Tambah Aset
+            </Button>
+          )}
+          {canWrite && (
+            <Button variant="secondary" onClick={() => navigate('/assets/bulk-import')}>
+              <Plus size={20} /> Bulk Import
+            </Button>
+          )}
           <Button variant="secondary" onClick={() => navigate('/assets/depreciation')}>
             Post Penyusutan
           </Button>
@@ -145,9 +151,11 @@ export default function AssetsPage() {
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">Belum ada aset tetap</h3>
           <p className="text-gray-500 mb-6">Mulai dengan menambahkan aset pertama Anda</p>
-          <Button variant="primary" onClick={() => navigate('/assets/new')}>
-            <Plus size={20} /> Tambah Aset Pertama
-          </Button>
+          {canWrite && (
+            <Button variant="primary" onClick={() => navigate('/assets/new')}>
+              <Plus size={20} /> Tambah Aset Pertama
+            </Button>
+          )}
         </div>
       ) : (
         <div className="overflow-x-auto border border-gray-200 rounded-lg">
@@ -195,21 +203,25 @@ export default function AssetsPage() {
                       >
                         <Eye size={18} />
                       </button>
-                      <button
-                        onClick={() => navigate(`/assets/${asset.id}/edit`)}
-                        className="text-gray-600 hover:text-blue-600 transition"
-                        title="Edit"
-                      >
-                        <Edit2 size={18} />
-                      </button>
-                      <button
-                        onClick={() => navigate(`/assets/${asset.id}/dispose`)}
-                        disabled={asset.status !== 'active'}
-                        className={`transition ${asset.status === 'active' ? 'text-gray-600 hover:text-red-600' : 'text-gray-300 cursor-not-allowed'}`}
-                        title={asset.status === 'active' ? 'Dispose' : 'Hanya aktif dapat dibuang'}
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                      {canWrite && (
+                        <button
+                          onClick={() => navigate(`/assets/${asset.id}/edit`)}
+                          className="text-gray-600 hover:text-blue-600 transition"
+                          title="Edit"
+                        >
+                          <Edit2 size={18} />
+                        </button>
+                      )}
+                      {isAdmin && (
+                        <button
+                          onClick={() => navigate(`/assets/${asset.id}/dispose`)}
+                          disabled={asset.status !== 'active'}
+                          className={`transition ${asset.status === 'active' ? 'text-gray-600 hover:text-red-600' : 'text-gray-300 cursor-not-allowed'}`}
+                          title={asset.status === 'active' ? 'Dispose' : 'Hanya aktif dapat dibuang'}
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

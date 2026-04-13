@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { ArrowLeft, CheckCircle, XCircle, SkipForward } from 'lucide-react'
 import { previewPeriod, postPeriod } from '../../services/depreciationService'
 import DepreciationPreviewTable from '../../components/assets/DepreciationPreviewTable'
+import { useAuth } from '../../contexts/AuthContext'
 
 // Default posting_date = last day of previous month
 function defaultPostingDate() {
@@ -20,6 +21,7 @@ function defaultPeriod() {
 
 export default function DepreciationRunPage() {
   const navigate = useNavigate()
+  const { isAdmin } = useAuth()
   const [step, setStep] = useState('select') // 'select' | 'preview' | 'result'
   const [form, setForm] = useState({
     period_from: defaultPeriod(),
@@ -177,13 +179,18 @@ export default function DepreciationRunPage() {
             </div>
           </div>
           <div className="flex justify-end">
-            <button
-              onClick={handlePreview}
-              disabled={loading}
-              className="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-60 transition-colors"
-            >
-              {loading ? 'Memuat...' : 'Preview Penyusutan →'}
-            </button>
+            {isAdmin && (
+              <button
+                onClick={handlePreview}
+                disabled={loading}
+                className="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-60 transition-colors"
+              >
+                {loading ? 'Memuat...' : 'Preview Penyusutan →'}
+              </button>
+            )}
+            {!isAdmin && (
+              <p className="text-sm text-gray-500">Hanya admin yang dapat menjalankan penyusutan.</p>
+            )}
           </div>
         </div>
       )}
@@ -216,13 +223,18 @@ export default function DepreciationRunPage() {
             >
               ← Kembali
             </button>
-            <button
-              onClick={handlePost}
-              disabled={loading || preview.length === 0}
-              className="px-5 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-60 transition-colors"
-            >
-              {loading ? 'Memposting...' : 'Confirm & Post'}
-            </button>
+            {isAdmin && (
+              <button
+                onClick={handlePost}
+                disabled={loading || preview.length === 0}
+                className="px-5 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-60 transition-colors"
+              >
+                {loading ? 'Memposting...' : 'Confirm & Post'}
+              </button>
+            )}
+            {!isAdmin && (
+              <p className="text-sm text-gray-500">Hanya admin yang dapat menjalankan penyusutan.</p>
+            )}
           </div>
         </div>
       )}
