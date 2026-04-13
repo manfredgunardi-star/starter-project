@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useLocation, Link } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import {
   ChevronDown,
   LayoutDashboard,
@@ -14,6 +15,8 @@ import {
   Building2
 } from 'lucide-react'
 
+// minRole: 'write' = staff+admin, 'admin' = admin only
+// No minRole = visible to all (including viewer)
 const menuGroups = [
   {
     label: 'Master Data',
@@ -58,7 +61,7 @@ const menuGroups = [
     items: [
       { label: 'Akun', path: '/cash/accounts' },
       { label: 'Pembayaran', path: '/cash/payments' },
-      { label: 'Transfer', path: '/cash/transfers/new' },
+      { label: 'Transfer', path: '/cash/transfers/new', minRole: 'write' },
       { label: 'Rekonsiliasi', path: '/cash/reconciliation' }
     ]
   },
@@ -76,8 +79,8 @@ const menuGroups = [
     items: [
       { label: 'Daftar Aset', path: '/assets' },
       { label: 'Kategori Aset', path: '/assets/categories' },
-      { label: 'Post Penyusutan', path: '/assets/depreciation' },
-      { label: 'Import Aset', path: '/assets/bulk-import' }
+      { label: 'Post Penyusutan', path: '/assets/depreciation', minRole: 'admin' },
+      { label: 'Import Aset', path: '/assets/bulk-import', minRole: 'write' }
     ]
   },
   {
@@ -96,6 +99,7 @@ const menuGroups = [
   {
     label: 'Settings',
     icon: Settings,
+    minRole: 'admin',
     items: [
       { label: 'Users', path: '/settings/users' },
       { label: 'Audit Log', path: '/settings/audit-log' }
@@ -121,12 +125,23 @@ function DashboardLink() {
   )
 }
 
-function MenuGroup({ group }) {
+function MenuGroup({ group, canWrite, isAdmin }) {
   const [isOpen, setIsOpen] = useState(true)
   const location = useLocation()
   const Icon = group.icon
 
-  const isGroupActive = group.items.some(item => location.pathname === item.path)
+  // Filter items by role
+  const visibleItems = group.items.filter(item => {
+    if (!item.minRole) return true
+    if (item.minRole === 'write') return canWrite
+    if (item.minRole === 'admin') return isAdmin
+    return true
+  })
+
+  // Hide entire group if no visible items
+  if (visibleItems.length === 0) return null
+
+  const isGroupActive = visibleItems.some(item => location.pathname === item.path)
 
   return (
     <div className="mb-2">
@@ -148,7 +163,7 @@ function MenuGroup({ group }) {
 
       {isOpen && (
         <div className="ml-4 mt-1 space-y-1">
-          {group.items.map(item => {
+          {visibleItems.map(item => {
             const isActive = location.pathname === item.path
             return (
               <Link
@@ -171,6 +186,16 @@ function MenuGroup({ group }) {
 }
 
 export default function Sidebar() {
+  const { canWrite, isAdmin } = useAuth()
+
+  // Filter groups that have a minRole on the group itself
+  const visibleGroups = menuGroups.filter(group => {
+    if (!group.minRole) return true
+    if (group.minRole === 'write') return canWrite
+    if (group.minRole === 'admin') return isAdmin
+    return true
+  })
+
   return (
     <div className="w-64 bg-white border-r border-gray-200 flex flex-col h-screen">
       <div className="p-6 border-b border-gray-200">
@@ -179,8 +204,8 @@ export default function Sidebar() {
 
       <nav className="flex-1 overflow-y-auto p-4">
         <DashboardLink />
-        {menuGroups.map(group => (
-          <MenuGroup key={group.label} group={group} />
+        {visibleGroups.map(group => (
+          <MenuGroup key={group.label} group={group} canWrite={canWrite} isAdmin={isAdmin} />
         ))}
       </nav>
     </div>
