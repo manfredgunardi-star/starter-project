@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useProducts, useSuppliers } from '../../hooks/useMasterData'
 import { getGoodsReceipt, saveGoodsReceipt, postGoodsReceipt } from '../../services/purchaseService'
@@ -12,6 +13,7 @@ import { ArrowLeft, Save, Send, Trash2, Plus } from 'lucide-react'
 export default function GoodsReceiptFormPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { canWrite, canPost } = useAuth()
   const toast = useToast()
   const isNew = !id || id === 'new'
 
@@ -140,12 +142,12 @@ export default function GoodsReceiptFormPage() {
           </h1>
         </div>
         <div className="flex gap-3">
-          {!readOnly && (
+          {!readOnly && canWrite && (
             <Button variant="secondary" onClick={handleSave} loading={submitting}>
               <Save size={18} /> Simpan
             </Button>
           )}
-          {!isNew && header.status === 'draft' && (
+          {!isNew && header.status === 'draft' && canPost && (
             <Button variant="primary" onClick={handlePost} loading={submitting}>
               <Send size={18} /> Post (Terima Barang)
             </Button>

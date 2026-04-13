@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { usePurchaseOrders } from '../../hooks/usePurchase'
 import { useSuppliers } from '../../hooks/useMasterData'
@@ -16,6 +17,7 @@ import { ArrowLeft, Save, Check } from 'lucide-react'
 export default function PurchaseOrderFormPage() {
   const navigate = useNavigate()
   const { id } = useParams()
+  const { canWrite, canPost } = useAuth()
   const toast = useToast()
 
   const { suppliers } = useSuppliers()
@@ -149,15 +151,15 @@ export default function PurchaseOrderFormPage() {
           <Button variant="secondary" onClick={() => navigate('/purchase/orders')}>
             Batal
           </Button>
-          {po.status === 'draft' && (
-            <>
-              <Button variant="primary" onClick={handleSave} loading={submitting}>
-                <Save size={18} /> Simpan Draft
-              </Button>
-              <Button variant="primary" onClick={handleConfirm} loading={submitting}>
-                <Check size={18} /> Konfirmasi
-              </Button>
-            </>
+          {po.status === 'draft' && canWrite && (
+            <Button variant="primary" onClick={handleSave} loading={submitting}>
+              <Save size={18} /> Simpan Draft
+            </Button>
+          )}
+          {po.status === 'draft' && canPost && (
+            <Button variant="primary" onClick={handleConfirm} loading={submitting}>
+              <Check size={18} /> Konfirmasi
+            </Button>
           )}
         </div>
       </div>

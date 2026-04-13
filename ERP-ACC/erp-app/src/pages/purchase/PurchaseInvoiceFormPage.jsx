@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useProducts, useSuppliers } from '../../hooks/useMasterData'
 import { getPurchaseInvoice, savePurchaseInvoice, postPurchaseInvoice } from '../../services/purchaseService'
@@ -15,6 +16,7 @@ export default function PurchaseInvoiceFormPage() {
   const { id } = useParams()
   const [searchParams] = useSearchParams()
   const navigate = useNavigate()
+  const { canWrite, canPost } = useAuth()
   const toast = useToast()
   const isNew = !id || id === 'new'
 
@@ -116,12 +118,12 @@ export default function PurchaseInvoiceFormPage() {
           </h1>
         </div>
         <div className="flex gap-3">
-          {!readOnly && (
+          {!readOnly && canWrite && (
             <Button variant="secondary" onClick={handleSave} loading={submitting}>
               <Save size={18} /> Simpan
             </Button>
           )}
-          {!isNew && header.status === 'draft' && (
+          {!isNew && header.status === 'draft' && canPost && (
             <Button variant="primary" onClick={handlePost} loading={submitting}>
               <Send size={18} /> Post Invoice
             </Button>
