@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSalesInvoices } from '../../hooks/useSales'
+import { useAuth } from '../../contexts/AuthContext'
 import { formatCurrency } from '../../utils/currency'
 import { formatDate } from '../../utils/date'
 import Button from '../../components/ui/Button'
@@ -10,6 +11,7 @@ import { Plus, Search } from 'lucide-react'
 
 export default function SalesInvoicesPage() {
   const navigate = useNavigate()
+  const { canWrite } = useAuth()
   const { invoices, loading, error } = useSalesInvoices()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
@@ -31,9 +33,11 @@ export default function SalesInvoicesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Invoice Penjualan</h1>
-        <Button variant="primary" onClick={() => navigate('/sales/invoices/new')}>
-          <Plus size={20} /> Buat Invoice
-        </Button>
+        {canWrite && (
+          <Button variant="primary" onClick={() => navigate('/sales/invoices/new')}>
+            <Plus size={20} /> Buat Invoice
+          </Button>
+        )}
       </div>
 
       <div className="flex gap-3">

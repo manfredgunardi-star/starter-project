@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGoodsDeliveries } from '../../hooks/useSales'
+import { useAuth } from '../../contexts/AuthContext'
 import { formatDate } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import StatusBadge from '../../components/ui/StatusBadge'
@@ -9,6 +10,7 @@ import { Plus, Search } from 'lucide-react'
 
 export default function GoodsDeliveriesPage() {
   const navigate = useNavigate()
+  const { canWrite } = useAuth()
   const { deliveries, loading, error } = useGoodsDeliveries()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
@@ -30,9 +32,11 @@ export default function GoodsDeliveriesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Pengiriman Barang</h1>
-        <Button variant="primary" onClick={() => navigate('/sales/deliveries/new')}>
-          <Plus size={20} /> Buat Pengiriman
-        </Button>
+        {canWrite && (
+          <Button variant="primary" onClick={() => navigate('/sales/deliveries/new')}>
+            <Plus size={20} /> Buat Pengiriman
+          </Button>
+        )}
       </div>
 
       <div className="flex gap-3">
