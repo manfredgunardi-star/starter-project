@@ -167,11 +167,11 @@ function AppContent() {
           <Route path="assets/depreciation" element={<RoleGuard require="isAdmin"><DepreciationRunPage /></RoleGuard>} />
           <Route path="assets/:id" element={<AssetDetailPage />} />
           <Route path="assets/:id/edit" element={<RoleGuard require="canWrite"><AssetFormPage /></RoleGuard>} />
-          <Route path="assets/:id/dispose" element={<RoleGuard require="canWrite"><AssetDisposalFormPage /></RoleGuard>} />
+          <Route path="assets/:id/dispose" element={<RoleGuard require="isAdmin"><AssetDisposalFormPage /></RoleGuard>} />
 
           {/* Settings */}
           <Route path="settings/users" element={<RoleGuard require="isAdmin"><UsersPage /></RoleGuard>} />
-          <Route path="settings/audit-log" element={<AuditLogPage />} />
+          <Route path="settings/audit-log" element={<RoleGuard require="isAdmin"><AuditLogPage /></RoleGuard>} />
 
           {/* Default */}
           <Route index element={<DashboardPage />} />
