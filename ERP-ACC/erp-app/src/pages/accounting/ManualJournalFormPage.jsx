@@ -52,7 +52,7 @@ export default function ManualJournalFormPage() {
     }
   }, [id, isNew])
 
-  const readOnly = !isNew && header.status === 'posted'
+  const readOnly = (!isNew && header.status === 'posted') || !canPost
 
   const totalDebit = items.reduce((s, i) => s + (Number(i.debit) || 0), 0)
   const totalCredit = items.reduce((s, i) => s + (Number(i.credit) || 0), 0)

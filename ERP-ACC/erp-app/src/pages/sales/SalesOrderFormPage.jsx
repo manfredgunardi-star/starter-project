@@ -14,7 +14,7 @@ import { ArrowLeft, Save, CheckCircle } from 'lucide-react'
 export default function SalesOrderFormPage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { canWrite } = useAuth()
+  const { canWrite, canPost } = useAuth()
   const toast = useToast()
   const isNew = !id || id === 'new'
 
@@ -119,7 +119,7 @@ export default function SalesOrderFormPage() {
               <Save size={18} /> Simpan Draft
             </Button>
           )}
-          {!isNew && header.status === 'draft' && canWrite && (
+          {!isNew && header.status === 'draft' && canPost && (
             <Button variant="primary" onClick={handleConfirm} loading={submitting}>
               <CheckCircle size={18} /> Konfirmasi
             </Button>
