@@ -5,6 +5,7 @@ import { ToastProvider } from './components/ui/ToastContext'
 import LoginPage from './pages/LoginPage'
 import AppLayout from './components/layout/AppLayout'
 import ProtectedRoute from './components/layout/ProtectedRoute'
+import RoleGuard from './components/layout/RoleGuard'
 
 // Master Data
 import UnitsPage from './pages/master/UnitsPage'
@@ -116,36 +117,36 @@ function AppContent() {
 
           {/* Sales */}
           <Route path="sales/orders" element={<SalesOrdersPage />} />
-          <Route path="sales/orders/new" element={<SalesOrderFormPage />} />
+          <Route path="sales/orders/new" element={<RoleGuard require="canWrite"><SalesOrderFormPage /></RoleGuard>} />
           <Route path="sales/orders/:id" element={<SalesOrderFormPage />} />
           <Route path="sales/deliveries" element={<GoodsDeliveriesPage />} />
-          <Route path="sales/deliveries/new" element={<GoodsDeliveryFormPage />} />
+          <Route path="sales/deliveries/new" element={<RoleGuard require="canWrite"><GoodsDeliveryFormPage /></RoleGuard>} />
           <Route path="sales/deliveries/:id" element={<GoodsDeliveryFormPage />} />
           <Route path="sales/invoices" element={<SalesInvoicesPage />} />
-          <Route path="sales/invoices/new" element={<SalesInvoiceFormPage />} />
+          <Route path="sales/invoices/new" element={<RoleGuard require="canWrite"><SalesInvoiceFormPage /></RoleGuard>} />
           <Route path="sales/invoices/:id" element={<SalesInvoiceFormPage />} />
 
           {/* Purchase */}
           <Route path="purchase/orders" element={<PurchaseOrdersPage />} />
-          <Route path="purchase/orders/new" element={<PurchaseOrderFormPage />} />
+          <Route path="purchase/orders/new" element={<RoleGuard require="canWrite"><PurchaseOrderFormPage /></RoleGuard>} />
           <Route path="purchase/orders/:id" element={<PurchaseOrderFormPage />} />
           <Route path="purchase/receipts" element={<GoodsReceiptsPage />} />
-          <Route path="purchase/receipts/new" element={<GoodsReceiptFormPage />} />
+          <Route path="purchase/receipts/new" element={<RoleGuard require="canWrite"><GoodsReceiptFormPage /></RoleGuard>} />
           <Route path="purchase/receipts/:id" element={<GoodsReceiptFormPage />} />
           <Route path="purchase/invoices" element={<PurchaseInvoicesPage />} />
-          <Route path="purchase/invoices/new" element={<PurchaseInvoiceFormPage />} />
+          <Route path="purchase/invoices/new" element={<RoleGuard require="canWrite"><PurchaseInvoiceFormPage /></RoleGuard>} />
           <Route path="purchase/invoices/:id" element={<PurchaseInvoiceFormPage />} />
 
           {/* Cash & Bank */}
           <Route path="cash/accounts" element={<CashBankAccountsPage />} />
           <Route path="cash/payments" element={<PaymentsPage />} />
-          <Route path="cash/payments/new" element={<PaymentFormPage />} />
-          <Route path="cash/transfers/new" element={<TransferFormPage />} />
+          <Route path="cash/payments/new" element={<RoleGuard require="canWrite"><PaymentFormPage /></RoleGuard>} />
+          <Route path="cash/transfers/new" element={<RoleGuard require="canWrite"><TransferFormPage /></RoleGuard>} />
           <Route path="cash/reconciliation" element={<ReconciliationPage />} />
 
           {/* Accounting */}
           <Route path="accounting/journals" element={<JournalsPage />} />
-          <Route path="accounting/journals/new" element={<ManualJournalFormPage />} />
+          <Route path="accounting/journals/new" element={<RoleGuard require="canPost"><ManualJournalFormPage /></RoleGuard>} />
           <Route path="accounting/journals/:id" element={<ManualJournalFormPage />} />
           <Route path="accounting/ledger" element={<LedgerPage />} />
 
@@ -161,15 +162,15 @@ function AppContent() {
           {/* Fixed Assets */}
           <Route path="assets" element={<AssetsPage />} />
           <Route path="assets/categories" element={<AssetCategoriesPage />} />
-          <Route path="assets/new" element={<AssetFormPage />} />
-          <Route path="assets/bulk-import" element={<AssetBulkImportPage />} />
-          <Route path="assets/depreciation" element={<DepreciationRunPage />} />
+          <Route path="assets/new" element={<RoleGuard require="canWrite"><AssetFormPage /></RoleGuard>} />
+          <Route path="assets/bulk-import" element={<RoleGuard require="canWrite"><AssetBulkImportPage /></RoleGuard>} />
+          <Route path="assets/depreciation" element={<RoleGuard require="isAdmin"><DepreciationRunPage /></RoleGuard>} />
           <Route path="assets/:id" element={<AssetDetailPage />} />
-          <Route path="assets/:id/edit" element={<AssetFormPage />} />
-          <Route path="assets/:id/dispose" element={<AssetDisposalFormPage />} />
+          <Route path="assets/:id/edit" element={<RoleGuard require="canWrite"><AssetFormPage /></RoleGuard>} />
+          <Route path="assets/:id/dispose" element={<RoleGuard require="canWrite"><AssetDisposalFormPage /></RoleGuard>} />
 
           {/* Settings */}
-          <Route path="settings/users" element={<UsersPage />} />
+          <Route path="settings/users" element={<RoleGuard require="isAdmin"><UsersPage /></RoleGuard>} />
           <Route path="settings/audit-log" element={<AuditLogPage />} />
 
           {/* Default */}
