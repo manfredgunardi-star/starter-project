@@ -2,6 +2,10 @@ import Input from '../ui/Input'
 import Select from '../ui/Select'
 import StatusBadge from '../ui/StatusBadge'
 import DateInput from '../ui/DateInput'
+import { Card, Space, Typography, Flex } from 'antd'
+import { Row, Col } from 'antd'
+
+const { Text } = Typography
 
 export default function DocumentHeader({
   docNumber,
@@ -21,81 +25,101 @@ export default function DocumentHeader({
   children,
 }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
-      <div className="flex items-start justify-between">
-        <div className="grid grid-cols-2 gap-4 flex-1 mr-4">
-          {/* Document Number */}
-          <Input
-            label="No. Dokumen"
-            value={docNumber || ''}
-            onChange={e => onDocNumberChange?.(e.target.value)}
-            readOnly={readOnly || !onDocNumberChange}
-            placeholder="Otomatis"
-            className={readOnly ? 'bg-gray-50' : ''}
-          />
+    <Card>
+      <Flex justify="space-between" align="flex-start" gap={16}>
+        <div style={{ flex: 1 }}>
+          <Row gutter={16}>
+            {/* Document Number */}
+            <Col span={12}>
+              <Input
+                label="No. Dokumen"
+                value={docNumber || ''}
+                onChange={e => onDocNumberChange?.(e.target.value)}
+                readOnly={readOnly || !onDocNumberChange}
+                placeholder="Otomatis"
+                className={readOnly ? 'bg-gray-50' : ''}
+              />
+            </Col>
 
-          {/* Date */}
-          <DateInput
-            label="Tanggal *"
-            value={date || ''}
-            onChange={e => onDateChange?.(e.target.value)}
-            disabled={readOnly}
-          />
+            {/* Date */}
+            <Col span={12}>
+              <DateInput
+                label="Tanggal *"
+                value={date || ''}
+                onChange={e => onDateChange?.(e.target.value)}
+                disabled={readOnly}
+              />
+            </Col>
 
-          {/* Party (customer/supplier) */}
-          {readOnly ? (
-            <Input
-              label={partyLabel}
-              value={partyOptions.find(o => o.value === partyId)?.label || partyId || '—'}
-              readOnly
-            />
-          ) : (
-            <Select
-              label={`${partyLabel} *`}
-              options={partyOptions}
-              value={partyId || ''}
-              onChange={e => onPartyChange?.(e.target.value)}
-              placeholder={`Pilih ${partyLabel.toLowerCase()}...`}
-            />
-          )}
+            {/* Party (customer/supplier) */}
+            <Col span={12} style={{ marginTop: 16 }}>
+              {readOnly ? (
+                <Input
+                  label={partyLabel}
+                  value={partyOptions.find(o => o.value === partyId)?.label || partyId || '—'}
+                  readOnly
+                />
+              ) : (
+                <Select
+                  label={`${partyLabel} *`}
+                  options={partyOptions}
+                  value={partyId || ''}
+                  onChange={e => onPartyChange?.(e.target.value)}
+                  placeholder={`Pilih ${partyLabel.toLowerCase()}...`}
+                />
+              )}
+            </Col>
 
-          {/* Due date (optional) */}
-          {(dueDate !== undefined) && (
-            <DateInput
-              label="Jatuh Tempo"
-              value={dueDate || ''}
-              onChange={e => onDueDateChange?.(e.target.value)}
-              disabled={readOnly}
-            />
-          )}
+            {/* Due date (optional) */}
+            {(dueDate !== undefined) && (
+              <Col span={12} style={{ marginTop: 16 }}>
+                <DateInput
+                  label="Jatuh Tempo"
+                  value={dueDate || ''}
+                  onChange={e => onDueDateChange?.(e.target.value)}
+                  disabled={readOnly}
+                />
+              </Col>
+            )}
 
-          {/* Extra slots */}
-          {children}
+            {/* Extra slots */}
+            {children}
+          </Row>
         </div>
 
         {/* Status badge */}
         {status && (
-          <div className="text-right">
-            <p className="text-xs text-gray-500 mb-1">Status</p>
+          <div style={{ textAlign: 'right' }}>
+            <Text type="secondary" style={{ fontSize: 12, display: 'block', marginBottom: 4 }}>Status</Text>
             <StatusBadge status={status} />
           </div>
         )}
-      </div>
+      </Flex>
 
       {/* Notes */}
       {(notes !== undefined) && (
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-gray-700">Catatan</label>
+        <Space direction="vertical" style={{ width: '100%', marginTop: 16 }} size={4}>
+          <Text strong style={{ fontSize: 13 }}>Catatan</Text>
           <textarea
             value={notes || ''}
             onChange={e => onNotesChange?.(e.target.value)}
             readOnly={readOnly}
             rows={2}
             placeholder="Catatan opsional..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+            style={{
+              width: '100%',
+              padding: '6px 12px',
+              border: '1px solid #d9d9d9',
+              borderRadius: 6,
+              fontSize: 13,
+              color: '#374151',
+              resize: 'none',
+              outline: 'none',
+              boxSizing: 'border-box',
+            }}
           />
-        </div>
+        </Space>
       )}
-    </div>
+    </Card>
   )
 }

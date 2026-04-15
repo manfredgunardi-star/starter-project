@@ -1,6 +1,9 @@
 import { useCallback } from 'react'
 import { formatCurrency } from '../../utils/currency'
 import { Plus, Trash2 } from 'lucide-react'
+import { Card, Space, Typography, Flex, Divider } from 'antd'
+
+const { Text } = Typography
 
 function emptyRow() {
   return {
@@ -96,25 +99,31 @@ export default function LineItemsTable({
 
   const productOptions = products.map(p => ({ value: p.id, label: `${p.name}${p.sku ? ` (${p.sku})` : ''}` }))
 
+  const cellStyle = { padding: '8px 16px', fontSize: 13 }
+  const inputStyle = { width: '100%', fontSize: 13, border: '1px solid #d9d9d9', borderRadius: 4, padding: '2px 8px' }
+
   return (
-    <div className="space-y-3">
-      <div className="overflow-x-auto border border-gray-200 rounded-lg">
-        <table className="w-full border-collapse min-w-[700px]">
-          <thead className="bg-gray-100 border-b border-gray-200">
+    <Space direction="vertical" style={{ width: '100%' }} size={12}>
+      <div style={{ overflowX: 'auto', border: '1px solid #e5e7eb', borderRadius: 8 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 700 }}>
+          <thead style={{ background: '#f3f4f6', borderBottom: '1px solid #e5e7eb' }}>
             <tr>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 w-40">Produk</th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-700 w-28">Satuan</th>
-              <th className="px-4 py-2 text-right text-xs font-medium text-gray-700 w-24">Qty</th>
-              <th className="px-4 py-2 text-right text-xs font-medium text-gray-700 w-32">Harga</th>
-              {showTax && <th className="px-4 py-2 text-right text-xs font-medium text-gray-700 w-28">Pajak</th>}
-              <th className="px-4 py-2 text-right text-xs font-medium text-gray-700 w-32">Total</th>
-              {!readOnly && <th className="w-10"></th>}
+              <th style={{ ...cellStyle, textAlign: 'left', width: 160, fontWeight: 500, color: '#374151' }}>Produk</th>
+              <th style={{ ...cellStyle, textAlign: 'left', width: 112, fontWeight: 500, color: '#374151' }}>Satuan</th>
+              <th style={{ ...cellStyle, textAlign: 'right', width: 96, fontWeight: 500, color: '#374151' }}>Qty</th>
+              <th style={{ ...cellStyle, textAlign: 'right', width: 128, fontWeight: 500, color: '#374151' }}>Harga</th>
+              {showTax && <th style={{ ...cellStyle, textAlign: 'right', width: 112, fontWeight: 500, color: '#374151' }}>Pajak</th>}
+              <th style={{ ...cellStyle, textAlign: 'right', width: 128, fontWeight: 500, color: '#374151' }}>Total</th>
+              {!readOnly && <th style={{ width: 40 }}></th>}
             </tr>
           </thead>
           <tbody>
             {items.length === 0 && (
               <tr>
-                <td colSpan={showTax ? (readOnly ? 6 : 7) : (readOnly ? 5 : 6)} className="px-4 py-6 text-center text-sm text-gray-500">
+                <td
+                  colSpan={showTax ? (readOnly ? 6 : 7) : (readOnly ? 5 : 6)}
+                  style={{ ...cellStyle, textAlign: 'center', color: '#9ca3af', padding: '24px 16px' }}
+                >
                   {readOnly ? 'Tidak ada item' : 'Klik "+ Tambah Baris" untuk menambahkan produk'}
                 </td>
               </tr>
@@ -124,14 +133,14 @@ export default function LineItemsTable({
               const unitOpts = getUnitOptions(prod)
 
               return (
-                <tr key={row._key || idx} className="border-b border-gray-200">
+                <tr key={row._key || idx} style={{ borderBottom: '1px solid #e5e7eb' }}>
                   {/* Product */}
-                  <td className="px-4 py-2">
+                  <td style={cellStyle}>
                     {readOnly ? (
-                      <span className="text-sm">{prod?.name || row.product_id}</span>
+                      <span style={{ fontSize: 13 }}>{prod?.name || row.product_id}</span>
                     ) : (
                       <select
-                        className="w-full text-sm border border-gray-300 rounded px-2 py-1"
+                        style={inputStyle}
                         value={row.product_id}
                         onChange={e => updateRow(idx, { product_id: e.target.value })}
                       >
@@ -144,12 +153,12 @@ export default function LineItemsTable({
                   </td>
 
                   {/* Unit */}
-                  <td className="px-4 py-2">
+                  <td style={cellStyle}>
                     {readOnly ? (
-                      <span className="text-sm">{unitOpts.find(u => u.id === row.unit_id)?.name || '—'}</span>
+                      <span style={{ fontSize: 13 }}>{unitOpts.find(u => u.id === row.unit_id)?.name || '—'}</span>
                     ) : (
                       <select
-                        className="w-full text-sm border border-gray-300 rounded px-2 py-1"
+                        style={inputStyle}
                         value={row.unit_id}
                         onChange={e => updateRow(idx, { unit_id: e.target.value })}
                         disabled={!row.product_id}
@@ -163,15 +172,15 @@ export default function LineItemsTable({
                   </td>
 
                   {/* Quantity */}
-                  <td className="px-4 py-2">
+                  <td style={cellStyle}>
                     {readOnly ? (
-                      <span className="text-sm text-right block">{row.quantity}</span>
+                      <span style={{ fontSize: 13, display: 'block', textAlign: 'right' }}>{row.quantity}</span>
                     ) : (
                       <input
                         type="number"
                         min="0"
                         step="any"
-                        className="w-full text-sm border border-gray-300 rounded px-2 py-1 text-right"
+                        style={{ ...inputStyle, textAlign: 'right' }}
                         value={row.quantity}
                         onChange={e => updateRow(idx, { quantity: e.target.value })}
                       />
@@ -179,15 +188,15 @@ export default function LineItemsTable({
                   </td>
 
                   {/* Unit Price */}
-                  <td className="px-4 py-2">
+                  <td style={cellStyle}>
                     {readOnly ? (
-                      <span className="text-sm text-right block">{formatCurrency(row.unit_price)}</span>
+                      <span style={{ fontSize: 13, display: 'block', textAlign: 'right' }}>{formatCurrency(row.unit_price)}</span>
                     ) : (
                       <input
                         type="number"
                         min="0"
                         step="any"
-                        className="w-full text-sm border border-gray-300 rounded px-2 py-1 text-right"
+                        style={{ ...inputStyle, textAlign: 'right' }}
                         value={row.unit_price}
                         onChange={e => updateRow(idx, { unit_price: e.target.value })}
                       />
@@ -196,27 +205,27 @@ export default function LineItemsTable({
 
                   {/* Tax */}
                   {showTax && (
-                    <td className="px-4 py-2 text-right text-sm text-gray-600">
+                    <td style={{ ...cellStyle, textAlign: 'right', color: '#4b5563' }}>
                       {prod?.is_taxable ? (
                         <span>{prod.tax_rate}% = {formatCurrency(row.tax_amount)}</span>
                       ) : (
-                        <span className="text-gray-400">—</span>
+                        <span style={{ color: '#9ca3af' }}>—</span>
                       )}
                     </td>
                   )}
 
                   {/* Total */}
-                  <td className="px-4 py-2 text-right text-sm font-medium text-gray-900">
+                  <td style={{ ...cellStyle, textAlign: 'right', fontWeight: 500, color: '#111827' }}>
                     {formatCurrency(row.total)}
                   </td>
 
                   {/* Delete button */}
                   {!readOnly && (
-                    <td className="px-2 py-2">
+                    <td style={{ padding: '8px' }}>
                       <button
                         type="button"
                         onClick={() => removeRow(idx)}
-                        className="text-red-500 hover:text-red-700"
+                        style={{ color: '#ef4444', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
                       >
                         <Trash2 size={16} />
                       </button>
@@ -234,7 +243,7 @@ export default function LineItemsTable({
         <button
           type="button"
           onClick={addRow}
-          className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800"
+          style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#2563eb', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
         >
           <Plus size={18} />
           Tambah Baris
@@ -243,26 +252,27 @@ export default function LineItemsTable({
 
       {/* Totals */}
       {items.length > 0 && (
-        <div className="flex justify-end">
-          <div className="text-sm space-y-1 min-w-[240px]">
-            <div className="flex justify-between text-gray-700">
+        <Flex justify="flex-end">
+          <div style={{ fontSize: 13, minWidth: 240 }}>
+            <Flex justify="space-between" style={{ color: '#374151', marginBottom: 4 }}>
               <span>Subtotal</span>
               <span>{formatCurrency(subtotal)}</span>
-            </div>
+            </Flex>
             {showTax && totalTax > 0 && (
-              <div className="flex justify-between text-gray-700">
+              <Flex justify="space-between" style={{ color: '#374151', marginBottom: 4 }}>
                 <span>Pajak</span>
                 <span>{formatCurrency(totalTax)}</span>
-              </div>
+              </Flex>
             )}
-            <div className="flex justify-between font-bold text-gray-900 border-t border-gray-300 pt-1">
+            <Divider style={{ margin: '6px 0' }} />
+            <Flex justify="space-between" style={{ fontWeight: 700, color: '#111827' }}>
               <span>Total</span>
               <span>{formatCurrency(grandTotal)}</span>
-            </div>
+            </Flex>
           </div>
-        </div>
+        </Flex>
       )}
-    </div>
+    </Space>
   )
 }
 

@@ -5,6 +5,9 @@ import { formatDate } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { Edit2, Trash2, RotateCcw, Plus } from 'lucide-react'
+import { Space, Typography, Tag, Alert, Card, Form, Input, Select, Flex, Tooltip } from 'antd'
+
+const { Title, Text } = Typography
 
 const ROLE_LABELS = {
   admin: 'Admin',
@@ -12,240 +15,190 @@ const ROLE_LABELS = {
   viewer: 'Viewer',
 }
 
-const ROLE_BADGE = {
-  admin: 'bg-red-100 text-red-700',
-  staff: 'bg-blue-100 text-blue-700',
-  viewer: 'bg-gray-100 text-gray-700',
+const ROLE_TAG_COLOR = {
+  admin: 'error',
+  staff: 'blue',
+  viewer: 'default',
 }
 
 function UserForm({ user, onSave, onCancel, isSaving, onError }) {
-  const [fullName, setFullName] = useState(user?.full_name || '')
-  const [role, setRole] = useState(user?.role || 'viewer')
+  const [form] = Form.useForm()
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    if (!fullName.trim()) {
+  const handleFinish = (values) => {
+    if (!values.full_name?.trim()) {
       onError('Nama lengkap tidak boleh kosong')
       return
     }
-    onSave({ full_name: fullName, role })
+    onSave({ full_name: values.full_name, role: values.role })
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
-        <input
-          type="text"
-          value={fullName}
-          onChange={e => setFullName(e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+    <Form
+      form={form}
+      layout="vertical"
+      initialValues={{ full_name: user?.full_name || '', role: user?.role || 'viewer' }}
+      onFinish={handleFinish}
+    >
+      <Form.Item label="Nama Lengkap" name="full_name" rules={[{ required: true, message: 'Nama wajib diisi' }]}>
+        <Input disabled={isSaving} />
+      </Form.Item>
+      <Form.Item label="Role" name="role">
+        <Select
           disabled={isSaving}
+          options={[
+            { value: 'viewer', label: 'Viewer' },
+            { value: 'staff', label: 'Staff' },
+            { value: 'admin', label: 'Admin' },
+          ]}
         />
-      </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-        <select
-          value={role}
-          onChange={e => setRole(e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-          disabled={isSaving}
-        >
-          <option value="viewer">Viewer</option>
-          <option value="staff">Staff</option>
-          <option value="admin">Admin</option>
-        </select>
-      </div>
-      <div className="flex gap-2">
-        <Button type="submit" variant="primary" loading={isSaving}>
-          Simpan
-        </Button>
-        <Button type="button" variant="secondary" onClick={onCancel} disabled={isSaving}>
-          Batal
-        </Button>
-      </div>
-    </form>
+      </Form.Item>
+      <Space>
+        <Button type="submit" variant="primary" loading={isSaving}>Simpan</Button>
+        <Button type="button" variant="secondary" onClick={onCancel} disabled={isSaving}>Batal</Button>
+      </Space>
+    </Form>
   )
 }
 
 function CreateUserForm({ onSave, onCancel, isSaving, onError }) {
-  const [email, setEmail] = useState('')
+  const [form] = Form.useForm()
   const [password, setPassword] = useState('')
-  const [fullName, setFullName] = useState('')
-  const [role, setRole] = useState('viewer')
 
   const generatePassword = () => {
-    // Exclude ambiguous chars: 0/O, 1/l/I
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
     let p = ''
     for (let i = 0; i < 10; i++) {
       p += chars[Math.floor(Math.random() * chars.length)]
     }
     setPassword(p)
+    form.setFieldValue('password', p)
   }
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    const trimmedEmail = email.trim()
-    const trimmedName = fullName.trim()
+  const handleFinish = (values) => {
+    const trimmedEmail = values.email?.trim()
+    const trimmedName = values.full_name?.trim()
+    const trimmedPassword = values.password?.trim()
 
-    if (!trimmedEmail) {
-      onError('Email tidak boleh kosong')
-      return
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
-      onError('Format email tidak valid')
-      return
-    }
-    const trimmedPassword = password.trim()
-    if (trimmedPassword.length < 6) {
-      onError('Password minimal 6 karakter')
-      return
-    }
-    if (!trimmedName) {
-      onError('Nama lengkap tidak boleh kosong')
-      return
-    }
+    if (!trimmedEmail) { onError('Email tidak boleh kosong'); return }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) { onError('Format email tidak valid'); return }
+    if (!trimmedPassword || trimmedPassword.length < 6) { onError('Password minimal 6 karakter'); return }
+    if (!trimmedName) { onError('Nama lengkap tidak boleh kosong'); return }
 
-    onSave({
-      email: trimmedEmail,
-      password: trimmedPassword,
-      full_name: trimmedName,
-      role,
-    })
+    onSave({ email: trimmedEmail, password: trimmedPassword, full_name: trimmedName, role: values.role })
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label htmlFor="create-email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-        <input
-          id="create-email"
-          type="email"
-          value={email}
-          onChange={e => setEmail(e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-          disabled={isSaving}
-          placeholder="user@contoh.com"
-          autoComplete="off"
-        />
-      </div>
-      <div>
-        <label htmlFor="create-password" className="block text-sm font-medium text-gray-700 mb-1">
-          Password Sementara
-        </label>
-        <div className="flex gap-2">
-          <input
-            id="create-password"
-            type="text"
+    <Form
+      form={form}
+      layout="vertical"
+      initialValues={{ role: 'viewer' }}
+      onFinish={handleFinish}
+      autoComplete="off"
+    >
+      <Form.Item label="Email" name="email" rules={[{ required: true, type: 'email', message: 'Email valid wajib diisi' }]}>
+        <Input type="email" disabled={isSaving} placeholder="user@contoh.com" autoComplete="off" />
+      </Form.Item>
+      <Form.Item label="Password Sementara" name="password" rules={[{ required: true, min: 6, message: 'Password minimal 6 karakter' }]}>
+        <Flex gap={8}>
+          <Input
             value={password}
-            onChange={e => setPassword(e.target.value)}
-            className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono"
+            onChange={e => { setPassword(e.target.value); form.setFieldValue('password', e.target.value) }}
             disabled={isSaving}
             placeholder="Minimal 6 karakter"
             autoComplete="new-password"
+            style={{ fontFamily: 'monospace', flex: 1 }}
           />
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={generatePassword}
-            disabled={isSaving}
-          >
+          <Button type="button" variant="secondary" onClick={generatePassword} disabled={isSaving}>
             Generate
           </Button>
-        </div>
-        <p className="text-xs text-gray-500 mt-1">
-          Berikan password ini kepada user. Mereka dapat mengubahnya setelah login.
-        </p>
-      </div>
-      <div>
-        <label htmlFor="create-fullname" className="block text-sm font-medium text-gray-700 mb-1">Nama Lengkap</label>
-        <input
-          id="create-fullname"
-          type="text"
-          value={fullName}
-          onChange={e => setFullName(e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+        </Flex>
+      </Form.Item>
+      <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: -16, marginBottom: 12 }}>
+        Berikan password ini kepada user. Mereka dapat mengubahnya setelah login.
+      </Text>
+      <Form.Item label="Nama Lengkap" name="full_name" rules={[{ required: true, message: 'Nama wajib diisi' }]}>
+        <Input disabled={isSaving} />
+      </Form.Item>
+      <Form.Item label="Role" name="role">
+        <Select
           disabled={isSaving}
+          options={[
+            { value: 'viewer', label: 'Viewer — hanya bisa melihat data' },
+            { value: 'staff', label: 'Staff — bisa input & edit transaksi' },
+            { value: 'admin', label: 'Admin — akses penuh termasuk manajemen user' },
+          ]}
         />
-      </div>
-      <div>
-        <label htmlFor="create-role" className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-        <select
-          id="create-role"
-          value={role}
-          onChange={e => setRole(e.target.value)}
-          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-          disabled={isSaving}
-        >
-          <option value="viewer">Viewer — hanya bisa melihat data</option>
-          <option value="staff">Staff — bisa input &amp; edit transaksi</option>
-          <option value="admin">Admin — akses penuh termasuk manajemen user</option>
-        </select>
-        <div className="mt-2 text-xs text-gray-600 bg-blue-50 border border-blue-100 rounded p-2 space-y-1">
-          <p><strong>Viewer:</strong> read-only. Bisa lihat semua data &amp; laporan.</p>
-          <p><strong>Staff:</strong> bisa input transaksi (PO, invoice, payment, dll).</p>
-          <p><strong>Admin:</strong> akses penuh + manajemen user + audit log.</p>
-        </div>
-      </div>
-      <div className="flex gap-2">
-        <Button type="submit" variant="primary" loading={isSaving}>
-          Buat User
-        </Button>
-        <Button type="button" variant="secondary" onClick={onCancel} disabled={isSaving}>
-          Batal
-        </Button>
-      </div>
-    </form>
+      </Form.Item>
+      <Alert
+        type="info"
+        style={{ marginBottom: 16 }}
+        message={
+          <Space direction="vertical" size={2} style={{ fontSize: 12 }}>
+            <div><strong>Viewer:</strong> read-only. Bisa lihat semua data & laporan.</div>
+            <div><strong>Staff:</strong> bisa input transaksi (PO, invoice, payment, dll).</div>
+            <div><strong>Admin:</strong> akses penuh + manajemen user + audit log.</div>
+          </Space>
+        }
+      />
+      <Space>
+        <Button type="submit" variant="primary" loading={isSaving}>Buat User</Button>
+        <Button type="button" variant="secondary" onClick={onCancel} disabled={isSaving}>Batal</Button>
+      </Space>
+    </Form>
   )
 }
 
 function UserRow({ user, onEdit, onDeactivate, onReactivate, isProcessing }) {
   return (
-    <tr className="border-b border-gray-200 hover:bg-gray-50">
-      <td className="px-4 py-2 text-sm text-gray-900">{user.full_name || '—'}</td>
-      <td className="px-4 py-2 text-xs font-mono text-gray-500">{user.id.slice(0, 8)}…</td>
-      <td className="px-4 py-2">
-        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${ROLE_BADGE[user.role] || 'bg-gray-100'}`}>
+    <tr style={{ borderBottom: '1px solid #e5e7eb' }}>
+      <td style={{ padding: '8px 16px', fontSize: 13, color: '#111827' }}>{user.full_name || '—'}</td>
+      <td style={{ padding: '8px 16px', fontSize: 12, fontFamily: 'monospace', color: '#6b7280' }}>{user.id.slice(0, 8)}…</td>
+      <td style={{ padding: '8px 16px' }}>
+        <Tag color={ROLE_TAG_COLOR[user.role] || 'default'} style={{ fontSize: 11 }}>
           {ROLE_LABELS[user.role]}
-        </span>
+        </Tag>
       </td>
-      <td className="px-4 py-2 text-xs text-gray-600">{formatDate(user.created_at)}</td>
-      <td className="px-4 py-2">
+      <td style={{ padding: '8px 16px', fontSize: 12, color: '#4b5563' }}>{formatDate(user.created_at)}</td>
+      <td style={{ padding: '8px 16px' }}>
         {user.is_active ? (
-          <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-medium">Aktif</span>
+          <Tag color="success" style={{ fontSize: 11 }}>Aktif</Tag>
         ) : (
-          <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">Nonaktif</span>
+          <Tag color="error" style={{ fontSize: 11 }}>Nonaktif</Tag>
         )}
       </td>
-      <td className="px-4 py-2 text-sm flex gap-2">
-        <button
-          onClick={() => onEdit(user)}
-          className="text-blue-600 hover:text-blue-800 disabled:text-gray-400"
-          disabled={isProcessing}
-          title="Edit"
-        >
-          <Edit2 size={16} />
-        </button>
-        {user.is_active ? (
-          <button
-            onClick={() => onDeactivate(user.id)}
-            className="text-red-600 hover:text-red-800 disabled:text-gray-400"
-            disabled={isProcessing}
-            title="Nonaktifkan"
-          >
-            <Trash2 size={16} />
-          </button>
-        ) : (
-          <button
-            onClick={() => onReactivate(user.id)}
-            className="text-green-600 hover:text-green-800 disabled:text-gray-400"
-            disabled={isProcessing}
-            title="Aktifkan kembali"
-          >
-            <RotateCcw size={16} />
-          </button>
-        )}
+      <td style={{ padding: '8px 16px' }}>
+        <Space size={8}>
+          <Tooltip title="Edit">
+            <button
+              onClick={() => onEdit(user)}
+              style={{ color: '#2563eb', background: 'none', border: 'none', cursor: isProcessing ? 'not-allowed' : 'pointer', opacity: isProcessing ? 0.4 : 1 }}
+              disabled={isProcessing}
+            >
+              <Edit2 size={16} />
+            </button>
+          </Tooltip>
+          {user.is_active ? (
+            <Tooltip title="Nonaktifkan">
+              <button
+                onClick={() => onDeactivate(user.id)}
+                style={{ color: '#dc2626', background: 'none', border: 'none', cursor: isProcessing ? 'not-allowed' : 'pointer', opacity: isProcessing ? 0.4 : 1 }}
+                disabled={isProcessing}
+              >
+                <Trash2 size={16} />
+              </button>
+            </Tooltip>
+          ) : (
+            <Tooltip title="Aktifkan kembali">
+              <button
+                onClick={() => onReactivate(user.id)}
+                style={{ color: '#16a34a', background: 'none', border: 'none', cursor: isProcessing ? 'not-allowed' : 'pointer', opacity: isProcessing ? 0.4 : 1 }}
+                disabled={isProcessing}
+              >
+                <RotateCcw size={16} />
+              </button>
+            </Tooltip>
+          )}
+        </Space>
       </td>
     </tr>
   )
@@ -277,9 +230,7 @@ export default function UsersPage() {
     }
   }
 
-  const handleEdit = (user) => {
-    setEditingUser(user)
-  }
+  const handleEdit = (user) => setEditingUser(user)
 
   const handleSave = async (updates) => {
     setIsSaving(true)
@@ -332,38 +283,33 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">Manajemen Users</h1>
+    <Space direction="vertical" style={{ width: '100%' }} size={24}>
+      <Flex justify="space-between" align="center">
+        <Title level={2} style={{ margin: 0 }}>Manajemen Users</Title>
         {!creatingUser && !editingUser && (
-          <Button
-            variant="primary"
-            onClick={() => setCreatingUser(true)}
-          >
-            <Plus size={16} className="inline mr-1" />
+          <Button variant="primary" onClick={() => setCreatingUser(true)}>
+            <Plus size={16} style={{ display: 'inline', marginRight: 4 }} />
             Tambah User
           </Button>
         )}
-      </div>
+      </Flex>
 
       {loading && <LoadingSpinner message="Memuat users..." />}
-      {error && <div className="text-red-600 text-sm">{error}</div>}
+      {error && <Alert type="error" message={error} showIcon />}
 
       {creatingUser && (
-        <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Tambah User Baru</h2>
+        <Card title="Tambah User Baru" style={{ background: '#f9fafb' }}>
           <CreateUserForm
             onSave={handleCreate}
             onCancel={() => setCreatingUser(false)}
             isSaving={isSaving}
             onError={(msg) => toast.error(msg)}
           />
-        </div>
+        </Card>
       )}
 
       {editingUser && (
-        <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Edit User</h2>
+        <Card title="Edit User" style={{ background: '#f9fafb' }}>
           <UserForm
             user={editingUser}
             onSave={handleSave}
@@ -371,44 +317,48 @@ export default function UsersPage() {
             isSaving={isSaving}
             onError={(msg) => toast.error(msg)}
           />
-        </div>
+        </Card>
       )}
 
       {users && !loading && (
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
-          <div className="bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 border-b border-gray-200">
+        <Card bodyStyle={{ padding: 0 }}>
+          <div style={{ padding: '8px 16px', background: '#f9fafb', borderBottom: '1px solid #f0f0f0', fontSize: 13, fontWeight: 500, color: '#374151' }}>
             {users.length} user
           </div>
           {users.length === 0 ? (
-            <p className="px-4 py-8 text-sm text-gray-400 text-center">Tidak ada user.</p>
+            <Text type="secondary" style={{ display: 'block', textAlign: 'center', padding: '32px 16px' }}>
+              Tidak ada user.
+            </Text>
           ) : (
-            <table className="w-full border-collapse">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-600">Nama</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-600">User ID</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-600">Role</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-600">Bergabung</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-600">Status</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-600">Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map(user => (
-                  <UserRow
-                    key={user.id}
-                    user={user}
-                    onEdit={handleEdit}
-                    onDeactivate={handleDeactivate}
-                    onReactivate={handleReactivate}
-                    isProcessing={isSaving}
-                  />
-                ))}
-              </tbody>
-            </table>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
+                  <tr>
+                    <th style={{ padding: '8px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: '#4b5563' }}>Nama</th>
+                    <th style={{ padding: '8px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: '#4b5563' }}>User ID</th>
+                    <th style={{ padding: '8px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: '#4b5563' }}>Role</th>
+                    <th style={{ padding: '8px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: '#4b5563' }}>Bergabung</th>
+                    <th style={{ padding: '8px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: '#4b5563' }}>Status</th>
+                    <th style={{ padding: '8px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: '#4b5563' }}>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.map(user => (
+                    <UserRow
+                      key={user.id}
+                      user={user}
+                      onEdit={handleEdit}
+                      onDeactivate={handleDeactivate}
+                      onReactivate={handleReactivate}
+                      isProcessing={isSaving}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
-        </div>
+        </Card>
       )}
-    </div>
+    </Space>
   )
 }

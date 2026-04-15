@@ -2,9 +2,11 @@ import { useState } from 'react'
 import { getAuditLogs } from '../../services/auditService'
 import { formatDateTime } from '../../utils/date'
 import Button from '../../components/ui/Button'
-import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import DateInput from '../../components/ui/DateInput'
+import { Space, Typography, Tag, Alert, Card, Select, Table } from 'antd'
 import { Search, ChevronDown, ChevronRight } from 'lucide-react'
+
+const { Title, Text } = Typography
 
 const TABLE_OPTIONS = [
   { value: '', label: 'Semua Tabel' },
@@ -17,10 +19,10 @@ const TABLE_OPTIONS = [
   { value: 'journals', label: 'Journals' },
 ]
 
-const ACTION_BADGE = {
-  create: 'bg-green-100 text-green-700',
-  update: 'bg-yellow-100 text-yellow-700',
-  delete: 'bg-red-100 text-red-700',
+const ACTION_TAG_COLOR = {
+  create: 'success',
+  update: 'warning',
+  delete: 'error',
 }
 
 function today() { return new Date().toISOString().slice(0, 10) }
@@ -28,37 +30,6 @@ function sevenDaysAgo() {
   const d = new Date()
   d.setDate(d.getDate() - 7)
   return d.toISOString().slice(0, 10)
-}
-
-function JsonDiff({ oldData, newData, action }) {
-  const [open, setOpen] = useState(false)
-
-  if (action === 'create') {
-    return (
-      <button
-        onClick={() => setOpen(o => !o)}
-        className="flex items-center gap-1 text-xs text-blue-600 hover:underline"
-      >
-        {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-        Lihat data
-      </button>
-    )
-  }
-
-  return (
-    <button
-      onClick={() => setOpen(o => !o)}
-      className="flex items-center gap-1 text-xs text-blue-600 hover:underline"
-    >
-      {open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
-      {action === 'update' ? 'Lihat perubahan' : 'Lihat data lama'}
-      {open && (
-        <span className="ml-2 text-gray-500">(klik lagi untuk tutup)</span>
-      )}
-    </button>
-  )
-
-  // intentionally unreachable — JSX below renders when open
 }
 
 function LogRow({ log }) {
@@ -73,27 +44,27 @@ function LogRow({ log }) {
   return (
     <>
       <tr
-        className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
+        style={{ borderBottom: '1px solid #f0f0f0', cursor: 'pointer' }}
         onClick={() => setOpen(o => !o)}
       >
-        <td className="px-4 py-2 text-xs text-gray-500 whitespace-nowrap">
+        <td style={{ padding: '8px 16px', fontSize: 12, color: '#6b7280', whiteSpace: 'nowrap' }}>
           {formatDateTime(log.created_at)}
         </td>
-        <td className="px-4 py-2 text-xs font-mono text-gray-700">
+        <td style={{ padding: '8px 16px', fontSize: 12, fontFamily: 'monospace', color: '#374151' }}>
           {log.table_name}
         </td>
-        <td className="px-4 py-2">
-          <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${ACTION_BADGE[log.action] || 'bg-gray-100 text-gray-700'}`}>
+        <td style={{ padding: '8px 16px' }}>
+          <Tag color={ACTION_TAG_COLOR[log.action] || 'default'} style={{ fontSize: 11 }}>
             {log.action}
-          </span>
+          </Tag>
         </td>
-        <td className="px-4 py-2 text-xs font-mono text-gray-500">
+        <td style={{ padding: '8px 16px', fontSize: 12, fontFamily: 'monospace', color: '#6b7280' }}>
           {log.record_id?.slice(0, 8)}…
         </td>
-        <td className="px-4 py-2 text-xs text-gray-600">
+        <td style={{ padding: '8px 16px', fontSize: 12, color: '#4b5563' }}>
           {log.user?.email || '—'}
         </td>
-        <td className="px-4 py-2 text-xs text-gray-400">
+        <td style={{ padding: '8px 16px', fontSize: 12, color: '#9ca3af' }}>
           {log.action === 'update' && diffKeys.length > 0
             ? `${diffKeys.length} field berubah`
             : log.action === 'create' ? 'Baru' : log.action === 'delete' ? 'Dihapus' : '—'}
@@ -101,36 +72,36 @@ function LogRow({ log }) {
       </tr>
 
       {open && (
-        <tr className="bg-gray-50 border-b border-gray-100">
-          <td colSpan={6} className="px-6 py-3">
+        <tr style={{ background: '#f9fafb', borderBottom: '1px solid #f0f0f0' }}>
+          <td colSpan={6} style={{ padding: '12px 24px' }}>
             {log.action === 'update' && diffKeys.length > 0 ? (
-              <div className="space-y-1">
-                <p className="text-xs font-semibold text-gray-600 mb-2">Perubahan field:</p>
-                <table className="text-xs w-full">
+              <Space direction="vertical" style={{ width: '100%' }} size={4}>
+                <Text strong style={{ fontSize: 12 }}>Perubahan field:</Text>
+                <table style={{ fontSize: 12, width: '100%' }}>
                   <thead>
-                    <tr className="text-gray-500">
-                      <th className="text-left pr-4 py-1 font-medium">Field</th>
-                      <th className="text-left pr-4 py-1 font-medium">Lama</th>
-                      <th className="text-left py-1 font-medium">Baru</th>
+                    <tr style={{ color: '#6b7280' }}>
+                      <th style={{ textAlign: 'left', paddingRight: 16, paddingBottom: 4, fontWeight: 500 }}>Field</th>
+                      <th style={{ textAlign: 'left', paddingRight: 16, paddingBottom: 4, fontWeight: 500 }}>Lama</th>
+                      <th style={{ textAlign: 'left', paddingBottom: 4, fontWeight: 500 }}>Baru</th>
                     </tr>
                   </thead>
                   <tbody>
                     {diffKeys.map(k => (
-                      <tr key={k} className="border-t border-gray-200">
-                        <td className="pr-4 py-1 font-mono text-gray-700">{k}</td>
-                        <td className="pr-4 py-1 text-red-600 line-through">
+                      <tr key={k} style={{ borderTop: '1px solid #e5e7eb' }}>
+                        <td style={{ paddingRight: 16, paddingTop: 4, fontFamily: 'monospace', color: '#374151' }}>{k}</td>
+                        <td style={{ paddingRight: 16, paddingTop: 4, color: '#dc2626', textDecoration: 'line-through' }}>
                           {JSON.stringify(log.old_data[k])}
                         </td>
-                        <td className="py-1 text-green-700">
+                        <td style={{ paddingTop: 4, color: '#16a34a' }}>
                           {JSON.stringify(log.new_data[k])}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-              </div>
+              </Space>
             ) : (
-              <pre className="text-xs text-gray-700 overflow-x-auto whitespace-pre-wrap">
+              <pre style={{ fontSize: 12, color: '#374151', overflowX: 'auto', whiteSpace: 'pre-wrap', margin: 0 }}>
                 {JSON.stringify(log.action === 'delete' ? log.old_data : log.new_data, null, 2)}
               </pre>
             )}
@@ -163,21 +134,18 @@ export default function AuditLogPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">Audit Log</h1>
+    <Space direction="vertical" style={{ width: '100%' }} size={24}>
+      <Title level={2} style={{ margin: 0 }}>Audit Log</Title>
 
-      <div className="flex flex-wrap gap-4 items-end">
+      <Space wrap align="end" size={12}>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Tabel</label>
-          <select
+          <div style={{ fontSize: 13, fontWeight: 500, marginBottom: 4, color: '#374151' }}>Tabel</div>
+          <Select
             value={tableName}
-            onChange={e => setTableName(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
-          >
-            {TABLE_OPTIONS.map(o => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
+            onChange={val => setTableName(val)}
+            style={{ width: 180 }}
+            options={TABLE_OPTIONS.map(o => ({ value: o.value, label: o.label }))}
+          />
         </div>
         <DateInput
           label="Dari Tanggal"
@@ -192,40 +160,45 @@ export default function AuditLogPage() {
         <Button variant="primary" onClick={handleLoad} loading={loading}>
           <Search size={16} /> Tampilkan
         </Button>
-      </div>
+      </Space>
 
-      {loading && <LoadingSpinner message="Memuat audit log..." />}
-      {error && <div className="text-red-600 text-sm">{error}</div>}
+      {error && <Alert type="error" message={error} showIcon />}
 
       {logs && !loading && (
-        <div className="border border-gray-200 rounded-lg overflow-hidden">
-          <div className="bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 border-b border-gray-200">
+        <Card bodyStyle={{ padding: 0 }}>
+          <div style={{ padding: '8px 16px', background: '#f9fafb', borderBottom: '1px solid #f0f0f0', fontSize: 13, fontWeight: 500, color: '#374151' }}>
             {logs.length} entri ditemukan
             {logs.length === 200 && (
-              <span className="ml-2 text-xs text-orange-600">(dibatasi 200 — perkecil rentang tanggal untuk hasil lebih spesifik)</span>
+              <Text type="warning" style={{ marginLeft: 8, fontSize: 12 }}>
+                (dibatasi 200 — perkecil rentang tanggal untuk hasil lebih spesifik)
+              </Text>
             )}
           </div>
           {logs.length === 0 ? (
-            <p className="px-4 py-8 text-sm text-gray-400 text-center">Tidak ada aktivitas dalam periode ini.</p>
+            <Text type="secondary" style={{ display: 'block', textAlign: 'center', padding: '32px 16px' }}>
+              Tidak ada aktivitas dalam periode ini.
+            </Text>
           ) : (
-            <table className="w-full border-collapse">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-600">Waktu</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-600">Tabel</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-600">Aksi</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-600">Record ID</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-600">User</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-600">Detail</th>
-                </tr>
-              </thead>
-              <tbody>
-                {logs.map(log => <LogRow key={log.id} log={log} />)}
-              </tbody>
-            </table>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead style={{ background: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
+                  <tr>
+                    <th style={{ padding: '8px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: '#4b5563' }}>Waktu</th>
+                    <th style={{ padding: '8px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: '#4b5563' }}>Tabel</th>
+                    <th style={{ padding: '8px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: '#4b5563' }}>Aksi</th>
+                    <th style={{ padding: '8px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: '#4b5563' }}>Record ID</th>
+                    <th style={{ padding: '8px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: '#4b5563' }}>User</th>
+                    <th style={{ padding: '8px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500, color: '#4b5563' }}>Detail</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {logs.map(log => <LogRow key={log.id} log={log} />)}
+                </tbody>
+              </table>
+            </div>
           )}
-        </div>
+        </Card>
       )}
-    </div>
+    </Space>
   )
 }

@@ -1,4 +1,5 @@
 import { Suspense } from 'react'
+import { Spin } from 'antd'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ToastProvider } from './components/ui/ToastContext'
@@ -79,11 +80,8 @@ function AppContent() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
-          <p className="text-gray-600">Memuat...</p>
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+        <Spin size="large" tip="Memuat..." />
       </div>
     )
   }
@@ -93,7 +91,7 @@ function AppContent() {
   }
 
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-screen"><p className="text-gray-600">Memuat...</p></div>}>
+    <Suspense fallback={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}><Spin size="large" tip="Memuat..." /></div>}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route

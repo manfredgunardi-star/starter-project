@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import { useLocation, Link } from 'react-router-dom'
+import { useLocation, Link, useNavigate } from 'react-router-dom'
+import { Layout, Menu, Button, Space, Typography, Divider } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import {
-  ChevronDown,
   LayoutDashboard,
   Database,
   Package,
@@ -12,8 +12,12 @@ import {
   BookOpen,
   BarChart3,
   Settings,
-  Building2
+  Building2,
+  LogOut,
 } from 'lucide-react'
+
+const { Sider } = Layout
+const { Text } = Typography
 
 // minRole: 'write' = staff+admin, 'admin' = admin only
 // No minRole = visible to all (including viewer)
@@ -21,6 +25,7 @@ const menuGroups = [
   {
     label: 'Master Data',
     icon: Database,
+    key: 'master',
     items: [
       { label: 'Satuan', path: '/master/units' },
       { label: 'Produk', path: '/master/products' },
@@ -32,6 +37,7 @@ const menuGroups = [
   {
     label: 'Inventory',
     icon: Package,
+    key: 'inventory',
     items: [
       { label: 'Stok', path: '/inventory/stock' },
       { label: 'Kartu Stok', path: '/inventory/stock-card' }
@@ -40,6 +46,7 @@ const menuGroups = [
   {
     label: 'Penjualan',
     icon: ShoppingCart,
+    key: 'penjualan',
     items: [
       { label: 'Sales Order', path: '/sales/orders' },
       { label: 'Pengiriman', path: '/sales/deliveries' },
@@ -49,6 +56,7 @@ const menuGroups = [
   {
     label: 'Pembelian',
     icon: Truck,
+    key: 'pembelian',
     items: [
       { label: 'Purchase Order', path: '/purchase/orders' },
       { label: 'Penerimaan', path: '/purchase/receipts' },
@@ -58,6 +66,7 @@ const menuGroups = [
   {
     label: 'Kas & Bank',
     icon: DollarSign,
+    key: 'kas',
     items: [
       { label: 'Akun', path: '/cash/accounts' },
       { label: 'Pembayaran', path: '/cash/payments' },
@@ -68,6 +77,7 @@ const menuGroups = [
   {
     label: 'Pembukuan',
     icon: BookOpen,
+    key: 'pembukuan',
     items: [
       { label: 'Jurnal', path: '/accounting/journals' },
       { label: 'Buku Besar', path: '/accounting/ledger' }
@@ -76,6 +86,7 @@ const menuGroups = [
   {
     label: 'Aset Tetap',
     icon: Building2,
+    key: 'aset',
     items: [
       { label: 'Daftar Aset', path: '/assets' },
       { label: 'Kategori Aset', path: '/assets/categories' },
@@ -86,6 +97,7 @@ const menuGroups = [
   {
     label: 'Laporan',
     icon: BarChart3,
+    key: 'laporan',
     items: [
       { label: 'Neraca', path: '/reports/balance-sheet' },
       { label: 'Laba Rugi', path: '/reports/income-statement' },
@@ -99,6 +111,7 @@ const menuGroups = [
   {
     label: 'Settings',
     icon: Settings,
+    key: 'settings',
     minRole: 'admin',
     items: [
       { label: 'Users', path: '/settings/users' },
@@ -107,88 +120,17 @@ const menuGroups = [
   }
 ]
 
-function DashboardLink() {
-  const location = useLocation()
-  const isActive = location.pathname === '/'
-  return (
-    <div className="mb-2">
-      <Link
-        to="/"
-        className={`w-full flex items-center gap-2 px-4 py-2 rounded text-sm font-medium transition ${
-          isActive ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-100'
-        }`}
-      >
-        <LayoutDashboard size={18} />
-        <span>Dashboard</span>
-      </Link>
-    </div>
-  )
-}
-
-function MenuGroup({ group, canWrite, isAdmin }) {
-  const [isOpen, setIsOpen] = useState(true)
-  const location = useLocation()
-  const Icon = group.icon
-
-  // Filter items by role
-  const visibleItems = group.items.filter(item => {
-    if (!item.minRole) return true
-    if (item.minRole === 'write') return canWrite
-    if (item.minRole === 'admin') return isAdmin
-    return true
-  })
-
-  // Hide entire group if no visible items
-  if (visibleItems.length === 0) return null
-
-  const isGroupActive = visibleItems.some(item => location.pathname === item.path)
-
-  return (
-    <div className="mb-2">
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={`w-full flex items-center gap-2 px-4 py-2 rounded text-sm font-medium transition ${
-          isGroupActive
-            ? 'bg-blue-100 text-blue-900'
-            : 'text-gray-700 hover:bg-gray-100'
-        }`}
-      >
-        <Icon size={18} />
-        <span className="flex-1 text-left">{group.label}</span>
-        <ChevronDown
-          size={16}
-          className={`transition transform ${isOpen ? '' : '-rotate-90'}`}
-        />
-      </button>
-
-      {isOpen && (
-        <div className="ml-4 mt-1 space-y-1">
-          {visibleItems.map(item => {
-            const isActive = location.pathname === item.path
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`block px-4 py-2 rounded text-sm transition ${
-                  isActive
-                    ? 'bg-blue-600 text-white font-medium'
-                    : 'text-gray-600 hover:bg-gray-100'
-                }`}
-              >
-                {item.label}
-              </Link>
-            )
-          })}
-        </div>
-      )}
-    </div>
-  )
-}
-
 export default function Sidebar() {
-  const { canWrite, isAdmin } = useAuth()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const { canWrite, isAdmin, profile, signOut } = useAuth()
+  const [collapsed, setCollapsed] = useState(false)
 
-  // Filter groups that have a minRole on the group itself
+  const handleSignOut = async () => {
+    await signOut()
+  }
+
+  // Filter groups by role
   const visibleGroups = menuGroups.filter(group => {
     if (!group.minRole) return true
     if (group.minRole === 'write') return canWrite
@@ -196,18 +138,92 @@ export default function Sidebar() {
     return true
   })
 
+  // Build AntD menu items
+  const menuItems = [
+    {
+      key: '/',
+      icon: <LayoutDashboard size={16} />,
+      label: <Link to="/">Dashboard</Link>,
+    },
+    ...visibleGroups.map(group => {
+      const Icon = group.icon
+      const visibleItems = group.items.filter(item => {
+        if (!item.minRole) return true
+        if (item.minRole === 'write') return canWrite
+        if (item.minRole === 'admin') return isAdmin
+        return true
+      })
+      if (visibleItems.length === 0) return null
+
+      return {
+        key: group.key,
+        icon: <Icon size={16} />,
+        label: group.label,
+        children: visibleItems.map(item => ({
+          key: item.path,
+          label: <Link to={item.path}>{item.label}</Link>,
+        })),
+      }
+    }).filter(Boolean),
+  ]
+
+  // Determine selected key and open keys
+  const selectedKey = location.pathname
+  const openKeys = visibleGroups
+    .filter(group =>
+      group.items.some(item => location.pathname === item.path || location.pathname.startsWith(item.path + '/'))
+    )
+    .map(group => group.key)
+
   return (
-    <div className="w-64 bg-white border-r border-gray-200 flex flex-col h-screen">
-      <div className="p-6 border-b border-gray-200">
-        <h1 className="text-xl font-bold text-gray-900">ERP Pembukuan</h1>
+    <Sider
+      collapsible
+      collapsed={collapsed}
+      onCollapse={setCollapsed}
+      theme="light"
+      width={240}
+      style={{ borderRight: '1px solid #f0f0f0', display: 'flex', flexDirection: 'column' }}
+    >
+      {/* Brand */}
+      <div style={{ padding: collapsed ? '16px 8px' : '16px 20px', borderBottom: '1px solid #f0f0f0' }}>
+        {!collapsed && (
+          <Text strong style={{ fontSize: 16, color: '#1f2937' }}>ERP Pembukuan</Text>
+        )}
+        {collapsed && (
+          <Text strong style={{ fontSize: 14, color: '#1f2937' }}>ERP</Text>
+        )}
       </div>
 
-      <nav className="flex-1 overflow-y-auto p-4">
-        <DashboardLink />
-        {visibleGroups.map(group => (
-          <MenuGroup key={group.label} group={group} canWrite={canWrite} isAdmin={isAdmin} />
-        ))}
-      </nav>
-    </div>
+      {/* Navigation */}
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        <Menu
+          mode="inline"
+          selectedKeys={[selectedKey]}
+          defaultOpenKeys={openKeys}
+          items={menuItems}
+          style={{ border: 'none' }}
+        />
+      </div>
+
+      {/* User info + logout */}
+      <div style={{ borderTop: '1px solid #f0f0f0', padding: collapsed ? '12px 8px' : '12px 16px' }}>
+        {!collapsed && (
+          <div style={{ marginBottom: 8 }}>
+            <Text type="secondary" style={{ fontSize: 12, display: 'block' }}>
+              {profile?.full_name || 'User'}
+            </Text>
+          </div>
+        )}
+        <Button
+          type="text"
+          danger
+          icon={<LogOut size={16} />}
+          onClick={handleSignOut}
+          style={{ width: '100%', textAlign: collapsed ? 'center' : 'left' }}
+        >
+          {!collapsed && 'Keluar'}
+        </Button>
+      </div>
+    </Sider>
   )
 }
