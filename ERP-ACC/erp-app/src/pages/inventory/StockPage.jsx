@@ -150,7 +150,7 @@ export default function StockPage() {
         <Col span={8}>
           <Card size="small">
             <Typography.Text type="secondary">Total Produk</Typography.Text>
-            <div className="text-2xl font-bold text-gray-900">{filtered.length}</div>
+            <div style={{ fontSize: 24, fontWeight: 700 }}>{filtered.length}</div>
           </Card>
         </Col>
         <Col span={8}>
@@ -164,7 +164,7 @@ export default function StockPage() {
         <Col span={8}>
           <Card size="small" style={{ background: '#fef2f2', borderColor: '#fecaca' }}>
             <Typography.Text type="danger">Stok Habis</Typography.Text>
-            <div className="text-2xl font-bold text-red-700">
+            <div style={{ fontSize: 24, fontWeight: 700, color: '#b91c1c' }}>
               {filtered.filter(s => s.quantity_on_hand <= 0).length}
             </div>
           </Card>

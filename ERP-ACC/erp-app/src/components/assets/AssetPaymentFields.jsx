@@ -187,7 +187,6 @@ export default function AssetPaymentFields({
             placeholder="Rp 0"
             value={formatCurrency(value.cash_bank_amount || 0)}
             disabled={true}
-            className="bg-gray-100"
           />
 
           <Typography.Text type="secondary" style={{ fontSize: 13 }}>
@@ -225,7 +224,6 @@ export default function AssetPaymentFields({
             placeholder="Rp 0"
             value={formatCurrency(value.hutang_amount || 0)}
             disabled={true}
-            className="bg-gray-100"
           />
 
           <Typography.Text type="secondary" style={{ fontSize: 13 }}>
@@ -263,7 +261,6 @@ export default function AssetPaymentFields({
             placeholder="Rp 0"
             value={formatCurrency(value.uang_muka_amount || 0)}
             disabled={true}
-            className="bg-gray-100"
           />
 
           <Typography.Text type="secondary" style={{ fontSize: 13 }}>

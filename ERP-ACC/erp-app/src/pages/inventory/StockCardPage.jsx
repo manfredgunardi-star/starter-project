@@ -124,7 +124,7 @@ export default function StockCardPage() {
       {!selectedProductId ? (
         <Card>
           <Flex justify="center" align="center" vertical style={{ padding: 32 }}>
-            <Calendar size={40} className="text-gray-400 mb-3" />
+            <Calendar size={40} style={{ color: '#9ca3af', marginBottom: 12 }} />
             <Typography.Text type="secondary">Pilih produk untuk melihat kartu stok</Typography.Text>
           </Flex>
         </Card>
@@ -242,7 +242,7 @@ export default function StockCardPage() {
               <Col span={8}>
                 <Card size="small">
                   <Typography.Text type="secondary" style={{ fontSize: 11, textTransform: 'uppercase' }}>Total Masuk</Typography.Text>
-                  <div className="text-lg font-bold text-green-600">
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#16a34a' }}>
                     {formatNumber(movementsWithBalance.reduce((sum, m) => sum + m.incoming, 0), 2)}
                   </div>
                 </Card>
@@ -250,7 +250,7 @@ export default function StockCardPage() {
               <Col span={8}>
                 <Card size="small">
                   <Typography.Text type="secondary" style={{ fontSize: 11, textTransform: 'uppercase' }}>Total Keluar</Typography.Text>
-                  <div className="text-lg font-bold text-red-600">
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#dc2626' }}>
                     {formatNumber(movementsWithBalance.reduce((sum, m) => sum + m.outgoing, 0), 2)}
                   </div>
                 </Card>
@@ -258,7 +258,7 @@ export default function StockCardPage() {
               <Col span={8}>
                 <Card size="small">
                   <Typography.Text type="secondary" style={{ fontSize: 11, textTransform: 'uppercase' }}>Saldo Akhir</Typography.Text>
-                  <div className="text-lg font-bold text-blue-600">
+                  <div style={{ fontSize: 16, fontWeight: 700, color: '#2563eb' }}>
                     {movementsWithBalance.length > 0
                       ? formatNumber(movementsWithBalance[movementsWithBalance.length - 1].balance, 2)
                       : '0'}
