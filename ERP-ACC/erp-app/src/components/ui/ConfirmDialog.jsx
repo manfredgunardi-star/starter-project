@@ -1,5 +1,4 @@
-import Modal from './Modal'
-import Button from './Button'
+import { Modal as AntdModal, Button as AntdButton, Space } from 'antd'
 
 export default function ConfirmDialog({
   isOpen,
@@ -11,24 +10,29 @@ export default function ConfirmDialog({
   variant = 'danger'
 }) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
-      <div className="space-y-6">
-        <p className="text-gray-700">{message}</p>
-        <div className="flex gap-3 justify-end">
-          <Button variant="secondary" onClick={onClose}>
-            Batal
-          </Button>
-          <Button
-            variant={variant}
+    <AntdModal
+      open={isOpen}
+      onCancel={onClose}
+      title={title}
+      width={400}
+      footer={
+        <Space>
+          <AntdButton onClick={onClose}>Batal</AntdButton>
+          <AntdButton
+            type="primary"
+            danger={variant === 'danger'}
             onClick={() => {
               onConfirm()
               onClose()
             }}
           >
             {confirmText}
-          </Button>
-        </div>
-      </div>
-    </Modal>
+          </AntdButton>
+        </Space>
+      }
+      destroyOnClose
+    >
+      <p>{message}</p>
+    </AntdModal>
   )
 }
