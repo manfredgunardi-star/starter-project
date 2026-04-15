@@ -114,7 +114,7 @@ export default function ManualJournalFormPage() {
     <Space direction="vertical" style={{ width: '100%' }} size="large">
       <Flex justify="space-between" align="center">
         <Space align="center">
-          <button onClick={() => navigate('/accounting/journals')} className="text-gray-500 hover:text-gray-700">
+          <button onClick={() => navigate('/accounting/journals')} style={{ color: '#6b7280' }}>
             <ArrowLeft size={20} />
           </button>
           <Typography.Title level={3} style={{ margin: 0 }}>
@@ -148,14 +148,14 @@ export default function ManualJournalFormPage() {
           </Col>
           <Col span={12}>
             <Space direction="vertical" style={{ width: '100%' }} size={4}>
-              <label className="block text-sm font-medium text-gray-700">Deskripsi *</label>
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151' }}>Deskripsi *</label>
               <input
                 type="text"
                 value={header.description}
                 onChange={e => setHeader(h => ({ ...h, description: e.target.value }))}
                 readOnly={readOnly}
                 placeholder="Keterangan jurnal..."
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                style={{ width: '100%', paddingLeft: 12, paddingRight: 12, paddingTop: 8, paddingBottom: 8, border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14 }}
               />
             </Space>
           </Col>
@@ -164,25 +164,25 @@ export default function ManualJournalFormPage() {
 
       {/* Items table */}
       <Card bodyStyle={{ padding: 0 }}>
-        <table className="w-full border-collapse">
-          <thead className="bg-gray-100 border-b border-gray-200">
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead style={{ backgroundColor: '#f3f4f6', borderBottom: '1px solid #e5e7eb' }}>
             <tr>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Akun (COA)</th>
-              <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Keterangan</th>
-              <th className="px-4 py-2 text-right text-xs font-medium text-gray-700">Debit</th>
-              <th className="px-4 py-2 text-right text-xs font-medium text-gray-700">Kredit</th>
-              {!readOnly && <th className="w-10"></th>}
+              <th style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, textAlign: 'left', fontSize: 12, fontWeight: 500, color: '#374151' }}>Akun (COA)</th>
+              <th style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, textAlign: 'left', fontSize: 12, fontWeight: 500, color: '#374151' }}>Keterangan</th>
+              <th style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, textAlign: 'right', fontSize: 12, fontWeight: 500, color: '#374151' }}>Debit</th>
+              <th style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, textAlign: 'right', fontSize: 12, fontWeight: 500, color: '#374151' }}>Kredit</th>
+              {!readOnly && <th style={{ width: 40 }}></th>}
             </tr>
           </thead>
           <tbody>
             {items.map((item, idx) => (
-              <tr key={item._key} className="border-b border-gray-200">
-                <td className="px-4 py-2 min-w-[240px]">
+              <tr key={item._key} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                <td style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, minWidth: 240 }}>
                   {readOnly ? (
-                    <span className="text-sm">{item.coa_code} — {item.coa_name}</span>
+                    <span style={{ fontSize: 14 }}>{item.coa_code} — {item.coa_name}</span>
                   ) : (
                     <select
-                      className="w-full text-sm border border-gray-300 rounded px-2 py-1"
+                      style={{ width: '100%', fontSize: 14, border: '1px solid #d1d5db', borderRadius: 4, paddingLeft: 8, paddingRight: 8, paddingTop: 4, paddingBottom: 4 }}
                       value={item.coa_id}
                       onChange={e => updateItem(idx, 'coa_id', e.target.value)}
                     >
@@ -193,43 +193,43 @@ export default function ManualJournalFormPage() {
                     </select>
                   )}
                 </td>
-                <td className="px-4 py-2">
+                <td style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8 }}>
                   {readOnly ? (
-                    <span className="text-sm text-gray-600">{item.description}</span>
+                    <span style={{ fontSize: 14, color: '#4b5563' }}>{item.description}</span>
                   ) : (
                     <input
                       type="text"
-                      className="w-full text-sm border border-gray-300 rounded px-2 py-1"
+                      style={{ width: '100%', fontSize: 14, border: '1px solid #d1d5db', borderRadius: 4, paddingLeft: 8, paddingRight: 8, paddingTop: 4, paddingBottom: 4 }}
                       value={item.description}
                       onChange={e => updateItem(idx, 'description', e.target.value)}
                       placeholder="Keterangan..."
                     />
                   )}
                 </td>
-                <td className="px-4 py-2 w-36">
+                <td style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, width: 144 }}>
                   {readOnly ? (
-                    <span className="text-sm text-right block">{item.debit > 0 ? Number(item.debit).toLocaleString('id-ID') : ''}</span>
+                    <span style={{ fontSize: 14, textAlign: 'right', display: 'block' }}>{item.debit > 0 ? Number(item.debit).toLocaleString('id-ID') : ''}</span>
                   ) : (
                     <input
                       type="number"
                       min="0"
                       step="any"
-                      className="w-full text-sm border border-gray-300 rounded px-2 py-1 text-right"
+                      style={{ width: '100%', fontSize: 14, border: '1px solid #d1d5db', borderRadius: 4, paddingLeft: 8, paddingRight: 8, paddingTop: 4, paddingBottom: 4, textAlign: 'right' }}
                       value={item.debit}
                       onChange={e => updateItem(idx, 'debit', e.target.value)}
                       placeholder="0"
                     />
                   )}
                 </td>
-                <td className="px-4 py-2 w-36">
+                <td style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, width: 144 }}>
                   {readOnly ? (
-                    <span className="text-sm text-right block">{item.credit > 0 ? Number(item.credit).toLocaleString('id-ID') : ''}</span>
+                    <span style={{ fontSize: 14, textAlign: 'right', display: 'block' }}>{item.credit > 0 ? Number(item.credit).toLocaleString('id-ID') : ''}</span>
                   ) : (
                     <input
                       type="number"
                       min="0"
                       step="any"
-                      className="w-full text-sm border border-gray-300 rounded px-2 py-1 text-right"
+                      style={{ width: '100%', fontSize: 14, border: '1px solid #d1d5db', borderRadius: 4, paddingLeft: 8, paddingRight: 8, paddingTop: 4, paddingBottom: 4, textAlign: 'right' }}
                       value={item.credit}
                       onChange={e => updateItem(idx, 'credit', e.target.value)}
                       placeholder="0"
@@ -237,10 +237,10 @@ export default function ManualJournalFormPage() {
                   )}
                 </td>
                 {!readOnly && (
-                  <td className="px-2 py-2">
+                  <td style={{ paddingLeft: 8, paddingRight: 8, paddingTop: 8, paddingBottom: 8 }}>
                     <button
                       onClick={() => setItems(prev => prev.filter((_, i) => i !== idx))}
-                      className="text-red-500 hover:text-red-700"
+                      style={{ color: '#ef4444' }}
                     >
                       <Trash2 size={16} />
                     </button>
@@ -249,13 +249,13 @@ export default function ManualJournalFormPage() {
               </tr>
             ))}
           </tbody>
-          <tfoot className="bg-gray-50 border-t-2 border-gray-300">
+          <tfoot style={{ backgroundColor: '#f9fafb', borderTop: '2px solid #d1d5db' }}>
             <tr>
-              <td colSpan={2} className="px-4 py-2 text-sm font-semibold text-right text-gray-700">Total</td>
-              <td className="px-4 py-2 text-sm text-right">
+              <td colSpan={2} style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, fontSize: 14, fontWeight: 600, textAlign: 'right', color: '#374151' }}>Total</td>
+              <td style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, fontSize: 14, textAlign: 'right' }}>
                 <Typography.Text strong>{formatCurrency(totalDebit)}</Typography.Text>
               </td>
-              <td className="px-4 py-2 text-sm text-right">
+              <td style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, fontSize: 14, textAlign: 'right' }}>
                 <Typography.Text strong>{formatCurrency(totalCredit)}</Typography.Text>
               </td>
               {!readOnly && <td></td>}
@@ -277,10 +277,10 @@ export default function ManualJournalFormPage() {
         </table>
 
         {!readOnly && (
-          <div className="p-3 border-t border-gray-200">
+          <div style={{ padding: 12, borderTop: '1px solid #e5e7eb' }}>
             <button
               onClick={() => setItems(prev => [...prev, emptyRow()])}
-              className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800"
+              style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#2563eb' }}
             >
               <Plus size={16} /> Tambah Baris
             </button>

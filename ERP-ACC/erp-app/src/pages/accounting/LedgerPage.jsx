@@ -54,9 +54,9 @@ export default function LedgerPage() {
       <Card>
         <Space wrap align="end">
           <div style={{ minWidth: 200, flex: 1 }}>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Akun (COA)</label>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 4 }}>Akun (COA)</label>
             <select
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+              style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: 8, paddingLeft: 12, paddingRight: 12, paddingTop: 8, paddingBottom: 8, fontSize: 14 }}
               value={coaId}
               onChange={e => setCoaId(e.target.value)}
             >
@@ -94,38 +94,38 @@ export default function LedgerPage() {
             </Typography.Text>
           )}
 
-          <div className="overflow-x-auto border border-gray-200 rounded-lg">
-            <table className="w-full border-collapse">
-              <thead className="bg-gray-100 border-b border-gray-200">
+          <div style={{ overflowX: 'auto', border: '1px solid #e5e7eb', borderRadius: 8 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead style={{ backgroundColor: '#f3f4f6', borderBottom: '1px solid #e5e7eb' }}>
                 <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Tanggal</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">No. Jurnal</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-900">Keterangan</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-gray-900">Debit</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-gray-900">Kredit</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-gray-900">Saldo</th>
+                  <th style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 12, paddingBottom: 12, textAlign: 'left', fontSize: 14, fontWeight: 500, color: '#111827' }}>Tanggal</th>
+                  <th style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 12, paddingBottom: 12, textAlign: 'left', fontSize: 14, fontWeight: 500, color: '#111827' }}>No. Jurnal</th>
+                  <th style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 12, paddingBottom: 12, textAlign: 'left', fontSize: 14, fontWeight: 500, color: '#111827' }}>Keterangan</th>
+                  <th style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 12, paddingBottom: 12, textAlign: 'right', fontSize: 14, fontWeight: 500, color: '#111827' }}>Debit</th>
+                  <th style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 12, paddingBottom: 12, textAlign: 'right', fontSize: 14, fontWeight: 500, color: '#111827' }}>Kredit</th>
+                  <th style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 12, paddingBottom: 12, textAlign: 'right', fontSize: 14, fontWeight: 500, color: '#111827' }}>Saldo</th>
                 </tr>
               </thead>
               <tbody>
                 {entries.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-sm text-gray-500">
+                    <td colSpan={6} style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 32, paddingBottom: 32, textAlign: 'center', fontSize: 14, color: '#6b7280' }}>
                       Tidak ada transaksi pada periode ini
                     </td>
                   </tr>
                 ) : (
                   entries.map((entry, idx) => (
-                    <tr key={idx} className="border-b border-gray-200 hover:bg-gray-50">
-                      <td className="px-4 py-2 text-sm text-gray-700">{formatDate(entry.journal_date)}</td>
-                      <td className="px-4 py-2 text-sm font-mono text-blue-600">{entry.journal_number}</td>
-                      <td className="px-4 py-2 text-sm text-gray-900">{entry.description}</td>
-                      <td className="px-4 py-2 text-sm text-right text-gray-900">
+                    <tr key={idx} style={{ borderBottom: '1px solid #e5e7eb' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                      <td style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, fontSize: 14, color: '#374151' }}>{formatDate(entry.journal_date)}</td>
+                      <td style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, fontSize: 14, fontFamily: 'monospace', color: '#2563eb' }}>{entry.journal_number}</td>
+                      <td style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, fontSize: 14, color: '#111827' }}>{entry.description}</td>
+                      <td style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, fontSize: 14, textAlign: 'right', color: '#111827' }}>
                         {entry.debit > 0 ? formatCurrency(entry.debit) : ''}
                       </td>
-                      <td className="px-4 py-2 text-sm text-right text-gray-900">
+                      <td style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, fontSize: 14, textAlign: 'right', color: '#111827' }}>
                         {entry.credit > 0 ? formatCurrency(entry.credit) : ''}
                       </td>
-                      <td className="px-4 py-2 text-sm text-right font-medium">
+                      <td style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, fontSize: 14, textAlign: 'right', fontWeight: 500 }}>
                         <Typography.Text type={entry.running_balance < 0 ? 'danger' : undefined}>
                           {formatCurrency(Math.abs(entry.running_balance))}
                           {entry.running_balance < 0 ? ' (K)' : ''}
@@ -136,16 +136,16 @@ export default function LedgerPage() {
                 )}
               </tbody>
               {entries.length > 0 && (
-                <tfoot className="bg-gray-50 border-t-2 border-gray-300">
+                <tfoot style={{ backgroundColor: '#f9fafb', borderTop: '2px solid #d1d5db' }}>
                   <tr>
-                    <td colSpan={3} className="px-4 py-2 text-sm font-semibold text-right">Total</td>
-                    <td className="px-4 py-2 text-sm text-right">
+                    <td colSpan={3} style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, fontSize: 14, fontWeight: 600, textAlign: 'right' }}>Total</td>
+                    <td style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, fontSize: 14, textAlign: 'right' }}>
                       <Typography.Text strong>{formatCurrency(totalDebit)}</Typography.Text>
                     </td>
-                    <td className="px-4 py-2 text-sm text-right">
+                    <td style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, fontSize: 14, textAlign: 'right' }}>
                       <Typography.Text strong>{formatCurrency(totalCredit)}</Typography.Text>
                     </td>
-                    <td className="px-4 py-2 text-sm text-right">
+                    <td style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, fontSize: 14, textAlign: 'right' }}>
                       <Typography.Text strong>
                         {formatCurrency(Math.abs(entries[entries.length - 1]?.running_balance || 0))}
                       </Typography.Text>

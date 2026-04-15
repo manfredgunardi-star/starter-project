@@ -43,7 +43,7 @@ export default function StockPage() {
         <Typography.Title level={3} style={{ margin: 0 }}>Stok On Hand</Typography.Title>
         <button
           onClick={refetch}
-          className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded transition"
+          style={{ display: 'flex', alignItems: 'center', gap: 8, paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, fontSize: 14, color: '#4b5563', backgroundColor: '#f3f4f6', borderRadius: 4, border: 'none', cursor: 'pointer' }}
         >
           <RefreshCw size={18} />
           Refresh
@@ -51,34 +51,34 @@ export default function StockPage() {
       </Flex>
 
       {/* Search bar */}
-      <div className="relative max-w-md">
-        <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+      <div style={{ position: 'relative', maxWidth: 448 }}>
+        <Search size={18} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
         <input
           type="text"
           value={search}
           onChange={e => setSearch(e.target.value)}
           placeholder="Cari produk atau SKU..."
-          className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
+          style={{ width: '100%', paddingLeft: 40, paddingRight: 16, paddingTop: 8, paddingBottom: 8, border: '1px solid #d1d5db', borderRadius: 8 }}
         />
       </div>
 
       {/* Stock table */}
-      <div className="overflow-x-auto border border-gray-200 rounded-lg">
-        <table className="w-full border-collapse">
-          <thead className="bg-gray-100 border-b border-gray-200">
+      <div style={{ overflowX: 'auto', border: '1px solid #e5e7eb', borderRadius: 8 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead style={{ backgroundColor: '#f3f4f6', borderBottom: '1px solid #e5e7eb' }}>
             <tr>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Produk</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">SKU</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Satuan</th>
-              <th className="px-6 py-3 text-right text-sm font-medium text-gray-900">Stok</th>
-              <th className="px-6 py-3 text-right text-sm font-medium text-gray-900">Harga Rata-rata</th>
-              <th className="px-6 py-3 text-right text-sm font-medium text-gray-900">Nilai Stok</th>
+              <th style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, textAlign: 'left', fontSize: 14, fontWeight: 500, color: '#111827' }}>Produk</th>
+              <th style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, textAlign: 'left', fontSize: 14, fontWeight: 500, color: '#111827' }}>SKU</th>
+              <th style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, textAlign: 'left', fontSize: 14, fontWeight: 500, color: '#111827' }}>Satuan</th>
+              <th style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, textAlign: 'right', fontSize: 14, fontWeight: 500, color: '#111827' }}>Stok</th>
+              <th style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, textAlign: 'right', fontSize: 14, fontWeight: 500, color: '#111827' }}>Harga Rata-rata</th>
+              <th style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, textAlign: 'right', fontSize: 14, fontWeight: 500, color: '#111827' }}>Nilai Stok</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-500">
+                <td colSpan={6} style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 32, paddingBottom: 32, textAlign: 'center', fontSize: 14, color: '#6b7280' }}>
                   {search ? 'Produk tidak ditemukan' : 'Belum ada data stok'}
                 </td>
               </tr>
@@ -89,39 +89,38 @@ export default function StockPage() {
                 const nilai = item.quantity_on_hand * item.avg_cost
 
                 return (
-                  <tr key={item.id} className="border-b border-gray-200 hover:bg-gray-50">
-                    <td className="px-6 py-3 text-sm font-medium text-gray-900">
+                  <tr key={item.id} style={{ borderBottom: '1px solid #e5e7eb' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                    <td style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, fontSize: 14, fontWeight: 500, color: '#111827' }}>
                       {item.product?.name || '—'}
                     </td>
-                    <td className="px-6 py-3 text-sm text-gray-500 font-mono">
+                    <td style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, fontSize: 14, color: '#6b7280', fontFamily: 'monospace' }}>
                       {item.product?.sku || '-'}
                     </td>
-                    <td className="px-6 py-3 text-sm text-gray-700">
+                    <td style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, fontSize: 14, color: '#374151' }}>
                       {item.product?.base_unit?.name || '-'}
                     </td>
-                    <td className="px-6 py-3 text-sm text-right">
-                      <span className={
-                        isZero ? 'text-red-600 font-semibold' :
-                        isLow ? 'text-orange-600 font-semibold' :
-                        'text-gray-900'
-                      }>
+                    <td style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, fontSize: 14, textAlign: 'right' }}>
+                      <span style={{
+                        color: isZero ? '#dc2626' : isLow ? '#ea580c' : '#111827',
+                        fontWeight: isZero || isLow ? 600 : 400
+                      }}>
                         {formatNumber(item.quantity_on_hand, 2)}
                         {isZero && (
-                          <span className="ml-2 text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded">
+                          <span style={{ marginLeft: 8, fontSize: 12, backgroundColor: '#fee2e2', color: '#b91c1c', paddingLeft: 6, paddingRight: 6, paddingTop: 2, paddingBottom: 2, borderRadius: 4 }}>
                             Habis
                           </span>
                         )}
                         {isLow && !isZero && (
-                          <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">
+                          <span style={{ marginLeft: 8, fontSize: 12, backgroundColor: '#fed7aa', color: '#b45309', paddingLeft: 6, paddingRight: 6, paddingTop: 2, paddingBottom: 2, borderRadius: 4 }}>
                             Menipis
                           </span>
                         )}
                       </span>
                     </td>
-                    <td className="px-6 py-3 text-sm text-right text-gray-700">
+                    <td style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, fontSize: 14, textAlign: 'right', color: '#374151' }}>
                       {formatCurrency(item.avg_cost)}
                     </td>
-                    <td className="px-6 py-3 text-sm text-right text-gray-900 font-medium">
+                    <td style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, fontSize: 14, textAlign: 'right', color: '#111827', fontWeight: 500 }}>
                       {formatCurrency(nilai)}
                     </td>
                   </tr>
@@ -132,12 +131,12 @@ export default function StockPage() {
 
           {/* Footer: total */}
           {filtered.length > 0 && (
-            <tfoot className="bg-gray-50 border-t-2 border-gray-300">
+            <tfoot style={{ backgroundColor: '#f9fafb', borderTop: '2px solid #d1d5db' }}>
               <tr>
-                <td colSpan={5} className="px-6 py-3 text-sm font-semibold text-gray-900 text-right">
+                <td colSpan={5} style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, fontSize: 14, fontWeight: 600, color: '#111827', textAlign: 'right' }}>
                   Total Nilai Stok
                 </td>
-                <td className="px-6 py-3 text-sm font-bold text-gray-900 text-right">
+                <td style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, fontSize: 14, fontWeight: 'bold', color: '#111827', textAlign: 'right' }}>
                   {formatCurrency(totalValue)}
                 </td>
               </tr>

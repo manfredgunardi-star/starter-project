@@ -67,7 +67,7 @@ export default function StockCardPage() {
       <Card>
         <Space direction="vertical" style={{ width: '100%' }}>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Pilih Produk</label>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 4 }}>Pilih Produk</label>
             <Select
               options={productOptions}
               value={selectedProductId}
@@ -132,22 +132,22 @@ export default function StockCardPage() {
         <LoadingSpinner message="Memuat kartu stok..." />
       ) : (
         <Space direction="vertical" style={{ width: '100%' }}>
-          <div className="overflow-x-auto border border-gray-200 rounded-lg">
-            <table className="w-full border-collapse">
-              <thead className="bg-gray-100 border-b border-gray-200">
+          <div style={{ overflowX: 'auto', border: '1px solid #e5e7eb', borderRadius: 8 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead style={{ backgroundColor: '#f3f4f6', borderBottom: '1px solid #e5e7eb' }}>
                 <tr>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Tanggal</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Keterangan</th>
-                  <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Referensi</th>
-                  <th className="px-6 py-3 text-right text-sm font-medium text-gray-900">Masuk</th>
-                  <th className="px-6 py-3 text-right text-sm font-medium text-gray-900">Keluar</th>
-                  <th className="px-6 py-3 text-right text-sm font-medium text-gray-900">Saldo</th>
+                  <th style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, textAlign: 'left', fontSize: 14, fontWeight: 500, color: '#111827' }}>Tanggal</th>
+                  <th style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, textAlign: 'left', fontSize: 14, fontWeight: 500, color: '#111827' }}>Keterangan</th>
+                  <th style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, textAlign: 'left', fontSize: 14, fontWeight: 500, color: '#111827' }}>Referensi</th>
+                  <th style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, textAlign: 'right', fontSize: 14, fontWeight: 500, color: '#111827' }}>Masuk</th>
+                  <th style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, textAlign: 'right', fontSize: 14, fontWeight: 500, color: '#111827' }}>Keluar</th>
+                  <th style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, textAlign: 'right', fontSize: 14, fontWeight: 500, color: '#111827' }}>Saldo</th>
                 </tr>
               </thead>
               <tbody>
                 {movementsWithBalance.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-sm text-gray-500">
+                    <td colSpan={6} style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 32, paddingBottom: 32, textAlign: 'center', fontSize: 14, color: '#6b7280' }}>
                       Tidak ada pergerakan stok untuk periode ini
                     </td>
                   </tr>
@@ -155,44 +155,47 @@ export default function StockCardPage() {
                   movementsWithBalance.map((movement, idx) => (
                     <tr
                       key={movement.id}
-                      className={`border-b border-gray-200 ${
-                        idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'
-                      } hover:bg-blue-50`}
+                      style={{ borderBottom: '1px solid #e5e7eb', backgroundColor: idx % 2 === 0 ? '#ffffff' : '#f9fafb' }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#eff6ff'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = idx % 2 === 0 ? '#ffffff' : '#f9fafb'}
                     >
-                      <td className="px-6 py-3 text-sm text-gray-700 font-mono">
+                      <td style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, fontSize: 14, color: '#374151', fontFamily: 'monospace' }}>
                         {formatDate(movement.date)}
                       </td>
-                      <td className="px-6 py-3 text-sm">
-                        <span className={typeColor[movement.type]}>
-                          <span className="font-medium">{typeLabel[movement.type] || '—'}</span>
+                      <td style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, fontSize: 14 }}>
+                        <span style={{ color: typeColor[movement.type]?.match(/#[0-9a-f]{6}/i)?.[0] || '#22c55e', fontWeight: 500 }}>
+                          {typeLabel[movement.type] || '—'}
                         </span>
                         {movement.notes && (
-                          <p className="text-xs text-gray-500 mt-0.5">{movement.notes}</p>
+                          <p style={{ fontSize: 12, color: '#6b7280', marginTop: 4 }}>{movement.notes}</p>
                         )}
                       </td>
-                      <td className="px-6 py-3 text-sm text-gray-600">
+                      <td style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, fontSize: 14, color: '#4b5563' }}>
                         {movement.reference_type && (
                           <>
-                            <div className="text-xs text-gray-500">{movement.reference_type}</div>
-                            <div className="font-mono text-xs">{movement.reference_id?.slice(0, 8) || '—'}</div>
+                            <div style={{ fontSize: 12, color: '#6b7280' }}>{movement.reference_type}</div>
+                            <div style={{ fontFamily: 'monospace', fontSize: 12 }}>{movement.reference_id?.slice(0, 8) || '—'}</div>
                           </>
                         )}
-                        {!movement.reference_type && <span className="text-gray-400">—</span>}
+                        {!movement.reference_type && <span style={{ color: '#d1d5db' }}>—</span>}
                       </td>
-                      <td className="px-6 py-3 text-sm text-right text-green-600 font-medium">
+                      <td style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, fontSize: 14, textAlign: 'right', color: '#16a34a', fontWeight: 500 }}>
                         {movement.incoming > 0 ? formatNumber(movement.incoming, 4) : ''}
                       </td>
-                      <td className="px-6 py-3 text-sm text-right text-red-600 font-medium">
+                      <td style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, fontSize: 14, textAlign: 'right', color: '#dc2626', fontWeight: 500 }}>
                         {movement.outgoing > 0 ? formatNumber(movement.outgoing, 4) : ''}
                       </td>
-                      <td className="px-6 py-3 text-sm text-right">
-                        <span className={`font-bold px-2 py-1 rounded ${
-                          movement.balance > 0
-                            ? 'bg-green-100 text-green-900'
-                            : movement.balance < 0
-                            ? 'bg-red-100 text-red-900'
-                            : 'bg-gray-100 text-gray-900'
-                        }`}>
+                      <td style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, fontSize: 14, textAlign: 'right' }}>
+                        <span style={{
+                          fontWeight: 'bold',
+                          paddingLeft: 8,
+                          paddingRight: 8,
+                          paddingTop: 4,
+                          paddingBottom: 4,
+                          borderRadius: 4,
+                          backgroundColor: movement.balance > 0 ? '#dcfce7' : movement.balance < 0 ? '#fee2e2' : '#f3f4f6',
+                          color: movement.balance > 0 ? '#166534' : movement.balance < 0 ? '#7f1d1d' : '#111827'
+                        }}>
                           {formatNumber(movement.balance, 4)}
                         </span>
                       </td>
@@ -203,25 +206,25 @@ export default function StockCardPage() {
 
               {/* Footer: Summary */}
               {movementsWithBalance.length > 0 && (
-                <tfoot className="bg-gray-50 border-t-2 border-gray-300">
+                <tfoot style={{ backgroundColor: '#f9fafb', borderTop: '2px solid #d1d5db' }}>
                   <tr>
-                    <td colSpan={3} className="px-6 py-3 text-sm font-semibold text-gray-900">
+                    <td colSpan={3} style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, fontSize: 14, fontWeight: 600, color: '#111827' }}>
                       Saldo Akhir ({baseUnitName})
                     </td>
-                    <td className="px-6 py-3 text-sm text-right font-bold text-gray-900">
+                    <td style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, fontSize: 14, textAlign: 'right', fontWeight: 'bold', color: '#111827' }}>
                       {formatNumber(
                         movementsWithBalance.reduce((sum, m) => sum + m.incoming, 0),
                         4
                       )}
                     </td>
-                    <td className="px-6 py-3 text-sm text-right font-bold text-gray-900">
+                    <td style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, fontSize: 14, textAlign: 'right', fontWeight: 'bold', color: '#111827' }}>
                       {formatNumber(
                         movementsWithBalance.reduce((sum, m) => sum + m.outgoing, 0),
                         4
                       )}
                     </td>
-                    <td className="px-6 py-3 text-sm text-right">
-                      <span className="font-bold px-2 py-1 rounded bg-blue-100 text-blue-900">
+                    <td style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, fontSize: 14, textAlign: 'right' }}>
+                      <span style={{ fontWeight: 'bold', paddingLeft: 8, paddingRight: 8, paddingTop: 4, paddingBottom: 4, borderRadius: 4, backgroundColor: '#dbeafe', color: '#1e40af' }}>
                         {movementsWithBalance.length > 0
                           ? formatNumber(movementsWithBalance[movementsWithBalance.length - 1].balance, 4)
                           : '0'}

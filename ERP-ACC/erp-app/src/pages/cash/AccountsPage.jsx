@@ -137,14 +137,14 @@ export default function AccountsPage() {
             <>
               <button
                 onClick={() => openEdit(account)}
-                className="text-blue-600 hover:text-blue-800"
+                style={{ color: '#2563eb' }}
                 title="Edit"
               >
                 <Edit2 size={18} />
               </button>
               <button
                 onClick={() => { setDeletingId(account.id); setIsDeleteOpen(true) }}
-                className="text-red-600 hover:text-red-800"
+                style={{ color: '#dc2626' }}
                 title="Hapus"
               >
                 <Trash2 size={18} />
@@ -179,7 +179,7 @@ export default function AccountsPage() {
         title={editingId ? 'Edit Akun' : 'Tambah Akun'}
         size="md"
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <Input
             label="Nama Akun *"
             placeholder="Contoh: Kas Kantor, BCA 123456789"

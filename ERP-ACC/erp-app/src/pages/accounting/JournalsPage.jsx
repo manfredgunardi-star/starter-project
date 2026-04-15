@@ -49,21 +49,20 @@ export default function JournalsPage() {
       </Flex>
 
       <Space>
-        <div className="relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <div style={{ position: 'relative' }}>
+          <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
           <input
             type="text"
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Cari no. jurnal atau deskripsi..."
-            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-            style={{ minWidth: 280 }}
+            style={{ width: '100%', paddingLeft: 36, paddingRight: 12, paddingTop: 8, paddingBottom: 8, border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14 }}
           />
         </div>
         <select
           value={sourceFilter}
           onChange={e => setSourceFilter(e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none"
+          style={{ border: '1px solid #d1d5db', borderRadius: 8, paddingLeft: 12, paddingRight: 12, paddingTop: 8, paddingBottom: 8, fontSize: 14 }}
         >
           <option value="">Semua Tipe</option>
           <option value="manual">Manual</option>
@@ -71,21 +70,21 @@ export default function JournalsPage() {
         </select>
       </Space>
 
-      <div className="overflow-x-auto border border-gray-200 rounded-lg">
-        <table className="w-full border-collapse">
-          <thead className="bg-gray-100 border-b border-gray-200">
+      <div style={{ overflowX: 'auto', border: '1px solid #e5e7eb', borderRadius: 8 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead style={{ backgroundColor: '#f3f4f6', borderBottom: '1px solid #e5e7eb' }}>
             <tr>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">No. Jurnal</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Tanggal</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Deskripsi</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Tipe</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Status</th>
+              <th style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, textAlign: 'left', fontSize: 14, fontWeight: 500, color: '#111827' }}>No. Jurnal</th>
+              <th style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, textAlign: 'left', fontSize: 14, fontWeight: 500, color: '#111827' }}>Tanggal</th>
+              <th style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, textAlign: 'left', fontSize: 14, fontWeight: 500, color: '#111827' }}>Deskripsi</th>
+              <th style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, textAlign: 'left', fontSize: 14, fontWeight: 500, color: '#111827' }}>Tipe</th>
+              <th style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, textAlign: 'left', fontSize: 14, fontWeight: 500, color: '#111827' }}>Status</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-8 text-center text-sm text-gray-500">
+                <td colSpan={5} style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 32, paddingBottom: 32, textAlign: 'center', fontSize: 14, color: '#6b7280' }}>
                   Belum ada data jurnal
                 </td>
               </tr>
@@ -93,18 +92,20 @@ export default function JournalsPage() {
               filtered.map(j => (
                 <tr
                   key={j.id}
-                  className="border-b border-gray-200 hover:bg-gray-50 cursor-pointer"
+                  style={{ borderBottom: '1px solid #e5e7eb', cursor: 'pointer' }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                   onClick={() => j.source === 'manual' ? navigate(`/accounting/journals/${j.id}`) : null}
                 >
-                  <td className="px-6 py-3 text-sm font-mono text-blue-600">{j.journal_number}</td>
-                  <td className="px-6 py-3 text-sm text-gray-700">{formatDate(j.date)}</td>
-                  <td className="px-6 py-3 text-sm text-gray-900">{j.description || '—'}</td>
-                  <td className="px-6 py-3 text-sm">
+                  <td style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, fontSize: 14, fontFamily: 'monospace', color: '#2563eb' }}>{j.journal_number}</td>
+                  <td style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, fontSize: 14, color: '#374151' }}>{formatDate(j.date)}</td>
+                  <td style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, fontSize: 14, color: '#111827' }}>{j.description || '—'}</td>
+                  <td style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, fontSize: 14 }}>
                     <Tag color={j.source === 'manual' ? 'purple' : 'default'}>
                       {j.source === 'manual' ? 'Manual' : 'Otomatis'}
                     </Tag>
                   </td>
-                  <td className="px-6 py-3 text-sm">
+                  <td style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, fontSize: 14 }}>
                     <Tag color={j.is_posted ? 'success' : 'warning'}>
                       {j.is_posted ? 'Posted' : 'Draft'}
                     </Tag>

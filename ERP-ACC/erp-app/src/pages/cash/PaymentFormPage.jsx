@@ -133,7 +133,7 @@ export default function PaymentFormPage() {
   return (
     <Space direction="vertical" style={{ width: '100%' }} size="large">
       <Space align="center">
-        <button onClick={() => navigate('/cash/payments')} className="text-gray-500 hover:text-gray-700">
+        <button onClick={() => navigate('/cash/payments')} style={{ color: '#6b7280' }}>
           <ArrowLeft size={20} />
         </button>
         <Typography.Title level={3} style={{ margin: 0 }}>Tambah Pembayaran</Typography.Title>
@@ -144,7 +144,7 @@ export default function PaymentFormPage() {
           {/* Type */}
           <Space>
             {['incoming', 'outgoing'].map(t => (
-              <label key={t} className="flex items-center gap-2 cursor-pointer">
+              <label key={t} style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                 <input
                   type="radio"
                   value={t}
@@ -154,7 +154,7 @@ export default function PaymentFormPage() {
                     setForm(f => ({ ...f, type: t, customer_id: '', supplier_id: '', invoice_id: '' }))
                     setInvoices([])
                   }}
-                  className="text-blue-600"
+                  style={{ accentColor: '#2563eb' }}
                 />
                 <Typography.Text>
                   {t === 'incoming' ? 'Masuk (dari Customer)' : 'Keluar (ke Supplier)'}
@@ -231,13 +231,13 @@ export default function PaymentFormPage() {
 
           {/* Notes */}
           <Space direction="vertical" style={{ width: '100%' }} size={4}>
-            <label className="block text-sm font-medium text-gray-700">Catatan</label>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151' }}>Catatan</label>
             <textarea
               value={form.notes}
               onChange={e => field('notes', e.target.value)}
               rows={2}
               placeholder="Catatan opsional..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+              style={{ width: '100%', paddingLeft: 12, paddingRight: 12, paddingTop: 8, paddingBottom: 8, border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, resize: 'none' }}
             />
           </Space>
 
