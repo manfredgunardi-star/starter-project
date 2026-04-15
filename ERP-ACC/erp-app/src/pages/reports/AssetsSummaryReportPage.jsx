@@ -5,6 +5,7 @@ import { jsPDF } from 'jspdf'
 import 'jspdf-autotable'
 import * as XLSX from 'xlsx'
 import { Download, FileText } from 'lucide-react'
+import DateInput from '../../components/ui/DateInput'
 
 export default function AssetsSummaryReportPage() {
   const [cutOffDate, setCutOffDate] = useState(new Date().toISOString().slice(0, 10))
@@ -129,15 +130,11 @@ export default function AssetsSummaryReportPage() {
       <h1 className="text-3xl font-bold text-gray-900">Ringkasan Aset Tetap per Kategori</h1>
 
       <div className="flex gap-4 items-end flex-wrap">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Cutoff Date</label>
-          <input
-            type="date"
-            value={cutOffDate}
-            onChange={e => setCutOffDate(e.target.value)}
-            className="border border-gray-300 rounded px-3 py-2 text-sm"
-          />
-        </div>
+        <DateInput
+          label="Cutoff Date"
+          value={cutOffDate}
+          onChange={e => setCutOffDate(e.target.value)}
+        />
         <button
           onClick={handleLoad}
           disabled={loading}

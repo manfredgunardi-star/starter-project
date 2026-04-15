@@ -1,6 +1,7 @@
 import Input from '../ui/Input'
 import Select from '../ui/Select'
 import StatusBadge from '../ui/StatusBadge'
+import DateInput from '../ui/DateInput'
 
 export default function DocumentHeader({
   docNumber,
@@ -34,12 +35,11 @@ export default function DocumentHeader({
           />
 
           {/* Date */}
-          <Input
+          <DateInput
             label="Tanggal *"
-            type="date"
             value={date || ''}
             onChange={e => onDateChange?.(e.target.value)}
-            readOnly={readOnly}
+            disabled={readOnly}
           />
 
           {/* Party (customer/supplier) */}
@@ -61,12 +61,11 @@ export default function DocumentHeader({
 
           {/* Due date (optional) */}
           {(dueDate !== undefined) && (
-            <Input
+            <DateInput
               label="Jatuh Tempo"
-              type="date"
               value={dueDate || ''}
               onChange={e => onDueDateChange?.(e.target.value)}
-              readOnly={readOnly}
+              disabled={readOnly}
             />
           )}
 

@@ -3,6 +3,7 @@ import { getAuditLogs } from '../../services/auditService'
 import { formatDateTime } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
+import DateInput from '../../components/ui/DateInput'
 import { Search, ChevronDown, ChevronRight } from 'lucide-react'
 
 const TABLE_OPTIONS = [
@@ -178,24 +179,16 @@ export default function AuditLogPage() {
             ))}
           </select>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Dari Tanggal</label>
-          <input
-            type="date"
-            value={startDate}
-            onChange={e => setStartDate(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Hingga Tanggal</label>
-          <input
-            type="date"
-            value={endDate}
-            onChange={e => setEndDate(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
-          />
-        </div>
+        <DateInput
+          label="Dari Tanggal"
+          value={startDate}
+          onChange={e => setStartDate(e.target.value)}
+        />
+        <DateInput
+          label="Hingga Tanggal"
+          value={endDate}
+          onChange={e => setEndDate(e.target.value)}
+        />
         <Button variant="primary" onClick={handleLoad} loading={loading}>
           <Search size={16} /> Tampilkan
         </Button>

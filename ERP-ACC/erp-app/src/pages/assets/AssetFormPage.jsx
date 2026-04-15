@@ -5,6 +5,7 @@ import * as assetCategoryService from '../../services/assetCategoryService'
 import * as depreciationService from '../../services/depreciationService'
 import AssetPaymentFields from '../../components/assets/AssetPaymentFields'
 import Button from '../../components/ui/Button'
+import DateInput from '../../components/ui/DateInput'
 import { formatCurrency } from '../../utils/currency'
 import { formatDate } from '../../utils/date'
 import { Lock, AlertCircle } from 'lucide-react'
@@ -294,18 +295,12 @@ export default function AssetFormPage() {
           )}
 
           {/* Acquisition Date */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tanggal Perolehan {!hasPosted && <span className="text-red-500">*</span>}
-            </label>
-            <input
-              type="date"
-              required={!hasPosted}
-              value={form.acquisition_date || ''}
-              onChange={e => handleFieldChange('acquisition_date', e.target.value)}
-              {...financialFieldProps('acquisition_date')}
-            />
-          </div>
+          <DateInput
+            label={`Tanggal Perolehan${!hasPosted ? ' *' : ''}`}
+            value={form.acquisition_date || ''}
+            onChange={e => handleFieldChange('acquisition_date', e.target.value)}
+            disabled={hasPosted}
+          />
 
           {/* Acquisition Cost */}
           <div>

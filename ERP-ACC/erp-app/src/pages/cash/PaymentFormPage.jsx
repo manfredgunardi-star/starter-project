@@ -10,6 +10,7 @@ import { formatCurrency } from '../../utils/currency'
 import { today } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
+import DateInput from '../../components/ui/DateInput'
 import Select from '../../components/ui/Select'
 import { ArrowLeft, Save } from 'lucide-react'
 
@@ -160,9 +161,8 @@ export default function PaymentFormPage() {
           ))}
         </div>
 
-        <Input
+        <DateInput
           label="Tanggal *"
-          type="date"
           value={form.date}
           onChange={e => field('date', e.target.value)}
         />

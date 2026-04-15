@@ -5,6 +5,7 @@ import { formatCurrency } from '../../utils/currency'
 import { formatDate } from '../../utils/date'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import Button from '../../components/ui/Button'
+import DateInput from '../../components/ui/DateInput'
 import { Search } from 'lucide-react'
 
 function yearStart() {
@@ -64,24 +65,16 @@ export default function LedgerPage() {
               ))}
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Dari</label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={e => setStartDate(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Hingga</label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={e => setEndDate(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none"
-            />
-          </div>
+          <DateInput
+            label="Dari"
+            value={startDate}
+            onChange={e => setStartDate(e.target.value)}
+          />
+          <DateInput
+            label="Hingga"
+            value={endDate}
+            onChange={e => setEndDate(e.target.value)}
+          />
           <Button variant="primary" onClick={handleSearch} loading={loading}>
             <Search size={16} /> Tampilkan
           </Button>

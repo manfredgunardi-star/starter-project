@@ -8,6 +8,7 @@ import { formatCurrency } from '../../utils/currency'
 import { today } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
+import DateInput from '../../components/ui/DateInput'
 import Select from '../../components/ui/Select'
 import { ArrowLeft, ArrowRight, Save } from 'lucide-react'
 
@@ -74,9 +75,8 @@ export default function TransferFormPage() {
       </div>
 
       <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4 max-w-xl">
-        <Input
+        <DateInput
           label="Tanggal *"
-          type="date"
           value={form.date}
           onChange={e => field('date', e.target.value)}
         />

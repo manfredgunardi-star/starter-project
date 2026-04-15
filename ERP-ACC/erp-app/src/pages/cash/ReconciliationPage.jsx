@@ -7,6 +7,7 @@ import { today } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import Select from '../../components/ui/Select'
 import Input from '../../components/ui/Input'
+import DateInput from '../../components/ui/DateInput'
 import { CheckCircle, XCircle } from 'lucide-react'
 
 export default function ReconciliationPage() {
@@ -67,9 +68,8 @@ export default function ReconciliationPage() {
             placeholder="Pilih akun..."
           />
 
-          <Input
+          <DateInput
             label="Tanggal Rekonsiliasi *"
-            type="date"
             value={form.date}
             onChange={e => field('date', e.target.value)}
           />

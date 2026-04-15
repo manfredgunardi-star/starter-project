@@ -4,6 +4,7 @@ import { formatCurrency } from '../../utils/currency'
 import { formatDate } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
+import DateInput from '../../components/ui/DateInput'
 import { Search } from 'lucide-react'
 
 function yearStart() {
@@ -44,24 +45,16 @@ export default function CashFlowPage() {
       <h1 className="text-3xl font-bold text-gray-900">Arus Kas (Cash Flow)</h1>
 
       <div className="flex gap-4 items-end">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Dari Tanggal</label>
-          <input
-            type="date"
-            value={startDate}
-            onChange={e => setStartDate(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Hingga Tanggal</label>
-          <input
-            type="date"
-            value={endDate}
-            onChange={e => setEndDate(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
-          />
-        </div>
+        <DateInput
+          label="Dari Tanggal"
+          value={startDate}
+          onChange={e => setStartDate(e.target.value)}
+        />
+        <DateInput
+          label="Hingga Tanggal"
+          value={endDate}
+          onChange={e => setEndDate(e.target.value)}
+        />
         <Button variant="primary" onClick={handleLoad} loading={loading}>
           <Search size={16} /> Tampilkan
         </Button>

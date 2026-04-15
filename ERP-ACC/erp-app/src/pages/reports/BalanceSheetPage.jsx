@@ -3,6 +3,7 @@ import { getAccountBalances } from '../../services/reportService'
 import { formatCurrency } from '../../utils/currency'
 import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
+import DateInput from '../../components/ui/DateInput'
 import { Search } from 'lucide-react'
 
 function yearStart() {
@@ -76,15 +77,11 @@ export default function BalanceSheetPage() {
       <h1 className="text-3xl font-bold text-gray-900">Neraca (Balance Sheet)</h1>
 
       <div className="flex gap-4 items-end">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Per Tanggal</label>
-          <input
-            type="date"
-            value={endDate}
-            onChange={e => setEndDate(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
-          />
-        </div>
+        <DateInput
+          label="Per Tanggal"
+          value={endDate}
+          onChange={e => setEndDate(e.target.value)}
+        />
         <Button variant="primary" onClick={handleLoad} loading={loading}>
           <Search size={16} /> Tampilkan
         </Button>

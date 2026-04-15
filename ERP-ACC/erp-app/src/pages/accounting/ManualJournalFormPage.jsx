@@ -8,6 +8,7 @@ import { formatCurrency } from '../../utils/currency'
 import { today } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
+import DateInput from '../../components/ui/DateInput'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { ArrowLeft, Save, Send, Plus, Trash2 } from 'lucide-react'
 
@@ -136,12 +137,11 @@ export default function ManualJournalFormPage() {
       {/* Header */}
       <div className="bg-white border border-gray-200 rounded-lg p-6">
         <div className="grid grid-cols-2 gap-4">
-          <Input
+          <DateInput
             label="Tanggal *"
-            type="date"
             value={header.date}
             onChange={e => setHeader(h => ({ ...h, date: e.target.value }))}
-            readOnly={readOnly}
+            disabled={readOnly}
           />
           <div className="space-y-1">
             <label className="block text-sm font-medium text-gray-700">Deskripsi *</label>

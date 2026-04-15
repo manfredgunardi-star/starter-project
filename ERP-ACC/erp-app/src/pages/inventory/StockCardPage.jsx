@@ -6,6 +6,7 @@ import { formatNumber } from '../../utils/currency'
 import Button from '../../components/ui/Button'
 import Select from '../../components/ui/Select'
 import Input from '../../components/ui/Input'
+import DateInput from '../../components/ui/DateInput'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { Calendar, Download } from 'lucide-react'
 
@@ -83,15 +84,13 @@ export default function StockCardPage() {
         )}
 
         <div className="grid grid-cols-2 gap-4">
-          <Input
+          <DateInput
             label="Tanggal Mulai"
-            type="date"
             value={startDate}
             onChange={e => setStartDate(e.target.value)}
           />
-          <Input
+          <DateInput
             label="Tanggal Akhir"
-            type="date"
             value={endDate}
             onChange={e => setEndDate(e.target.value)}
           />
