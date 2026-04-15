@@ -1,33 +1,56 @@
 import { forwardRef } from 'react'
+import { Input as AntdInput, InputNumber } from 'antd'
 
 const Input = forwardRef(({
   label,
   error,
   type = 'text',
   placeholder,
+  value,
+  onChange,
   ...props
 }, ref) => {
+  const isNumber = type === 'number'
+  const isTextarea = type === 'textarea'
+
+  const field = isNumber ? (
+    <InputNumber
+      ref={ref}
+      placeholder={placeholder}
+      value={value === '' || value === undefined ? null : value}
+      onChange={(val) => onChange && onChange({ target: { value: val ?? '' } })}
+      status={error ? 'error' : undefined}
+      style={{ width: '100%' }}
+      {...props}
+    />
+  ) : isTextarea ? (
+    <AntdInput.TextArea
+      ref={ref}
+      placeholder={placeholder}
+      value={value}
+      onChange={onChange}
+      status={error ? 'error' : undefined}
+      {...props}
+    />
+  ) : (
+    <AntdInput
+      ref={ref}
+      type={type}
+      placeholder={placeholder}
+      value={value}
+      onChange={onChange}
+      status={error ? 'error' : undefined}
+      {...props}
+    />
+  )
+
   return (
-    <div className="space-y-1">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       {label && (
-        <label className="block text-sm font-medium text-gray-700">
-          {label}
-        </label>
+        <label style={{ fontSize: 14, fontWeight: 500 }}>{label}</label>
       )}
-      <input
-        ref={ref}
-        type={type}
-        placeholder={placeholder}
-        className={`w-full px-3 py-2 border rounded-lg text-gray-900 placeholder-gray-500 transition ${
-          error
-            ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-            : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
-        } focus:outline-none focus:ring-1`}
-        {...props}
-      />
-      {error && (
-        <p className="text-sm text-red-600">{error}</p>
-      )}
+      {field}
+      {error && <span style={{ color: '#ff4d4f', fontSize: 12 }}>{error}</span>}
     </div>
   )
 })
