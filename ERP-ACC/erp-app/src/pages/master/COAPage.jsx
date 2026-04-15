@@ -210,23 +210,23 @@ export default function COAPage() {
       </Flex>
 
       {/* COA Tree Table */}
-      <div className="overflow-x-auto border border-gray-200 rounded-lg">
-        <table className="w-full border-collapse">
-          <thead className="bg-gray-100 border-b border-gray-200">
+      <div style={{ overflowX: 'auto', border: '1px solid #e5e7eb', borderRadius: 8 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <thead style={{ background: '#f3f4f6', borderBottom: '1px solid #e5e7eb' }}>
             <tr>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Kode</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Nama Akun</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Tipe</th>
-              <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Saldo Normal</th>
+              <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Kode</th>
+              <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Nama Akun</th>
+              <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Tipe</th>
+              <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Saldo Normal</th>
               {canWrite && (
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Aksi</th>
+                <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Aksi</th>
               )}
             </tr>
           </thead>
           <tbody>
             {treeList.length === 0 ? (
               <tr>
-                <td colSpan={canWrite ? 5 : 4} className="px-6 py-8 text-center text-sm text-gray-500">
+                <td colSpan={canWrite ? 5 : 4} style={{ padding: '32px 24px', textAlign: 'center', fontSize: 14, color: '#6b7280' }}>
                   Belum ada data COA
                 </td>
               </tr>
@@ -234,44 +234,41 @@ export default function COAPage() {
               treeList.map((account) => (
                 <tr
                   key={account.id}
-                  className="border-b border-gray-200 hover:bg-gray-50"
+                  style={{ borderBottom: '1px solid #e5e7eb' }}
                 >
-                  <td className="px-6 py-3 text-sm text-gray-700 font-mono">
+                  <td style={{ padding: '12px 24px', fontSize: 14, fontFamily: 'monospace' }}>
                     {account.code}
                   </td>
-                  <td className="px-6 py-3 text-sm text-gray-900">
+                  <td style={{ padding: '12px 24px', fontSize: 14 }}>
                     {/* Indent based on depth */}
                     <span
-                      style={{ paddingLeft: `${account.depth * 20}px` }}
-                      className={account.depth === 0 ? 'font-semibold' : ''}
+                      style={{ paddingLeft: `${account.depth * 20}px`, fontWeight: account.depth === 0 ? 600 : undefined }}
                     >
                       {account.depth > 0 && (
-                        <span className="text-gray-400 mr-1">└</span>
+                        <span style={{ color: '#9ca3af', marginRight: 4 }}>└</span>
                       )}
                       {account.name}
                     </span>
                   </td>
-                  <td className="px-6 py-3 text-sm text-gray-700">
+                  <td style={{ padding: '12px 24px', fontSize: 14 }}>
                     {TYPE_LABELS[account.type] || account.type}
                   </td>
-                  <td className="px-6 py-3 text-sm">
+                  <td style={{ padding: '12px 24px', fontSize: 14 }}>
                     <Tag color={account.normal_balance === 'debit' ? 'blue' : 'purple'}>
                       {NORMAL_BALANCE_LABELS[account.normal_balance]}
                     </Tag>
                   </td>
                   {canWrite && (
-                    <td className="px-6 py-3 text-sm">
+                    <td style={{ padding: '12px 24px', fontSize: 14 }}>
                       <Space>
                         <button
                           onClick={() => openEdit(account)}
-                          className="text-blue-600 hover:text-blue-800"
                           title="Edit"
                         >
                           <Edit2 size={18} />
                         </button>
                         <button
                           onClick={() => { setDeletingId(account.id); setIsDeleteOpen(true) }}
-                          className="text-red-600 hover:text-red-800"
                           title="Hapus"
                         >
                           <Trash2 size={18} />
@@ -329,20 +326,16 @@ export default function COAPage() {
                 />
               </Col>
               <Col span={12}>
-                <div className="space-y-1">
-                  <label className="block text-sm font-medium text-gray-700">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  <label style={{ display: 'block', fontSize: 14, fontWeight: 500 }}>
                     Saldo Normal
                   </label>
-                  <div className={`w-full px-3 py-2 border rounded-lg text-sm ${
-                    normalBalance
-                      ? 'border-gray-300 bg-gray-50 text-gray-700'
-                      : 'border-gray-200 bg-gray-50 text-gray-400'
-                  }`}>
+                  <div style={{ width: '100%', padding: '6px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, background: '#f9fafb', color: normalBalance ? undefined : '#9ca3af' }}>
                     {normalBalance
                       ? NORMAL_BALANCE_LABELS[normalBalance]
                       : '(otomatis dari tipe)'}
                   </div>
-                  <p className="text-xs text-gray-500">Otomatis berdasarkan tipe akun</p>
+                  <p style={{ fontSize: 12, color: '#6b7280', margin: 0 }}>Otomatis berdasarkan tipe akun</p>
                 </div>
               </Col>
             </Row>

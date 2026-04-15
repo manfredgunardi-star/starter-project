@@ -133,7 +133,7 @@ export default function GoodsDeliveryFormPage() {
     <Space direction="vertical" style={{ width: '100%' }} size={24}>
       <Flex justify="space-between" align="center">
         <Space align="center">
-          <button onClick={() => navigate('/sales/deliveries')} className="text-gray-500 hover:text-gray-700">
+          <button onClick={() => navigate('/sales/deliveries')}>
             <ArrowLeft size={20} />
           </button>
           <Typography.Title level={4} style={{ margin: 0 }}>
@@ -171,15 +171,15 @@ export default function GoodsDeliveryFormPage() {
       {/* Delivery items — no price, just qty */}
       <Space direction="vertical" style={{ width: '100%' }} size={12}>
         <Typography.Title level={5} style={{ margin: 0 }}>Item Pengiriman</Typography.Title>
-        <div className="overflow-x-auto border border-gray-200 rounded-lg">
-          <table className="w-full border-collapse">
-            <thead className="bg-gray-100 border-b border-gray-200">
+        <div style={{ overflowX: 'auto', border: '1px solid #e5e7eb', borderRadius: 8 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead style={{ background: '#f3f4f6', borderBottom: '1px solid #e5e7eb' }}>
               <tr>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Produk</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Satuan</th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-gray-700">Qty</th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-gray-700">Qty (Base)</th>
-                {!readOnly && <th className="w-10"></th>}
+                <th style={{ padding: '8px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500 }}>Produk</th>
+                <th style={{ padding: '8px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500 }}>Satuan</th>
+                <th style={{ padding: '8px 16px', textAlign: 'right', fontSize: 12, fontWeight: 500 }}>Qty</th>
+                <th style={{ padding: '8px 16px', textAlign: 'right', fontSize: 12, fontWeight: 500 }}>Qty (Base)</th>
+                {!readOnly && <th style={{ width: 40 }}></th>}
               </tr>
             </thead>
             <tbody>
@@ -188,13 +188,13 @@ export default function GoodsDeliveryFormPage() {
                 const productOpts = products.map(p => ({ value: p.id, label: `${p.name}${p.sku ? ` (${p.sku})` : ''}` }))
 
                 return (
-                  <tr key={item._key || idx} className="border-b border-gray-200">
-                    <td className="px-4 py-2">
+                  <tr key={item._key || idx} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                    <td style={{ padding: '8px 16px' }}>
                       {readOnly ? (
-                        <span className="text-sm">{item.product_name || item.product_id}</span>
+                        <span style={{ fontSize: 14 }}>{item.product_name || item.product_id}</span>
                       ) : (
                         <select
-                          className="w-full text-sm border border-gray-300 rounded px-2 py-1"
+                          style={{ width: '100%', fontSize: 14, border: '1px solid #d1d5db', borderRadius: 4, padding: '2px 8px' }}
                           value={item.product_id}
                           onChange={e => updateItem(idx, 'product_id', e.target.value)}
                         >
@@ -203,12 +203,12 @@ export default function GoodsDeliveryFormPage() {
                         </select>
                       )}
                     </td>
-                    <td className="px-4 py-2">
+                    <td style={{ padding: '8px 16px' }}>
                       {readOnly ? (
-                        <span className="text-sm">{item.unit_name}</span>
+                        <span style={{ fontSize: 14 }}>{item.unit_name}</span>
                       ) : (
                         <select
-                          className="w-full text-sm border border-gray-300 rounded px-2 py-1"
+                          style={{ width: '100%', fontSize: 14, border: '1px solid #d1d5db', borderRadius: 4, padding: '2px 8px' }}
                           value={item.unit_id}
                           onChange={e => updateItem(idx, 'unit_id', e.target.value)}
                           disabled={!item.product_id}
@@ -218,29 +218,28 @@ export default function GoodsDeliveryFormPage() {
                         </select>
                       )}
                     </td>
-                    <td className="px-4 py-2">
+                    <td style={{ padding: '8px 16px' }}>
                       {readOnly ? (
-                        <span className="text-sm text-right block">{item.quantity}</span>
+                        <span style={{ fontSize: 14, display: 'block', textAlign: 'right' }}>{item.quantity}</span>
                       ) : (
                         <input
                           type="number"
                           min="0"
                           step="any"
-                          className="w-full text-sm border border-gray-300 rounded px-2 py-1 text-right"
+                          style={{ width: '100%', fontSize: 14, border: '1px solid #d1d5db', borderRadius: 4, padding: '2px 8px', textAlign: 'right' }}
                           value={item.quantity}
                           onChange={e => updateItem(idx, 'quantity', e.target.value)}
                         />
                       )}
                     </td>
-                    <td className="px-4 py-2 text-sm text-right text-gray-500">
+                    <td style={{ padding: '8px 16px', fontSize: 14, textAlign: 'right' }}>
                       {Number(item.quantity_base || 0).toFixed(4)}
                     </td>
                     {!readOnly && (
-                      <td className="px-2 py-2">
+                      <td style={{ padding: '8px' }}>
                         <button
                           type="button"
                           onClick={() => setItems(prev => prev.filter((_, i) => i !== idx))}
-                          className="text-red-500 hover:text-red-700"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -251,7 +250,7 @@ export default function GoodsDeliveryFormPage() {
               })}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={readOnly ? 4 : 5} className="px-4 py-6 text-center text-sm text-gray-500">
+                  <td colSpan={readOnly ? 4 : 5} style={{ padding: '24px 16px', textAlign: 'center', fontSize: 14, color: '#6b7280' }}>
                     Tidak ada item
                   </td>
                 </tr>
@@ -264,7 +263,7 @@ export default function GoodsDeliveryFormPage() {
           <button
             type="button"
             onClick={() => setItems(prev => [...prev, { _key: Date.now(), product_id: '', unit_id: '', quantity: '', quantity_base: 0 }])}
-            className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800"
+            style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14 }}
           >
             <Plus size={18} /> Tambah Baris
           </button>

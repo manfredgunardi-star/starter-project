@@ -198,12 +198,11 @@ export default function ProductsPage() {
         <Space>
           {canWrite && (
             <>
-              <button onClick={() => openEdit(product)} className="text-blue-600 hover:text-blue-800" title="Edit">
+              <button onClick={() => openEdit(product)} title="Edit">
                 <Edit2 size={18} />
               </button>
               <button
                 onClick={() => { setDeletingId(product.id); setIsDeleteOpen(true) }}
-                className="text-red-600 hover:text-red-800"
                 title="Hapus"
               >
                 <Trash2 size={18} />
@@ -307,14 +306,13 @@ export default function ProductsPage() {
             </Row>
 
             <Space align="center" size={16}>
-              <label className="flex items-center gap-2 cursor-pointer">
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
                 <input
                   type="checkbox"
                   checked={formData.is_taxable}
                   onChange={e => field('is_taxable', e.target.checked)}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded"
                 />
-                <span className="text-sm font-medium text-gray-700">Kena PPN</span>
+                <span style={{ fontSize: 14, fontWeight: 500 }}>Kena PPN</span>
               </label>
               {formData.is_taxable && (
                 <div style={{ width: 128 }}>
@@ -338,7 +336,7 @@ export default function ProductsPage() {
                   type="button"
                   onClick={addConversionRow}
                   disabled={!formData.base_unit_id}
-                  className="text-blue-600 hover:text-blue-800 disabled:text-gray-400 flex items-center gap-1 text-sm"
+                  style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 14 }}
                 >
                   <PlusCircle size={18} />
                   Tambah Baris
@@ -354,17 +352,17 @@ export default function ProductsPage() {
               ) : (
                 <Space direction="vertical" style={{ width: '100%' }} size={8}>
                   {/* Header */}
-                  <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-2 items-center">
-                    <div className="text-xs font-medium text-gray-600">Dari Satuan</div>
-                    <div className="text-xs font-medium text-gray-600 text-center px-2">=</div>
-                    <div className="text-xs font-medium text-gray-600">Faktor × {baseUnitName}</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr auto', gap: 8, alignItems: 'center' }}>
+                    <div style={{ fontSize: 12, fontWeight: 500 }}>Dari Satuan</div>
+                    <div style={{ fontSize: 12, fontWeight: 500, textAlign: 'center', padding: '0 8px' }}>=</div>
+                    <div style={{ fontSize: 12, fontWeight: 500 }}>Faktor × {baseUnitName}</div>
                     <div></div>
                   </div>
 
                   {conversions.map((conv, i) => {
                     const fromOptions = availableFromUnits(i).map(u => ({ value: u.id, label: u.name }))
                     return (
-                      <div key={i} className="grid grid-cols-[1fr_auto_1fr_auto] gap-2 items-start">
+                      <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr auto', gap: 8, alignItems: 'start' }}>
                         <Select
                           options={fromOptions}
                           value={conv.from_unit_id}
@@ -372,7 +370,7 @@ export default function ProductsPage() {
                           placeholder="Pilih satuan..."
                           error={formErrors[`conv_unit_${i}`]}
                         />
-                        <div className="flex items-center justify-center h-10 mt-0 text-gray-500 px-1">=</div>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 40, padding: '0 4px' }}>=</div>
                         <Input
                           type="number"
                           min="0.0001"
@@ -385,7 +383,7 @@ export default function ProductsPage() {
                         <button
                           type="button"
                           onClick={() => removeConversionRow(i)}
-                          className="text-red-500 hover:text-red-700 mt-1"
+                          style={{ marginTop: 4 }}
                         >
                           <X size={20} />
                         </button>

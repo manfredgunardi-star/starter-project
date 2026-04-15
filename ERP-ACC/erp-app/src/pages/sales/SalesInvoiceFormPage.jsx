@@ -111,7 +111,7 @@ export default function SalesInvoiceFormPage() {
     <Space direction="vertical" style={{ width: '100%' }} size={24}>
       <Flex justify="space-between" align="center">
         <Space align="center">
-          <button onClick={() => navigate('/sales/invoices')} className="text-gray-500 hover:text-gray-700">
+          <button onClick={() => navigate('/sales/invoices')}>
             <ArrowLeft size={20} />
           </button>
           <Typography.Title level={4} style={{ margin: 0 }}>

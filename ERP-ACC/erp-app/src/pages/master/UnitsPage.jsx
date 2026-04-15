@@ -98,14 +98,12 @@ export default function UnitsPage() {
             <>
               <button
                 onClick={() => handleEdit(unit)}
-                className="text-blue-600 hover:text-blue-800 transition"
                 title="Edit"
               >
                 <Edit2 size={18} />
               </button>
               <button
                 onClick={() => handleDeleteClick(unit)}
-                className="text-red-600 hover:text-red-800 transition"
                 title="Hapus"
               >
                 <Trash2 size={18} />

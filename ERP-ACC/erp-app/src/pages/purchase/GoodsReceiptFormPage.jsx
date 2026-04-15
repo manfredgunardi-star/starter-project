@@ -135,7 +135,7 @@ export default function GoodsReceiptFormPage() {
     <Space direction="vertical" style={{ width: '100%' }} size={24}>
       <Flex justify="space-between" align="center">
         <Space align="center">
-          <button onClick={() => navigate('/purchase/receipts')} className="text-gray-500 hover:text-gray-700">
+          <button onClick={() => navigate('/purchase/receipts')}>
             <ArrowLeft size={20} />
           </button>
           <Typography.Title level={4} style={{ margin: 0 }}>
@@ -173,17 +173,17 @@ export default function GoodsReceiptFormPage() {
       {/* Items table with unit price */}
       <Space direction="vertical" style={{ width: '100%' }} size={12}>
         <Typography.Title level={5} style={{ margin: 0 }}>Item Penerimaan</Typography.Title>
-        <div className="overflow-x-auto border border-gray-200 rounded-lg">
-          <table className="w-full border-collapse">
-            <thead className="bg-gray-100 border-b border-gray-200">
+        <div style={{ overflowX: 'auto', border: '1px solid #e5e7eb', borderRadius: 8 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead style={{ background: '#f3f4f6', borderBottom: '1px solid #e5e7eb' }}>
               <tr>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Produk</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-700">Satuan</th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-gray-700">Qty</th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-gray-700">Qty (Base)</th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-gray-700">Harga Beli</th>
-                <th className="px-4 py-2 text-right text-xs font-medium text-gray-700">Subtotal</th>
-                {!readOnly && <th className="w-10"></th>}
+                <th style={{ padding: '8px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500 }}>Produk</th>
+                <th style={{ padding: '8px 16px', textAlign: 'left', fontSize: 12, fontWeight: 500 }}>Satuan</th>
+                <th style={{ padding: '8px 16px', textAlign: 'right', fontSize: 12, fontWeight: 500 }}>Qty</th>
+                <th style={{ padding: '8px 16px', textAlign: 'right', fontSize: 12, fontWeight: 500 }}>Qty (Base)</th>
+                <th style={{ padding: '8px 16px', textAlign: 'right', fontSize: 12, fontWeight: 500 }}>Harga Beli</th>
+                <th style={{ padding: '8px 16px', textAlign: 'right', fontSize: 12, fontWeight: 500 }}>Subtotal</th>
+                {!readOnly && <th style={{ width: 40 }}></th>}
               </tr>
             </thead>
             <tbody>
@@ -193,13 +193,13 @@ export default function GoodsReceiptFormPage() {
                 const subtotal = (Number(item.quantity_base) || 0) * (Number(item.unit_price) || 0)
 
                 return (
-                  <tr key={item._key || idx} className="border-b border-gray-200">
-                    <td className="px-4 py-2 min-w-[160px]">
+                  <tr key={item._key || idx} style={{ borderBottom: '1px solid #e5e7eb' }}>
+                    <td style={{ padding: '8px 16px', minWidth: 160 }}>
                       {readOnly ? (
-                        <span className="text-sm">{item.product_name || item.product_id}</span>
+                        <span style={{ fontSize: 14 }}>{item.product_name || item.product_id}</span>
                       ) : (
                         <select
-                          className="w-full text-sm border border-gray-300 rounded px-2 py-1"
+                          style={{ width: '100%', fontSize: 14, border: '1px solid #d1d5db', borderRadius: 4, padding: '2px 8px' }}
                           value={item.product_id}
                           onChange={e => updateItem(idx, 'product_id', e.target.value)}
                         >
@@ -208,12 +208,12 @@ export default function GoodsReceiptFormPage() {
                         </select>
                       )}
                     </td>
-                    <td className="px-4 py-2 min-w-[100px]">
+                    <td style={{ padding: '8px 16px', minWidth: 100 }}>
                       {readOnly ? (
-                        <span className="text-sm">{item.unit_name}</span>
+                        <span style={{ fontSize: 14 }}>{item.unit_name}</span>
                       ) : (
                         <select
-                          className="w-full text-sm border border-gray-300 rounded px-2 py-1"
+                          style={{ width: '100%', fontSize: 14, border: '1px solid #d1d5db', borderRadius: 4, padding: '2px 8px' }}
                           value={item.unit_id}
                           onChange={e => updateItem(idx, 'unit_id', e.target.value)}
                           disabled={!item.product_id}
@@ -223,42 +223,41 @@ export default function GoodsReceiptFormPage() {
                         </select>
                       )}
                     </td>
-                    <td className="px-4 py-2 w-24">
+                    <td style={{ padding: '8px 16px', width: 96 }}>
                       {readOnly ? (
-                        <span className="text-sm text-right block">{item.quantity}</span>
+                        <span style={{ fontSize: 14, display: 'block', textAlign: 'right' }}>{item.quantity}</span>
                       ) : (
                         <input
                           type="number" min="0" step="any"
-                          className="w-full text-sm border border-gray-300 rounded px-2 py-1 text-right"
+                          style={{ width: '100%', fontSize: 14, border: '1px solid #d1d5db', borderRadius: 4, padding: '2px 8px', textAlign: 'right' }}
                           value={item.quantity}
                           onChange={e => updateItem(idx, 'quantity', e.target.value)}
                         />
                       )}
                     </td>
-                    <td className="px-4 py-2 text-sm text-right text-gray-500 w-24">
+                    <td style={{ padding: '8px 16px', fontSize: 14, textAlign: 'right', width: 96 }}>
                       {Number(item.quantity_base || 0).toFixed(4)}
                     </td>
-                    <td className="px-4 py-2 w-32">
+                    <td style={{ padding: '8px 16px', width: 128 }}>
                       {readOnly ? (
-                        <span className="text-sm text-right block">{Number(item.unit_price).toLocaleString('id-ID')}</span>
+                        <span style={{ fontSize: 14, display: 'block', textAlign: 'right' }}>{Number(item.unit_price).toLocaleString('id-ID')}</span>
                       ) : (
                         <input
                           type="number" min="0" step="any"
-                          className="w-full text-sm border border-gray-300 rounded px-2 py-1 text-right"
+                          style={{ width: '100%', fontSize: 14, border: '1px solid #d1d5db', borderRadius: 4, padding: '2px 8px', textAlign: 'right' }}
                           value={item.unit_price}
                           onChange={e => updateItem(idx, 'unit_price', e.target.value)}
                         />
                       )}
                     </td>
-                    <td className="px-4 py-2 text-sm text-right font-medium text-gray-900 w-32">
+                    <td style={{ padding: '8px 16px', fontSize: 14, textAlign: 'right', fontWeight: 500, width: 128 }}>
                       {subtotal.toLocaleString('id-ID')}
                     </td>
                     {!readOnly && (
-                      <td className="px-2 py-2">
+                      <td style={{ padding: '8px' }}>
                         <button
                           type="button"
                           onClick={() => setItems(prev => prev.filter((_, i) => i !== idx))}
-                          className="text-red-500 hover:text-red-700"
                         >
                           <Trash2 size={16} />
                         </button>
@@ -269,17 +268,17 @@ export default function GoodsReceiptFormPage() {
               })}
               {items.length === 0 && (
                 <tr>
-                  <td colSpan={readOnly ? 6 : 7} className="px-4 py-6 text-center text-sm text-gray-500">
+                  <td colSpan={readOnly ? 6 : 7} style={{ padding: '24px 16px', textAlign: 'center', fontSize: 14, color: '#6b7280' }}>
                     Tidak ada item
                   </td>
                 </tr>
               )}
             </tbody>
             {items.length > 0 && (
-              <tfoot className="border-t border-gray-300 bg-gray-50">
+              <tfoot style={{ borderTop: '1px solid #d1d5db', background: '#f9fafb' }}>
                 <tr>
-                  <td colSpan={5} className="px-4 py-2 text-sm font-medium text-right">Total:</td>
-                  <td className="px-4 py-2 text-sm font-bold text-right text-gray-900">
+                  <td colSpan={5} style={{ padding: '8px 16px', fontSize: 14, fontWeight: 500, textAlign: 'right' }}>Total:</td>
+                  <td style={{ padding: '8px 16px', fontSize: 14, fontWeight: 700, textAlign: 'right' }}>
                     {items.reduce((s, i) => s + (Number(i.quantity_base) || 0) * (Number(i.unit_price) || 0), 0).toLocaleString('id-ID')}
                   </td>
                   {!readOnly && <td></td>}
@@ -293,7 +292,7 @@ export default function GoodsReceiptFormPage() {
           <button
             type="button"
             onClick={() => setItems(prev => [...prev, { _key: Date.now(), product_id: '', unit_id: '', quantity: '', quantity_base: 0, unit_price: '' }])}
-            className="flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800"
+            style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14 }}
           >
             <Plus size={18} /> Tambah Baris
           </button>
