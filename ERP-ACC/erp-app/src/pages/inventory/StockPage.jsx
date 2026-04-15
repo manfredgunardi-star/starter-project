@@ -3,6 +3,7 @@ import { useStock } from '../../hooks/useInventory'
 import { formatCurrency, formatNumber } from '../../utils/currency'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { Search, RefreshCw } from 'lucide-react'
+import { Space, Row, Col, Card, Flex, Typography, Alert, Tag } from 'antd'
 
 const LOW_STOCK_THRESHOLD = 10
 
@@ -29,19 +30,17 @@ export default function StockPage() {
 
   if (error) {
     return (
-      <div className="space-y-4">
-        <h1 className="text-3xl font-bold text-gray-900">Stok</h1>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700">
-          {error}
-        </div>
-      </div>
+      <Space direction="vertical" style={{ width: '100%' }}>
+        <Typography.Title level={3}>Stok</Typography.Title>
+        <Alert type="error" message={error} showIcon />
+      </Space>
     )
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Stok On Hand</h1>
+    <Space direction="vertical" style={{ width: '100%' }}>
+      <Flex justify="space-between" align="center">
+        <Typography.Title level={3} style={{ margin: 0 }}>Stok On Hand</Typography.Title>
         <button
           onClick={refetch}
           className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded transition"
@@ -49,7 +48,7 @@ export default function StockPage() {
           <RefreshCw size={18} />
           Refresh
         </button>
-      </div>
+      </Flex>
 
       {/* Search bar */}
       <div className="relative max-w-md">
@@ -148,24 +147,30 @@ export default function StockPage() {
       </div>
 
       {/* Summary stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white border border-gray-200 rounded-lg p-4">
-          <p className="text-sm text-gray-500">Total Produk</p>
-          <p className="text-2xl font-bold text-gray-900">{filtered.length}</p>
-        </div>
-        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-          <p className="text-sm text-orange-700">Stok Menipis</p>
-          <p className="text-2xl font-bold text-orange-700">
-            {filtered.filter(s => s.quantity_on_hand > 0 && s.quantity_on_hand < LOW_STOCK_THRESHOLD).length}
-          </p>
-        </div>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <p className="text-sm text-red-700">Stok Habis</p>
-          <p className="text-2xl font-bold text-red-700">
-            {filtered.filter(s => s.quantity_on_hand <= 0).length}
-          </p>
-        </div>
-      </div>
-    </div>
+      <Row gutter={16}>
+        <Col span={8}>
+          <Card size="small">
+            <Typography.Text type="secondary">Total Produk</Typography.Text>
+            <div className="text-2xl font-bold text-gray-900">{filtered.length}</div>
+          </Card>
+        </Col>
+        <Col span={8}>
+          <Card size="small" style={{ background: '#fff7ed', borderColor: '#fed7aa' }}>
+            <Typography.Text style={{ color: '#c2410c' }}>Stok Menipis</Typography.Text>
+            <div className="text-2xl font-bold" style={{ color: '#c2410c' }}>
+              {filtered.filter(s => s.quantity_on_hand > 0 && s.quantity_on_hand < LOW_STOCK_THRESHOLD).length}
+            </div>
+          </Card>
+        </Col>
+        <Col span={8}>
+          <Card size="small" style={{ background: '#fef2f2', borderColor: '#fecaca' }}>
+            <Typography.Text type="danger">Stok Habis</Typography.Text>
+            <div className="text-2xl font-bold text-red-700">
+              {filtered.filter(s => s.quantity_on_hand <= 0).length}
+            </div>
+          </Card>
+        </Col>
+      </Row>
+    </Space>
   )
 }

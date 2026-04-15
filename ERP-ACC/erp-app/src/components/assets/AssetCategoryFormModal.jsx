@@ -6,6 +6,7 @@ import Modal from '../ui/Modal'
 import Button from '../ui/Button'
 import Input from '../ui/Input'
 import Select from '../ui/Select'
+import { Row, Col, Flex, Alert } from 'antd'
 
 export default function AssetCategoryFormModal({
   open,
@@ -170,31 +171,33 @@ export default function AssetCategoryFormModal({
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         {formErrors.submit && (
-          <div className="bg-red-50 text-red-700 p-3 rounded text-sm">
-            {formErrors.submit}
-          </div>
+          <Alert type="error" message={formErrors.submit} showIcon />
         )}
 
-        <div className="grid grid-cols-2 gap-4">
-          <Input
-            label="Kode Kategori"
-            placeholder="Contoh: EQP"
-            value={formData.code}
-            onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
-            error={formErrors.code}
-            maxLength="3"
-            autoFocus
-            disabled={isSubmitting || loadingCOA}
-          />
-          <Input
-            label="Nama Kategori"
-            placeholder="Contoh: Equipment"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            error={formErrors.name}
-            disabled={isSubmitting || loadingCOA}
-          />
-        </div>
+        <Row gutter={16}>
+          <Col span={12}>
+            <Input
+              label="Kode Kategori"
+              placeholder="Contoh: EQP"
+              value={formData.code}
+              onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+              error={formErrors.code}
+              maxLength="3"
+              autoFocus
+              disabled={isSubmitting || loadingCOA}
+            />
+          </Col>
+          <Col span={12}>
+            <Input
+              label="Nama Kategori"
+              placeholder="Contoh: Equipment"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              error={formErrors.name}
+              disabled={isSubmitting || loadingCOA}
+            />
+          </Col>
+        </Row>
 
         <Input
           label="Umur Manfaat Default (bulan)"
@@ -237,7 +240,7 @@ export default function AssetCategoryFormModal({
           disabled={isSubmitting || loadingCOA}
         />
 
-        <div className="flex gap-3 justify-end pt-4">
+        <Flex gap={8} justify="flex-end" style={{ paddingTop: 8 }}>
           <Button
             variant="secondary"
             onClick={onClose}
@@ -253,7 +256,7 @@ export default function AssetCategoryFormModal({
           >
             {editData ? 'Simpan' : 'Tambah'}
           </Button>
-        </div>
+        </Flex>
       </form>
     </Modal>
   )

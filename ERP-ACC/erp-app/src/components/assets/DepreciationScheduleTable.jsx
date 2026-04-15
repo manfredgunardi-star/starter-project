@@ -1,10 +1,11 @@
 import { useNavigate } from 'react-router-dom'
 import { formatCurrency } from '../../utils/currency'
+import { Typography, Tag } from 'antd'
 
-const STATUS_BADGE = {
-  pending:   'bg-gray-100 text-gray-600',
-  posted:    'bg-green-100 text-green-700',
-  cancelled: 'bg-red-100 text-red-600',
+const STATUS_TAG_COLOR = {
+  pending:   'default',
+  posted:    'success',
+  cancelled: 'error',
 }
 
 const STATUS_LABEL = {
@@ -23,9 +24,9 @@ export default function DepreciationScheduleTable({ schedule = [] }) {
 
   if (schedule.length === 0) {
     return (
-      <p className="text-sm text-gray-400 py-4 text-center">
+      <Typography.Text type="secondary" style={{ display: 'block', textAlign: 'center', padding: '16px 0' }}>
         Tidak ada jadwal penyusutan.
-      </p>
+      </Typography.Text>
     )
   }
 
@@ -74,9 +75,9 @@ export default function DepreciationScheduleTable({ schedule = [] }) {
                   {formatCurrency(row.book_value_end)}
                 </td>
                 <td className="px-3 py-2 text-center">
-                  <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${STATUS_BADGE[row.status] ?? 'bg-gray-100 text-gray-500'}`}>
+                  <Tag color={STATUS_TAG_COLOR[row.status] ?? 'default'}>
                     {STATUS_LABEL[row.status] ?? row.status}
-                  </span>
+                  </Tag>
                 </td>
                 <td className="px-3 py-2">
                   {row.journal ? (

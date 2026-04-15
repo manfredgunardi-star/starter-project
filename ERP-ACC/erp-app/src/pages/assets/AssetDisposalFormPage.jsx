@@ -8,6 +8,7 @@ import { formatCurrency } from '../../utils/currency'
 import { formatDate } from '../../utils/date'
 import DisposalPreviewCard from '../../components/assets/DisposalPreviewCard'
 import DateInput from '../../components/ui/DateInput'
+import { Space, Row, Col, Card, Flex, Typography, Alert, Descriptions } from 'antd'
 
 export default function AssetDisposalFormPage() {
   const { id } = useParams()
@@ -98,62 +99,47 @@ export default function AssetDisposalFormPage() {
 
   if (loadingAsset) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-gray-400">Memuat data aset...</div>
-      </div>
+      <Flex justify="center" align="center" style={{ height: '100vh' }}>
+        <Typography.Text type="secondary">Memuat data aset...</Typography.Text>
+      </Flex>
     )
   }
 
   if (!asset) {
     return (
-      <div className="p-6">
+      <div style={{ padding: 24 }}>
         <button onClick={() => navigate('/assets')} className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4">
           <ArrowLeft size={18} /> Kembali
         </button>
-        <div className="text-red-600">Aset tidak ditemukan</div>
+        <Typography.Text type="danger">Aset tidak ditemukan</Typography.Text>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6 p-6 max-w-2xl">
+    <Space direction="vertical" style={{ width: '100%', maxWidth: 672, padding: 24 }}>
       <button onClick={() => navigate(`/assets/${id}`)} className="flex items-center gap-2 text-gray-500 hover:text-gray-700">
         <ArrowLeft size={18} /> Kembali ke Detail Aset
       </button>
 
-      <h1 className="text-2xl font-bold text-gray-900">Lepas Aset</h1>
+      <Typography.Title level={4} style={{ margin: 0 }}>Lepas Aset</Typography.Title>
 
       {/* Asset Info Header */}
-      <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
-        <div className="grid grid-cols-2 gap-3 text-sm">
-          <div>
-            <div className="text-xs text-gray-500">Kode Aset</div>
-            <div className="font-medium text-gray-900">{asset.code}</div>
-          </div>
-          <div>
-            <div className="text-xs text-gray-500">Nama</div>
-            <div className="font-medium text-gray-900">{asset.name}</div>
-          </div>
-          <div>
-            <div className="text-xs text-gray-500">Harga Perolehan</div>
-            <div className="font-medium">{formatCurrency(asset.acquisition_cost)}</div>
-          </div>
-          <div>
-            <div className="text-xs text-gray-500">Tanggal Perolehan</div>
-            <div className="font-medium">{formatDate(asset.acquisition_date)}</div>
-          </div>
-        </div>
-      </div>
+      <Card size="small" style={{ background: '#fafafa' }}>
+        <Descriptions size="small" column={2}>
+          <Descriptions.Item label="Kode Aset">{asset.code}</Descriptions.Item>
+          <Descriptions.Item label="Nama">{asset.name}</Descriptions.Item>
+          <Descriptions.Item label="Harga Perolehan">{formatCurrency(asset.acquisition_cost)}</Descriptions.Item>
+          <Descriptions.Item label="Tanggal Perolehan">{formatDate(asset.acquisition_date)}</Descriptions.Item>
+        </Descriptions>
+      </Card>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded p-3">
-          {error}
-        </div>
+        <Alert type="error" message={error} showIcon />
       )}
 
       {/* Form */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-5">
-        <h2 className="font-semibold text-gray-800">Informasi Pelepasan</h2>
+      <Card title={<Typography.Text strong>Informasi Pelepasan</Typography.Text>}>
 
         {/* Tanggal disposal */}
         <DateInput
@@ -251,7 +237,7 @@ export default function AssetDisposalFormPage() {
         >
           {loadingPreview ? 'Menghitung...' : 'Preview Disposal'}
         </button>
-      </div>
+      </Card>
 
       {/* Preview card */}
       {preview && (
@@ -263,7 +249,7 @@ export default function AssetDisposalFormPage() {
       )}
 
       {/* Confirm button */}
-      <div className="flex justify-end">
+      <Flex justify="flex-end">
         <button
           onClick={handleConfirm}
           disabled={!preview || saving}
@@ -275,7 +261,7 @@ export default function AssetDisposalFormPage() {
         >
           {saving ? 'Memproses...' : 'Konfirmasi Pelepasan Aset'}
         </button>
-      </div>
-    </div>
+      </Flex>
+    </Space>
   )
 }

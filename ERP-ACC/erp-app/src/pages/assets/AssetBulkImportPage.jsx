@@ -6,6 +6,7 @@ import { createAsset } from '../../services/assetService'
 import { listCategories } from '../../services/assetCategoryService'
 import { supabase } from '../../lib/supabase'
 import { formatCurrency } from '../../utils/currency'
+import { Space, Row, Col, Card, Flex, Typography, Alert } from 'antd'
 
 // ---- Template ----
 function downloadTemplate() {
@@ -142,7 +143,7 @@ export default function AssetBulkImportPage() {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <Space direction="vertical" style={{ width: '100%', padding: 24 }}>
       <button
         onClick={() => navigate('/assets')}
         className="flex items-center gap-2 text-gray-500 hover:text-gray-700"
@@ -150,23 +151,22 @@ export default function AssetBulkImportPage() {
         <ArrowLeft size={18} /> Kembali ke Daftar Aset
       </button>
 
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Bulk Import Aset</h1>
+      <Flex justify="space-between" align="center">
+        <Typography.Title level={4} style={{ margin: 0 }}>Bulk Import Aset</Typography.Title>
         <button
           onClick={downloadTemplate}
           className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors text-sm"
         >
           <Download size={16} /> Download Template
         </button>
-      </div>
+      </Flex>
 
       {/* Upload area */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-        <h2 className="font-semibold text-gray-800">Upload File Excel</h2>
-        <p className="text-sm text-gray-500">
+      <Card title={<Typography.Text strong>Upload File Excel</Typography.Text>}>
+        <Typography.Text type="secondary">
           Download template di atas, isi data aset, lalu upload file .xlsx.
           Format tanggal: <code className="bg-gray-100 px-1 rounded">YYYY-MM-DD</code>.
-        </p>
+        </Typography.Text>
         <div
           onClick={() => fileRef.current?.click()}
           className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
@@ -181,22 +181,26 @@ export default function AssetBulkImportPage() {
           onChange={handleFileChange}
           className="hidden"
         />
-      </div>
+      </Card>
 
       {/* Preview rows */}
       {rows.length > 0 && (
-        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-          <div className="px-4 py-3 border-b border-gray-200 flex justify-between items-center">
-            <h2 className="font-semibold text-gray-800">Preview ({rows.length} baris)</h2>
-            <div className="flex gap-3 text-sm">
-              <span className="flex items-center gap-1 text-green-600">
-                <CheckCircle size={14} /> {validRows.length} valid
-              </span>
-              <span className="flex items-center gap-1 text-red-600">
-                <XCircle size={14} /> {invalidRows.length} error
-              </span>
-            </div>
-          </div>
+        <Card
+          title={
+            <Flex justify="space-between" align="center">
+              <Typography.Text strong>Preview ({rows.length} baris)</Typography.Text>
+              <Space>
+                <span className="flex items-center gap-1 text-green-600 text-sm">
+                  <CheckCircle size={14} /> {validRows.length} valid
+                </span>
+                <span className="flex items-center gap-1 text-red-600 text-sm">
+                  <XCircle size={14} /> {invalidRows.length} error
+                </span>
+              </Space>
+            </Flex>
+          }
+          bodyStyle={{ padding: 0 }}
+        >
           <div className="overflow-x-auto">
             <table className="min-w-full text-xs">
               <thead className="bg-gray-50 border-b border-gray-200">
@@ -249,13 +253,12 @@ export default function AssetBulkImportPage() {
               </ul>
             </div>
           )}
-        </div>
+        </Card>
       )}
 
       {/* Payment selector + import button */}
       {validRows.length > 0 && !summary && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-          <h2 className="font-semibold text-gray-800">Pembayaran</h2>
+        <Card title={<Typography.Text strong>Pembayaran</Typography.Text>}>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Bayar dari Akun Kas/Bank <span className="text-red-500">*</span>
@@ -298,37 +301,44 @@ export default function AssetBulkImportPage() {
           >
             {importing ? `Mengimpor... (${progress}%)` : `Import ${validRows.length} Aset Valid`}
           </button>
-        </div>
+        </Card>
       )}
 
       {/* Summary */}
       {summary && (
-        <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-          <h2 className="font-semibold text-gray-800">Hasil Import</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg">
-              <CheckCircle className="text-green-600 shrink-0" size={28} />
-              <div>
-                <div className="text-2xl font-bold text-green-700">{summary.success}</div>
-                <div className="text-sm text-green-600">Aset berhasil diimpor</div>
+        <Card title={<Typography.Text strong>Hasil Import</Typography.Text>}>
+          <Row gutter={16}>
+            <Col span={12}>
+              <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg">
+                <CheckCircle className="text-green-600 shrink-0" size={28} />
+                <div>
+                  <div className="text-2xl font-bold text-green-700">{summary.success}</div>
+                  <div className="text-sm text-green-600">Aset berhasil diimpor</div>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-3 p-4 bg-red-50 rounded-lg">
-              <XCircle className="text-red-500 shrink-0" size={28} />
-              <div>
-                <div className="text-2xl font-bold text-red-700">{summary.failed}</div>
-                <div className="text-sm text-red-600">Gagal diimpor</div>
+            </Col>
+            <Col span={12}>
+              <div className="flex items-center gap-3 p-4 bg-red-50 rounded-lg">
+                <XCircle className="text-red-500 shrink-0" size={28} />
+                <div>
+                  <div className="text-2xl font-bold text-red-700">{summary.failed}</div>
+                  <div className="text-sm text-red-600">Gagal diimpor</div>
+                </div>
               </div>
-            </div>
-          </div>
+            </Col>
+          </Row>
           {summary.errors.length > 0 && (
-            <div className="bg-red-50 border border-red-200 rounded p-3">
-              <ul className="text-xs text-red-600 space-y-1">
-                {summary.errors.map((e, i) => <li key={i}>• {e}</li>)}
-              </ul>
-            </div>
+            <Alert
+              type="error"
+              style={{ marginTop: 16 }}
+              description={
+                <ul style={{ margin: 0, paddingLeft: 16 }}>
+                  {summary.errors.map((e, i) => <li key={i}>{e}</li>)}
+                </ul>
+              }
+            />
           )}
-          <div className="flex gap-3">
+          <Space style={{ marginTop: 16 }}>
             <button
               onClick={() => navigate('/assets')}
               className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
@@ -341,9 +351,9 @@ export default function AssetBulkImportPage() {
             >
               Import Lagi
             </button>
-          </div>
-        </div>
+          </Space>
+        </Card>
       )}
-    </div>
+    </Space>
   )
 }

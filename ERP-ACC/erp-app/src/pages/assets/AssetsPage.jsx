@@ -6,6 +6,7 @@ import { formatCurrency } from '../../utils/currency'
 import { formatDate } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
+import { Space, Flex, Tag, Typography } from 'antd'
 import { Plus, Search, Eye, Edit2, Trash2 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 
@@ -67,28 +68,28 @@ export default function AssetsPage() {
     }
   }
 
-  // Get status badge color
-  const getStatusBadge = (status) => {
+  // Get status tag color
+  const getStatusTag = (status) => {
     switch (status) {
       case 'active':
-        return <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Active</span>
+        return <Tag color="success">Active</Tag>
       case 'disposed':
-        return <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Disposed</span>
+        return <Tag color="default">Disposed</Tag>
       case 'fully_depreciated':
-        return <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Fully Depreciated</span>
+        return <Tag color="blue">Fully Depreciated</Tag>
       default:
-        return <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">—</span>
+        return <Tag color="default">—</Tag>
     }
   }
 
   if (loading && assets.length === 0) return <LoadingSpinner message="Memuat aset tetap..." />
 
   return (
-    <div className="space-y-6">
+    <Space direction="vertical" style={{ width: '100%' }} size="large">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Aset Tetap</h1>
-        <div className="flex gap-2">
+      <Flex justify="space-between" align="center">
+        <Typography.Title level={3} style={{ margin: 0 }}>Aset Tetap</Typography.Title>
+        <Space>
           {canWrite && (
             <Button variant="primary" onClick={() => navigate('/assets/new')}>
               <Plus size={20} /> Tambah Aset
@@ -104,19 +105,20 @@ export default function AssetsPage() {
               Post Penyusutan
             </Button>
           )}
-        </div>
-      </div>
+        </Space>
+      </Flex>
 
       {/* Filter Bar */}
-      <div className="flex gap-3">
-        <div className="relative flex-1 max-w-xs">
+      <Space>
+        <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
             value={filters.q}
             onChange={e => handleFilterChange('q', e.target.value)}
             placeholder="Cari kode atau nama aset..."
-            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            className="pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            style={{ width: 280 }}
           />
         </div>
         <select
@@ -141,7 +143,7 @@ export default function AssetsPage() {
           <option value="disposed">Disposed</option>
           <option value="fully_depreciated">Fully Depreciated</option>
         </select>
-      </div>
+      </Space>
 
       {/* Table */}
       {assets.length === 0 ? (
@@ -194,10 +196,10 @@ export default function AssetsPage() {
                     {formatCurrency(asset.acquisition_cost)}
                   </td>
                   <td className="px-6 py-3 text-center">
-                    {getStatusBadge(asset.status)}
+                    {getStatusTag(asset.status)}
                   </td>
                   <td className="px-6 py-3 text-center">
-                    <div className="flex justify-center gap-2">
+                    <Space justify="center">
                       <button
                         onClick={() => navigate(`/assets/${asset.id}`)}
                         className="text-gray-600 hover:text-blue-600 transition"
@@ -224,7 +226,7 @@ export default function AssetsPage() {
                           <Trash2 size={18} />
                         </button>
                       )}
-                    </div>
+                    </Space>
                   </td>
                 </tr>
               ))}
@@ -232,6 +234,6 @@ export default function AssetsPage() {
           </table>
         </div>
       )}
-    </div>
+    </Space>
   )
 }

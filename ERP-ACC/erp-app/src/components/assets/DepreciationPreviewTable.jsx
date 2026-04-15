@@ -1,4 +1,5 @@
 import { formatCurrency } from '../../utils/currency'
+import { Typography } from 'antd'
 
 /**
  * DepreciationPreviewTable
@@ -9,9 +10,9 @@ import { formatCurrency } from '../../utils/currency'
 export default function DepreciationPreviewTable({ preview = [] }) {
   if (preview.length === 0) {
     return (
-      <p className="text-sm text-gray-400 py-4 text-center">
+      <Typography.Text type="secondary" style={{ display: 'block', textAlign: 'center', padding: '16px 0' }}>
         Tidak ada data penyusutan untuk periode ini.
-      </p>
+      </Typography.Text>
     )
   }
 

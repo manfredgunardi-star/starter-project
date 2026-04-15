@@ -9,6 +9,7 @@ import Input from '../../components/ui/Input'
 import DateInput from '../../components/ui/DateInput'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { Calendar, Download } from 'lucide-react'
+import { Space, Row, Col, Card, Flex, Typography, Alert } from 'antd'
 
 export default function StockCardPage() {
   const { products = [] } = useProducts()
@@ -59,66 +60,78 @@ export default function StockCardPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">Kartu Stok</h1>
+    <Space direction="vertical" style={{ width: '100%' }}>
+      <Typography.Title level={3} style={{ margin: 0 }}>Kartu Stok</Typography.Title>
 
       {/* Filters */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
-        <div className="space-y-2">
-          <label className="block text-sm font-medium text-gray-700">Pilih Produk</label>
-          <Select
-            options={productOptions}
-            value={selectedProductId}
-            onChange={e => setSelectedProductId(e.target.value)}
-            placeholder="Pilih produk untuk melihat kartu stok..."
-          />
-        </div>
-
-        {selectedProduct && (
-          <div className="bg-blue-50 border border-blue-200 rounded p-3 text-sm">
-            <p className="text-blue-900">
-              <span className="font-medium">SKU:</span> {selectedProduct.sku || '—'} |
-              <span className="font-medium ml-3">Satuan Dasar:</span> {baseUnitName}
-            </p>
+      <Card>
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Pilih Produk</label>
+            <Select
+              options={productOptions}
+              value={selectedProductId}
+              onChange={e => setSelectedProductId(e.target.value)}
+              placeholder="Pilih produk untuk melihat kartu stok..."
+            />
           </div>
-        )}
 
-        <div className="grid grid-cols-2 gap-4">
-          <DateInput
-            label="Tanggal Mulai"
-            value={startDate}
-            onChange={e => setStartDate(e.target.value)}
-          />
-          <DateInput
-            label="Tanggal Akhir"
-            value={endDate}
-            onChange={e => setEndDate(e.target.value)}
-          />
-        </div>
+          {selectedProduct && (
+            <Alert
+              type="info"
+              showIcon={false}
+              message={
+                <Typography.Text style={{ color: '#1e3a5f' }}>
+                  <strong>SKU:</strong> {selectedProduct.sku || '—'} |
+                  <strong className="ml-3">Satuan Dasar:</strong> {baseUnitName}
+                </Typography.Text>
+              }
+            />
+          )}
 
-        <Button
-          variant="secondary"
-          onClick={() => {
-            setStartDate(new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0])
-            setEndDate(today())
-            setSelectedProductId('')
-          }}
-          size="sm"
-        >
-          Reset Filter
-        </Button>
-      </div>
+          <Row gutter={16}>
+            <Col span={12}>
+              <DateInput
+                label="Tanggal Mulai"
+                value={startDate}
+                onChange={e => setStartDate(e.target.value)}
+              />
+            </Col>
+            <Col span={12}>
+              <DateInput
+                label="Tanggal Akhir"
+                value={endDate}
+                onChange={e => setEndDate(e.target.value)}
+              />
+            </Col>
+          </Row>
+
+          <Button
+            variant="secondary"
+            onClick={() => {
+              setStartDate(new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0])
+              setEndDate(today())
+              setSelectedProductId('')
+            }}
+            size="sm"
+          >
+            Reset Filter
+          </Button>
+        </Space>
+      </Card>
 
       {/* Stock card table */}
       {!selectedProductId ? (
-        <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 text-center">
-          <Calendar size={40} className="mx-auto text-gray-400 mb-3" />
-          <p className="text-gray-600">Pilih produk untuk melihat kartu stok</p>
-        </div>
+        <Card>
+          <Flex justify="center" align="center" vertical style={{ padding: 32 }}>
+            <Calendar size={40} className="text-gray-400 mb-3" />
+            <Typography.Text type="secondary">Pilih produk untuk melihat kartu stok</Typography.Text>
+          </Flex>
+        </Card>
       ) : loading ? (
         <LoadingSpinner message="Memuat kartu stok..." />
       ) : (
-        <div className="space-y-4">
+        <Space direction="vertical" style={{ width: '100%' }}>
           <div className="overflow-x-auto border border-gray-200 rounded-lg">
             <table className="w-full border-collapse">
               <thead className="bg-gray-100 border-b border-gray-200">
@@ -222,40 +235,37 @@ export default function StockCardPage() {
 
           {/* Summary info */}
           {movementsWithBalance.length > 0 && (
-            <div className="grid grid-cols-3 gap-4 bg-white border border-gray-200 rounded-lg p-4">
-              <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wide">Total Masuk</p>
-                <p className="text-lg font-bold text-green-600">
-                  {formatNumber(
-                    movementsWithBalance.reduce((sum, m) => sum + m.incoming, 0),
-                    2
-                  )}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wide">Total Keluar</p>
-                <p className="text-lg font-bold text-red-600">
-                  {formatNumber(
-                    movementsWithBalance.reduce((sum, m) => sum + m.outgoing, 0),
-                    2
-                  )}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-gray-500 uppercase tracking-wide">Saldo Akhir</p>
-                <p className="text-lg font-bold text-blue-600">
-                  {movementsWithBalance.length > 0
-                    ? formatNumber(
-                        movementsWithBalance[movementsWithBalance.length - 1].balance,
-                        2
-                      )
-                    : '0'}
-                </p>
-              </div>
-            </div>
+            <Row gutter={16}>
+              <Col span={8}>
+                <Card size="small">
+                  <Typography.Text type="secondary" style={{ fontSize: 11, textTransform: 'uppercase' }}>Total Masuk</Typography.Text>
+                  <div className="text-lg font-bold text-green-600">
+                    {formatNumber(movementsWithBalance.reduce((sum, m) => sum + m.incoming, 0), 2)}
+                  </div>
+                </Card>
+              </Col>
+              <Col span={8}>
+                <Card size="small">
+                  <Typography.Text type="secondary" style={{ fontSize: 11, textTransform: 'uppercase' }}>Total Keluar</Typography.Text>
+                  <div className="text-lg font-bold text-red-600">
+                    {formatNumber(movementsWithBalance.reduce((sum, m) => sum + m.outgoing, 0), 2)}
+                  </div>
+                </Card>
+              </Col>
+              <Col span={8}>
+                <Card size="small">
+                  <Typography.Text type="secondary" style={{ fontSize: 11, textTransform: 'uppercase' }}>Saldo Akhir</Typography.Text>
+                  <div className="text-lg font-bold text-blue-600">
+                    {movementsWithBalance.length > 0
+                      ? formatNumber(movementsWithBalance[movementsWithBalance.length - 1].balance, 2)
+                      : '0'}
+                  </div>
+                </Card>
+              </Col>
+            </Row>
           )}
-        </div>
+        </Space>
       )}
-    </div>
+    </Space>
   )
 }

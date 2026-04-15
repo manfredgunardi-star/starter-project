@@ -5,6 +5,7 @@ import { formatCurrency, parseCurrency } from '../../utils/currency'
 import { CheckCircle, AlertCircle } from 'lucide-react'
 import Input from '../ui/Input'
 import Select from '../ui/Select'
+import { Space, Card, Typography, Alert, Divider } from 'antd'
 
 /**
  * AssetPaymentFields — Controlled sub-form for asset acquisition payment method selection
@@ -126,8 +127,8 @@ export default function AssetPaymentFields({
   const sumDiff = Math.abs(paymentSum - totalAmount)
 
   return (
-    <div className="space-y-4 border-t pt-4">
-      <h3 className="font-semibold text-gray-900">Metode Pembayaran Akuisisi</h3>
+    <Space direction="vertical" style={{ width: '100%', borderTop: '1px solid #f0f0f0', paddingTop: 16 }}>
+      <Typography.Title level={5} style={{ margin: 0 }}>Metode Pembayaran Akuisisi</Typography.Title>
 
       {/* Radio Group: Payment Method Selection */}
       <div className="space-y-2">
@@ -169,10 +170,8 @@ export default function AssetPaymentFields({
 
       {/* CASH_BANK Mode */}
       {value.method === 'cash_bank' && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
-          <p className="text-sm font-medium text-blue-900">
-            Pembayaran Tunai/Bank
-          </p>
+        <Card size="small" style={{ background: '#eff6ff', borderColor: '#bfdbfe' }}>
+          <Typography.Text strong style={{ color: '#1e3a5f' }}>Pembayaran Tunai/Bank</Typography.Text>
 
           <Select
             label="Akun Kas/Bank"
@@ -192,18 +191,16 @@ export default function AssetPaymentFields({
             className="bg-gray-100"
           />
 
-          <div className="text-sm text-gray-600">
+          <Typography.Text type="secondary" style={{ fontSize: 13 }}>
             <strong>Total:</strong> {formatCurrency(totalAmount)}
-          </div>
-        </div>
+          </Typography.Text>
+        </Card>
       )}
 
       {/* HUTANG Mode */}
       {value.method === 'hutang' && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3">
-          <p className="text-sm font-medium text-amber-900">
-            Hutang Dagang
-          </p>
+        <Card size="small" style={{ background: '#fffbeb', borderColor: '#fde68a' }}>
+          <Typography.Text strong style={{ color: '#78350f' }}>Hutang Dagang</Typography.Text>
 
           <Select
             label="Supplier"
@@ -232,18 +229,16 @@ export default function AssetPaymentFields({
             className="bg-gray-100"
           />
 
-          <div className="text-sm text-gray-600">
+          <Typography.Text type="secondary" style={{ fontSize: 13 }}>
             <strong>Total:</strong> {formatCurrency(totalAmount)}
-          </div>
-        </div>
+          </Typography.Text>
+        </Card>
       )}
 
       {/* UANG_MUKA Mode */}
       {value.method === 'uang_muka' && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-3">
-          <p className="text-sm font-medium text-green-900">
-            Pemakaian Uang Muka
-          </p>
+        <Card size="small" style={{ background: '#f0fdf4', borderColor: '#bbf7d0' }}>
+          <Typography.Text strong style={{ color: '#14532d' }}>Pemakaian Uang Muka</Typography.Text>
 
           <Select
             label="Akun Uang Muka"
@@ -272,27 +267,27 @@ export default function AssetPaymentFields({
             className="bg-gray-100"
           />
 
-          <div className="text-sm text-gray-600">
+          <Typography.Text type="secondary" style={{ fontSize: 13 }}>
             <strong>Total:</strong> {formatCurrency(totalAmount)}
-          </div>
-        </div>
+          </Typography.Text>
+        </Card>
       )}
 
       {/* MIXED Mode */}
       {value.method === 'mixed' && (
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 space-y-4">
-          <div>
-            <p className="text-sm font-medium text-purple-900 mb-2">
-              Pembayaran Campur
-            </p>
-            <p className="text-xs text-purple-700">
-              Bagi total pembayaran ke berbagai metode di bawah
-            </p>
-          </div>
+        <Card size="small" style={{ background: '#faf5ff', borderColor: '#e9d5ff' }}>
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <div>
+              <Typography.Text strong style={{ color: '#581c87' }}>Pembayaran Campur</Typography.Text>
+              <br />
+              <Typography.Text style={{ color: '#7c3aed', fontSize: 12 }}>
+                Bagi total pembayaran ke berbagai metode di bawah
+              </Typography.Text>
+            </div>
 
           {/* Cash/Bank Section */}
-          <div className="bg-white rounded border border-purple-300 p-3 space-y-2">
-            <h4 className="text-sm font-medium text-gray-700">Tunai/Bank</h4>
+          <Card size="small">
+            <Typography.Text strong style={{ fontSize: 13 }}>Tunai/Bank</Typography.Text>
 
             <Select
               label="Akun Kas/Bank"
@@ -311,11 +306,11 @@ export default function AssetPaymentFields({
               onChange={(e) => handleAmountChange('cash_bank_amount', e.target.value)}
               disabled={loadingData}
             />
-          </div>
+          </Card>
 
           {/* Hutang Section */}
-          <div className="bg-white rounded border border-purple-300 p-3 space-y-2">
-            <h4 className="text-sm font-medium text-gray-700">Hutang Dagang</h4>
+          <Card size="small">
+            <Typography.Text strong style={{ fontSize: 13 }}>Hutang Dagang</Typography.Text>
 
             <Select
               label="Supplier"
@@ -343,11 +338,11 @@ export default function AssetPaymentFields({
               onChange={(e) => handleAmountChange('hutang_amount', e.target.value)}
               disabled={loadingData}
             />
-          </div>
+          </Card>
 
           {/* Uang Muka Section */}
-          <div className="bg-white rounded border border-purple-300 p-3 space-y-2">
-            <h4 className="text-sm font-medium text-gray-700">Uang Muka</h4>
+          <Card size="small">
+            <Typography.Text strong style={{ fontSize: 13 }}>Uang Muka</Typography.Text>
 
             <Select
               label="Akun Uang Muka"
@@ -366,11 +361,11 @@ export default function AssetPaymentFields({
               onChange={(e) => handleAmountChange('uang_muka_amount', e.target.value)}
               disabled={loadingData}
             />
-          </div>
+          </Card>
 
           {/* Summary and Validation */}
-          <div className="bg-white rounded border-2 p-3">
-            <div className="space-y-2">
+          <Card size="small">
+            <Space direction="vertical" style={{ width: '100%' }}>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600">Target Total:</span>
                 <span className="font-medium">{formatCurrency(totalAmount)}</span>
@@ -381,24 +376,28 @@ export default function AssetPaymentFields({
               </div>
 
               {/* Validation Indicator */}
-              <div className="pt-2 border-t">
-                {isValid ? (
-                  <div className="flex items-center gap-2 text-sm text-green-700">
-                    <CheckCircle size={16} />
-                    <span>Pembayaran sesuai total (selisih: Rp 0)</span>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-sm text-red-700">
-                    <AlertCircle size={16} />
-                    <span>Selisih: {formatCurrency(sumDiff)}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+              <Divider style={{ margin: '8px 0' }} />
+              {isValid ? (
+                <Alert
+                  type="success"
+                  showIcon
+                  message="Pembayaran sesuai total (selisih: Rp 0)"
+                  style={{ padding: '4px 8px' }}
+                />
+              ) : (
+                <Alert
+                  type="error"
+                  showIcon
+                  message={`Selisih: ${formatCurrency(sumDiff)}`}
+                  style={{ padding: '4px 8px' }}
+                />
+              )}
+            </Space>
+          </Card>
+          </Space>
+        </Card>
       )}
-    </div>
+    </Space>
   )
 }
 

@@ -9,6 +9,7 @@ import DateInput from '../../components/ui/DateInput'
 import { formatCurrency } from '../../utils/currency'
 import { formatDate } from '../../utils/date'
 import { Lock, AlertCircle } from 'lucide-react'
+import { Space, Flex, Card, Row, Col, Alert, Typography } from 'antd'
 
 const INITIAL_PAYMENT = {
   method: 'cash_bank',
@@ -182,245 +183,264 @@ export default function AssetFormPage() {
         }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">
-          {isEdit ? 'Edit Aset Tetap' : 'Tambah Aset Tetap'}
-        </h1>
-        <Button variant="ghost" onClick={() => navigate(isEdit ? `/assets/${id}` : '/assets')}>
-          Batal
-        </Button>
-      </div>
-
-      {/* Error */}
-      {error && (
-        <div className="flex items-start gap-3 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
-          <AlertCircle size={16} className="mt-0.5 shrink-0" />
-          <span>{error}</span>
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Section 1: Informasi Aset */}
-        <div className="bg-white border border-gray-200 rounded-lg p-5 space-y-4">
-          <h2 className="text-base font-semibold text-gray-900">Informasi Aset</h2>
-
-          {/* Name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nama Aset <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              required
-              value={form.name}
-              onChange={e => handleFieldChange('name', e.target.value)}
-              placeholder="Contoh: Truk Hino 500"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
-
-          {/* Category */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Kategori Aset {!isEdit && <span className="text-red-500">*</span>}
-            </label>
-            <select
-              required={!isEdit}
-              value={form.category_id || ''}
-              onChange={e => handleCategoryChange(e.target.value)}
-              disabled={isEdit && hasPosted}
-              title={isEdit && hasPosted ? 'Terkunci – sudah ada jurnal penyusutan terposting' : undefined}
-              className={
-                isEdit && hasPosted
-                  ? 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-100 text-gray-500 cursor-not-allowed'
-                  : 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500'
-              }
-            >
-              <option value="">Pilih kategori...</option>
-              {categories.map(cat => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.code} — {cat.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Location */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Lokasi <span className="text-gray-400 font-normal">(opsional)</span>
-            </label>
-            <input
-              type="text"
-              value={form.location || ''}
-              onChange={e => handleFieldChange('location', e.target.value)}
-              placeholder="Contoh: Gudang Utama"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-            />
-          </div>
-
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Keterangan <span className="text-gray-400 font-normal">(opsional)</span>
-            </label>
-            <textarea
-              rows={3}
-              value={form.description || ''}
-              onChange={e => handleFieldChange('description', e.target.value)}
-              placeholder="Catatan tambahan tentang aset ini..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-y"
-            />
-          </div>
-        </div>
-
-        {/* Section 2: Keuangan */}
-        <div className={`bg-white border rounded-lg p-5 space-y-4 ${hasPosted ? 'border-amber-200' : 'border-gray-200'}`}>
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold text-gray-900">Keuangan</h2>
-            {hasPosted && (
-              <div className="flex items-center gap-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
-                <Lock size={12} />
-                Terkunci – ada jurnal terposting
-              </div>
-            )}
-          </div>
-
-          {hasPosted && (
-            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-100 rounded p-2">
-              Field keuangan tidak dapat diubah karena sudah ada jurnal penyusutan yang terposting.
-            </p>
-          )}
-
-          {/* Acquisition Date */}
-          <DateInput
-            label={`Tanggal Perolehan${!hasPosted ? ' *' : ''}`}
-            value={form.acquisition_date || ''}
-            onChange={e => handleFieldChange('acquisition_date', e.target.value)}
-            disabled={hasPosted}
-          />
-
-          {/* Acquisition Cost */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Harga Perolehan (Rp) {!hasPosted && <span className="text-red-500">*</span>}
-            </label>
-            <input
-              type="number"
-              min="0"
-              step="1"
-              required={!hasPosted}
-              value={form.acquisition_cost || ''}
-              onChange={e => handleFieldChange('acquisition_cost', e.target.value)}
-              placeholder="0"
-              {...financialFieldProps('acquisition_cost')}
-            />
-          </div>
-
-          {/* Salvage Value */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nilai Sisa (Rp)
-            </label>
-            <input
-              type="number"
-              min="0"
-              step="1"
-              value={form.salvage_value || '0'}
-              onChange={e => handleFieldChange('salvage_value', e.target.value)}
-              placeholder="0"
-              {...financialFieldProps('salvage_value')}
-            />
-          </div>
-
-          {/* Useful Life */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Masa Manfaat (bulan) {!hasPosted && <span className="text-red-500">*</span>}
-            </label>
-            <input
-              type="number"
-              min="1"
-              step="1"
-              required={!hasPosted}
-              value={form.useful_life_months || ''}
-              onChange={e => handleFieldChange('useful_life_months', e.target.value)}
-              placeholder="Contoh: 60"
-              {...financialFieldProps('useful_life_months')}
-            />
-          </div>
-
-          {/* Depreciation Start Date (read-only) */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Mulai Penyusutan
-              <span className="ml-1 text-xs font-normal text-gray-400">(otomatis: awal bulan setelah perolehan)</span>
-            </label>
-            <input
-              type="text"
-              readOnly
-              value={depreciationStartDate || '—'}
-              className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-600"
-            />
-          </div>
-        </div>
-
-        {/* Section 3: Pembayaran (create mode only) */}
-        {!isEdit && (
-          <div className="bg-white border border-gray-200 rounded-lg p-5">
-            <h2 className="text-base font-semibold text-gray-900 mb-4">Pembayaran Akuisisi</h2>
-            <AssetPaymentFields
-              value={form.payment}
-              onChange={handlePaymentChange}
-              totalAmount={Number(form.acquisition_cost) || 0}
-            />
-          </div>
-        )}
-
-        {/* Section 4: Preview Penyusutan */}
-        {depreciable > 0 && lifeMonths > 0 && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-5 space-y-3">
-            <h2 className="text-base font-semibold text-blue-900">Preview Penyusutan (Garis Lurus)</h2>
-            <div className="grid grid-cols-2 gap-3 text-sm">
-              <div className="bg-white rounded border border-blue-100 p-3">
-                <p className="text-xs text-gray-500 mb-1">Per bulan</p>
-                <p className="font-semibold text-gray-900">{formatCurrency(monthly)}</p>
-              </div>
-              <div className="bg-white rounded border border-blue-100 p-3">
-                <p className="text-xs text-gray-500 mb-1">Per tahun</p>
-                <p className="font-semibold text-gray-900">{formatCurrency(yearly)}</p>
-              </div>
-              <div className="bg-white rounded border border-blue-100 p-3">
-                <p className="text-xs text-gray-500 mb-1">Total bulan</p>
-                <p className="font-semibold text-gray-900">{lifeMonths} bulan</p>
-              </div>
-              <div className="bg-white rounded border border-blue-100 p-3">
-                <p className="text-xs text-gray-500 mb-1">Berakhir</p>
-                <p className="font-semibold text-gray-900">{endDate || '—'}</p>
-              </div>
-            </div>
-            <p className="text-xs text-blue-700">
-              Nilai yang dapat disusutkan: {formatCurrency(depreciable)} (harga perolehan − nilai sisa)
-            </p>
-          </div>
-        )}
-
-        {/* Submit */}
-        <div className="flex gap-3 justify-end">
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => navigate(isEdit ? `/assets/${id}` : '/assets')}
-          >
+    <div style={{ maxWidth: 672, margin: '0 auto' }}>
+      <Space direction="vertical" style={{ width: '100%' }} size="large">
+        {/* Header */}
+        <Flex justify="space-between" align="center">
+          <Typography.Title level={4} style={{ margin: 0 }}>
+            {isEdit ? 'Edit Aset Tetap' : 'Tambah Aset Tetap'}
+          </Typography.Title>
+          <Button variant="ghost" onClick={() => navigate(isEdit ? `/assets/${id}` : '/assets')}>
             Batal
           </Button>
-          <Button type="submit" variant="primary" loading={saving}>
-            {saving ? 'Menyimpan...' : isEdit ? 'Simpan Perubahan' : 'Buat Aset'}
-          </Button>
-        </div>
-      </form>
+        </Flex>
+
+        {/* Error */}
+        {error && (
+          <Alert type="error" showIcon message={error} />
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <Space direction="vertical" style={{ width: '100%' }} size="large">
+            {/* Section 1: Informasi Aset */}
+            <Card title="Informasi Aset">
+              <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                {/* Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nama Aset <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={form.name}
+                    onChange={e => handleFieldChange('name', e.target.value)}
+                    placeholder="Contoh: Truk Hino 500"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Category */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Kategori Aset {!isEdit && <span className="text-red-500">*</span>}
+                  </label>
+                  <select
+                    required={!isEdit}
+                    value={form.category_id || ''}
+                    onChange={e => handleCategoryChange(e.target.value)}
+                    disabled={isEdit && hasPosted}
+                    title={isEdit && hasPosted ? 'Terkunci – sudah ada jurnal penyusutan terposting' : undefined}
+                    className={
+                      isEdit && hasPosted
+                        ? 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-100 text-gray-500 cursor-not-allowed'
+                        : 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500'
+                    }
+                  >
+                    <option value="">Pilih kategori...</option>
+                    {categories.map(cat => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.code} — {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Location */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Lokasi <span className="text-gray-400 font-normal">(opsional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={form.location || ''}
+                    onChange={e => handleFieldChange('location', e.target.value)}
+                    placeholder="Contoh: Gudang Utama"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Keterangan <span className="text-gray-400 font-normal">(opsional)</span>
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={form.description || ''}
+                    onChange={e => handleFieldChange('description', e.target.value)}
+                    placeholder="Catatan tambahan tentang aset ini..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-y"
+                  />
+                </div>
+              </Space>
+            </Card>
+
+            {/* Section 2: Keuangan */}
+            <Card
+              title={
+                <Flex justify="space-between" align="center">
+                  <span>Keuangan</span>
+                  {hasPosted && (
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                      <Lock size={12} />
+                      Terkunci – ada jurnal terposting
+                    </span>
+                  )}
+                </Flex>
+              }
+              style={hasPosted ? { borderColor: '#fcd34d' } : undefined}
+            >
+              <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                {hasPosted && (
+                  <Alert
+                    type="warning"
+                    showIcon
+                    message="Field keuangan tidak dapat diubah karena sudah ada jurnal penyusutan yang terposting."
+                  />
+                )}
+
+                {/* Acquisition Date */}
+                <DateInput
+                  label={`Tanggal Perolehan${!hasPosted ? ' *' : ''}`}
+                  value={form.acquisition_date || ''}
+                  onChange={e => handleFieldChange('acquisition_date', e.target.value)}
+                  disabled={hasPosted}
+                />
+
+                {/* Acquisition Cost */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Harga Perolehan (Rp) {!hasPosted && <span className="text-red-500">*</span>}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    required={!hasPosted}
+                    value={form.acquisition_cost || ''}
+                    onChange={e => handleFieldChange('acquisition_cost', e.target.value)}
+                    placeholder="0"
+                    {...financialFieldProps('acquisition_cost')}
+                  />
+                </div>
+
+                {/* Salvage Value */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Nilai Sisa (Rp)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={form.salvage_value || '0'}
+                    onChange={e => handleFieldChange('salvage_value', e.target.value)}
+                    placeholder="0"
+                    {...financialFieldProps('salvage_value')}
+                  />
+                </div>
+
+                {/* Useful Life */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Masa Manfaat (bulan) {!hasPosted && <span className="text-red-500">*</span>}
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    step="1"
+                    required={!hasPosted}
+                    value={form.useful_life_months || ''}
+                    onChange={e => handleFieldChange('useful_life_months', e.target.value)}
+                    placeholder="Contoh: 60"
+                    {...financialFieldProps('useful_life_months')}
+                  />
+                </div>
+
+                {/* Depreciation Start Date (read-only) */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Mulai Penyusutan
+                    <span className="ml-1 text-xs font-normal text-gray-400">(otomatis: awal bulan setelah perolehan)</span>
+                  </label>
+                  <input
+                    type="text"
+                    readOnly
+                    value={depreciationStartDate || '—'}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-600"
+                  />
+                </div>
+              </Space>
+            </Card>
+
+            {/* Section 3: Pembayaran (create mode only) */}
+            {!isEdit && (
+              <Card title="Pembayaran Akuisisi">
+                <AssetPaymentFields
+                  value={form.payment}
+                  onChange={handlePaymentChange}
+                  totalAmount={Number(form.acquisition_cost) || 0}
+                />
+              </Card>
+            )}
+
+            {/* Section 4: Preview Penyusutan */}
+            {depreciable > 0 && lifeMonths > 0 && (
+              <Card
+                title={<Typography.Text style={{ color: '#1e3a8a', fontWeight: 600 }}>Preview Penyusutan (Garis Lurus)</Typography.Text>}
+                style={{ backgroundColor: '#eff6ff', borderColor: '#bfdbfe' }}
+              >
+                <Space direction="vertical" style={{ width: '100%' }}>
+                  <Row gutter={12}>
+                    <Col span={12}>
+                      <div className="bg-white rounded border border-blue-100 p-3">
+                        <p className="text-xs text-gray-500 mb-1">Per bulan</p>
+                        <p className="font-semibold text-gray-900">{formatCurrency(monthly)}</p>
+                      </div>
+                    </Col>
+                    <Col span={12}>
+                      <div className="bg-white rounded border border-blue-100 p-3">
+                        <p className="text-xs text-gray-500 mb-1">Per tahun</p>
+                        <p className="font-semibold text-gray-900">{formatCurrency(yearly)}</p>
+                      </div>
+                    </Col>
+                    <Col span={12} style={{ marginTop: 12 }}>
+                      <div className="bg-white rounded border border-blue-100 p-3">
+                        <p className="text-xs text-gray-500 mb-1">Total bulan</p>
+                        <p className="font-semibold text-gray-900">{lifeMonths} bulan</p>
+                      </div>
+                    </Col>
+                    <Col span={12} style={{ marginTop: 12 }}>
+                      <div className="bg-white rounded border border-blue-100 p-3">
+                        <p className="text-xs text-gray-500 mb-1">Berakhir</p>
+                        <p className="font-semibold text-gray-900">{endDate || '—'}</p>
+                      </div>
+                    </Col>
+                  </Row>
+                  <Typography.Text style={{ color: '#1d4ed8', fontSize: 12 }}>
+                    Nilai yang dapat disusutkan: {formatCurrency(depreciable)} (harga perolehan − nilai sisa)
+                  </Typography.Text>
+                </Space>
+              </Card>
+            )}
+
+            {/* Submit */}
+            <Flex justify="flex-end" gap="small">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => navigate(isEdit ? `/assets/${id}` : '/assets')}
+              >
+                Batal
+              </Button>
+              <Button type="submit" variant="primary" loading={saving}>
+                {saving ? 'Menyimpan...' : isEdit ? 'Simpan Perubahan' : 'Buat Aset'}
+              </Button>
+            </Flex>
+          </Space>
+        </form>
+      </Space>
     </div>
   )
 }

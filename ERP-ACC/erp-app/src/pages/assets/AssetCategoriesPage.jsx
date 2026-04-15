@@ -8,6 +8,7 @@ import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import AssetCategoryFormModal from '../../components/assets/AssetCategoryFormModal'
 import { Plus, Edit2, Trash2 } from 'lucide-react'
+import { Space, Flex, Typography } from 'antd'
 
 export default function AssetCategoriesPage() {
   const { canWrite } = useAuth()
@@ -107,7 +108,7 @@ export default function AssetCategoriesPage() {
       key: 'id',
       label: 'Aksi',
       render: (_, category) => (
-        <div className="flex gap-2">
+        <Space>
           {canWrite && (
             <>
               <button
@@ -126,7 +127,7 @@ export default function AssetCategoriesPage() {
               </button>
             </>
           )}
-        </div>
+        </Space>
       )
     }
   ]
@@ -134,16 +135,16 @@ export default function AssetCategoriesPage() {
   if (loading) return <LoadingSpinner message="Memuat kategori aset..." />
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Kategori Aset Tetap</h1>
+    <Space direction="vertical" style={{ width: '100%' }}>
+      <Flex justify="space-between" align="center">
+        <Typography.Title level={3} style={{ margin: 0 }}>Kategori Aset Tetap</Typography.Title>
         {canWrite && (
           <Button variant="primary" onClick={handleAdd}>
             <Plus size={20} />
             Tambah Kategori
           </Button>
         )}
-      </div>
+      </Flex>
 
       <DataTable
         columns={columns}
@@ -169,6 +170,6 @@ export default function AssetCategoriesPage() {
         confirmText="Hapus"
         variant="danger"
       />
-    </div>
+    </Space>
   )
 }
