@@ -37,55 +37,61 @@ export default function DepreciationScheduleTable({ schedule = [] }) {
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full text-sm">
+    <div style={{ overflowX: 'auto' }}>
+      <table style={{ minWidth: '100%', fontSize: '0.875rem' }}>
         <thead>
-          <tr className="bg-gray-50 border-b border-gray-200">
-            <th className="px-3 py-2 text-left font-medium text-gray-500 w-12">#</th>
-            <th className="px-3 py-2 text-left font-medium text-gray-500">Periode</th>
-            <th className="px-3 py-2 text-right font-medium text-gray-500">Beban</th>
-            <th className="px-3 py-2 text-right font-medium text-gray-500">Akumulasi</th>
-            <th className="px-3 py-2 text-right font-medium text-gray-500">Nilai Buku Akhir</th>
-            <th className="px-3 py-2 text-center font-medium text-gray-500">Status</th>
-            <th className="px-3 py-2 text-left font-medium text-gray-500">Jurnal</th>
+          <tr style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
+            <th style={{ padding: '12px 12px', textAlign: 'left', fontWeight: 500, color: '#6b7280', width: '48px' }}>#</th>
+            <th style={{ padding: '12px 12px', textAlign: 'left', fontWeight: 500, color: '#6b7280' }}>Periode</th>
+            <th style={{ padding: '12px 12px', textAlign: 'right', fontWeight: 500, color: '#6b7280' }}>Beban</th>
+            <th style={{ padding: '12px 12px', textAlign: 'right', fontWeight: 500, color: '#6b7280' }}>Akumulasi</th>
+            <th style={{ padding: '12px 12px', textAlign: 'right', fontWeight: 500, color: '#6b7280' }}>Nilai Buku Akhir</th>
+            <th style={{ padding: '12px 12px', textAlign: 'center', fontWeight: 500, color: '#6b7280' }}>Status</th>
+            <th style={{ padding: '12px 12px', textAlign: 'left', fontWeight: 500, color: '#6b7280' }}>Jurnal</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody style={{ borderCollapse: 'collapse' }}>
           {schedule.map((row) => {
             const clickable = row.status === 'posted' && row.journal?.id
             return (
               <tr
                 key={row.id}
                 onClick={() => handleRowClick(row)}
-                className={
-                  clickable
-                    ? 'hover:bg-blue-50 cursor-pointer transition-colors'
-                    : 'hover:bg-gray-50'
-                }
+                style={{
+                  borderBottom: '1px solid #f3f4f6',
+                  cursor: clickable ? 'pointer' : 'default',
+                  backgroundColor: clickable ? 'var(--hover-bg)' : 'var(--default-bg)'
+                }}
+                onMouseEnter={(e) => {
+                  if (clickable) e.currentTarget.style.backgroundColor = '#eff6ff'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = 'transparent'
+                }}
               >
-                <td className="px-3 py-2 text-gray-500">{row.sequence_no}</td>
-                <td className="px-3 py-2 text-gray-700 font-mono">{row.period}</td>
-                <td className="px-3 py-2 text-right text-gray-700">
+                <td style={{ padding: '12px 12px', color: '#6b7280' }}>{row.sequence_no}</td>
+                <td style={{ padding: '12px 12px', color: '#374151', fontFamily: 'monospace' }}>{row.period}</td>
+                <td style={{ padding: '12px 12px', textAlign: 'right', color: '#374151' }}>
                   {formatCurrency(row.amount)}
                 </td>
-                <td className="px-3 py-2 text-right text-gray-700">
+                <td style={{ padding: '12px 12px', textAlign: 'right', color: '#374151' }}>
                   {formatCurrency(row.accumulated_amount)}
                 </td>
-                <td className="px-3 py-2 text-right text-gray-700">
+                <td style={{ padding: '12px 12px', textAlign: 'right', color: '#374151' }}>
                   {formatCurrency(row.book_value_end)}
                 </td>
-                <td className="px-3 py-2 text-center">
+                <td style={{ padding: '12px 12px', textAlign: 'center' }}>
                   <Tag color={STATUS_TAG_COLOR[row.status] ?? 'default'}>
                     {STATUS_LABEL[row.status] ?? row.status}
                   </Tag>
                 </td>
-                <td className="px-3 py-2">
+                <td style={{ padding: '12px 12px' }}>
                   {row.journal ? (
-                    <span className={`text-xs font-mono ${clickable ? 'text-blue-600 underline' : 'text-gray-500'}`}>
+                    <span style={{ fontSize: '0.75rem', fontFamily: 'monospace', color: clickable ? '#2563eb' : '#6b7280', textDecoration: clickable ? 'underline' : 'none' }}>
                       {row.journal.journal_number}
                     </span>
                   ) : (
-                    <span className="text-gray-300 text-xs">—</span>
+                    <span style={{ color: '#d1d5db', fontSize: '0.75rem' }}>—</span>
                   )}
                 </td>
               </tr>

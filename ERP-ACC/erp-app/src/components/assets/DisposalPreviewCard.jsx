@@ -52,8 +52,8 @@ export default function DisposalPreviewCard({ preview, disposalType, salePrice =
       </Descriptions>
 
       {/* Journal entries summary */}
-      <div className="bg-gray-50 rounded p-3 text-xs text-gray-500 space-y-1 mt-3">
-        <div className="font-medium text-gray-600 mb-2">Jurnal yang akan dibuat:</div>
+      <div style={{ backgroundColor: '#f9fafb', borderRadius: '4px', padding: '12px', fontSize: '0.75rem', color: '#6b7280', marginTop: '12px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div style={{ fontWeight: 500, color: '#4b5563', marginBottom: '8px' }}>Jurnal yang akan dibuat:</div>
         <div>Dr. Akumulasi Penyusutan ... {formatCurrency(accumulated)}</div>
         {disposalType === 'sale' && (
           <div>Dr. Kas/Bank ... {formatCurrency(salePrice)}</div>

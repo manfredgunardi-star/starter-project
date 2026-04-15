@@ -12,8 +12,8 @@ export default function RoleGuard({ require, children }) {
 
   if (auth.loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-gray-600">Memuat...</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+        <p style={{ color: '#4b5563' }}>Memuat...</p>
       </div>
     )
   }

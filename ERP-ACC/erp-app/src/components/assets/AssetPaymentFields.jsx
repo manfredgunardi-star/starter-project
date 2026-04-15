@@ -131,11 +131,11 @@ export default function AssetPaymentFields({
       <Typography.Title level={5} style={{ margin: 0 }}>Metode Pembayaran Akuisisi</Typography.Title>
 
       {/* Radio Group: Payment Method Selection */}
-      <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">
+      <div>
+        <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500 }}>
           Pilih Metode Pembayaran
         </label>
-        <div className="space-y-2">
+        <div>
           {[
             { id: 'cash_bank', label: 'Tunai/Bank', desc: 'Pembayaran langsung dari rekening kas/bank' },
             { id: 'hutang', label: 'Hutang Dagang', desc: 'Pembayaran cicilan kepada supplier' },
@@ -144,7 +144,7 @@ export default function AssetPaymentFields({
           ].map(option => (
             <label
               key={option.id}
-              className="flex items-center cursor-pointer p-2 rounded hover:bg-gray-50"
+              style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', padding: '8px', borderRadius: '4px' }}
             >
               <input
                 type="radio"
@@ -153,13 +153,12 @@ export default function AssetPaymentFields({
                 checked={value.method === option.id}
                 onChange={(e) => handleMethodChange(e.target.value)}
                 disabled={loadingData}
-                className="w-4 h-4 text-blue-600"
               />
-              <div className="ml-3">
-                <span className="block text-sm font-medium text-gray-700">
+              <div style={{ marginLeft: '12px' }}>
+                <span style={{ display: 'block', fontSize: '0.875rem', fontWeight: 500 }}>
                   {option.label}
                 </span>
-                <span className="block text-xs text-gray-500">
+                <span style={{ display: 'block', fontSize: '0.75rem', color: '#6b7280' }}>
                   {option.desc}
                 </span>
               </div>
@@ -366,13 +365,13 @@ export default function AssetPaymentFields({
           {/* Summary and Validation */}
           <Card size="small">
             <Space direction="vertical" style={{ width: '100%' }}>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Target Total:</span>
-                <span className="font-medium">{formatCurrency(totalAmount)}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                <span style={{ color: '#4b5563' }}>Target Total:</span>
+                <span style={{ fontWeight: 500 }}>{formatCurrency(totalAmount)}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Jumlah Pembayaran:</span>
-                <span className="font-medium">{formatCurrency(paymentSum)}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                <span style={{ color: '#4b5563' }}>Jumlah Pembayaran:</span>
+                <span style={{ fontWeight: 500 }}>{formatCurrency(paymentSum)}</span>
               </div>
 
               {/* Validation Indicator */}
