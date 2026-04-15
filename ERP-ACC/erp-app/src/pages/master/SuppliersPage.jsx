@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Space, Flex, Typography, Alert } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useSuppliers } from '../../hooks/useMasterData'
@@ -105,7 +106,7 @@ export default function SuppliersPage() {
       key: 'id',
       label: 'Aksi',
       render: (_, supplier) => (
-        <div className="flex gap-2">
+        <Space>
           {canWrite && (
             <>
               <button
@@ -124,7 +125,7 @@ export default function SuppliersPage() {
               </button>
             </>
           )}
-        </div>
+        </Space>
       )
     }
   ]
@@ -132,16 +133,16 @@ export default function SuppliersPage() {
   if (loading) return <LoadingSpinner message="Memuat data supplier..." />
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Supplier</h1>
+    <Space direction="vertical" style={{ width: '100%' }} size={24}>
+      <Flex justify="space-between" align="center">
+        <Typography.Title level={3} style={{ margin: 0 }}>Supplier</Typography.Title>
         {canWrite && (
           <Button variant="primary" onClick={openAdd}>
             <Plus size={20} />
             Tambah Supplier
           </Button>
         )}
-      </div>
+      </Flex>
 
       <DataTable columns={columns} data={suppliers} emptyMessage="Belum ada data supplier" />
 
@@ -152,52 +153,52 @@ export default function SuppliersPage() {
         title={editingId ? 'Edit Supplier' : 'Tambah Supplier'}
         size="md"
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {formError && (
-            <div className="bg-red-50 text-red-700 p-3 rounded text-sm">
-              {formError}
-            </div>
-          )}
-          <Input
-            label="Nama Supplier *"
-            placeholder="Nama supplier"
-            value={formData.name}
-            onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))}
-            autoFocus
-          />
-          <Input
-            label="Alamat"
-            placeholder="Alamat lengkap"
-            value={formData.address}
-            onChange={(e) => setFormData(p => ({ ...p, address: e.target.value }))}
-          />
-          <Input
-            label="Telepon"
-            placeholder="Nomor telepon"
-            value={formData.phone}
-            onChange={(e) => setFormData(p => ({ ...p, phone: e.target.value }))}
-          />
-          <Input
-            label="Email"
-            type="email"
-            placeholder="email@example.com"
-            value={formData.email}
-            onChange={(e) => setFormData(p => ({ ...p, email: e.target.value }))}
-          />
-          <Input
-            label="NPWP"
-            placeholder="Nomor NPWP"
-            value={formData.npwp}
-            onChange={(e) => setFormData(p => ({ ...p, npwp: e.target.value }))}
-          />
-          <div className="flex gap-3 justify-end pt-2">
-            <Button variant="secondary" type="button" onClick={() => setIsModalOpen(false)}>
-              Batal
-            </Button>
-            <Button variant="primary" type="submit" loading={isSubmitting}>
-              {editingId ? 'Simpan' : 'Tambah'}
-            </Button>
-          </div>
+        <form onSubmit={handleSubmit}>
+          <Space direction="vertical" style={{ width: '100%' }} size={16}>
+            {formError && (
+              <Alert type="error" message={formError} showIcon />
+            )}
+            <Input
+              label="Nama Supplier *"
+              placeholder="Nama supplier"
+              value={formData.name}
+              onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))}
+              autoFocus
+            />
+            <Input
+              label="Alamat"
+              placeholder="Alamat lengkap"
+              value={formData.address}
+              onChange={(e) => setFormData(p => ({ ...p, address: e.target.value }))}
+            />
+            <Input
+              label="Telepon"
+              placeholder="Nomor telepon"
+              value={formData.phone}
+              onChange={(e) => setFormData(p => ({ ...p, phone: e.target.value }))}
+            />
+            <Input
+              label="Email"
+              type="email"
+              placeholder="email@example.com"
+              value={formData.email}
+              onChange={(e) => setFormData(p => ({ ...p, email: e.target.value }))}
+            />
+            <Input
+              label="NPWP"
+              placeholder="Nomor NPWP"
+              value={formData.npwp}
+              onChange={(e) => setFormData(p => ({ ...p, npwp: e.target.value }))}
+            />
+            <Flex justify="flex-end" gap={12} style={{ paddingTop: 8 }}>
+              <Button variant="secondary" type="button" onClick={() => setIsModalOpen(false)}>
+                Batal
+              </Button>
+              <Button variant="primary" type="submit" loading={isSubmitting}>
+                {editingId ? 'Simpan' : 'Tambah'}
+              </Button>
+            </Flex>
+          </Space>
         </form>
       </Modal>
 
@@ -211,6 +212,6 @@ export default function SuppliersPage() {
         confirmText="Hapus"
         variant="danger"
       />
-    </div>
+    </Space>
   )
 }

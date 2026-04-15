@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react'
+import { Space, Flex, Row, Col, Typography, Tag } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useCOA } from '../../hooks/useMasterData'
@@ -197,16 +198,16 @@ export default function COAPage() {
   if (loading) return <LoadingSpinner message="Memuat Chart of Accounts..." />
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Chart of Accounts</h1>
+    <Space direction="vertical" style={{ width: '100%' }} size={24}>
+      <Flex justify="space-between" align="center">
+        <Typography.Title level={3} style={{ margin: 0 }}>Chart of Accounts</Typography.Title>
         {canWrite && (
           <Button variant="primary" onClick={openAdd}>
             <Plus size={20} />
             Tambah Akun
           </Button>
         )}
-      </div>
+      </Flex>
 
       {/* COA Tree Table */}
       <div className="overflow-x-auto border border-gray-200 rounded-lg">
@@ -254,17 +255,13 @@ export default function COAPage() {
                     {TYPE_LABELS[account.type] || account.type}
                   </td>
                   <td className="px-6 py-3 text-sm">
-                    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
-                      account.normal_balance === 'debit'
-                        ? 'bg-blue-100 text-blue-800'
-                        : 'bg-purple-100 text-purple-800'
-                    }`}>
+                    <Tag color={account.normal_balance === 'debit' ? 'blue' : 'purple'}>
                       {NORMAL_BALANCE_LABELS[account.normal_balance]}
-                    </span>
+                    </Tag>
                   </td>
                   {canWrite && (
                     <td className="px-6 py-3 text-sm">
-                      <div className="flex gap-2">
+                      <Space>
                         <button
                           onClick={() => openEdit(account)}
                           className="text-blue-600 hover:text-blue-800"
@@ -279,7 +276,7 @@ export default function COAPage() {
                         >
                           <Trash2 size={18} />
                         </button>
-                      </div>
+                      </Space>
                     </td>
                   )}
                 </tr>
@@ -296,67 +293,77 @@ export default function COAPage() {
         title={editingId ? 'Edit Akun' : 'Tambah Akun'}
         size="md"
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Kode Akun *"
-              placeholder="Contoh: 1-10000"
-              value={formData.code}
-              onChange={(e) => field('code', e.target.value)}
-              error={formErrors.code}
-              autoFocus
-            />
-            <Input
-              label="Nama Akun *"
-              placeholder="Nama akun"
-              value={formData.name}
-              onChange={(e) => field('name', e.target.value)}
-              error={formErrors.name}
-            />
-          </div>
+        <form onSubmit={handleSubmit}>
+          <Space direction="vertical" style={{ width: '100%' }} size={16}>
+            <Row gutter={16}>
+              <Col span={12}>
+                <Input
+                  label="Kode Akun *"
+                  placeholder="Contoh: 1-10000"
+                  value={formData.code}
+                  onChange={(e) => field('code', e.target.value)}
+                  error={formErrors.code}
+                  autoFocus
+                />
+              </Col>
+              <Col span={12}>
+                <Input
+                  label="Nama Akun *"
+                  placeholder="Nama akun"
+                  value={formData.name}
+                  onChange={(e) => field('name', e.target.value)}
+                  error={formErrors.name}
+                />
+              </Col>
+            </Row>
 
-          <div className="grid grid-cols-2 gap-4">
+            <Row gutter={16}>
+              <Col span={12}>
+                <Select
+                  label="Tipe Akun *"
+                  options={TYPE_OPTIONS}
+                  value={formData.type}
+                  onChange={(e) => field('type', e.target.value)}
+                  error={formErrors.type}
+                  placeholder="Pilih tipe..."
+                />
+              </Col>
+              <Col span={12}>
+                <div className="space-y-1">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Saldo Normal
+                  </label>
+                  <div className={`w-full px-3 py-2 border rounded-lg text-sm ${
+                    normalBalance
+                      ? 'border-gray-300 bg-gray-50 text-gray-700'
+                      : 'border-gray-200 bg-gray-50 text-gray-400'
+                  }`}>
+                    {normalBalance
+                      ? NORMAL_BALANCE_LABELS[normalBalance]
+                      : '(otomatis dari tipe)'}
+                  </div>
+                  <p className="text-xs text-gray-500">Otomatis berdasarkan tipe akun</p>
+                </div>
+              </Col>
+            </Row>
+
             <Select
-              label="Tipe Akun *"
-              options={TYPE_OPTIONS}
-              value={formData.type}
-              onChange={(e) => field('type', e.target.value)}
-              error={formErrors.type}
-              placeholder="Pilih tipe..."
+              label="Akun Induk (opsional)"
+              options={parentOptions}
+              value={formData.parent_id}
+              onChange={(e) => field('parent_id', e.target.value)}
+              placeholder="— Tidak ada (akun induk) —"
             />
-            <div className="space-y-1">
-              <label className="block text-sm font-medium text-gray-700">
-                Saldo Normal
-              </label>
-              <div className={`w-full px-3 py-2 border rounded-lg text-sm ${
-                normalBalance
-                  ? 'border-gray-300 bg-gray-50 text-gray-700'
-                  : 'border-gray-200 bg-gray-50 text-gray-400'
-              }`}>
-                {normalBalance
-                  ? NORMAL_BALANCE_LABELS[normalBalance]
-                  : '(otomatis dari tipe)'}
-              </div>
-              <p className="text-xs text-gray-500">Otomatis berdasarkan tipe akun</p>
-            </div>
-          </div>
 
-          <Select
-            label="Akun Induk (opsional)"
-            options={parentOptions}
-            value={formData.parent_id}
-            onChange={(e) => field('parent_id', e.target.value)}
-            placeholder="— Tidak ada (akun induk) —"
-          />
-
-          <div className="flex gap-3 justify-end pt-2">
-            <Button variant="secondary" type="button" onClick={() => setIsModalOpen(false)}>
-              Batal
-            </Button>
-            <Button variant="primary" type="submit" loading={isSubmitting}>
-              {editingId ? 'Simpan' : 'Tambah'}
-            </Button>
-          </div>
+            <Flex justify="flex-end" gap={12} style={{ paddingTop: 8 }}>
+              <Button variant="secondary" type="button" onClick={() => setIsModalOpen(false)}>
+                Batal
+              </Button>
+              <Button variant="primary" type="submit" loading={isSubmitting}>
+                {editingId ? 'Simpan' : 'Tambah'}
+              </Button>
+            </Flex>
+          </Space>
         </form>
       </Modal>
 
@@ -370,6 +377,6 @@ export default function COAPage() {
         confirmText="Hapus"
         variant="danger"
       />
-    </div>
+    </Space>
   )
 }

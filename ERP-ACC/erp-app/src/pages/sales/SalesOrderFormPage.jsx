@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { Space, Flex, Typography } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useProducts, useCustomers } from '../../hooks/useMasterData'
@@ -101,19 +102,19 @@ export default function SalesOrderFormPage() {
   if (loading) return <LoadingSpinner message="Memuat sales order..." />
 
   return (
-    <div className="space-y-6">
+    <Space direction="vertical" style={{ width: '100%' }} size={24}>
       {/* Breadcrumb + actions */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <Flex justify="space-between" align="center">
+        <Space align="center">
           <button onClick={() => navigate('/sales/orders')} className="text-gray-500 hover:text-gray-700">
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <Typography.Title level={4} style={{ margin: 0 }}>
             {isNew ? 'Sales Order Baru' : `SO ${header.so_number}`}
-          </h1>
-        </div>
+          </Typography.Title>
+        </Space>
 
-        <div className="flex gap-3">
+        <Space>
           {!readOnly && canWrite && (
             <Button variant="secondary" onClick={handleSave} loading={submitting}>
               <Save size={18} /> Simpan Draft
@@ -129,8 +130,8 @@ export default function SalesOrderFormPage() {
               Buat Invoice
             </Button>
           )}
-        </div>
-      </div>
+        </Space>
+      </Flex>
 
       {/* Header */}
       <DocumentHeader
@@ -148,8 +149,8 @@ export default function SalesOrderFormPage() {
       />
 
       {/* Line items */}
-      <div className="space-y-2">
-        <h2 className="text-lg font-semibold text-gray-900">Item Pesanan</h2>
+      <Space direction="vertical" style={{ width: '100%' }} size={8}>
+        <Typography.Title level={5} style={{ margin: 0 }}>Item Pesanan</Typography.Title>
         <LineItemsTable
           items={items}
           onItemsChange={setItems}
@@ -158,7 +159,7 @@ export default function SalesOrderFormPage() {
           readOnly={readOnly}
           showTax
         />
-      </div>
-    </div>
+      </Space>
+    </Space>
   )
 }

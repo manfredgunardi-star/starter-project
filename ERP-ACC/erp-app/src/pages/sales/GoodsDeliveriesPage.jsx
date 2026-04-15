@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Space, Flex, Typography } from 'antd'
 import { useGoodsDeliveries } from '../../hooks/useSales'
 import { useAuth } from '../../contexts/AuthContext'
 import { formatDate } from '../../utils/date'
@@ -26,21 +27,21 @@ export default function GoodsDeliveriesPage() {
   }, [deliveries, search, statusFilter])
 
   if (loading) return <LoadingSpinner message="Memuat pengiriman..." />
-  if (error) return <div className="text-red-600">{error}</div>
+  if (error) return <Typography.Text type="danger">{error}</Typography.Text>
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Pengiriman Barang</h1>
+    <Space direction="vertical" style={{ width: '100%' }} size={24}>
+      <Flex justify="space-between" align="center">
+        <Typography.Title level={3} style={{ margin: 0 }}>Pengiriman Barang</Typography.Title>
         {canWrite && (
           <Button variant="primary" onClick={() => navigate('/sales/deliveries/new')}>
             <Plus size={20} /> Buat Pengiriman
           </Button>
         )}
-      </div>
+      </Flex>
 
-      <div className="flex gap-3">
-        <div className="relative flex-1 max-w-xs">
+      <Space>
+        <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
@@ -48,6 +49,7 @@ export default function GoodsDeliveriesPage() {
             onChange={e => setSearch(e.target.value)}
             placeholder="Cari no. GD atau customer..."
             className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            style={{ width: 280 }}
           />
         </div>
         <select
@@ -59,7 +61,7 @@ export default function GoodsDeliveriesPage() {
           <option value="draft">Draft</option>
           <option value="posted">Posted</option>
         </select>
-      </div>
+      </Space>
 
       <div className="overflow-x-auto border border-gray-200 rounded-lg">
         <table className="w-full border-collapse">
@@ -95,6 +97,6 @@ export default function GoodsDeliveriesPage() {
           </tbody>
         </table>
       </div>
-    </div>
+    </Space>
   )
 }

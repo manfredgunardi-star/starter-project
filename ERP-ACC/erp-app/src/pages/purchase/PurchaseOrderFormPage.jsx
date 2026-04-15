@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { Space, Flex, Typography, Card, Alert } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { usePurchaseOrders } from '../../hooks/usePurchase'
@@ -109,60 +110,64 @@ export default function PurchaseOrderFormPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
+    <Space direction="vertical" style={{ width: '100%' }} size={24}>
+      <Space align="center">
         <button onClick={() => navigate('/purchase/orders')} className="text-gray-500 hover:text-gray-700">
           <ArrowLeft size={20} />
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <Typography.Title level={4} style={{ margin: 0 }}>
           {id ? 'Edit PO' : 'Buat Purchase Order'}
-        </h1>
-      </div>
+        </Typography.Title>
+      </Space>
 
-      <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-6">
-        <DocumentHeader
-          docNumber={po.po_number}
-          date={po.date}
-          onDateChange={e => setPO({ ...po, date: e.target.value })}
-          status={po.status}
-          partyLabel="Supplier"
-          partyId={po.supplier_id}
-          onPartyChange={e => setPO({ ...po, supplier_id: e.target.value })}
-          partyOptions={supplierOptions}
-          notes={po.notes}
-          onNotesChange={e => setPO({ ...po, notes: e.target.value })}
-          readOnly={po.status !== 'draft'}
-        />
+      <Card>
+        <Space direction="vertical" style={{ width: '100%' }} size={24}>
+          <DocumentHeader
+            docNumber={po.po_number}
+            date={po.date}
+            onDateChange={e => setPO({ ...po, date: e.target.value })}
+            status={po.status}
+            partyLabel="Supplier"
+            partyId={po.supplier_id}
+            onPartyChange={e => setPO({ ...po, supplier_id: e.target.value })}
+            partyOptions={supplierOptions}
+            notes={po.notes}
+            onNotesChange={e => setPO({ ...po, notes: e.target.value })}
+            readOnly={po.status !== 'draft'}
+          />
 
-        <LineItemsTable
-          items={items}
-          onItemsChange={setItems}
-          products={products}
-          priceField="buy_price"
-          showTax={true}
-          readOnly={po.status !== 'draft'}
-        />
+          <LineItemsTable
+            items={items}
+            onItemsChange={setItems}
+            products={products}
+            priceField="buy_price"
+            showTax={true}
+            readOnly={po.status !== 'draft'}
+          />
 
-        <div className="bg-blue-50 border border-blue-200 rounded p-3 text-xs text-blue-800">
-          Setelah dikonfirmasi, PO tidak dapat diubah. Lanjutkan dengan membuat Goods Receipt.
-        </div>
+          <Alert
+            type="info"
+            message="Setelah dikonfirmasi, PO tidak dapat diubah. Lanjutkan dengan membuat Goods Receipt."
+            showIcon
+          />
 
-        <div className="flex gap-3 justify-end pt-2">
-          <Button variant="secondary" onClick={() => navigate('/purchase/orders')}>
-            Batal
-          </Button>
-          {po.status === 'draft' && canWrite && (
-            <Button variant="primary" onClick={handleSave} loading={submitting}>
-              <Save size={18} /> Simpan Draft
+          <Flex justify="flex-end" gap={12}>
+            <Button variant="secondary" onClick={() => navigate('/purchase/orders')}>
+              Batal
             </Button>
-          )}
-          {po.status === 'draft' && canPost && (
-            <Button variant="primary" onClick={handleConfirm} loading={submitting}>
-              <Check size={18} /> Konfirmasi
-            </Button>
-          )}
-        </div>
-      </div>
-    </div>
+            {po.status === 'draft' && canWrite && (
+              <Button variant="primary" onClick={handleSave} loading={submitting}>
+                <Save size={18} /> Simpan Draft
+              </Button>
+            )}
+            {po.status === 'draft' && canPost && (
+              <Button variant="primary" onClick={handleConfirm} loading={submitting}>
+                <Check size={18} /> Konfirmasi
+              </Button>
+            )}
+          </Flex>
+        </Space>
+      </Card>
+    </Space>
   )
 }

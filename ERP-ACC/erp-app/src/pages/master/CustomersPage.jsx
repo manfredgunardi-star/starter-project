@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Space, Flex, Row, Col, Typography, Alert } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useCustomers } from '../../hooks/useMasterData'
@@ -105,7 +106,7 @@ export default function CustomersPage() {
       key: 'id',
       label: 'Aksi',
       render: (_, customer) => (
-        <div className="flex gap-2">
+        <Space>
           {canWrite && (
             <>
               <button
@@ -124,7 +125,7 @@ export default function CustomersPage() {
               </button>
             </>
           )}
-        </div>
+        </Space>
       )
     }
   ]
@@ -132,16 +133,16 @@ export default function CustomersPage() {
   if (loading) return <LoadingSpinner message="Memuat data customer..." />
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Customer</h1>
+    <Space direction="vertical" style={{ width: '100%' }} size={24}>
+      <Flex justify="space-between" align="center">
+        <Typography.Title level={3} style={{ margin: 0 }}>Customer</Typography.Title>
         {canWrite && (
           <Button variant="primary" onClick={openAdd}>
             <Plus size={20} />
             Tambah Customer
           </Button>
         )}
-      </div>
+      </Flex>
 
       <DataTable columns={columns} data={customers} emptyMessage="Belum ada data customer" />
 
@@ -152,52 +153,52 @@ export default function CustomersPage() {
         title={editingId ? 'Edit Customer' : 'Tambah Customer'}
         size="md"
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {formError && (
-            <div className="bg-red-50 text-red-700 p-3 rounded text-sm">
-              {formError}
-            </div>
-          )}
-          <Input
-            label="Nama Customer *"
-            placeholder="Nama customer"
-            value={formData.name}
-            onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))}
-            autoFocus
-          />
-          <Input
-            label="Alamat"
-            placeholder="Alamat lengkap"
-            value={formData.address}
-            onChange={(e) => setFormData(p => ({ ...p, address: e.target.value }))}
-          />
-          <Input
-            label="Telepon"
-            placeholder="Nomor telepon"
-            value={formData.phone}
-            onChange={(e) => setFormData(p => ({ ...p, phone: e.target.value }))}
-          />
-          <Input
-            label="Email"
-            type="email"
-            placeholder="email@example.com"
-            value={formData.email}
-            onChange={(e) => setFormData(p => ({ ...p, email: e.target.value }))}
-          />
-          <Input
-            label="NPWP"
-            placeholder="Nomor NPWP"
-            value={formData.npwp}
-            onChange={(e) => setFormData(p => ({ ...p, npwp: e.target.value }))}
-          />
-          <div className="flex gap-3 justify-end pt-2">
-            <Button variant="secondary" type="button" onClick={() => setIsModalOpen(false)}>
-              Batal
-            </Button>
-            <Button variant="primary" type="submit" loading={isSubmitting}>
-              {editingId ? 'Simpan' : 'Tambah'}
-            </Button>
-          </div>
+        <form onSubmit={handleSubmit}>
+          <Space direction="vertical" style={{ width: '100%' }} size={16}>
+            {formError && (
+              <Alert type="error" message={formError} showIcon />
+            )}
+            <Input
+              label="Nama Customer *"
+              placeholder="Nama customer"
+              value={formData.name}
+              onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))}
+              autoFocus
+            />
+            <Input
+              label="Alamat"
+              placeholder="Alamat lengkap"
+              value={formData.address}
+              onChange={(e) => setFormData(p => ({ ...p, address: e.target.value }))}
+            />
+            <Input
+              label="Telepon"
+              placeholder="Nomor telepon"
+              value={formData.phone}
+              onChange={(e) => setFormData(p => ({ ...p, phone: e.target.value }))}
+            />
+            <Input
+              label="Email"
+              type="email"
+              placeholder="email@example.com"
+              value={formData.email}
+              onChange={(e) => setFormData(p => ({ ...p, email: e.target.value }))}
+            />
+            <Input
+              label="NPWP"
+              placeholder="Nomor NPWP"
+              value={formData.npwp}
+              onChange={(e) => setFormData(p => ({ ...p, npwp: e.target.value }))}
+            />
+            <Flex justify="flex-end" gap={12} style={{ paddingTop: 8 }}>
+              <Button variant="secondary" type="button" onClick={() => setIsModalOpen(false)}>
+                Batal
+              </Button>
+              <Button variant="primary" type="submit" loading={isSubmitting}>
+                {editingId ? 'Simpan' : 'Tambah'}
+              </Button>
+            </Flex>
+          </Space>
         </form>
       </Modal>
 
@@ -211,6 +212,6 @@ export default function CustomersPage() {
         confirmText="Hapus"
         variant="danger"
       />
-    </div>
+    </Space>
   )
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Space, Flex, Row, Col, Typography, Card } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useProducts, useUnits } from '../../hooks/useMasterData'
@@ -194,7 +195,7 @@ export default function ProductsPage() {
       key: 'id',
       label: 'Aksi',
       render: (_, product) => (
-        <div className="flex gap-2">
+        <Space>
           {canWrite && (
             <>
               <button onClick={() => openEdit(product)} className="text-blue-600 hover:text-blue-800" title="Edit">
@@ -209,7 +210,7 @@ export default function ProductsPage() {
               </button>
             </>
           )}
-        </div>
+        </Space>
       )
     }
   ]
@@ -217,16 +218,16 @@ export default function ProductsPage() {
   if (loading) return <LoadingSpinner message="Memuat data produk..." />
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Produk</h1>
+    <Space direction="vertical" style={{ width: '100%' }} size={24}>
+      <Flex justify="space-between" align="center">
+        <Typography.Title level={3} style={{ margin: 0 }}>Produk</Typography.Title>
         {canWrite && (
           <Button variant="primary" onClick={openAdd}>
             <Plus size={20} />
             Tambah Produk
           </Button>
         )}
-      </div>
+      </Flex>
 
       <DataTable columns={columns} data={products} emptyMessage="Belum ada data produk" />
 
@@ -237,159 +238,173 @@ export default function ProductsPage() {
         title={editingId ? 'Edit Produk' : 'Tambah Produk'}
         size="lg"
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="SKU"
-              placeholder="Contoh: PRD-001"
-              value={formData.sku}
-              onChange={e => field('sku', e.target.value)}
-            />
-            <Input
-              label="Nama Produk *"
-              placeholder="Nama produk"
-              value={formData.name}
-              onChange={e => field('name', e.target.value)}
-              error={formErrors.name}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Kategori"
-              placeholder="Contoh: Bahan Baku"
-              value={formData.category}
-              onChange={e => field('category', e.target.value)}
-            />
-            <Select
-              label="Satuan Dasar *"
-              options={unitOptions}
-              value={formData.base_unit_id}
-              onChange={e => field('base_unit_id', e.target.value)}
-              error={formErrors.base_unit_id}
-              placeholder="Pilih satuan..."
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <Input
-              label="Harga Beli *"
-              type="number"
-              min="0"
-              placeholder="0"
-              value={formData.buy_price}
-              onChange={e => field('buy_price', e.target.value)}
-              error={formErrors.buy_price}
-            />
-            <Input
-              label="Harga Jual *"
-              type="number"
-              min="0"
-              placeholder="0"
-              value={formData.sell_price}
-              onChange={e => field('sell_price', e.target.value)}
-              error={formErrors.sell_price}
-            />
-          </div>
-
-          <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={formData.is_taxable}
-                onChange={e => field('is_taxable', e.target.checked)}
-                className="w-4 h-4 text-blue-600 border-gray-300 rounded"
-              />
-              <span className="text-sm font-medium text-gray-700">Kena PPN</span>
-            </label>
-            {formData.is_taxable && (
-              <div className="w-32">
+        <form onSubmit={handleSubmit}>
+          <Space direction="vertical" style={{ width: '100%' }} size={16}>
+            <Row gutter={16}>
+              <Col span={12}>
                 <Input
-                  label="Tarif PPN (%)"
+                  label="SKU"
+                  placeholder="Contoh: PRD-001"
+                  value={formData.sku}
+                  onChange={e => field('sku', e.target.value)}
+                />
+              </Col>
+              <Col span={12}>
+                <Input
+                  label="Nama Produk *"
+                  placeholder="Nama produk"
+                  value={formData.name}
+                  onChange={e => field('name', e.target.value)}
+                  error={formErrors.name}
+                />
+              </Col>
+            </Row>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <Input
+                  label="Kategori"
+                  placeholder="Contoh: Bahan Baku"
+                  value={formData.category}
+                  onChange={e => field('category', e.target.value)}
+                />
+              </Col>
+              <Col span={12}>
+                <Select
+                  label="Satuan Dasar *"
+                  options={unitOptions}
+                  value={formData.base_unit_id}
+                  onChange={e => field('base_unit_id', e.target.value)}
+                  error={formErrors.base_unit_id}
+                  placeholder="Pilih satuan..."
+                />
+              </Col>
+            </Row>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <Input
+                  label="Harga Beli *"
                   type="number"
                   min="0"
-                  max="100"
-                  value={formData.tax_rate}
-                  onChange={e => field('tax_rate', e.target.value)}
+                  placeholder="0"
+                  value={formData.buy_price}
+                  onChange={e => field('buy_price', e.target.value)}
+                  error={formErrors.buy_price}
                 />
-              </div>
-            )}
-          </div>
+              </Col>
+              <Col span={12}>
+                <Input
+                  label="Harga Jual *"
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={formData.sell_price}
+                  onChange={e => field('sell_price', e.target.value)}
+                  error={formErrors.sell_price}
+                />
+              </Col>
+            </Row>
 
-          {/* Konversi Satuan */}
-          <div className="border border-gray-200 rounded-lg p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium text-gray-900">Konversi Satuan</h3>
-              <button
-                type="button"
-                onClick={addConversionRow}
-                disabled={!formData.base_unit_id}
-                className="text-blue-600 hover:text-blue-800 disabled:text-gray-400 flex items-center gap-1 text-sm"
-              >
-                <PlusCircle size={18} />
-                Tambah Baris
-              </button>
-            </div>
-
-            {conversions.length === 0 ? (
-              <p className="text-sm text-gray-500 text-center py-2">
-                {formData.base_unit_id
-                  ? 'Belum ada konversi. Klik "Tambah Baris" untuk menambahkan.'
-                  : 'Pilih satuan dasar terlebih dahulu.'}
-              </p>
-            ) : (
-              <div className="space-y-2">
-                {/* Header */}
-                <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-2 items-center">
-                  <div className="text-xs font-medium text-gray-600">Dari Satuan</div>
-                  <div className="text-xs font-medium text-gray-600 text-center px-2">=</div>
-                  <div className="text-xs font-medium text-gray-600">Faktor × {baseUnitName}</div>
-                  <div></div>
+            <Space align="center" size={16}>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.is_taxable}
+                  onChange={e => field('is_taxable', e.target.checked)}
+                  className="w-4 h-4 text-blue-600 border-gray-300 rounded"
+                />
+                <span className="text-sm font-medium text-gray-700">Kena PPN</span>
+              </label>
+              {formData.is_taxable && (
+                <div style={{ width: 128 }}>
+                  <Input
+                    label="Tarif PPN (%)"
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={formData.tax_rate}
+                    onChange={e => field('tax_rate', e.target.value)}
+                  />
                 </div>
+              )}
+            </Space>
 
-                {conversions.map((conv, i) => {
-                  const fromOptions = availableFromUnits(i).map(u => ({ value: u.id, label: u.name }))
-                  return (
-                    <div key={i} className="grid grid-cols-[1fr_auto_1fr_auto] gap-2 items-start">
-                      <Select
-                        options={fromOptions}
-                        value={conv.from_unit_id}
-                        onChange={e => updateConversionRow(i, 'from_unit_id', e.target.value)}
-                        placeholder="Pilih satuan..."
-                        error={formErrors[`conv_unit_${i}`]}
-                      />
-                      <div className="flex items-center justify-center h-10 mt-0 text-gray-500 px-1">=</div>
-                      <Input
-                        type="number"
-                        min="0.0001"
-                        step="any"
-                        placeholder="Faktor"
-                        value={conv.conversion_factor}
-                        onChange={e => updateConversionRow(i, 'conversion_factor', e.target.value)}
-                        error={formErrors[`conv_factor_${i}`]}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeConversionRow(i)}
-                        className="text-red-500 hover:text-red-700 mt-1"
-                      >
-                        <X size={20} />
-                      </button>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
+            {/* Konversi Satuan */}
+            <Card size="small" title={
+              <Flex justify="space-between" align="center">
+                <Typography.Text strong>Konversi Satuan</Typography.Text>
+                <button
+                  type="button"
+                  onClick={addConversionRow}
+                  disabled={!formData.base_unit_id}
+                  className="text-blue-600 hover:text-blue-800 disabled:text-gray-400 flex items-center gap-1 text-sm"
+                >
+                  <PlusCircle size={18} />
+                  Tambah Baris
+                </button>
+              </Flex>
+            }>
+              {conversions.length === 0 ? (
+                <Typography.Text type="secondary" style={{ display: 'block', textAlign: 'center', padding: '8px 0' }}>
+                  {formData.base_unit_id
+                    ? 'Belum ada konversi. Klik "Tambah Baris" untuk menambahkan.'
+                    : 'Pilih satuan dasar terlebih dahulu.'}
+                </Typography.Text>
+              ) : (
+                <Space direction="vertical" style={{ width: '100%' }} size={8}>
+                  {/* Header */}
+                  <div className="grid grid-cols-[1fr_auto_1fr_auto] gap-2 items-center">
+                    <div className="text-xs font-medium text-gray-600">Dari Satuan</div>
+                    <div className="text-xs font-medium text-gray-600 text-center px-2">=</div>
+                    <div className="text-xs font-medium text-gray-600">Faktor × {baseUnitName}</div>
+                    <div></div>
+                  </div>
 
-          <div className="flex gap-3 justify-end pt-2">
-            <Button variant="secondary" type="button" onClick={() => setIsModalOpen(false)}>
-              Batal
-            </Button>
-            <Button variant="primary" type="submit" loading={isSubmitting}>
-              {editingId ? 'Simpan' : 'Tambah'}
-            </Button>
-          </div>
+                  {conversions.map((conv, i) => {
+                    const fromOptions = availableFromUnits(i).map(u => ({ value: u.id, label: u.name }))
+                    return (
+                      <div key={i} className="grid grid-cols-[1fr_auto_1fr_auto] gap-2 items-start">
+                        <Select
+                          options={fromOptions}
+                          value={conv.from_unit_id}
+                          onChange={e => updateConversionRow(i, 'from_unit_id', e.target.value)}
+                          placeholder="Pilih satuan..."
+                          error={formErrors[`conv_unit_${i}`]}
+                        />
+                        <div className="flex items-center justify-center h-10 mt-0 text-gray-500 px-1">=</div>
+                        <Input
+                          type="number"
+                          min="0.0001"
+                          step="any"
+                          placeholder="Faktor"
+                          value={conv.conversion_factor}
+                          onChange={e => updateConversionRow(i, 'conversion_factor', e.target.value)}
+                          error={formErrors[`conv_factor_${i}`]}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeConversionRow(i)}
+                          className="text-red-500 hover:text-red-700 mt-1"
+                        >
+                          <X size={20} />
+                        </button>
+                      </div>
+                    )
+                  })}
+                </Space>
+              )}
+            </Card>
+
+            <Flex justify="flex-end" gap={12} style={{ paddingTop: 8 }}>
+              <Button variant="secondary" type="button" onClick={() => setIsModalOpen(false)}>
+                Batal
+              </Button>
+              <Button variant="primary" type="submit" loading={isSubmitting}>
+                {editingId ? 'Simpan' : 'Tambah'}
+              </Button>
+            </Flex>
+          </Space>
         </form>
       </Modal>
 
@@ -403,6 +418,6 @@ export default function ProductsPage() {
         confirmText="Hapus"
         variant="danger"
       />
-    </div>
+    </Space>
   )
 }

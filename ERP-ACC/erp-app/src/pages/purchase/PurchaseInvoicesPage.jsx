@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Space, Flex, Typography, Tag } from 'antd'
 import { usePurchaseInvoices } from '../../hooks/usePurchase'
 import { useAuth } from '../../contexts/AuthContext'
 import { formatCurrency } from '../../utils/currency'
@@ -7,6 +8,13 @@ import { formatDate } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { Plus, Search } from 'lucide-react'
+
+const STATUS_COLOR = {
+  draft: 'default',
+  posted: 'blue',
+  partial: 'gold',
+  paid: 'success',
+}
 
 export default function PurchaseInvoicesPage() {
   const navigate = useNavigate()
@@ -26,21 +34,21 @@ export default function PurchaseInvoicesPage() {
   }, [purchaseInvoices, search, statusFilter])
 
   if (loading) return <LoadingSpinner message="Memuat invoice pembelian..." />
-  if (error) return <div className="text-red-600">{error}</div>
+  if (error) return <Typography.Text type="danger">{error}</Typography.Text>
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Invoice Pembelian</h1>
+    <Space direction="vertical" style={{ width: '100%' }} size={24}>
+      <Flex justify="space-between" align="center">
+        <Typography.Title level={3} style={{ margin: 0 }}>Invoice Pembelian</Typography.Title>
         {canWrite && (
           <Button variant="primary" onClick={() => navigate('/purchase/invoices/new')}>
             <Plus size={20} /> Buat Invoice
           </Button>
         )}
-      </div>
+      </Flex>
 
-      <div className="flex gap-3">
-        <div className="relative flex-1 max-w-xs">
+      <Space>
+        <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
@@ -48,6 +56,7 @@ export default function PurchaseInvoicesPage() {
             onChange={e => setSearch(e.target.value)}
             placeholder="Cari no. invoice atau supplier..."
             className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            style={{ width: 280 }}
           />
         </div>
         <select
@@ -61,7 +70,7 @@ export default function PurchaseInvoicesPage() {
           <option value="partial">Partial</option>
           <option value="paid">Lunas</option>
         </select>
-      </div>
+      </Space>
 
       <div className="overflow-x-auto border border-gray-200 rounded-lg">
         <table className="w-full border-collapse">
@@ -95,14 +104,9 @@ export default function PurchaseInvoicesPage() {
                   <td className="px-6 py-3 text-sm text-gray-900">{inv.supplier?.name || '—'}</td>
                   <td className="px-6 py-3 text-sm text-gray-700">{inv.due_date ? formatDate(inv.due_date) : '—'}</td>
                   <td className="px-6 py-3 text-sm">
-                    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
-                      inv.status === 'draft' ? 'bg-gray-100 text-gray-800'
-                      : inv.status === 'posted' ? 'bg-blue-100 text-blue-800'
-                      : inv.status === 'partial' ? 'bg-yellow-100 text-yellow-800'
-                      : 'bg-green-100 text-green-800'
-                    }`}>
+                    <Tag color={STATUS_COLOR[inv.status] || 'default'}>
                       {inv.status === 'paid' ? 'Lunas' : inv.status}
-                    </span>
+                    </Tag>
                   </td>
                   <td className="px-6 py-3 text-sm text-right font-medium text-gray-900">
                     {formatCurrency(inv.total)}
@@ -116,6 +120,6 @@ export default function PurchaseInvoicesPage() {
           </tbody>
         </table>
       </div>
-    </div>
+    </Space>
   )
 }

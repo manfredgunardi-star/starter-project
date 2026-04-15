@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { Space, Flex, Typography, Alert } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useProducts, useCustomers } from '../../hooks/useMasterData'
@@ -129,17 +130,17 @@ export default function GoodsDeliveryFormPage() {
   if (loading) return <LoadingSpinner message="Memuat pengiriman..." />
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+    <Space direction="vertical" style={{ width: '100%' }} size={24}>
+      <Flex justify="space-between" align="center">
+        <Space align="center">
           <button onClick={() => navigate('/sales/deliveries')} className="text-gray-500 hover:text-gray-700">
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <Typography.Title level={4} style={{ margin: 0 }}>
             {isNew ? 'Pengiriman Baru' : `GD ${header.gd_number}`}
-          </h1>
-        </div>
-        <div className="flex gap-3">
+          </Typography.Title>
+        </Space>
+        <Space>
           {!readOnly && canWrite && (
             <Button variant="secondary" onClick={handleSave} loading={submitting}>
               <Save size={18} /> Simpan
@@ -150,8 +151,8 @@ export default function GoodsDeliveryFormPage() {
               <Send size={18} /> Post (Kirim)
             </Button>
           )}
-        </div>
-      </div>
+        </Space>
+      </Flex>
 
       <DocumentHeader
         docNumber={header.gd_number}
@@ -168,8 +169,8 @@ export default function GoodsDeliveryFormPage() {
       />
 
       {/* Delivery items — no price, just qty */}
-      <div className="space-y-3">
-        <h2 className="text-lg font-semibold text-gray-900">Item Pengiriman</h2>
+      <Space direction="vertical" style={{ width: '100%' }} size={12}>
+        <Typography.Title level={5} style={{ margin: 0 }}>Item Pengiriman</Typography.Title>
         <div className="overflow-x-auto border border-gray-200 rounded-lg">
           <table className="w-full border-collapse">
             <thead className="bg-gray-100 border-b border-gray-200">
@@ -268,13 +269,15 @@ export default function GoodsDeliveryFormPage() {
             <Plus size={18} /> Tambah Baris
           </button>
         )}
-      </div>
+      </Space>
 
       {header.status === 'posted' && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-green-800 text-sm">
-          Pengiriman telah diposting. Stok telah berkurang dan jurnal HPP telah dibuat.
-        </div>
+        <Alert
+          type="success"
+          message="Pengiriman telah diposting. Stok telah berkurang dan jurnal HPP telah dibuat."
+          showIcon
+        />
       )}
-    </div>
+    </Space>
   )
 }

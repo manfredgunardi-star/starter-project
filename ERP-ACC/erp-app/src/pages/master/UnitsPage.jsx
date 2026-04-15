@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Space, Flex, Typography, Alert } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useUnits } from '../../hooks/useMasterData'
@@ -92,7 +93,7 @@ export default function UnitsPage() {
       key: 'id',
       label: 'Aksi',
       render: (_, unit) => (
-        <div className="flex gap-2">
+        <Space>
           {canWrite && (
             <>
               <button
@@ -111,7 +112,7 @@ export default function UnitsPage() {
               </button>
             </>
           )}
-        </div>
+        </Space>
       )
     }
   ]
@@ -119,16 +120,16 @@ export default function UnitsPage() {
   if (loading) return <LoadingSpinner message="Memuat data satuan..." />
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Satuan</h1>
+    <Space direction="vertical" style={{ width: '100%' }} size={24}>
+      <Flex justify="space-between" align="center">
+        <Typography.Title level={3} style={{ margin: 0 }}>Satuan</Typography.Title>
         {canWrite && (
           <Button variant="primary" onClick={handleAdd}>
             <Plus size={20} />
             Tambah Satuan
           </Button>
         )}
-      </div>
+      </Flex>
 
       <DataTable columns={columns} data={units} emptyMessage="Belum ada data satuan" />
 
@@ -139,35 +140,35 @@ export default function UnitsPage() {
         title={editingId ? 'Edit Satuan' : 'Tambah Satuan'}
         size="sm"
       >
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {formError && (
-            <div className="bg-red-50 text-red-700 p-3 rounded text-sm">
-              {formError}
-            </div>
-          )}
-          <Input
-            label="Nama Satuan"
-            placeholder="Contoh: pcs, kg, liter"
-            value={formData.name}
-            onChange={(e) => setFormData({ name: e.target.value })}
-            autoFocus
-          />
-          <div className="flex gap-3 justify-end">
-            <Button
-              variant="secondary"
-              onClick={() => setIsModalOpen(false)}
-            >
-              Batal
-            </Button>
-            <Button
-              variant="primary"
-              type="submit"
-              loading={isSubmitting}
-              disabled={isSubmitting}
-            >
-              {editingId ? 'Simpan' : 'Tambah'}
-            </Button>
-          </div>
+        <form onSubmit={handleSubmit}>
+          <Space direction="vertical" style={{ width: '100%' }} size={16}>
+            {formError && (
+              <Alert type="error" message={formError} showIcon />
+            )}
+            <Input
+              label="Nama Satuan"
+              placeholder="Contoh: pcs, kg, liter"
+              value={formData.name}
+              onChange={(e) => setFormData({ name: e.target.value })}
+              autoFocus
+            />
+            <Flex justify="flex-end" gap={12}>
+              <Button
+                variant="secondary"
+                onClick={() => setIsModalOpen(false)}
+              >
+                Batal
+              </Button>
+              <Button
+                variant="primary"
+                type="submit"
+                loading={isSubmitting}
+                disabled={isSubmitting}
+              >
+                {editingId ? 'Simpan' : 'Tambah'}
+              </Button>
+            </Flex>
+          </Space>
         </form>
       </Modal>
 
@@ -181,6 +182,6 @@ export default function UnitsPage() {
         confirmText="Hapus"
         variant="danger"
       />
-    </div>
+    </Space>
   )
 }

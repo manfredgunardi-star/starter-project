@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Space, Flex, Typography, Row, Col, Card } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useProducts, useCustomers } from '../../hooks/useMasterData'
@@ -107,17 +108,17 @@ export default function SalesInvoiceFormPage() {
   if (loading) return <LoadingSpinner message="Memuat invoice..." />
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+    <Space direction="vertical" style={{ width: '100%' }} size={24}>
+      <Flex justify="space-between" align="center">
+        <Space align="center">
           <button onClick={() => navigate('/sales/invoices')} className="text-gray-500 hover:text-gray-700">
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <Typography.Title level={4} style={{ margin: 0 }}>
             {isNew ? 'Invoice Baru' : `Invoice ${header.invoice_number}`}
-          </h1>
-        </div>
-        <div className="flex gap-3">
+          </Typography.Title>
+        </Space>
+        <Space>
           {!readOnly && canWrite && (
             <Button variant="secondary" onClick={handleSave} loading={submitting}>
               <Save size={18} /> Simpan
@@ -133,8 +134,8 @@ export default function SalesInvoiceFormPage() {
               Terima Pembayaran
             </Button>
           )}
-        </div>
-      </div>
+        </Space>
+      </Flex>
 
       <DocumentHeader
         docNumber={header.invoice_number}
@@ -152,8 +153,8 @@ export default function SalesInvoiceFormPage() {
         readOnly={readOnly}
       />
 
-      <div className="space-y-2">
-        <h2 className="text-lg font-semibold text-gray-900">Item Invoice</h2>
+      <Space direction="vertical" style={{ width: '100%' }} size={8}>
+        <Typography.Title level={5} style={{ margin: 0 }}>Item Invoice</Typography.Title>
         <LineItemsTable
           items={items}
           onItemsChange={setItems}
@@ -162,27 +163,27 @@ export default function SalesInvoiceFormPage() {
           readOnly={readOnly}
           showTax
         />
-      </div>
+      </Space>
 
       {/* Payment summary for posted invoices */}
       {!isNew && header.status !== 'draft' && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <div className="grid grid-cols-3 gap-4 text-sm">
-            <div>
-              <p className="text-blue-700">Total Invoice</p>
-              <p className="font-bold text-blue-900">{formatCurrency(header.total)}</p>
-            </div>
-            <div>
-              <p className="text-green-700">Dibayar</p>
-              <p className="font-bold text-green-900">{formatCurrency(header.amount_paid)}</p>
-            </div>
-            <div>
-              <p className="text-red-700">Sisa Piutang</p>
-              <p className="font-bold text-red-900">{formatCurrency(remaining)}</p>
-            </div>
-          </div>
-        </div>
+        <Card style={{ background: '#e6f4ff', border: '1px solid #91caff' }}>
+          <Row gutter={16}>
+            <Col span={8}>
+              <Typography.Text style={{ color: '#0958d9', display: 'block' }}>Total Invoice</Typography.Text>
+              <Typography.Text strong style={{ color: '#003eb3', fontSize: 16 }}>{formatCurrency(header.total)}</Typography.Text>
+            </Col>
+            <Col span={8}>
+              <Typography.Text type="success" style={{ display: 'block' }}>Dibayar</Typography.Text>
+              <Typography.Text strong style={{ color: '#135200', fontSize: 16 }}>{formatCurrency(header.amount_paid)}</Typography.Text>
+            </Col>
+            <Col span={8}>
+              <Typography.Text type="danger" style={{ display: 'block' }}>Sisa Piutang</Typography.Text>
+              <Typography.Text strong type="danger" style={{ fontSize: 16 }}>{formatCurrency(remaining)}</Typography.Text>
+            </Col>
+          </Row>
+        </Card>
       )}
-    </div>
+    </Space>
   )
 }
