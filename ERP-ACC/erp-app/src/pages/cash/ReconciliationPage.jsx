@@ -9,6 +9,7 @@ import Select from '../../components/ui/Select'
 import Input from '../../components/ui/Input'
 import DateInput from '../../components/ui/DateInput'
 import { CheckCircle, XCircle } from 'lucide-react'
+import { Space, Row, Col, Card, Typography, Flex } from 'antd'
 
 export default function ReconciliationPage() {
   const toast = useToast()
@@ -52,108 +53,133 @@ export default function ReconciliationPage() {
   }))
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">Rekonsiliasi Bank</h1>
+    <Space direction="vertical" style={{ width: '100%' }} size="large">
+      <Typography.Title level={2} style={{ margin: 0 }}>Rekonsiliasi Bank</Typography.Title>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <Row gutter={24}>
         {/* Input form */}
-        <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900">Rekonsiliasi Baru</h2>
+        <Col xs={24} md={12}>
+          <Card>
+            <Space direction="vertical" style={{ width: '100%' }} size="middle">
+              <Typography.Title level={5} style={{ margin: 0 }}>Rekonsiliasi Baru</Typography.Title>
 
-          <Select
-            label="Akun *"
-            options={accountOptions}
-            value={form.account_id}
-            onChange={e => { field('account_id', e.target.value); setResult(null) }}
-            placeholder="Pilih akun..."
-          />
+              <Select
+                label="Akun *"
+                options={accountOptions}
+                value={form.account_id}
+                onChange={e => { field('account_id', e.target.value); setResult(null) }}
+                placeholder="Pilih akun..."
+              />
 
-          <DateInput
-            label="Tanggal Rekonsiliasi *"
-            value={form.date}
-            onChange={e => field('date', e.target.value)}
-          />
+              <DateInput
+                label="Tanggal Rekonsiliasi *"
+                value={form.date}
+                onChange={e => field('date', e.target.value)}
+              />
 
-          <Input
-            label="Saldo Rekening Koran *"
-            type="number"
-            step="any"
-            placeholder="0"
-            value={form.statement_balance}
-            onChange={e => { field('statement_balance', e.target.value); setResult(null) }}
-          />
+              <Input
+                label="Saldo Rekening Koran *"
+                type="number"
+                step="any"
+                placeholder="0"
+                value={form.statement_balance}
+                onChange={e => { field('statement_balance', e.target.value); setResult(null) }}
+              />
 
-          {/* Live comparison */}
-          {selectedAccount && form.statement_balance !== '' && (
-            <div className="border border-gray-200 rounded-lg p-4 space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Saldo Sistem</span>
-                <span className="font-medium">{formatCurrency(selectedAccount.balance)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Saldo Rekening Koran</span>
-                <span className="font-medium">{formatCurrency(Number(form.statement_balance))}</span>
-              </div>
-              <div className="border-t pt-2 flex justify-between font-semibold">
-                <span>Selisih</span>
-                <span className={diff === 0 ? 'text-green-600' : 'text-red-600'}>
-                  {formatCurrency(Math.abs(diff))} {diff > 0 ? '(lebih)' : diff < 0 ? '(kurang)' : ''}
-                </span>
-              </div>
-              {diff === 0 && (
-                <div className="flex items-center gap-2 text-green-700 text-xs pt-1">
-                  <CheckCircle size={14} /> Saldo sesuai — siap direkonsiliasi
-                </div>
+              {/* Live comparison */}
+              {selectedAccount && form.statement_balance !== '' && (
+                <Card size="small" style={{ background: '#fafafa' }}>
+                  <Space direction="vertical" style={{ width: '100%' }} size="small">
+                    <Flex justify="space-between">
+                      <Typography.Text type="secondary">Saldo Sistem</Typography.Text>
+                      <Typography.Text strong>{formatCurrency(selectedAccount.balance)}</Typography.Text>
+                    </Flex>
+                    <Flex justify="space-between">
+                      <Typography.Text type="secondary">Saldo Rekening Koran</Typography.Text>
+                      <Typography.Text strong>{formatCurrency(Number(form.statement_balance))}</Typography.Text>
+                    </Flex>
+                    <div style={{ borderTop: '1px solid #d9d9d9', paddingTop: 8 }}>
+                      <Flex justify="space-between">
+                        <Typography.Text strong>Selisih</Typography.Text>
+                        <Typography.Text strong type={diff === 0 ? 'success' : 'danger'}>
+                          {formatCurrency(Math.abs(diff))} {diff > 0 ? '(lebih)' : diff < 0 ? '(kurang)' : ''}
+                        </Typography.Text>
+                      </Flex>
+                    </div>
+                    {diff === 0 && (
+                      <Flex align="center" gap={8}>
+                        <CheckCircle size={14} style={{ color: '#52c41a' }} />
+                        <Typography.Text type="success" style={{ fontSize: 12 }}>
+                          Saldo sesuai — siap direkonsiliasi
+                        </Typography.Text>
+                      </Flex>
+                    )}
+                    {diff !== 0 && (
+                      <Flex align="center" gap={8}>
+                        <XCircle size={14} style={{ color: '#fa8c16' }} />
+                        <Typography.Text style={{ fontSize: 12, color: '#fa8c16' }}>
+                          Ada selisih — periksa transaksi yang belum dicatat
+                        </Typography.Text>
+                      </Flex>
+                    )}
+                  </Space>
+                </Card>
               )}
-              {diff !== 0 && (
-                <div className="flex items-center gap-2 text-orange-700 text-xs pt-1">
-                  <XCircle size={14} /> Ada selisih — periksa transaksi yang belum dicatat
-                </div>
-              )}
-            </div>
-          )}
 
-          <Button variant="primary" onClick={handleSave} loading={submitting}>
-            Simpan Rekonsiliasi
-          </Button>
-        </div>
+              <Button variant="primary" onClick={handleSave} loading={submitting}>
+                Simpan Rekonsiliasi
+              </Button>
+            </Space>
+          </Card>
+        </Col>
 
         {/* Result */}
         {result && (
-          <div className={`border rounded-lg p-6 ${result.is_reconciled ? 'bg-green-50 border-green-200' : 'bg-orange-50 border-orange-200'}`}>
-            <div className="flex items-center gap-3 mb-4">
-              {result.is_reconciled
-                ? <CheckCircle size={24} className="text-green-600" />
-                : <XCircle size={24} className="text-orange-600" />
-              }
-              <h2 className="text-lg font-semibold">
-                {result.is_reconciled ? 'Rekonsiliasi Sukses' : 'Ada Selisih'}
-              </h2>
-            </div>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Saldo Sistem</span>
-                <span className="font-medium">{formatCurrency(result.system_balance)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Saldo Rekening Koran</span>
-                <span className="font-medium">{formatCurrency(result.statement_balance)}</span>
-              </div>
-              <div className="border-t pt-2 flex justify-between font-semibold">
-                <span>Selisih</span>
-                <span className={result.is_reconciled ? 'text-green-600' : 'text-red-600'}>
-                  {formatCurrency(Math.abs(result.statement_balance - result.system_balance))}
-                </span>
-              </div>
-            </div>
-            {!result.is_reconciled && (
-              <p className="mt-4 text-xs text-orange-700">
-                Periksa transaksi yang belum dicatat atau transaksi yang masih dalam proses.
-              </p>
-            )}
-          </div>
+          <Col xs={24} md={12}>
+            <Card
+              style={{
+                background: result.is_reconciled ? '#f6ffed' : '#fff7e6',
+                borderColor: result.is_reconciled ? '#b7eb8f' : '#ffd591',
+              }}
+            >
+              <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                <Flex align="center" gap={12}>
+                  {result.is_reconciled
+                    ? <CheckCircle size={24} style={{ color: '#52c41a' }} />
+                    : <XCircle size={24} style={{ color: '#fa8c16' }} />
+                  }
+                  <Typography.Title level={5} style={{ margin: 0 }}>
+                    {result.is_reconciled ? 'Rekonsiliasi Sukses' : 'Ada Selisih'}
+                  </Typography.Title>
+                </Flex>
+                <Space direction="vertical" style={{ width: '100%' }} size="small">
+                  <Flex justify="space-between">
+                    <Typography.Text type="secondary">Saldo Sistem</Typography.Text>
+                    <Typography.Text strong>{formatCurrency(result.system_balance)}</Typography.Text>
+                  </Flex>
+                  <Flex justify="space-between">
+                    <Typography.Text type="secondary">Saldo Rekening Koran</Typography.Text>
+                    <Typography.Text strong>{formatCurrency(result.statement_balance)}</Typography.Text>
+                  </Flex>
+                  <div style={{ borderTop: '1px solid #d9d9d9', paddingTop: 8 }}>
+                    <Flex justify="space-between">
+                      <Typography.Text strong>Selisih</Typography.Text>
+                      <Typography.Text strong type={result.is_reconciled ? 'success' : 'danger'}>
+                        {formatCurrency(Math.abs(result.statement_balance - result.system_balance))}
+                      </Typography.Text>
+                    </Flex>
+                  </div>
+                </Space>
+                {!result.is_reconciled && (
+                  <Typography.Text style={{ fontSize: 12, color: '#fa8c16' }}>
+                    Periksa transaksi yang belum dicatat atau transaksi yang masih dalam proses.
+                  </Typography.Text>
+                )}
+              </Space>
+            </Card>
+          </Col>
         )}
-      </div>
-    </div>
+      </Row>
+    </Space>
   )
 }

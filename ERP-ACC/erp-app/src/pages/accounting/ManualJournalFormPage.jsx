@@ -11,6 +11,7 @@ import Input from '../../components/ui/Input'
 import DateInput from '../../components/ui/DateInput'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { ArrowLeft, Save, Send, Plus, Trash2 } from 'lucide-react'
+import { Space, Flex, Card, Row, Col, Alert, Typography } from 'antd'
 
 const emptyRow = () => ({ _key: Date.now() + Math.random(), coa_id: '', description: '', debit: '', credit: '' })
 
@@ -110,17 +111,17 @@ export default function ManualJournalFormPage() {
   if (loading) return <LoadingSpinner message="Memuat jurnal..." />
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+    <Space direction="vertical" style={{ width: '100%' }} size="large">
+      <Flex justify="space-between" align="center">
+        <Space align="center">
           <button onClick={() => navigate('/accounting/journals')} className="text-gray-500 hover:text-gray-700">
             <ArrowLeft size={20} />
           </button>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <Typography.Title level={3} style={{ margin: 0 }}>
             {isNew ? 'Jurnal Manual Baru' : `Jurnal ${header.journal_number}`}
-          </h1>
-        </div>
-        <div className="flex gap-3">
+          </Typography.Title>
+        </Space>
+        <Space>
           {!readOnly && canPost && (
             <Button variant="secondary" onClick={handleSave} loading={submitting}>
               <Save size={18} /> Simpan Draft
@@ -131,34 +132,38 @@ export default function ManualJournalFormPage() {
               <Send size={18} /> Post Jurnal
             </Button>
           )}
-        </div>
-      </div>
+        </Space>
+      </Flex>
 
       {/* Header */}
-      <div className="bg-white border border-gray-200 rounded-lg p-6">
-        <div className="grid grid-cols-2 gap-4">
-          <DateInput
-            label="Tanggal *"
-            value={header.date}
-            onChange={e => setHeader(h => ({ ...h, date: e.target.value }))}
-            disabled={readOnly}
-          />
-          <div className="space-y-1">
-            <label className="block text-sm font-medium text-gray-700">Deskripsi *</label>
-            <input
-              type="text"
-              value={header.description}
-              onChange={e => setHeader(h => ({ ...h, description: e.target.value }))}
-              readOnly={readOnly}
-              placeholder="Keterangan jurnal..."
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+      <Card>
+        <Row gutter={16}>
+          <Col span={12}>
+            <DateInput
+              label="Tanggal *"
+              value={header.date}
+              onChange={e => setHeader(h => ({ ...h, date: e.target.value }))}
+              disabled={readOnly}
             />
-          </div>
-        </div>
-      </div>
+          </Col>
+          <Col span={12}>
+            <Space direction="vertical" style={{ width: '100%' }} size={4}>
+              <label className="block text-sm font-medium text-gray-700">Deskripsi *</label>
+              <input
+                type="text"
+                value={header.description}
+                onChange={e => setHeader(h => ({ ...h, description: e.target.value }))}
+                readOnly={readOnly}
+                placeholder="Keterangan jurnal..."
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </Space>
+          </Col>
+        </Row>
+      </Card>
 
       {/* Items table */}
-      <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+      <Card bodyStyle={{ padding: 0 }}>
         <table className="w-full border-collapse">
           <thead className="bg-gray-100 border-b border-gray-200">
             <tr>
@@ -247,20 +252,23 @@ export default function ManualJournalFormPage() {
           <tfoot className="bg-gray-50 border-t-2 border-gray-300">
             <tr>
               <td colSpan={2} className="px-4 py-2 text-sm font-semibold text-right text-gray-700">Total</td>
-              <td className="px-4 py-2 text-sm font-bold text-right">
-                {formatCurrency(totalDebit)}
+              <td className="px-4 py-2 text-sm text-right">
+                <Typography.Text strong>{formatCurrency(totalDebit)}</Typography.Text>
               </td>
-              <td className="px-4 py-2 text-sm font-bold text-right">
-                {formatCurrency(totalCredit)}
+              <td className="px-4 py-2 text-sm text-right">
+                <Typography.Text strong>{formatCurrency(totalCredit)}</Typography.Text>
               </td>
               {!readOnly && <td></td>}
             </tr>
             {!readOnly && (
               <tr>
                 <td colSpan={4} className="px-4 py-2">
-                  <div className={`text-xs font-medium ${isBalanced ? 'text-green-600' : totalDebit > 0 ? 'text-orange-600' : 'text-gray-400'}`}>
+                  <Typography.Text
+                    type={isBalanced ? 'success' : totalDebit > 0 ? 'warning' : 'secondary'}
+                    style={{ fontSize: 12, fontWeight: 500 }}
+                  >
                     {isBalanced ? '✓ Seimbang — siap diposting' : totalDebit > 0 ? `Selisih: ${formatCurrency(Math.abs(totalDebit - totalCredit))}` : 'Isi baris jurnal di atas'}
-                  </div>
+                  </Typography.Text>
                 </td>
                 {!readOnly && <td></td>}
               </tr>
@@ -278,13 +286,15 @@ export default function ManualJournalFormPage() {
             </button>
           </div>
         )}
-      </div>
+      </Card>
 
       {header.status === 'posted' && (
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-green-800 text-sm">
-          Jurnal telah diposting dan tidak dapat diubah.
-        </div>
+        <Alert
+          type="success"
+          message="Jurnal telah diposting dan tidak dapat diubah."
+          showIcon
+        />
       )}
-    </div>
+    </Space>
   )
 }

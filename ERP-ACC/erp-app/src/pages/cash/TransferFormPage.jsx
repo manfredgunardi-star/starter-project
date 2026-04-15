@@ -11,6 +11,7 @@ import Input from '../../components/ui/Input'
 import DateInput from '../../components/ui/DateInput'
 import Select from '../../components/ui/Select'
 import { ArrowLeft, ArrowRight, Save } from 'lucide-react'
+import { Space, Card, Alert, Typography, Flex } from 'antd'
 
 export default function TransferFormPage() {
   const navigate = useNavigate()
@@ -66,85 +67,89 @@ export default function TransferFormPage() {
   const toOptions = accountOptions.filter(a => a.value !== form.from_account_id)
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
+    <Space direction="vertical" style={{ width: '100%' }} size="large">
+      <Space align="center">
         <button onClick={() => navigate('/cash/payments')} className="text-gray-500 hover:text-gray-700">
           <ArrowLeft size={20} />
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">Transfer Kas/Bank</h1>
-      </div>
+        <Typography.Title level={3} style={{ margin: 0 }}>Transfer Kas/Bank</Typography.Title>
+      </Space>
 
-      <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4 max-w-xl">
-        <DateInput
-          label="Tanggal *"
-          value={form.date}
-          onChange={e => field('date', e.target.value)}
-        />
-
-        <Select
-          label="Akun Asal *"
-          options={accountOptions}
-          value={form.from_account_id}
-          onChange={e => { field('from_account_id', e.target.value); field('to_account_id', '') }}
-          placeholder="Pilih akun asal..."
-        />
-
-        {form.from_account_id && form.to_account_id && (
-          <div className="flex items-center justify-center gap-3 py-1">
-            <span className="text-sm font-medium text-gray-700">{fromAccount?.name}</span>
-            <ArrowRight size={18} className="text-blue-600" />
-            <span className="text-sm font-medium text-gray-700">{toAccount?.name}</span>
-          </div>
-        )}
-
-        <Select
-          label="Akun Tujuan *"
-          options={toOptions}
-          value={form.to_account_id}
-          onChange={e => field('to_account_id', e.target.value)}
-          placeholder="Pilih akun tujuan..."
-        />
-
-        <Input
-          label="Jumlah *"
-          type="number"
-          min="0"
-          step="any"
-          placeholder="0"
-          value={form.amount}
-          onChange={e => field('amount', e.target.value)}
-        />
-
-        {fromAccount && form.amount && (
-          <p className="text-xs text-gray-500">
-            Saldo tersisa setelah transfer: {formatCurrency(fromAccount.balance - Number(form.amount))}
-          </p>
-        )}
-
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-gray-700">Catatan</label>
-          <textarea
-            value={form.notes}
-            onChange={e => field('notes', e.target.value)}
-            rows={2}
-            placeholder="Catatan opsional..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+      <Card style={{ maxWidth: 560 }}>
+        <Space direction="vertical" style={{ width: '100%' }} size="middle">
+          <DateInput
+            label="Tanggal *"
+            value={form.date}
+            onChange={e => field('date', e.target.value)}
           />
-        </div>
 
-        <div className="bg-blue-50 border border-blue-200 rounded p-3 text-xs text-blue-800">
-          Transfer langsung diposting — jurnal otomatis dibuat dan saldo kedua akun diperbarui.
-        </div>
+          <Select
+            label="Akun Asal *"
+            options={accountOptions}
+            value={form.from_account_id}
+            onChange={e => { field('from_account_id', e.target.value); field('to_account_id', '') }}
+            placeholder="Pilih akun asal..."
+          />
 
-        <div className="flex gap-3 justify-end pt-2">
-          <Button variant="secondary" onClick={() => navigate('/cash/payments')}>Batal</Button>
-          {canWrite && (
-            <Button variant="primary" onClick={handleSave} loading={submitting}>
-              <Save size={18} /> Simpan & Post
-            </Button>
+          {form.from_account_id && form.to_account_id && (
+            <Flex justify="center" align="center" gap={12} style={{ paddingBlock: 4 }}>
+              <Typography.Text strong>{fromAccount?.name}</Typography.Text>
+              <ArrowRight size={18} style={{ color: '#1677ff' }} />
+              <Typography.Text strong>{toAccount?.name}</Typography.Text>
+            </Flex>
           )}
-        </div>
-      </div>
-    </div>
+
+          <Select
+            label="Akun Tujuan *"
+            options={toOptions}
+            value={form.to_account_id}
+            onChange={e => field('to_account_id', e.target.value)}
+            placeholder="Pilih akun tujuan..."
+          />
+
+          <Input
+            label="Jumlah *"
+            type="number"
+            min="0"
+            step="any"
+            placeholder="0"
+            value={form.amount}
+            onChange={e => field('amount', e.target.value)}
+          />
+
+          {fromAccount && form.amount && (
+            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+              Saldo tersisa setelah transfer: {formatCurrency(fromAccount.balance - Number(form.amount))}
+            </Typography.Text>
+          )}
+
+          <Space direction="vertical" style={{ width: '100%' }} size={4}>
+            <label className="block text-sm font-medium text-gray-700">Catatan</label>
+            <textarea
+              value={form.notes}
+              onChange={e => field('notes', e.target.value)}
+              rows={2}
+              placeholder="Catatan opsional..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+            />
+          </Space>
+
+          <Alert
+            type="info"
+            showIcon
+            message="Transfer langsung diposting — jurnal otomatis dibuat dan saldo kedua akun diperbarui."
+          />
+
+          <Flex justify="flex-end" gap={12} style={{ paddingTop: 8 }}>
+            <Button variant="secondary" onClick={() => navigate('/cash/payments')}>Batal</Button>
+            {canWrite && (
+              <Button variant="primary" onClick={handleSave} loading={submitting}>
+                <Save size={18} /> Simpan & Post
+              </Button>
+            )}
+          </Flex>
+        </Space>
+      </Card>
+    </Space>
   )
 }

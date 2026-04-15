@@ -12,6 +12,7 @@ import Modal from '../../components/ui/Modal'
 import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { Plus, Edit2, Trash2 } from 'lucide-react'
+import { Space, Flex, Typography } from 'antd'
 
 const emptyForm = {
   name: '',
@@ -131,7 +132,7 @@ export default function AccountsPage() {
       key: 'id',
       label: 'Aksi',
       render: (_, account) => (
-        <div className="flex gap-2">
+        <Space size="small">
           {canWrite && (
             <>
               <button
@@ -150,7 +151,7 @@ export default function AccountsPage() {
               </button>
             </>
           )}
-        </div>
+        </Space>
       ),
     },
   ]
@@ -158,16 +159,16 @@ export default function AccountsPage() {
   if (loading || coaLoading) return <LoadingSpinner message="Memuat data akun..." />
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Akun Kas / Bank</h1>
+    <Space direction="vertical" style={{ width: '100%' }} size="large">
+      <Flex justify="space-between" align="center">
+        <Typography.Title level={2} style={{ margin: 0 }}>Akun Kas / Bank</Typography.Title>
         {canWrite && (
           <Button variant="primary" onClick={openAdd}>
             <Plus size={20} />
             Tambah Akun
           </Button>
         )}
-      </div>
+      </Flex>
 
       <DataTable columns={columns} data={accounts} emptyMessage="Belum ada data akun kas/bank" />
 
@@ -204,14 +205,14 @@ export default function AccountsPage() {
             placeholder="Pilih akun kas/bank..."
           />
 
-          <div className="flex gap-3 justify-end pt-2">
+          <Flex justify="flex-end" gap={12} style={{ paddingTop: 8 }}>
             <Button variant="secondary" type="button" onClick={() => setIsModalOpen(false)}>
               Batal
             </Button>
             <Button variant="primary" type="submit" loading={isSubmitting}>
               {editingId ? 'Simpan' : 'Tambah'}
             </Button>
-          </div>
+          </Flex>
         </form>
       </Modal>
 
@@ -225,6 +226,6 @@ export default function AccountsPage() {
         confirmText="Hapus"
         variant="danger"
       />
-    </div>
+    </Space>
   )
 }

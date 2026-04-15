@@ -7,6 +7,7 @@ import { formatDate } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { Plus, Search } from 'lucide-react'
+import { Space, Flex, Tag, Typography, Alert } from 'antd'
 
 export default function PaymentsPage() {
   const navigate = useNavigate()
@@ -27,21 +28,21 @@ export default function PaymentsPage() {
   }, [payments, search, typeFilter])
 
   if (loading) return <LoadingSpinner message="Memuat pembayaran..." />
-  if (error) return <div className="text-red-600">{error}</div>
+  if (error) return <Alert type="error" message={error} showIcon />
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Pembayaran</h1>
+    <Space direction="vertical" style={{ width: '100%' }} size="large">
+      <Flex justify="space-between" align="center">
+        <Typography.Title level={2} style={{ margin: 0 }}>Pembayaran</Typography.Title>
         {canWrite && (
           <Button variant="primary" onClick={() => navigate('/cash/payments/new')}>
             <Plus size={20} /> Tambah Pembayaran
           </Button>
         )}
-      </div>
+      </Flex>
 
-      <div className="flex gap-3">
-        <div className="relative flex-1 max-w-xs">
+      <Space>
+        <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
@@ -49,6 +50,7 @@ export default function PaymentsPage() {
             onChange={e => setSearch(e.target.value)}
             placeholder="Cari no. pembayaran..."
             className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            style={{ minWidth: 280 }}
           />
         </div>
         <select
@@ -60,7 +62,7 @@ export default function PaymentsPage() {
           <option value="incoming">Masuk (dari Customer)</option>
           <option value="outgoing">Keluar (ke Supplier)</option>
         </select>
-      </div>
+      </Space>
 
       <div className="overflow-x-auto border border-gray-200 rounded-lg">
         <table className="w-full border-collapse">
@@ -88,13 +90,9 @@ export default function PaymentsPage() {
                   <td className="px-6 py-3 text-sm font-mono text-blue-600">{p.payment_number}</td>
                   <td className="px-6 py-3 text-sm text-gray-700">{formatDate(p.date)}</td>
                   <td className="px-6 py-3 text-sm">
-                    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
-                      p.type === 'incoming'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                    }`}>
+                    <Tag color={p.type === 'incoming' ? 'success' : 'error'}>
                       {p.type === 'incoming' ? 'Masuk' : 'Keluar'}
-                    </span>
+                    </Tag>
                   </td>
                   <td className="px-6 py-3 text-sm text-gray-900">
                     {p.customer?.name || p.supplier?.name || '—'}
@@ -112,6 +110,6 @@ export default function PaymentsPage() {
           </tbody>
         </table>
       </div>
-    </div>
+    </Space>
   )
 }

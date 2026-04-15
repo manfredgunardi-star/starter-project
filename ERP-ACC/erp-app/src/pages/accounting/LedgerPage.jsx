@@ -7,6 +7,7 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import Button from '../../components/ui/Button'
 import DateInput from '../../components/ui/DateInput'
 import { Search } from 'lucide-react'
+import { Space, Card, Alert, Typography } from 'antd'
 
 function yearStart() {
   return new Date().getFullYear() + '-01-01'
@@ -46,13 +47,13 @@ export default function LedgerPage() {
   const totalCredit = entries.reduce((s, e) => s + (Number(e.credit) || 0), 0)
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">Buku Besar (Ledger)</h1>
+    <Space direction="vertical" style={{ width: '100%' }} size="large">
+      <Typography.Title level={2} style={{ margin: 0 }}>Buku Besar (Ledger)</Typography.Title>
 
       {/* Filter */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4">
-        <div className="flex flex-wrap gap-4 items-end">
-          <div className="flex-1 min-w-[200px]">
+      <Card>
+        <Space wrap align="end">
+          <div style={{ minWidth: 200, flex: 1 }}>
             <label className="block text-sm font-medium text-gray-700 mb-1">Akun (COA)</label>
             <select
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -78,19 +79,19 @@ export default function LedgerPage() {
           <Button variant="primary" onClick={handleSearch} loading={loading}>
             <Search size={16} /> Tampilkan
           </Button>
-        </div>
-      </div>
+        </Space>
+      </Card>
 
       {loading && <LoadingSpinner message="Memuat buku besar..." />}
-      {error && <div className="text-red-600">{error}</div>}
+      {error && <Alert type="error" message={error} showIcon />}
 
       {searched && !loading && (
         <>
           {selectedCoa && (
-            <div className="text-sm text-gray-600">
-              <span className="font-semibold">{selectedCoa.code} — {selectedCoa.name}</span>
-              {' '}| Normal Balance: <span className="capitalize">{selectedCoa.normal_balance}</span>
-            </div>
+            <Typography.Text>
+              <Typography.Text strong>{selectedCoa.code} — {selectedCoa.name}</Typography.Text>
+              {' '}| Normal Balance: <span style={{ textTransform: 'capitalize' }}>{selectedCoa.normal_balance}</span>
+            </Typography.Text>
           )}
 
           <div className="overflow-x-auto border border-gray-200 rounded-lg">
@@ -124,11 +125,11 @@ export default function LedgerPage() {
                       <td className="px-4 py-2 text-sm text-right text-gray-900">
                         {entry.credit > 0 ? formatCurrency(entry.credit) : ''}
                       </td>
-                      <td className={`px-4 py-2 text-sm text-right font-medium ${
-                        entry.running_balance >= 0 ? 'text-gray-900' : 'text-red-600'
-                      }`}>
-                        {formatCurrency(Math.abs(entry.running_balance))}
-                        {entry.running_balance < 0 ? ' (K)' : ''}
+                      <td className="px-4 py-2 text-sm text-right font-medium">
+                        <Typography.Text type={entry.running_balance < 0 ? 'danger' : undefined}>
+                          {formatCurrency(Math.abs(entry.running_balance))}
+                          {entry.running_balance < 0 ? ' (K)' : ''}
+                        </Typography.Text>
                       </td>
                     </tr>
                   ))
@@ -138,10 +139,16 @@ export default function LedgerPage() {
                 <tfoot className="bg-gray-50 border-t-2 border-gray-300">
                   <tr>
                     <td colSpan={3} className="px-4 py-2 text-sm font-semibold text-right">Total</td>
-                    <td className="px-4 py-2 text-sm font-bold text-right">{formatCurrency(totalDebit)}</td>
-                    <td className="px-4 py-2 text-sm font-bold text-right">{formatCurrency(totalCredit)}</td>
-                    <td className="px-4 py-2 text-sm font-bold text-right">
-                      {formatCurrency(Math.abs(entries[entries.length - 1]?.running_balance || 0))}
+                    <td className="px-4 py-2 text-sm text-right">
+                      <Typography.Text strong>{formatCurrency(totalDebit)}</Typography.Text>
+                    </td>
+                    <td className="px-4 py-2 text-sm text-right">
+                      <Typography.Text strong>{formatCurrency(totalCredit)}</Typography.Text>
+                    </td>
+                    <td className="px-4 py-2 text-sm text-right">
+                      <Typography.Text strong>
+                        {formatCurrency(Math.abs(entries[entries.length - 1]?.running_balance || 0))}
+                      </Typography.Text>
                     </td>
                   </tr>
                 </tfoot>
@@ -150,6 +157,6 @@ export default function LedgerPage() {
           </div>
         </>
       )}
-    </div>
+    </Space>
   )
 }

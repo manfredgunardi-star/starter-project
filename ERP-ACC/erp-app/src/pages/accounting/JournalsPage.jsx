@@ -6,6 +6,7 @@ import { formatDate } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { Plus, Search } from 'lucide-react'
+import { Space, Flex, Tag, Typography, Alert } from 'antd'
 
 export default function JournalsPage() {
   const navigate = useNavigate()
@@ -34,21 +35,21 @@ export default function JournalsPage() {
   }, [journals, search, sourceFilter])
 
   if (loading) return <LoadingSpinner message="Memuat jurnal..." />
-  if (error) return <div className="text-red-600">{error}</div>
+  if (error) return <Alert type="error" message={error} showIcon />
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Jurnal</h1>
+    <Space direction="vertical" style={{ width: '100%' }} size="large">
+      <Flex justify="space-between" align="center">
+        <Typography.Title level={2} style={{ margin: 0 }}>Jurnal</Typography.Title>
         {canPost && (
           <Button variant="primary" onClick={() => navigate('/accounting/journals/new')}>
             <Plus size={20} /> Jurnal Manual
           </Button>
         )}
-      </div>
+      </Flex>
 
-      <div className="flex gap-3">
-        <div className="relative flex-1 max-w-xs">
+      <Space>
+        <div className="relative">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
@@ -56,6 +57,7 @@ export default function JournalsPage() {
             onChange={e => setSearch(e.target.value)}
             placeholder="Cari no. jurnal atau deskripsi..."
             className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+            style={{ minWidth: 280 }}
           />
         </div>
         <select
@@ -67,7 +69,7 @@ export default function JournalsPage() {
           <option value="manual">Manual</option>
           <option value="auto">Otomatis</option>
         </select>
-      </div>
+      </Space>
 
       <div className="overflow-x-auto border border-gray-200 rounded-lg">
         <table className="w-full border-collapse">
@@ -98,18 +100,14 @@ export default function JournalsPage() {
                   <td className="px-6 py-3 text-sm text-gray-700">{formatDate(j.date)}</td>
                   <td className="px-6 py-3 text-sm text-gray-900">{j.description || '—'}</td>
                   <td className="px-6 py-3 text-sm">
-                    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
-                      j.source === 'manual' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-600'
-                    }`}>
+                    <Tag color={j.source === 'manual' ? 'purple' : 'default'}>
                       {j.source === 'manual' ? 'Manual' : 'Otomatis'}
-                    </span>
+                    </Tag>
                   </td>
                   <td className="px-6 py-3 text-sm">
-                    <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
-                      j.is_posted ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                    }`}>
+                    <Tag color={j.is_posted ? 'success' : 'warning'}>
                       {j.is_posted ? 'Posted' : 'Draft'}
-                    </span>
+                    </Tag>
                   </td>
                 </tr>
               ))
@@ -117,6 +115,6 @@ export default function JournalsPage() {
           </tbody>
         </table>
       </div>
-    </div>
+    </Space>
   )
 }

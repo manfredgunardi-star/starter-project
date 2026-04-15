@@ -13,6 +13,7 @@ import Input from '../../components/ui/Input'
 import DateInput from '../../components/ui/DateInput'
 import Select from '../../components/ui/Select'
 import { ArrowLeft, Save } from 'lucide-react'
+import { Space, Card, Alert, Typography, Flex } from 'antd'
 
 export default function PaymentFormPage() {
   const navigate = useNavigate()
@@ -130,130 +131,134 @@ export default function PaymentFormPage() {
   }))
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
+    <Space direction="vertical" style={{ width: '100%' }} size="large">
+      <Space align="center">
         <button onClick={() => navigate('/cash/payments')} className="text-gray-500 hover:text-gray-700">
           <ArrowLeft size={20} />
         </button>
-        <h1 className="text-2xl font-bold text-gray-900">Tambah Pembayaran</h1>
-      </div>
+        <Typography.Title level={3} style={{ margin: 0 }}>Tambah Pembayaran</Typography.Title>
+      </Space>
 
-      <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4 max-w-xl">
-        {/* Type */}
-        <div className="flex gap-4">
-          {['incoming', 'outgoing'].map(t => (
-            <label key={t} className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                value={t}
-                checked={form.type === t}
-                onChange={() => {
-                  field('type', t)
-                  setForm(f => ({ ...f, type: t, customer_id: '', supplier_id: '', invoice_id: '' }))
-                  setInvoices([])
-                }}
-                className="text-blue-600"
-              />
-              <span className="text-sm font-medium text-gray-700">
-                {t === 'incoming' ? 'Masuk (dari Customer)' : 'Keluar (ke Supplier)'}
-              </span>
-            </label>
-          ))}
-        </div>
+      <Card style={{ maxWidth: 560 }}>
+        <Space direction="vertical" style={{ width: '100%' }} size="middle">
+          {/* Type */}
+          <Space>
+            {['incoming', 'outgoing'].map(t => (
+              <label key={t} className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  value={t}
+                  checked={form.type === t}
+                  onChange={() => {
+                    field('type', t)
+                    setForm(f => ({ ...f, type: t, customer_id: '', supplier_id: '', invoice_id: '' }))
+                    setInvoices([])
+                  }}
+                  className="text-blue-600"
+                />
+                <Typography.Text>
+                  {t === 'incoming' ? 'Masuk (dari Customer)' : 'Keluar (ke Supplier)'}
+                </Typography.Text>
+              </label>
+            ))}
+          </Space>
 
-        <DateInput
-          label="Tanggal *"
-          value={form.date}
-          onChange={e => field('date', e.target.value)}
-        />
-
-        {/* Customer (for incoming) */}
-        {form.type === 'incoming' && (
-          <Select
-            label="Customer *"
-            options={customerOptions}
-            value={form.customer_id}
-            onChange={e => { field('customer_id', e.target.value); field('invoice_id', '') }}
-            placeholder="Pilih customer..."
+          <DateInput
+            label="Tanggal *"
+            value={form.date}
+            onChange={e => field('date', e.target.value)}
           />
-        )}
 
-        {/* Supplier (for outgoing) */}
-        {form.type === 'outgoing' && (
-          <Select
-            label="Supplier *"
-            options={supplierOptions}
-            value={form.supplier_id}
-            onChange={e => { field('supplier_id', e.target.value); field('invoice_id', '') }}
-            placeholder="Pilih supplier..."
-          />
-        )}
-
-        {/* Invoice reference */}
-        {((form.type === 'incoming' && form.customer_id) || (form.type === 'outgoing' && form.supplier_id)) && (
-          <div className="space-y-1">
+          {/* Customer (for incoming) */}
+          {form.type === 'incoming' && (
             <Select
-              label="Invoice (opsional)"
-              options={invoiceOptions}
-              value={form.invoice_id}
-              onChange={e => field('invoice_id', e.target.value)}
-              placeholder={loadingInvoices ? 'Memuat...' : '— Tanpa invoice —'}
+              label="Customer *"
+              options={customerOptions}
+              value={form.customer_id}
+              onChange={e => { field('customer_id', e.target.value); field('invoice_id', '') }}
+              placeholder="Pilih customer..."
             />
-            {selectedInvoice && (
-              <p className="text-xs text-blue-600">
-                {form.type === 'incoming' ? 'Sisa piutang' : 'Sisa hutang'}: {formatCurrency(remaining)}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Account */}
-        <Select
-          label="Akun Kas/Bank *"
-          options={accountOptions}
-          value={form.account_id}
-          onChange={e => field('account_id', e.target.value)}
-          placeholder="Pilih akun..."
-        />
-
-        {/* Amount */}
-        <Input
-          label="Jumlah *"
-          type="number"
-          min="0"
-          step="any"
-          placeholder="0"
-          value={form.amount}
-          onChange={e => field('amount', e.target.value)}
-        />
-
-        {/* Notes */}
-        <div className="space-y-1">
-          <label className="block text-sm font-medium text-gray-700">Catatan</label>
-          <textarea
-            value={form.notes}
-            onChange={e => field('notes', e.target.value)}
-            rows={2}
-            placeholder="Catatan opsional..."
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
-          />
-        </div>
-
-        <div className="bg-yellow-50 border border-yellow-200 rounded p-3 text-xs text-yellow-800">
-          Pembayaran akan langsung diposting — jurnal otomatis dibuat dan saldo akun diperbarui.
-        </div>
-
-        <div className="flex gap-3 justify-end pt-2">
-          <Button variant="secondary" onClick={() => navigate('/cash/payments')}>
-            Batal
-          </Button>
-          {canWrite && (
-            <Button variant="primary" onClick={handleSave} loading={submitting}>
-              <Save size={18} /> Simpan & Post
-            </Button>
           )}
-        </div>
-      </div>
-    </div>
+
+          {/* Supplier (for outgoing) */}
+          {form.type === 'outgoing' && (
+            <Select
+              label="Supplier *"
+              options={supplierOptions}
+              value={form.supplier_id}
+              onChange={e => { field('supplier_id', e.target.value); field('invoice_id', '') }}
+              placeholder="Pilih supplier..."
+            />
+          )}
+
+          {/* Invoice reference */}
+          {((form.type === 'incoming' && form.customer_id) || (form.type === 'outgoing' && form.supplier_id)) && (
+            <Space direction="vertical" style={{ width: '100%' }} size={4}>
+              <Select
+                label="Invoice (opsional)"
+                options={invoiceOptions}
+                value={form.invoice_id}
+                onChange={e => field('invoice_id', e.target.value)}
+                placeholder={loadingInvoices ? 'Memuat...' : '— Tanpa invoice —'}
+              />
+              {selectedInvoice && (
+                <Typography.Text type="secondary" style={{ fontSize: 12, color: '#1677ff' }}>
+                  {form.type === 'incoming' ? 'Sisa piutang' : 'Sisa hutang'}: {formatCurrency(remaining)}
+                </Typography.Text>
+              )}
+            </Space>
+          )}
+
+          {/* Account */}
+          <Select
+            label="Akun Kas/Bank *"
+            options={accountOptions}
+            value={form.account_id}
+            onChange={e => field('account_id', e.target.value)}
+            placeholder="Pilih akun..."
+          />
+
+          {/* Amount */}
+          <Input
+            label="Jumlah *"
+            type="number"
+            min="0"
+            step="any"
+            placeholder="0"
+            value={form.amount}
+            onChange={e => field('amount', e.target.value)}
+          />
+
+          {/* Notes */}
+          <Space direction="vertical" style={{ width: '100%' }} size={4}>
+            <label className="block text-sm font-medium text-gray-700">Catatan</label>
+            <textarea
+              value={form.notes}
+              onChange={e => field('notes', e.target.value)}
+              rows={2}
+              placeholder="Catatan opsional..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
+            />
+          </Space>
+
+          <Alert
+            type="warning"
+            showIcon
+            message="Pembayaran akan langsung diposting — jurnal otomatis dibuat dan saldo akun diperbarui."
+          />
+
+          <Flex justify="flex-end" gap={12} style={{ paddingTop: 8 }}>
+            <Button variant="secondary" onClick={() => navigate('/cash/payments')}>
+              Batal
+            </Button>
+            {canWrite && (
+              <Button variant="primary" onClick={handleSave} loading={submitting}>
+                <Save size={18} /> Simpan & Post
+              </Button>
+            )}
+          </Flex>
+        </Space>
+      </Card>
+    </Space>
   )
 }
