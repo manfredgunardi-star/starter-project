@@ -113,14 +113,18 @@ export default function AssetCategoriesPage() {
             <>
               <button
                 onClick={() => handleEdit(category)}
-                className="text-blue-600 hover:text-blue-800 transition"
+                style={{ color: '#2563eb', cursor: 'pointer', background: 'none', border: 'none' }}
+                onMouseEnter={(e) => e.target.style.color = '#1e40af'}
+                onMouseLeave={(e) => e.target.style.color = '#2563eb'}
                 title="Edit"
               >
                 <Edit2 size={18} />
               </button>
               <button
                 onClick={() => handleDeleteClick(category)}
-                className="text-red-600 hover:text-red-800 transition"
+                style={{ color: '#dc2626', cursor: 'pointer', background: 'none', border: 'none' }}
+                onMouseEnter={(e) => e.target.style.color = '#b91c1c'}
+                onMouseLeave={(e) => e.target.style.color = '#dc2626'}
                 title="Hapus"
               >
                 <Trash2 size={18} />

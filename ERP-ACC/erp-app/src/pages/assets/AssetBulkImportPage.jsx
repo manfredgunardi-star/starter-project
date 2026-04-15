@@ -146,7 +146,9 @@ export default function AssetBulkImportPage() {
     <Space direction="vertical" style={{ width: '100%', padding: 24 }}>
       <button
         onClick={() => navigate('/assets')}
-        className="flex items-center gap-2 text-gray-500 hover:text-gray-700"
+        style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#6b7280' }}
+        onMouseEnter={(e) => e.target.style.color = '#374151'}
+        onMouseLeave={(e) => e.target.style.color = '#6b7280'}
       >
         <ArrowLeft size={18} /> Kembali ke Daftar Aset
       </button>
@@ -155,7 +157,9 @@ export default function AssetBulkImportPage() {
         <Typography.Title level={4} style={{ margin: 0 }}>Bulk Import Aset</Typography.Title>
         <button
           onClick={downloadTemplate}
-          className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors text-sm"
+          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', border: '1px solid #d1d5db', color: '#374151', borderRadius: 4, fontSize: 14, backgroundColor: 'white', cursor: 'pointer' }}
+          onMouseEnter={(e) => e.target.style.backgroundColor = '#f9fafb'}
+          onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
         >
           <Download size={16} /> Download Template
         </button>
@@ -165,21 +169,23 @@ export default function AssetBulkImportPage() {
       <Card title={<Typography.Text strong>Upload File Excel</Typography.Text>}>
         <Typography.Text type="secondary">
           Download template di atas, isi data aset, lalu upload file .xlsx.
-          Format tanggal: <code className="bg-gray-100 px-1 rounded">YYYY-MM-DD</code>.
+          Format tanggal: <code style={{ backgroundColor: '#f3f4f6', padding: '1px 3px', borderRadius: 2 }}>YYYY-MM-DD</code>.
         </Typography.Text>
         <div
           onClick={() => fileRef.current?.click()}
-          className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors"
+          style={{ border: '2px dashed #d1d5db', borderRadius: 8, padding: 32, textAlign: 'center', cursor: 'pointer' }}
+          onMouseEnter={(e) => { e.target.style.borderColor = '#60a5fa'; e.target.style.backgroundColor = '#eff6ff' }}
+          onMouseLeave={(e) => { e.target.style.borderColor = '#d1d5db'; e.target.style.backgroundColor = 'transparent' }}
         >
-          <Upload size={32} className="mx-auto text-gray-400 mb-3" />
-          <p className="text-sm text-gray-500">Klik untuk pilih file .xlsx</p>
+          <Upload size={32} style={{ margin: '0 auto 12px', color: '#9ca3af', display: 'block' }} />
+          <p style={{ fontSize: 14, color: '#6b7280', margin: 0 }}>Klik untuk pilih file .xlsx</p>
         </div>
         <input
           ref={fileRef}
           type="file"
           accept=".xlsx,.xls"
           onChange={handleFileChange}
-          className="hidden"
+          style={{ display: 'none' }}
         />
       </Card>
 
@@ -190,10 +196,10 @@ export default function AssetBulkImportPage() {
             <Flex justify="space-between" align="center">
               <Typography.Text strong>Preview ({rows.length} baris)</Typography.Text>
               <Space>
-                <span className="flex items-center gap-1 text-green-600 text-sm">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#16a34a', fontSize: 14 }}>
                   <CheckCircle size={14} /> {validRows.length} valid
                 </span>
-                <span className="flex items-center gap-1 text-red-600 text-sm">
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#dc2626', fontSize: 14 }}>
                   <XCircle size={14} /> {invalidRows.length} error
                 </span>
               </Space>
@@ -201,35 +207,35 @@ export default function AssetBulkImportPage() {
           }
           bodyStyle={{ padding: 0 }}
         >
-          <div className="overflow-x-auto">
-            <table className="min-w-full text-xs">
-              <thead className="bg-gray-50 border-b border-gray-200">
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ minWidth: '100%', fontSize: 12 }}>
+              <thead style={{ backgroundColor: '#f9fafb', borderBottom: '1px solid #e5e7eb' }}>
                 <tr>
-                  <th className="px-3 py-2 text-left text-gray-500">#</th>
-                  <th className="px-3 py-2 text-left text-gray-500">Nama</th>
-                  <th className="px-3 py-2 text-left text-gray-500">Kategori</th>
-                  <th className="px-3 py-2 text-left text-gray-500">Tgl Perolehan</th>
-                  <th className="px-3 py-2 text-right text-gray-500">Harga</th>
-                  <th className="px-3 py-2 text-right text-gray-500">Residu</th>
-                  <th className="px-3 py-2 text-right text-gray-500">Umur (bln)</th>
-                  <th className="px-3 py-2 text-left text-gray-500">Status</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', color: '#6b7280' }}>#</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', color: '#6b7280' }}>Nama</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', color: '#6b7280' }}>Kategori</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', color: '#6b7280' }}>Tgl Perolehan</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'right', color: '#6b7280' }}>Harga</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'right', color: '#6b7280' }}>Residu</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'right', color: '#6b7280' }}>Umur (bln)</th>
+                  <th style={{ padding: '8px 12px', textAlign: 'left', color: '#6b7280' }}>Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody style={{ borderCollapse: 'collapse' }}>
                 {rows.map((row) => (
-                  <tr key={row.rowNum} className={row.valid ? '' : 'bg-red-50'}>
-                    <td className="px-3 py-2 text-gray-500">{row.rowNum}</td>
-                    <td className="px-3 py-2 text-gray-900">{row.data.name || '—'}</td>
-                    <td className="px-3 py-2 text-gray-700">{row.data.category_id ? categories.find(c => c.id === row.data.category_id)?.code : '—'}</td>
-                    <td className="px-3 py-2 font-mono text-gray-700">{row.data.acquisition_date || '—'}</td>
-                    <td className="px-3 py-2 text-right">{row.data.acquisition_cost ? formatCurrency(row.data.acquisition_cost) : '—'}</td>
-                    <td className="px-3 py-2 text-right">{formatCurrency(row.data.salvage_value)}</td>
-                    <td className="px-3 py-2 text-right">{row.data.useful_life_months || '—'}</td>
-                    <td className="px-3 py-2">
+                  <tr key={row.rowNum} style={{ borderBottom: '1px solid #f3f4f6', backgroundColor: row.valid ? 'transparent' : '#fef2f2' }}>
+                    <td style={{ padding: '8px 12px', color: '#6b7280' }}>{row.rowNum}</td>
+                    <td style={{ padding: '8px 12px', color: '#111827' }}>{row.data.name || '—'}</td>
+                    <td style={{ padding: '8px 12px', color: '#374151' }}>{row.data.category_id ? categories.find(c => c.id === row.data.category_id)?.code : '—'}</td>
+                    <td style={{ padding: '8px 12px', color: '#374151', fontFamily: 'monospace' }}>{row.data.acquisition_date || '—'}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right' }}>{row.data.acquisition_cost ? formatCurrency(row.data.acquisition_cost) : '—'}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right' }}>{formatCurrency(row.data.salvage_value)}</td>
+                    <td style={{ padding: '8px 12px', textAlign: 'right' }}>{row.data.useful_life_months || '—'}</td>
+                    <td style={{ padding: '8px 12px' }}>
                       {row.valid ? (
-                        <span className="flex items-center gap-1 text-green-600"><CheckCircle size={12} /> Valid</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#16a34a' }}><CheckCircle size={12} /> Valid</span>
                       ) : (
-                        <span title={row.errors.join('\n')} className="flex items-center gap-1 text-red-600 cursor-help">
+                        <span title={row.errors.join('\n')} style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#dc2626', cursor: 'help' }}>
                           <XCircle size={12} /> {row.errors.length} error
                         </span>
                       )}
@@ -242,12 +248,12 @@ export default function AssetBulkImportPage() {
 
           {/* Error details */}
           {invalidRows.length > 0 && (
-            <div className="p-4 border-t border-red-100 bg-red-50">
-              <p className="text-xs font-medium text-red-700 mb-2">Detail error:</p>
-              <ul className="text-xs text-red-600 space-y-1">
+            <div style={{ padding: 16, borderTop: '1px solid #fee2e2', backgroundColor: '#fef2f2' }}>
+              <p style={{ fontSize: 12, fontWeight: 500, color: '#b91c1c', marginBottom: 8 }}>Detail error:</p>
+              <ul style={{ fontSize: 12, color: '#dc2626', margin: 0, paddingLeft: 16 }}>
                 {invalidRows.map(row => (
-                  <li key={row.rowNum}>
-                    <span className="font-medium">Baris {row.rowNum}:</span> {row.errors.join(', ')}
+                  <li key={row.rowNum} style={{ marginBottom: 4 }}>
+                    <span style={{ fontWeight: 500 }}>Baris {row.rowNum}:</span> {row.errors.join(', ')}
                   </li>
                 ))}
               </ul>
@@ -260,35 +266,34 @@ export default function AssetBulkImportPage() {
       {validRows.length > 0 && !summary && (
         <Card title={<Typography.Text strong>Pembayaran</Typography.Text>}>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Bayar dari Akun Kas/Bank <span className="text-red-500">*</span>
+            <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 4 }}>
+              Bayar dari Akun Kas/Bank <span style={{ color: '#ef4444' }}>*</span>
             </label>
             <select
               value={paymentAccountId}
               onChange={e => setPaymentAccountId(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+              style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: 4, padding: '8px 12px', fontSize: 14, outline: 'none' }}
             >
               <option value="">-- Pilih akun --</option>
               {cashBankAccounts.map(a => (
                 <option key={a.id} value={a.id}>{a.code} — {a.name}</option>
               ))}
             </select>
-            <p className="text-xs text-gray-400 mt-1">
+            <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>
               Akan diterapkan untuk semua {validRows.length} baris yang valid.
             </p>
           </div>
 
           {/* Progress bar */}
           {importing && (
-            <div>
-              <div className="flex justify-between text-xs text-gray-500 mb-1">
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#6b7280', marginBottom: 4 }}>
                 <span>Mengimpor...</span>
                 <span>{progress}%</span>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div style={{ width: '100%', backgroundColor: '#e5e7eb', borderRadius: 9999, height: 8 }}>
                 <div
-                  className="bg-blue-600 h-2 rounded-full transition-all"
-                  style={{ width: `${progress}%` }}
+                  style={{ backgroundColor: '#2563eb', height: 8, borderRadius: 9999, transition: 'width 0.3s ease', width: `${progress}%` }}
                 />
               </div>
             </div>
@@ -297,7 +302,9 @@ export default function AssetBulkImportPage() {
           <button
             onClick={handleImport}
             disabled={importing || !paymentAccountId}
-            className="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-60 transition-colors font-medium"
+            style={{ width: '100%', padding: '8px 0', backgroundColor: '#2563eb', color: 'white', borderRadius: 4, fontWeight: 500, border: 'none', cursor: importing || !paymentAccountId ? 'not-allowed' : 'pointer', opacity: importing || !paymentAccountId ? 0.6 : 1 }}
+            onMouseEnter={(e) => !e.target.disabled && (e.target.style.backgroundColor = '#1d4ed8')}
+            onMouseLeave={(e) => e.target.style.backgroundColor = '#2563eb'}
           >
             {importing ? `Mengimpor... (${progress}%)` : `Import ${validRows.length} Aset Valid`}
           </button>
@@ -309,20 +316,20 @@ export default function AssetBulkImportPage() {
         <Card title={<Typography.Text strong>Hasil Import</Typography.Text>}>
           <Row gutter={16}>
             <Col span={12}>
-              <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg">
-                <CheckCircle className="text-green-600 shrink-0" size={28} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 16, backgroundColor: '#dcfce7', borderRadius: 8 }}>
+                <CheckCircle style={{ color: '#16a34a', flexShrink: 0 }} size={28} />
                 <div>
-                  <div className="text-2xl font-bold text-green-700">{summary.success}</div>
-                  <div className="text-sm text-green-600">Aset berhasil diimpor</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: '#15803d' }}>{summary.success}</div>
+                  <div style={{ fontSize: 14, color: '#16a34a' }}>Aset berhasil diimpor</div>
                 </div>
               </div>
             </Col>
             <Col span={12}>
-              <div className="flex items-center gap-3 p-4 bg-red-50 rounded-lg">
-                <XCircle className="text-red-500 shrink-0" size={28} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 16, backgroundColor: '#fee2e2', borderRadius: 8 }}>
+                <XCircle style={{ color: '#ef4444', flexShrink: 0 }} size={28} />
                 <div>
-                  <div className="text-2xl font-bold text-red-700">{summary.failed}</div>
-                  <div className="text-sm text-red-600">Gagal diimpor</div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: '#b91c1c' }}>{summary.failed}</div>
+                  <div style={{ fontSize: 14, color: '#dc2626' }}>Gagal diimpor</div>
                 </div>
               </div>
             </Col>
@@ -341,13 +348,17 @@ export default function AssetBulkImportPage() {
           <Space style={{ marginTop: 16 }}>
             <button
               onClick={() => navigate('/assets')}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              style={{ padding: '8px 16px', backgroundColor: '#2563eb', color: 'white', borderRadius: 4, border: 'none', cursor: 'pointer' }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = '#1d4ed8'}
+              onMouseLeave={(e) => e.target.style.backgroundColor = '#2563eb'}
             >
               Lihat Daftar Aset
             </button>
             <button
               onClick={() => { setRows([]); setSummary(null); setProgress(0); if (fileRef.current) fileRef.current.value = '' }}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors"
+              style={{ padding: '8px 16px', border: '1px solid #d1d5db', color: '#374151', borderRadius: 4, backgroundColor: 'white', cursor: 'pointer' }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = '#f9fafb'}
+              onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
             >
               Import Lagi
             </button>

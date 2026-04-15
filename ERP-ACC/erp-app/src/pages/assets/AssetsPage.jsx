@@ -110,21 +110,20 @@ export default function AssetsPage() {
 
       {/* Filter Bar */}
       <Space>
-        <div className="relative">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <div style={{ position: 'relative' }}>
+          <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
           <input
             type="text"
             value={filters.q}
             onChange={e => handleFilterChange('q', e.target.value)}
             placeholder="Cari kode atau nama aset..."
-            className="pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-            style={{ width: 280 }}
+            style={{ paddingLeft: 36, paddingRight: 12, padding: '8px 12px 8px 36px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, outline: 'none', width: 280 }}
           />
         </div>
         <select
           value={filters.categoryId}
           onChange={e => handleFilterChange('categoryId', e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+          style={{ border: '1px solid #d1d5db', borderRadius: 8, padding: '8px 12px', fontSize: 14, outline: 'none' }}
         >
           <option value="">Semua Kategori</option>
           {categories.map(cat => (
@@ -136,7 +135,7 @@ export default function AssetsPage() {
         <select
           value={filters.status}
           onChange={e => handleFilterChange('status', e.target.value)}
-          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+          style={{ border: '1px solid #d1d5db', borderRadius: 8, padding: '8px 12px', fontSize: 14, outline: 'none' }}
         >
           <option value="all">Semua</option>
           <option value="active">Active</option>
@@ -147,14 +146,14 @@ export default function AssetsPage() {
 
       {/* Table */}
       {assets.length === 0 ? (
-        <div className="border border-gray-200 rounded-lg p-12 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center">
-              <Plus size={32} className="text-gray-400" />
+        <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 48, textAlign: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+            <div style={{ width: 64, height: 64, backgroundColor: '#f3f4f6', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Plus size={32} style={{ color: '#9ca3af' }} />
             </div>
           </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">Belum ada aset tetap</h3>
-          <p className="text-gray-500 mb-6">Mulai dengan menambahkan aset pertama Anda</p>
+          <h3 style={{ fontSize: 18, fontWeight: 500, color: '#111827', marginBottom: 8 }}>Belum ada aset tetap</h3>
+          <p style={{ color: '#6b7280', marginBottom: 24 }}>Mulai dengan menambahkan aset pertama Anda</p>
           {canWrite && (
             <Button variant="primary" onClick={() => navigate('/assets/new')}>
               <Plus size={20} /> Tambah Aset Pertama
@@ -162,47 +161,49 @@ export default function AssetsPage() {
           )}
         </div>
       ) : (
-        <div className="overflow-x-auto border border-gray-200 rounded-lg">
-          <table className="w-full border-collapse">
-            <thead className="bg-gray-100 border-b border-gray-200">
+        <div style={{ overflowX: 'auto', border: '1px solid #e5e7eb', borderRadius: 8 }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead style={{ backgroundColor: '#f3f4f6', borderBottom: '1px solid #e5e7eb' }}>
               <tr>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Kode</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Nama</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Kategori</th>
-                <th className="px-6 py-3 text-left text-sm font-medium text-gray-900">Tgl Perolehan</th>
-                <th className="px-6 py-3 text-right text-sm font-medium text-gray-900">Harga Perolehan</th>
-                <th className="px-6 py-3 text-center text-sm font-medium text-gray-900">Status</th>
-                <th className="px-6 py-3 text-center text-sm font-medium text-gray-900">Aksi</th>
+                <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500, color: '#111827' }}>Kode</th>
+                <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500, color: '#111827' }}>Nama</th>
+                <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500, color: '#111827' }}>Kategori</th>
+                <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500, color: '#111827' }}>Tgl Perolehan</th>
+                <th style={{ padding: '12px 24px', textAlign: 'right', fontSize: 14, fontWeight: 500, color: '#111827' }}>Harga Perolehan</th>
+                <th style={{ padding: '12px 24px', textAlign: 'center', fontSize: 14, fontWeight: 500, color: '#111827' }}>Status</th>
+                <th style={{ padding: '12px 24px', textAlign: 'center', fontSize: 14, fontWeight: 500, color: '#111827' }}>Aksi</th>
               </tr>
             </thead>
             <tbody>
               {assets.map(asset => (
-                <tr key={asset.id} className="border-b border-gray-200 hover:bg-gray-50">
-                  <td className="px-6 py-3 text-sm font-mono text-blue-600 cursor-pointer hover:underline" onClick={() => navigate(`/assets/${asset.id}`)}>
+                <tr key={asset.id} style={{ borderBottom: '1px solid #e5e7eb' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                  <td style={{ padding: '12px 24px', fontSize: 14, fontFamily: 'monospace', color: '#2563eb', cursor: 'pointer' }} onClick={() => navigate(`/assets/${asset.id}`)} onMouseEnter={(e) => e.target.style.textDecoration = 'underline'} onMouseLeave={(e) => e.target.style.textDecoration = 'none'}>
                     {asset.code}
                   </td>
-                  <td className="px-6 py-3 text-sm text-gray-900">
-                    <button onClick={() => navigate(`/assets/${asset.id}`)} className="hover:text-blue-600 hover:underline">
+                  <td style={{ padding: '12px 24px', fontSize: 14, color: '#111827' }}>
+                    <button onClick={() => navigate(`/assets/${asset.id}`)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#111827', textDecoration: 'none' }} onMouseEnter={(e) => { e.target.style.color = '#2563eb'; e.target.style.textDecoration = 'underline' }} onMouseLeave={(e) => { e.target.style.color = '#111827'; e.target.style.textDecoration = 'none' }}>
                       {asset.name}
                     </button>
                   </td>
-                  <td className="px-6 py-3 text-sm text-gray-700">
+                  <td style={{ padding: '12px 24px', fontSize: 14, color: '#374151' }}>
                     {asset.category?.name || '—'}
                   </td>
-                  <td className="px-6 py-3 text-sm text-gray-700">
+                  <td style={{ padding: '12px 24px', fontSize: 14, color: '#374151' }}>
                     {formatDate(asset.acquisition_date)}
                   </td>
-                  <td className="px-6 py-3 text-sm text-right font-medium text-gray-900">
+                  <td style={{ padding: '12px 24px', fontSize: 14, textAlign: 'right', fontWeight: 500, color: '#111827' }}>
                     {formatCurrency(asset.acquisition_cost)}
                   </td>
-                  <td className="px-6 py-3 text-center">
+                  <td style={{ padding: '12px 24px', textAlign: 'center' }}>
                     {getStatusTag(asset.status)}
                   </td>
-                  <td className="px-6 py-3 text-center">
+                  <td style={{ padding: '12px 24px', textAlign: 'center' }}>
                     <Space justify="center">
                       <button
                         onClick={() => navigate(`/assets/${asset.id}`)}
-                        className="text-gray-600 hover:text-blue-600 transition"
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#4b5563' }}
+                        onMouseEnter={(e) => e.target.style.color = '#2563eb'}
+                        onMouseLeave={(e) => e.target.style.color = '#4b5563'}
                         title="View"
                       >
                         <Eye size={18} />
@@ -210,7 +211,9 @@ export default function AssetsPage() {
                       {canWrite && (
                         <button
                           onClick={() => navigate(`/assets/${asset.id}/edit`)}
-                          className="text-gray-600 hover:text-blue-600 transition"
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#4b5563' }}
+                          onMouseEnter={(e) => e.target.style.color = '#2563eb'}
+                          onMouseLeave={(e) => e.target.style.color = '#4b5563'}
                           title="Edit"
                         >
                           <Edit2 size={18} />
@@ -220,7 +223,14 @@ export default function AssetsPage() {
                         <button
                           onClick={() => navigate(`/assets/${asset.id}/dispose`)}
                           disabled={asset.status !== 'active'}
-                          className={`transition ${asset.status === 'active' ? 'text-gray-600 hover:text-red-600' : 'text-gray-300 cursor-not-allowed'}`}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            cursor: asset.status === 'active' ? 'pointer' : 'not-allowed',
+                            color: asset.status === 'active' ? '#4b5563' : '#d1d5db',
+                          }}
+                          onMouseEnter={(e) => asset.status === 'active' && (e.target.style.color = '#dc2626')}
+                          onMouseLeave={(e) => asset.status === 'active' && (e.target.style.color = '#4b5563')}
                           title={asset.status === 'active' ? 'Dispose' : 'Hanya aktif dapat dibuang'}
                         >
                           <Trash2 size={18} />

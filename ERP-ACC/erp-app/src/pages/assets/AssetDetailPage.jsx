@@ -83,8 +83,8 @@ export default function AssetDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-gray-400">Memuat data...</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+        <div style={{ color: '#9ca3af' }}>Memuat data...</div>
       </div>
     )
   }
@@ -94,11 +94,13 @@ export default function AssetDetailPage() {
       <div style={{ padding: 24 }}>
         <button
           onClick={() => navigate('/assets')}
-          className="mb-4 flex items-center gap-2 text-gray-500 hover:text-gray-700"
+          style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#6b7280', marginBottom: 16, background: 'none', border: 'none', cursor: 'pointer' }}
+          onMouseEnter={(e) => e.target.style.color = '#374151'}
+          onMouseLeave={(e) => e.target.style.color = '#6b7280'}
         >
           <ArrowLeft size={18} /> Kembali
         </button>
-        <div className="text-red-600">{error || 'Aset tidak ditemukan'}</div>
+        <div style={{ color: '#dc2626' }}>{error || 'Aset tidak ditemukan'}</div>
       </div>
     )
   }
@@ -114,7 +116,9 @@ export default function AssetDetailPage() {
       {/* Back button */}
       <button
         onClick={() => navigate('/assets')}
-        className="flex items-center gap-2 text-gray-500 hover:text-gray-700"
+        style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer' }}
+        onMouseEnter={(e) => e.target.style.color = '#374151'}
+        onMouseLeave={(e) => e.target.style.color = '#6b7280'}
       >
         <ArrowLeft size={18} /> Kembali
       </button>
@@ -144,7 +148,9 @@ export default function AssetDetailPage() {
           {canWrite && (
             <button
               onClick={() => navigate(`/assets/${id}/edit`)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', backgroundColor: '#2563eb', color: 'white', borderRadius: 4, border: 'none', cursor: 'pointer' }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = '#1d4ed8'}
+              onMouseLeave={(e) => e.target.style.backgroundColor = '#2563eb'}
             >
               <Edit2 size={16} /> Edit
             </button>
@@ -153,11 +159,19 @@ export default function AssetDetailPage() {
             <button
               onClick={() => navigate(`/assets/${id}/dispose`)}
               disabled={asset.status === 'disposed'}
-              className={`flex items-center gap-2 px-4 py-2 rounded transition-colors ${
-                asset.status === 'disposed'
-                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                  : 'bg-red-100 text-red-600 hover:bg-red-200'
-              }`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                padding: '8px 16px',
+                borderRadius: 4,
+                border: 'none',
+                cursor: asset.status === 'disposed' ? 'not-allowed' : 'pointer',
+                backgroundColor: asset.status === 'disposed' ? '#f3f4f6' : '#fee2e2',
+                color: asset.status === 'disposed' ? '#9ca3af' : '#dc2626',
+              }}
+              onMouseEnter={(e) => asset.status !== 'disposed' && (e.target.style.backgroundColor = '#fecaca')}
+              onMouseLeave={(e) => asset.status !== 'disposed' && (e.target.style.backgroundColor = '#fee2e2')}
             >
               <Trash2 size={16} /> Lepas Aset
             </button>
@@ -179,34 +193,55 @@ export default function AssetDetailPage() {
 
       {/* Tabs */}
       <Card bodyStyle={{ padding: 0 }}>
-        <div className="border-b border-gray-200 flex">
+        <div style={{ borderBottom: '1px solid #e5e7eb', display: 'flex' }}>
           <button
             onClick={() => setActiveTab('schedule')}
-            className={`px-6 py-3 font-medium transition-colors ${
-              activeTab === 'schedule'
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
+            style={{
+              padding: '12px 24px',
+              fontWeight: 500,
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: activeTab === 'schedule' ? '#2563eb' : '#6b7280',
+              borderBottom: activeTab === 'schedule' ? '2px solid #2563eb' : 'none',
+              marginBottom: activeTab === 'schedule' ? 0 : 2,
+            }}
+            onMouseEnter={(e) => activeTab !== 'schedule' && (e.target.style.color = '#374151')}
+            onMouseLeave={(e) => activeTab !== 'schedule' && (e.target.style.color = '#6b7280')}
           >
             Jadwal Penyusutan
           </button>
           <button
             onClick={() => setActiveTab('journals')}
-            className={`px-6 py-3 font-medium transition-colors ${
-              activeTab === 'journals'
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
+            style={{
+              padding: '12px 24px',
+              fontWeight: 500,
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: activeTab === 'journals' ? '#2563eb' : '#6b7280',
+              borderBottom: activeTab === 'journals' ? '2px solid #2563eb' : 'none',
+              marginBottom: activeTab === 'journals' ? 0 : 2,
+            }}
+            onMouseEnter={(e) => activeTab !== 'journals' && (e.target.style.color = '#374151')}
+            onMouseLeave={(e) => activeTab !== 'journals' && (e.target.style.color = '#6b7280')}
           >
             Riwayat Jurnal
           </button>
           <button
             onClick={() => setActiveTab('audit')}
-            className={`px-6 py-3 font-medium transition-colors ${
-              activeTab === 'audit'
-                ? 'text-blue-600 border-b-2 border-blue-600'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
+            style={{
+              padding: '12px 24px',
+              fontWeight: 500,
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: activeTab === 'audit' ? '#2563eb' : '#6b7280',
+              borderBottom: activeTab === 'audit' ? '2px solid #2563eb' : 'none',
+              marginBottom: activeTab === 'audit' ? 0 : 2,
+            }}
+            onMouseEnter={(e) => activeTab !== 'audit' && (e.target.style.color = '#374151')}
+            onMouseLeave={(e) => activeTab !== 'audit' && (e.target.style.color = '#6b7280')}
           >
             Audit Log
           </button>
@@ -223,13 +258,13 @@ export default function AssetDetailPage() {
                 <Typography.Text type="secondary">Tidak ada jurnal.</Typography.Text>
               ) : (
                 journals.map(j => (
-                  <div key={j.id} className="border border-gray-200 rounded p-3 hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => navigate(`/accounting/journals/${j.id}`)}>
+                  <div key={j.id} style={{ border: '1px solid #e5e7eb', borderRadius: 4, padding: 12, cursor: 'pointer' }} onClick={() => navigate(`/accounting/journals/${j.id}`)} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#f9fafb'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
                     <Flex justify="space-between" align="flex-start">
                       <div>
-                        <div className="font-medium text-gray-900">{j.journal_number}</div>
+                        <div style={{ fontWeight: 500, color: '#111827' }}>{j.journal_number}</div>
                         <Typography.Text type="secondary" style={{ fontSize: 13 }}>{j.description}</Typography.Text>
                       </div>
-                      <div className="text-right">
+                      <div style={{ textAlign: 'right' }}>
                         <Typography.Text type="secondary" style={{ fontSize: 13 }}>{formatDate(j.date)}</Typography.Text>
                         <div style={{ marginTop: 4 }}>
                           <Tag color={SOURCE_TAG_COLOR[j.source] ?? 'default'}>{j.source}</Tag>
@@ -248,10 +283,10 @@ export default function AssetDetailPage() {
                 <Typography.Text type="secondary">Tidak ada riwayat perubahan.</Typography.Text>
               ) : (
                 auditLogs.map(log => (
-                  <div key={log.id} className="border border-gray-200 rounded p-3">
+                  <div key={log.id} style={{ border: '1px solid #e5e7eb', borderRadius: 4, padding: 12 }}>
                     <Flex justify="space-between" align="flex-start">
                       <div>
-                        <div className="font-medium text-gray-900 capitalize">{log.action}</div>
+                        <div style={{ fontWeight: 500, color: '#111827', textTransform: 'capitalize' }}>{log.action}</div>
                         <Typography.Text type="secondary" style={{ fontSize: 12 }}>{log.table_name}</Typography.Text>
                       </div>
                       <Typography.Text type="secondary" style={{ fontSize: 13 }}>
@@ -259,13 +294,13 @@ export default function AssetDetailPage() {
                       </Typography.Text>
                     </Flex>
                     {log.action !== 'create' && log.old_data && (
-                      <div className="text-xs text-gray-400 mt-2">
-                        <span className="font-mono text-red-600">- {JSON.stringify(log.old_data).slice(0, 50)}</span>
+                      <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 8 }}>
+                        <span style={{ fontFamily: 'monospace', color: '#dc2626' }}>- {JSON.stringify(log.old_data).slice(0, 50)}</span>
                       </div>
                     )}
                     {log.new_data && (
-                      <div className="text-xs text-gray-400">
-                        <span className="font-mono text-green-600">+ {JSON.stringify(log.new_data).slice(0, 50)}</span>
+                      <div style={{ fontSize: 12, color: '#9ca3af' }}>
+                        <span style={{ fontFamily: 'monospace', color: '#16a34a' }}>+ {JSON.stringify(log.new_data).slice(0, 50)}</span>
                       </div>
                     )}
                   </div>

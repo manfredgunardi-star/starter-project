@@ -99,7 +99,9 @@ export default function DepreciationRunPage() {
     <Space direction="vertical" style={{ width: '100%', padding: 24 }}>
       <button
         onClick={() => step === 'select' ? navigate('/assets') : setStep(step === 'preview' ? 'select' : 'preview')}
-        className="flex items-center gap-2 text-gray-500 hover:text-gray-700"
+        style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer' }}
+        onMouseEnter={(e) => e.target.style.color = '#374151'}
+        onMouseLeave={(e) => e.target.style.color = '#6b7280'}
       >
         <ArrowLeft size={18} /> {step === 'select' ? 'Kembali ke Daftar Aset' : 'Kembali'}
       </button>
@@ -118,27 +120,27 @@ export default function DepreciationRunPage() {
         <Card title={<Typography.Text strong>Periode Penyusutan</Typography.Text>}>
           <Row gutter={[16, 16]}>
             <Col span={12}>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Dari Periode <span className="text-red-500">*</span>
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 4 }}>
+                Dari Periode <span style={{ color: '#ef4444' }}>*</span>
               </label>
               <input
                 type="month"
                 name="period_from"
                 value={form.period_from}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: 4, padding: '8px 12px', fontSize: 14, outline: 'none' }}
               />
             </Col>
             <Col span={12}>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Sampai Periode <span className="text-red-500">*</span>
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 4 }}>
+                Sampai Periode <span style={{ color: '#ef4444' }}>*</span>
               </label>
               <input
                 type="month"
                 name="period_to"
                 value={form.period_to}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: 4, padding: '8px 12px', fontSize: 14, outline: 'none' }}
               />
             </Col>
             <Col span={12}>
@@ -149,7 +151,7 @@ export default function DepreciationRunPage() {
               />
             </Col>
             <Col span={12}>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 4 }}>
                 Template Keterangan Jurnal
               </label>
               <input
@@ -158,9 +160,9 @@ export default function DepreciationRunPage() {
                 value={form.description_template}
                 onChange={handleChange}
                 placeholder="Penyusutan {asset} — {period}"
-                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: 4, padding: '8px 12px', fontSize: 14, outline: 'none' }}
               />
-              <p className="text-xs text-gray-400 mt-1">Gunakan {'{asset}'} dan {'{period}'} sebagai placeholder.</p>
+              <p style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>Gunakan {'{asset}'} dan {'{period}'} sebagai placeholder.</p>
             </Col>
           </Row>
           <Flex justify="flex-end" style={{ marginTop: 16 }}>
@@ -168,7 +170,9 @@ export default function DepreciationRunPage() {
               <button
                 onClick={handlePreview}
                 disabled={loading}
-                className="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-60 transition-colors"
+                style={{ padding: '8px 20px', backgroundColor: '#2563eb', color: 'white', borderRadius: 4, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.6 : 1 }}
+                onMouseEnter={(e) => !loading && (e.target.style.backgroundColor = '#1d4ed8')}
+                onMouseLeave={(e) => e.target.style.backgroundColor = '#2563eb'}
               >
                 {loading ? 'Memuat...' : 'Preview Penyusutan →'}
               </button>
@@ -213,7 +217,9 @@ export default function DepreciationRunPage() {
           <Flex justify="space-between">
             <button
               onClick={() => setStep('select')}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors"
+              style={{ padding: '8px 16px', border: '1px solid #d1d5db', color: '#374151', borderRadius: 4, backgroundColor: 'white', cursor: 'pointer' }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = '#f9fafb'}
+              onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
             >
               ← Kembali
             </button>
@@ -221,7 +227,9 @@ export default function DepreciationRunPage() {
               <button
                 onClick={handlePost}
                 disabled={loading || preview.length === 0}
-                className="px-5 py-2 bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-60 transition-colors"
+                style={{ padding: '8px 20px', backgroundColor: '#16a34a', color: 'white', borderRadius: 4, border: 'none', cursor: loading || preview.length === 0 ? 'not-allowed' : 'pointer', opacity: loading || preview.length === 0 ? 0.6 : 1 }}
+                onMouseEnter={(e) => (loading || preview.length === 0) || (e.target.style.backgroundColor = '#15803d')}
+                onMouseLeave={(e) => (loading || preview.length === 0) || (e.target.style.backgroundColor = '#16a34a')}
               >
                 {loading ? 'Memposting...' : 'Confirm & Post'}
               </button>
@@ -239,20 +247,20 @@ export default function DepreciationRunPage() {
           <Card title={<Typography.Text strong>Hasil Posting</Typography.Text>}>
             <Row gutter={16}>
               <Col span={12}>
-                <div className="flex items-center gap-3 p-4 bg-green-50 rounded-lg">
-                  <CheckCircle className="text-green-600 shrink-0" size={28} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 16, backgroundColor: '#dcfce7', borderRadius: 8 }}>
+                  <CheckCircle style={{ color: '#16a34a', flexShrink: 0 }} size={28} />
                   <div>
-                    <div className="text-2xl font-bold text-green-700">{result.posted}</div>
-                    <div className="text-sm text-green-600">Jurnal terposting</div>
+                    <div style={{ fontSize: 24, fontWeight: 700, color: '#15803d' }}>{result.posted}</div>
+                    <div style={{ fontSize: 14, color: '#16a34a' }}>Jurnal terposting</div>
                   </div>
                 </div>
               </Col>
               <Col span={12}>
-                <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-lg">
-                  <SkipForward className="text-gray-500 shrink-0" size={28} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 16, backgroundColor: '#f3f4f6', borderRadius: 8 }}>
+                  <SkipForward style={{ color: '#6b7280', flexShrink: 0 }} size={28} />
                   <div>
-                    <div className="text-2xl font-bold text-gray-700">{result.skipped}</div>
-                    <div className="text-sm text-gray-500">Dilewati (sudah diposting)</div>
+                    <div style={{ fontSize: 24, fontWeight: 700, color: '#374151' }}>{result.skipped}</div>
+                    <div style={{ fontSize: 14, color: '#6b7280' }}>Dilewati (sudah diposting)</div>
                   </div>
                 </div>
               </Col>
@@ -278,7 +286,9 @@ export default function DepreciationRunPage() {
           <Flex justify="flex-end">
             <button
               onClick={() => navigate('/assets')}
-              className="px-5 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+              style={{ padding: '8px 20px', backgroundColor: '#2563eb', color: 'white', borderRadius: 4, border: 'none', cursor: 'pointer' }}
+              onMouseEnter={(e) => e.target.style.backgroundColor = '#1d4ed8'}
+              onMouseLeave={(e) => e.target.style.backgroundColor = '#2563eb'}
             >
               Kembali ke Daftar Aset
             </button>

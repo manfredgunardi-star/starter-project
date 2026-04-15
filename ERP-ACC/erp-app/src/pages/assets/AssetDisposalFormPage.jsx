@@ -108,7 +108,7 @@ export default function AssetDisposalFormPage() {
   if (!asset) {
     return (
       <div style={{ padding: 24 }}>
-        <button onClick={() => navigate('/assets')} className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4">
+        <button onClick={() => navigate('/assets')} style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#6b7280', marginBottom: 16, background: 'none', border: 'none', cursor: 'pointer' }} onMouseEnter={(e) => e.target.style.color = '#374151'} onMouseLeave={(e) => e.target.style.color = '#6b7280'}>
           <ArrowLeft size={18} /> Kembali
         </button>
         <Typography.Text type="danger">Aset tidak ditemukan</Typography.Text>
@@ -118,7 +118,7 @@ export default function AssetDisposalFormPage() {
 
   return (
     <Space direction="vertical" style={{ width: '100%', maxWidth: 672, padding: 24 }}>
-      <button onClick={() => navigate(`/assets/${id}`)} className="flex items-center gap-2 text-gray-500 hover:text-gray-700">
+      <button onClick={() => navigate(`/assets/${id}`)} style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#6b7280', background: 'none', border: 'none', cursor: 'pointer' }} onMouseEnter={(e) => e.target.style.color = '#374151'} onMouseLeave={(e) => e.target.style.color = '#6b7280'}>
         <ArrowLeft size={18} /> Kembali ke Detail Aset
       </button>
 
@@ -150,31 +150,31 @@ export default function AssetDisposalFormPage() {
 
         {/* Tipe disposal */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Tipe Pelepasan <span className="text-red-500">*</span>
+          <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 8 }}>
+            Tipe Pelepasan <span style={{ color: '#ef4444' }}>*</span>
           </label>
-          <div className="flex gap-6">
-            <label className="flex items-center gap-2 cursor-pointer">
+          <div style={{ display: 'flex', gap: 24 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
               <input
                 type="radio"
                 name="disposal_type"
                 value="sale"
                 checked={form.disposal_type === 'sale'}
                 onChange={handleChange}
-                className="text-blue-600"
+                style={{ accentColor: '#2563eb' }}
               />
-              <span className="text-sm text-gray-700">Penjualan</span>
+              <span style={{ fontSize: 14, color: '#374151' }}>Penjualan</span>
             </label>
-            <label className="flex items-center gap-2 cursor-pointer">
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
               <input
                 type="radio"
                 name="disposal_type"
                 value="writeoff"
                 checked={form.disposal_type === 'writeoff'}
                 onChange={handleChange}
-                className="text-blue-600"
+                style={{ accentColor: '#2563eb' }}
               />
-              <span className="text-sm text-gray-700">Penghapusan (Write-off)</span>
+              <span style={{ fontSize: 14, color: '#374151' }}>Penghapusan (Write-off)</span>
             </label>
           </div>
         </div>
@@ -183,8 +183,8 @@ export default function AssetDisposalFormPage() {
         {form.disposal_type === 'sale' && (
           <>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Harga Jual <span className="text-red-500">*</span>
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 4 }}>
+                Harga Jual <span style={{ color: '#ef4444' }}>*</span>
               </label>
               <input
                 type="number"
@@ -193,18 +193,18 @@ export default function AssetDisposalFormPage() {
                 onChange={handleChange}
                 min="0"
                 placeholder="0"
-                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: 4, padding: '8px 12px', fontSize: 14, outline: 'none' }}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Akun Kas/Bank Penerimaan <span className="text-red-500">*</span>
+              <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 4 }}>
+                Akun Kas/Bank Penerimaan <span style={{ color: '#ef4444' }}>*</span>
               </label>
               <select
                 name="payment_account_id"
                 value={form.payment_account_id}
                 onChange={handleChange}
-                className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+                style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: 4, padding: '8px 12px', fontSize: 14, outline: 'none' }}
               >
                 <option value="">-- Pilih akun --</option>
                 {cashBankAccounts.map(a => (
@@ -217,7 +217,7 @@ export default function AssetDisposalFormPage() {
 
         {/* Notes */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 4 }}>
             Keterangan
           </label>
           <textarea
@@ -225,7 +225,7 @@ export default function AssetDisposalFormPage() {
             value={form.notes}
             onChange={handleChange}
             rows={2}
-            className="w-full border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-300"
+            style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: 4, padding: '8px 12px', fontSize: 14, outline: 'none', fontFamily: 'inherit' }}
           />
         </div>
 
@@ -233,7 +233,9 @@ export default function AssetDisposalFormPage() {
         <button
           onClick={handlePreview}
           disabled={loadingPreview}
-          className="w-full py-2 border border-blue-600 text-blue-600 rounded hover:bg-blue-50 transition-colors font-medium text-sm disabled:opacity-60"
+          style={{ width: '100%', padding: '8px 0', border: '1px solid #2563eb', color: '#2563eb', borderRadius: 4, fontWeight: 500, fontSize: 14, backgroundColor: 'white', cursor: loadingPreview ? 'not-allowed' : 'pointer', opacity: loadingPreview ? 0.6 : 1 }}
+          onMouseEnter={(e) => !loadingPreview && (e.target.style.backgroundColor = '#eff6ff')}
+          onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
         >
           {loadingPreview ? 'Menghitung...' : 'Preview Disposal'}
         </button>
@@ -253,11 +255,17 @@ export default function AssetDisposalFormPage() {
         <button
           onClick={handleConfirm}
           disabled={!preview || saving}
-          className={`px-6 py-2 rounded font-medium transition-colors ${
-            !preview || saving
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-              : 'bg-red-600 text-white hover:bg-red-700'
-          }`}
+          style={{
+            padding: '8px 24px',
+            borderRadius: 4,
+            fontWeight: 500,
+            border: 'none',
+            cursor: !preview || saving ? 'not-allowed' : 'pointer',
+            backgroundColor: !preview || saving ? '#f3f4f6' : '#dc2626',
+            color: !preview || saving ? '#9ca3af' : 'white',
+          }}
+          onMouseEnter={(e) => (!preview || saving) || (e.target.style.backgroundColor = '#b91c1c')}
+          onMouseLeave={(e) => (!preview || saving) || (e.target.style.backgroundColor = '#dc2626')}
         >
           {saving ? 'Memproses...' : 'Konfirmasi Pelepasan Aset'}
         </button>

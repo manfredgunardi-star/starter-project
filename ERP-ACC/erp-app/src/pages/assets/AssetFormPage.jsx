@@ -176,10 +176,10 @@ export default function AssetFormPage() {
       ? {
           disabled: true,
           title: 'Terkunci – sudah ada jurnal penyusutan terposting',
-          className: 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-100 text-gray-500 cursor-not-allowed',
+          style: { width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 14, backgroundColor: '#f3f4f6', color: '#6b7280', cursor: 'not-allowed' },
         }
       : {
-          className: 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500',
+          style: { width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, outline: 'none' },
         }
 
   return (
@@ -207,8 +207,8 @@ export default function AssetFormPage() {
               <Space direction="vertical" style={{ width: '100%' }} size="middle">
                 {/* Name */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Nama Aset <span className="text-red-500">*</span>
+                  <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 4 }}>
+                    Nama Aset <span style={{ color: '#ef4444' }}>*</span>
                   </label>
                   <input
                     type="text"
@@ -216,14 +216,14 @@ export default function AssetFormPage() {
                     value={form.name}
                     onChange={e => handleFieldChange('name', e.target.value)}
                     placeholder="Contoh: Truk Hino 500"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, outline: 'none' }}
                   />
                 </div>
 
                 {/* Category */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Kategori Aset {!isEdit && <span className="text-red-500">*</span>}
+                  <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 4 }}>
+                    Kategori Aset {!isEdit && <span style={{ color: '#ef4444' }}>*</span>}
                   </label>
                   <select
                     required={!isEdit}
@@ -231,10 +231,10 @@ export default function AssetFormPage() {
                     onChange={e => handleCategoryChange(e.target.value)}
                     disabled={isEdit && hasPosted}
                     title={isEdit && hasPosted ? 'Terkunci – sudah ada jurnal penyusutan terposting' : undefined}
-                    className={
+                    style={
                       isEdit && hasPosted
-                        ? 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-100 text-gray-500 cursor-not-allowed'
-                        : 'w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500'
+                        ? { width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 14, backgroundColor: '#f3f4f6', color: '#6b7280', cursor: 'not-allowed' }
+                        : { width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, outline: 'none' }
                     }
                   >
                     <option value="">Pilih kategori...</option>
@@ -248,29 +248,29 @@ export default function AssetFormPage() {
 
                 {/* Location */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Lokasi <span className="text-gray-400 font-normal">(opsional)</span>
+                  <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 4 }}>
+                    Lokasi <span style={{ color: '#9ca3af', fontWeight: 'normal' }}>(opsional)</span>
                   </label>
                   <input
                     type="text"
                     value={form.location || ''}
                     onChange={e => handleFieldChange('location', e.target.value)}
                     placeholder="Contoh: Gudang Utama"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, outline: 'none' }}
                   />
                 </div>
 
                 {/* Description */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Keterangan <span className="text-gray-400 font-normal">(opsional)</span>
+                  <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 4 }}>
+                    Keterangan <span style={{ color: '#9ca3af', fontWeight: 'normal' }}>(opsional)</span>
                   </label>
                   <textarea
                     rows={3}
                     value={form.description || ''}
                     onChange={e => handleFieldChange('description', e.target.value)}
                     placeholder="Catatan tambahan tentang aset ini..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 resize-y"
+                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, outline: 'none', fontFamily: 'inherit', resize: 'vertical' }}
                   />
                 </div>
               </Space>
@@ -282,7 +282,7 @@ export default function AssetFormPage() {
                 <Flex justify="space-between" align="center">
                   <span>Keuangan</span>
                   {hasPosted && (
-                    <span className="flex items-center gap-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 500, color: '#a16207', backgroundColor: '#fef3c7', border: '1px solid #fcd34d', borderRadius: 4, padding: '4px 8px' }}>
                       <Lock size={12} />
                       Terkunci – ada jurnal terposting
                     </span>
@@ -310,8 +310,8 @@ export default function AssetFormPage() {
 
                 {/* Acquisition Cost */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Harga Perolehan (Rp) {!hasPosted && <span className="text-red-500">*</span>}
+                  <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 4 }}>
+                    Harga Perolehan (Rp) {!hasPosted && <span style={{ color: '#ef4444' }}>*</span>}
                   </label>
                   <input
                     type="number"
@@ -327,7 +327,7 @@ export default function AssetFormPage() {
 
                 {/* Salvage Value */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 4 }}>
                     Nilai Sisa (Rp)
                   </label>
                   <input
@@ -343,8 +343,8 @@ export default function AssetFormPage() {
 
                 {/* Useful Life */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Masa Manfaat (bulan) {!hasPosted && <span className="text-red-500">*</span>}
+                  <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 4 }}>
+                    Masa Manfaat (bulan) {!hasPosted && <span style={{ color: '#ef4444' }}>*</span>}
                   </label>
                   <input
                     type="number"
@@ -360,15 +360,15 @@ export default function AssetFormPage() {
 
                 {/* Depreciation Start Date (read-only) */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label style={{ display: 'block', fontSize: 14, fontWeight: 500, color: '#374151', marginBottom: 4 }}>
                     Mulai Penyusutan
-                    <span className="ml-1 text-xs font-normal text-gray-400">(otomatis: awal bulan setelah perolehan)</span>
+                    <span style={{ marginLeft: 4, fontSize: 12, fontWeight: 'normal', color: '#9ca3af' }}>(otomatis: awal bulan setelah perolehan)</span>
                   </label>
                   <input
                     type="text"
                     readOnly
                     value={depreciationStartDate || '—'}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-600"
+                    style={{ width: '100%', padding: '8px 12px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 14, backgroundColor: '#f9fafb', color: '#4b5563' }}
                   />
                 </div>
               </Space>
@@ -394,27 +394,27 @@ export default function AssetFormPage() {
                 <Space direction="vertical" style={{ width: '100%' }}>
                   <Row gutter={12}>
                     <Col span={12}>
-                      <div className="bg-white rounded border border-blue-100 p-3">
-                        <p className="text-xs text-gray-500 mb-1">Per bulan</p>
-                        <p className="font-semibold text-gray-900">{formatCurrency(monthly)}</p>
+                      <div style={{ backgroundColor: 'white', borderRadius: 4, border: '1px solid #dbeafe', padding: 12 }}>
+                        <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>Per bulan</p>
+                        <p style={{ fontWeight: 600, color: '#111827' }}>{formatCurrency(monthly)}</p>
                       </div>
                     </Col>
                     <Col span={12}>
-                      <div className="bg-white rounded border border-blue-100 p-3">
-                        <p className="text-xs text-gray-500 mb-1">Per tahun</p>
-                        <p className="font-semibold text-gray-900">{formatCurrency(yearly)}</p>
+                      <div style={{ backgroundColor: 'white', borderRadius: 4, border: '1px solid #dbeafe', padding: 12 }}>
+                        <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>Per tahun</p>
+                        <p style={{ fontWeight: 600, color: '#111827' }}>{formatCurrency(yearly)}</p>
                       </div>
                     </Col>
                     <Col span={12} style={{ marginTop: 12 }}>
-                      <div className="bg-white rounded border border-blue-100 p-3">
-                        <p className="text-xs text-gray-500 mb-1">Total bulan</p>
-                        <p className="font-semibold text-gray-900">{lifeMonths} bulan</p>
+                      <div style={{ backgroundColor: 'white', borderRadius: 4, border: '1px solid #dbeafe', padding: 12 }}>
+                        <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>Total bulan</p>
+                        <p style={{ fontWeight: 600, color: '#111827' }}>{lifeMonths} bulan</p>
                       </div>
                     </Col>
                     <Col span={12} style={{ marginTop: 12 }}>
-                      <div className="bg-white rounded border border-blue-100 p-3">
-                        <p className="text-xs text-gray-500 mb-1">Berakhir</p>
-                        <p className="font-semibold text-gray-900">{endDate || '—'}</p>
+                      <div style={{ backgroundColor: 'white', borderRadius: 4, border: '1px solid #dbeafe', padding: 12 }}>
+                        <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 4 }}>Berakhir</p>
+                        <p style={{ fontWeight: 600, color: '#111827' }}>{endDate || '—'}</p>
                       </div>
                     </Col>
                   </Row>
