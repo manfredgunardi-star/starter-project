@@ -5,44 +5,52 @@ import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import DateInput from '../../components/ui/DateInput'
 import { Search } from 'lucide-react'
+import { Space, Row, Col, Card, Typography, Alert, Statistic, Table } from 'antd'
 
-function yearStart() {
-  return new Date().getFullYear() + '-01-01'
-}
+const { Title, Text } = Typography
+
 function today() {
   return new Date().toISOString().slice(0, 10)
 }
 
-function Section({ title, accounts, className }) {
+function Section({ title, accounts }) {
   const total = accounts.reduce((s, a) => s + (Number(a.balance) || 0), 0)
+
+  const columns = [
+    { dataIndex: 'code', key: 'code', width: 100, render: v => <Text type="secondary">{v}</Text> },
+    { dataIndex: 'name', key: 'name', render: v => <Text>{v}</Text> },
+    {
+      dataIndex: 'balance',
+      key: 'balance',
+      align: 'right',
+      render: v => <Text strong>{formatCurrency(v)}</Text>,
+    },
+  ]
+
+  const footer = () => (
+    <Row justify="space-between">
+      <Col><Text strong>Total {title}</Text></Col>
+      <Col><Text strong>{formatCurrency(total)}</Text></Col>
+    </Row>
+  )
+
   return (
-    <div className={`border rounded-lg overflow-hidden ${className}`}>
-      <div className="bg-gray-100 px-4 py-2 font-semibold text-sm text-gray-800 border-b">{title}</div>
-      <table className="w-full">
-        <tbody>
-          {accounts.map(a => (
-            <tr key={a.coa_id} className="border-b border-gray-100">
-              <td className="px-4 py-2 text-sm text-gray-700">{a.code}</td>
-              <td className="px-4 py-2 text-sm text-gray-900">{a.name}</td>
-              <td className="px-4 py-2 text-sm text-right font-medium text-gray-900">
-                {formatCurrency(a.balance)}
-              </td>
-            </tr>
-          ))}
-          {accounts.length === 0 && (
-            <tr>
-              <td colSpan={3} className="px-4 py-4 text-sm text-gray-400 text-center">—</td>
-            </tr>
-          )}
-        </tbody>
-        <tfoot className="border-t-2 border-gray-300 bg-gray-50">
-          <tr>
-            <td colSpan={2} className="px-4 py-2 text-sm font-semibold">Total {title}</td>
-            <td className="px-4 py-2 text-sm font-bold text-right">{formatCurrency(total)}</td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
+    <Card
+      title={<Text strong>{title}</Text>}
+      size="small"
+      styles={{ body: { padding: 0 } }}
+    >
+      <Table
+        dataSource={accounts}
+        columns={columns}
+        rowKey="coa_id"
+        pagination={false}
+        size="small"
+        showHeader={false}
+        footer={footer}
+        locale={{ emptyText: '—' }}
+      />
+    </Card>
   )
 }
 
@@ -56,7 +64,6 @@ export default function BalanceSheetPage() {
     setLoading(true)
     setError(null)
     try {
-      // From epoch to endDate to get cumulative balance
       const balances = await getAccountBalances('2000-01-01', endDate)
       setData(balances || [])
     } catch (err) {
@@ -71,12 +78,13 @@ export default function BalanceSheetPage() {
   const totalAset = byType('asset').reduce((s, a) => s + a.balance, 0)
   const totalKewajiban = byType('liability').reduce((s, a) => s + a.balance, 0)
   const totalModal = byType('equity').reduce((s, a) => s + a.balance, 0)
+  const selisih = Math.abs(totalAset - totalKewajiban - totalModal)
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">Neraca (Balance Sheet)</h1>
+    <Space direction="vertical" style={{ width: '100%' }}>
+      <Title level={2}>Neraca (Balance Sheet)</Title>
 
-      <div className="flex gap-4 items-end">
+      <Space align="end">
         <DateInput
           label="Per Tanggal"
           value={endDate}
@@ -85,56 +93,46 @@ export default function BalanceSheetPage() {
         <Button variant="primary" onClick={handleLoad} loading={loading}>
           <Search size={16} /> Tampilkan
         </Button>
-      </div>
+      </Space>
 
       {loading && <LoadingSpinner message="Memuat neraca..." />}
-      {error && <div className="text-red-600">{error}</div>}
+      {error && <Alert type="error" message={error} showIcon />}
 
       {data && !loading && (
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Left: ASET */}
-            <div className="space-y-4">
-              <Section title="ASET" accounts={byType('asset')} className="border-blue-200" />
-            </div>
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <Row gutter={16}>
+            <Col xs={24} md={12}>
+              <Section title="ASET" accounts={byType('asset')} />
+            </Col>
+            <Col xs={24} md={12}>
+              <Space direction="vertical" style={{ width: '100%' }}>
+                <Section title="KEWAJIBAN" accounts={byType('liability')} />
+                <Section title="MODAL / EKUITAS" accounts={byType('equity')} />
+              </Space>
+            </Col>
+          </Row>
 
-            {/* Right: KEWAJIBAN + MODAL */}
-            <div className="space-y-4">
-              <Section title="KEWAJIBAN" accounts={byType('liability')} className="border-red-200" />
-              <Section title="MODAL / EKUITAS" accounts={byType('equity')} className="border-green-200" />
-            </div>
-          </div>
-
-          {/* Summary */}
-          <div className="border-t-2 border-gray-300 pt-4">
-            <div className="grid grid-cols-3 gap-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-                <p className="text-sm text-blue-700">Total Aset</p>
-                <p className="text-xl font-bold text-blue-900">{formatCurrency(totalAset)}</p>
-              </div>
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-                <p className="text-sm text-red-700">Total Kewajiban</p>
-                <p className="text-xl font-bold text-red-900">{formatCurrency(totalKewajiban)}</p>
-              </div>
-              <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-                <p className="text-sm text-green-700">Total Modal</p>
-                <p className="text-xl font-bold text-green-900">{formatCurrency(totalModal)}</p>
-              </div>
-            </div>
-
-            <div className={`mt-3 p-3 rounded text-sm text-center ${
-              Math.abs(totalAset - totalKewajiban - totalModal) < 0.01
-                ? 'bg-green-50 text-green-700'
-                : 'bg-red-50 text-red-700'
-            }`}>
-              {Math.abs(totalAset - totalKewajiban - totalModal) < 0.01
-                ? '✓ Neraca seimbang — Aset = Kewajiban + Modal'
-                : `⚠ Selisih: ${formatCurrency(Math.abs(totalAset - totalKewajiban - totalModal))}`
+          <Card>
+            <Row gutter={16}>
+              <Col span={8}>
+                <Statistic title="Total Aset" value={totalAset} formatter={v => formatCurrency(v)} valueStyle={{ color: '#1d4ed8' }} />
+              </Col>
+              <Col span={8}>
+                <Statistic title="Total Kewajiban" value={totalKewajiban} formatter={v => formatCurrency(v)} valueStyle={{ color: '#dc2626' }} />
+              </Col>
+              <Col span={8}>
+                <Statistic title="Total Modal" value={totalModal} formatter={v => formatCurrency(v)} valueStyle={{ color: '#16a34a' }} />
+              </Col>
+            </Row>
+            <div style={{ marginTop: 12 }}>
+              {selisih < 0.01
+                ? <Alert type="success" message="Neraca seimbang — Aset = Kewajiban + Modal" showIcon />
+                : <Alert type="error" message={`Selisih: ${formatCurrency(selisih)}`} showIcon />
               }
             </div>
-          </div>
-        </div>
+          </Card>
+        </Space>
       )}
-    </div>
+    </Space>
   )
 }

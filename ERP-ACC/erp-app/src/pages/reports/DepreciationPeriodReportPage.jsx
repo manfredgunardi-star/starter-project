@@ -6,6 +6,9 @@ import { jsPDF } from 'jspdf'
 import 'jspdf-autotable'
 import * as XLSX from 'xlsx'
 import { Download, FileText } from 'lucide-react'
+import { Space, Card, Typography, Alert, Table, Select, Button } from 'antd'
+
+const { Title, Text } = Typography
 
 export default function DepreciationPeriodReportPage() {
   const [periodFrom, setPeriodFrom] = useState(new Date().getFullYear() + '-01')
@@ -42,7 +45,6 @@ export default function DepreciationPeriodReportPage() {
       const { data, error: dErr } = await query.order('period')
       if (dErr) throw dErr
 
-      // Group by period and category
       const grouped = {}
       data.forEach(d => {
         if (categoryId && d.asset.category_id !== categoryId) return
@@ -104,100 +106,115 @@ export default function DepreciationPeriodReportPage() {
 
   const totalAmount = rows.reduce((s, r) => s + r.total, 0)
 
+  const categoryOptions = [
+    { value: '', label: 'Semua' },
+    ...categories.map(c => ({ value: c.id, label: c.name })),
+  ]
+
+  const columns = [
+    { title: 'Periode', dataIndex: 'period', key: 'period', width: 110, render: v => <Text code>{v}</Text> },
+    {
+      title: 'Kategori',
+      key: 'kategori',
+      render: (_, r) => r.categoryName,
+    },
+    {
+      title: 'Jumlah Aset',
+      dataIndex: 'count',
+      key: 'count',
+      align: 'center',
+      render: v => <Text type="secondary">{v}</Text>,
+    },
+    {
+      title: 'Total Penyusutan',
+      dataIndex: 'total',
+      key: 'total',
+      align: 'right',
+      render: v => formatCurrency(v),
+    },
+  ]
+
   return (
-    <div className="space-y-6 p-6">
-      <h1 className="text-3xl font-bold text-gray-900">Penyusutan per Periode</h1>
+    <div style={{ padding: 24 }}>
+      <Space direction="vertical" style={{ width: '100%' }}>
+        <Title level={2}>Penyusutan per Periode</Title>
 
-      <div className="flex gap-4 items-end flex-wrap">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Dari Periode</label>
-          <input
-            type="month"
-            value={periodFrom}
-            onChange={e => setPeriodFrom(e.target.value)}
-            className="border border-gray-300 rounded px-3 py-2 text-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Sampai Periode</label>
-          <input
-            type="month"
-            value={periodTo}
-            onChange={e => setPeriodTo(e.target.value)}
-            className="border border-gray-300 rounded px-3 py-2 text-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
-          <select
-            value={categoryId}
-            onChange={e => setCategoryId(e.target.value)}
-            className="border border-gray-300 rounded px-3 py-2 text-sm"
-          >
-            <option value="">Semua</option>
-            {categories.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-        </div>
-        <button
-          onClick={handleLoad}
-          disabled={loading}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-60 text-sm font-medium"
-        >
-          Tampilkan
-        </button>
-      </div>
+        <Space align="end" wrap>
+          <Space direction="vertical" size={4}>
+            <Text type="secondary" style={{ fontSize: 12 }}>Dari Periode</Text>
+            <input
+              type="month"
+              value={periodFrom}
+              onChange={e => setPeriodFrom(e.target.value)}
+              style={{ border: '1px solid #d9d9d9', borderRadius: 6, padding: '4px 11px', fontSize: 14 }}
+            />
+          </Space>
+          <Space direction="vertical" size={4}>
+            <Text type="secondary" style={{ fontSize: 12 }}>Sampai Periode</Text>
+            <input
+              type="month"
+              value={periodTo}
+              onChange={e => setPeriodTo(e.target.value)}
+              style={{ border: '1px solid #d9d9d9', borderRadius: 6, padding: '4px 11px', fontSize: 14 }}
+            />
+          </Space>
+          <Space direction="vertical" size={4}>
+            <Text type="secondary" style={{ fontSize: 12 }}>Kategori</Text>
+            <Select
+              value={categoryId}
+              onChange={setCategoryId}
+              options={categoryOptions}
+              style={{ width: 160 }}
+            />
+          </Space>
+          <Button type="primary" onClick={handleLoad} loading={loading}>
+            Tampilkan
+          </Button>
+        </Space>
 
-      {error && <div className="text-red-600 text-sm">{error}</div>}
+        {error && <Alert type="error" message={error} showIcon />}
 
-      {rows.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex gap-2">
-            <button onClick={exportPDF} className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm font-medium">
-              <FileText size={16} /> Export PDF
-            </button>
-            <button onClick={exportExcel} className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm font-medium">
-              <Download size={16} /> Export Excel
-            </button>
-          </div>
+        {rows.length > 0 && (
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Space>
+              <Button icon={<FileText size={14} />} onClick={exportPDF}>Export PDF</Button>
+              <Button icon={<Download size={14} />} onClick={exportExcel}>Export Excel</Button>
+            </Space>
 
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-4 py-2 text-left font-medium text-gray-600">Periode</th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-600">Kategori</th>
-                  <th className="px-4 py-2 text-center font-medium text-gray-600">Jumlah Aset</th>
-                  <th className="px-4 py-2 text-right font-medium text-gray-600">Total Penyusutan</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {rows.map((r, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 font-mono">{r.period}</td>
-                    <td className="px-4 py-2">{r.categoryName}</td>
-                    <td className="px-4 py-2 text-center text-gray-600">{r.count}</td>
-                    <td className="px-4 py-2 text-right">{formatCurrency(r.total)}</td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot className="bg-gray-50 border-t border-gray-300 font-semibold">
-                <tr>
-                  <td colSpan="3" className="px-4 py-2">Total</td>
-                  <td className="px-4 py-2 text-right">{formatCurrency(totalAmount)}</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </div>
-      )}
+            <Card styles={{ body: { padding: 0 } }}>
+              <Table
+                dataSource={rows}
+                columns={columns}
+                rowKey={(_, i) => i}
+                pagination={false}
+                size="small"
+                summary={() => (
+                  <Table.Summary.Row>
+                    <Table.Summary.Cell colSpan={3} index={0}>
+                      <Text strong>Total</Text>
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell index={3} align="right">
+                      <Text strong>{formatCurrency(totalAmount)}</Text>
+                    </Table.Summary.Cell>
+                  </Table.Summary.Row>
+                )}
+              />
+            </Card>
+          </Space>
+        )}
 
-      {rows.length === 0 && !loading && !error && (
-        <div className="text-center text-gray-400 py-8">Klik "Tampilkan" untuk melihat laporan.</div>
-      )}
+        {rows.length === 0 && !loading && !error && (
+          <Text type="secondary" style={{ display: 'block', textAlign: 'center', padding: '32px 0' }}>
+            Klik "Tampilkan" untuk melihat laporan.
+          </Text>
+        )}
 
-      {loading && <div className="text-center text-gray-500 py-8">Memuat...</div>}
+        {loading && (
+          <Text type="secondary" style={{ display: 'block', textAlign: 'center', padding: '32px 0' }}>
+            Memuat...
+          </Text>
+        )}
+      </Space>
     </div>
   )
 }

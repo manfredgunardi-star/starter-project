@@ -5,6 +5,9 @@ import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import DateInput from '../../components/ui/DateInput'
 import { Search } from 'lucide-react'
+import { Space, Card, Row, Col, Typography, Alert, Statistic, Divider } from 'antd'
+
+const { Title, Text } = Typography
 
 function yearStart() {
   return new Date().getFullYear() + '-01-01'
@@ -13,27 +16,26 @@ function today() {
   return new Date().toISOString().slice(0, 10)
 }
 
-function Section({ title, accounts, totalLabel, highlight }) {
+function Section({ title, accounts, totalLabel, totalType }) {
   const total = accounts.reduce((s, a) => s + (Number(a.balance) || 0), 0)
   return (
-    <div className="space-y-1">
-      <h3 className="font-semibold text-gray-800 text-sm uppercase tracking-wide border-b border-gray-200 pb-1">
+    <Space direction="vertical" style={{ width: '100%' }}>
+      <Text strong style={{ textTransform: 'uppercase', letterSpacing: '0.05em', borderBottom: '1px solid #e5e7eb', display: 'block', paddingBottom: 4 }}>
         {title}
-      </h3>
+      </Text>
       {accounts.map(a => (
-        <div key={a.coa_id} className="flex justify-between text-sm">
-          <span className="text-gray-700 pl-4">{a.code} — {a.name}</span>
-          <span className="font-medium text-gray-900">{formatCurrency(a.balance)}</span>
-        </div>
+        <Row key={a.coa_id} justify="space-between">
+          <Col><Text style={{ paddingLeft: 16 }}>{a.code} — {a.name}</Text></Col>
+          <Col><Text strong>{formatCurrency(a.balance)}</Text></Col>
+        </Row>
       ))}
-      {accounts.length === 0 && (
-        <div className="text-sm text-gray-400 pl-4">—</div>
-      )}
-      <div className={`flex justify-between text-sm font-semibold border-t border-gray-300 pt-1 mt-1 ${highlight || ''}`}>
-        <span>{totalLabel}</span>
-        <span>{formatCurrency(total)}</span>
-      </div>
-    </div>
+      {accounts.length === 0 && <Text type="secondary" style={{ paddingLeft: 16 }}>—</Text>}
+      <Divider style={{ margin: '4px 0' }} />
+      <Row justify="space-between">
+        <Col><Text strong>{totalLabel}</Text></Col>
+        <Col><Text strong type={totalType}>{formatCurrency(total)}</Text></Col>
+      </Row>
+    </Space>
   )
 }
 
@@ -64,10 +66,10 @@ export default function IncomeStatementPage() {
   const netIncome = totalRevenue - totalExpense
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">Laba Rugi (Income Statement)</h1>
+    <Space direction="vertical" style={{ width: '100%' }}>
+      <Title level={2}>Laba Rugi (Income Statement)</Title>
 
-      <div className="flex gap-4 items-end">
+      <Space align="end">
         <DateInput
           label="Dari Tanggal"
           value={startDate}
@@ -81,57 +83,71 @@ export default function IncomeStatementPage() {
         <Button variant="primary" onClick={handleLoad} loading={loading}>
           <Search size={16} /> Tampilkan
         </Button>
-      </div>
+      </Space>
 
       {loading && <LoadingSpinner message="Memuat laporan laba rugi..." />}
-      {error && <div className="text-red-600">{error}</div>}
+      {error && <Alert type="error" message={error} showIcon />}
 
       {data && !loading && (
-        <div className="bg-white border border-gray-200 rounded-lg p-6 max-w-2xl space-y-6">
-          <Section
-            title="Pendapatan"
-            accounts={byType('revenue')}
-            totalLabel="Total Pendapatan"
-            highlight="text-green-700"
-          />
+        <Card style={{ maxWidth: 640 }}>
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Section
+              title="Pendapatan"
+              accounts={byType('revenue')}
+              totalLabel="Total Pendapatan"
+              totalType="success"
+            />
 
-          <Section
-            title="Beban"
-            accounts={byType('expense')}
-            totalLabel="Total Beban"
-            highlight="text-red-700"
-          />
+            <Section
+              title="Beban"
+              accounts={byType('expense')}
+              totalLabel="Total Beban"
+              totalType="danger"
+            />
 
-          {/* Net income */}
-          <div className={`border-t-2 border-gray-400 pt-4 flex justify-between text-base font-bold ${
-            netIncome >= 0 ? 'text-green-700' : 'text-red-700'
-          }`}>
-            <span>{netIncome >= 0 ? 'Laba Bersih' : 'Rugi Bersih'}</span>
-            <span>{formatCurrency(Math.abs(netIncome))}</span>
-          </div>
+            <Divider style={{ borderTopWidth: 2, margin: '4px 0' }} />
+            <Row justify="space-between">
+              <Col>
+                <Text strong style={{ fontSize: 16 }}>
+                  {netIncome >= 0 ? 'Laba Bersih' : 'Rugi Bersih'}
+                </Text>
+              </Col>
+              <Col>
+                <Text strong type={netIncome >= 0 ? 'success' : 'danger'} style={{ fontSize: 16 }}>
+                  {formatCurrency(Math.abs(netIncome))}
+                </Text>
+              </Col>
+            </Row>
 
-          <div className="grid grid-cols-3 gap-3 pt-2">
-            <div className="bg-green-50 border border-green-200 rounded p-3 text-center">
-              <p className="text-xs text-green-700">Total Pendapatan</p>
-              <p className="font-bold text-green-900">{formatCurrency(totalRevenue)}</p>
-            </div>
-            <div className="bg-red-50 border border-red-200 rounded p-3 text-center">
-              <p className="text-xs text-red-700">Total Beban</p>
-              <p className="font-bold text-red-900">{formatCurrency(totalExpense)}</p>
-            </div>
-            <div className={`border rounded p-3 text-center ${
-              netIncome >= 0 ? 'bg-blue-50 border-blue-200' : 'bg-orange-50 border-orange-200'
-            }`}>
-              <p className={`text-xs ${netIncome >= 0 ? 'text-blue-700' : 'text-orange-700'}`}>
-                {netIncome >= 0 ? 'Laba Bersih' : 'Rugi Bersih'}
-              </p>
-              <p className={`font-bold ${netIncome >= 0 ? 'text-blue-900' : 'text-orange-900'}`}>
-                {formatCurrency(Math.abs(netIncome))}
-              </p>
-            </div>
-          </div>
-        </div>
+            <Row gutter={12} style={{ marginTop: 8 }}>
+              <Col span={8}>
+                <Statistic
+                  title="Total Pendapatan"
+                  value={totalRevenue}
+                  formatter={v => formatCurrency(v)}
+                  valueStyle={{ color: '#16a34a', fontSize: 14 }}
+                />
+              </Col>
+              <Col span={8}>
+                <Statistic
+                  title="Total Beban"
+                  value={totalExpense}
+                  formatter={v => formatCurrency(v)}
+                  valueStyle={{ color: '#dc2626', fontSize: 14 }}
+                />
+              </Col>
+              <Col span={8}>
+                <Statistic
+                  title={netIncome >= 0 ? 'Laba Bersih' : 'Rugi Bersih'}
+                  value={Math.abs(netIncome)}
+                  formatter={v => formatCurrency(v)}
+                  valueStyle={{ color: netIncome >= 0 ? '#1d4ed8' : '#ea580c', fontSize: 14 }}
+                />
+              </Col>
+            </Row>
+          </Space>
+        </Card>
       )}
-    </div>
+    </Space>
   )
 }

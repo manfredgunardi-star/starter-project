@@ -8,6 +8,9 @@ import 'jspdf-autotable'
 import * as XLSX from 'xlsx'
 import { Download, FileText } from 'lucide-react'
 import DateInput from '../../components/ui/DateInput'
+import { Space, Card, Row, Col, Typography, Alert, Table, Select, Button } from 'antd'
+
+const { Title, Text } = Typography
 
 export default function AssetsListReportPage() {
   const [cutOffDate, setCutOffDate] = useState(new Date().toISOString().slice(0, 10))
@@ -30,7 +33,6 @@ export default function AssetsListReportPage() {
     setError('')
     setLoading(true)
     try {
-      // Get assets
       let query = supabase
         .from('assets')
         .select('id, code, name, acquisition_date, acquisition_cost, status, category_id, category:asset_categories(name)')
@@ -42,7 +44,6 @@ export default function AssetsListReportPage() {
       const { data: assets, error: aErr } = await query.order('code')
       if (aErr) throw aErr
 
-      // Get accumulated depreciation for each asset up to cutoff date
       const result = await Promise.all(
         assets.map(async (asset) => {
           const { data: schedules, error: sErr } = await supabase
@@ -132,116 +133,111 @@ export default function AssetsListReportPage() {
     bookValue: rows.reduce((s, r) => s + r.bookValue, 0),
   }
 
+  const columns = [
+    { title: 'Kode', dataIndex: 'code', key: 'code', width: 100, render: v => <Text code>{v}</Text> },
+    { title: 'Nama', dataIndex: 'name', key: 'name' },
+    { title: 'Kategori', dataIndex: 'category', key: 'category', render: v => <Text type="secondary">{v}</Text> },
+    { title: 'Tgl Perolehan', dataIndex: 'acquisitionDate', key: 'acquisitionDate', render: v => <Text code>{formatDate(v)}</Text> },
+    { title: 'Harga Perolehan', dataIndex: 'acquisitionCost', key: 'acquisitionCost', align: 'right', render: v => formatCurrency(v) },
+    { title: 'Akumulasi', dataIndex: 'accumulated', key: 'accumulated', align: 'right', render: v => formatCurrency(v) },
+    { title: 'Nilai Buku', dataIndex: 'bookValue', key: 'bookValue', align: 'right', render: v => <Text strong>{formatCurrency(v)}</Text> },
+  ]
+
+  const categoryOptions = [
+    { value: '', label: 'Semua' },
+    ...categories.map(c => ({ value: c.id, label: c.name })),
+  ]
+
+  const statusOptions = [
+    { value: 'all', label: 'Semua' },
+    { value: 'active', label: 'Aktif' },
+    { value: 'disposed', label: 'Dilepas' },
+    { value: 'fully_depreciated', label: 'Penyusutan Selesai' },
+  ]
+
   return (
-    <div className="space-y-6 p-6">
-      <h1 className="text-3xl font-bold text-gray-900">Daftar Aset Tetap</h1>
+    <div style={{ padding: 24 }}>
+      <Space direction="vertical" style={{ width: '100%' }}>
+        <Title level={2}>Daftar Aset Tetap</Title>
 
-      <div className="flex gap-4 items-end flex-wrap">
-        <DateInput
-          label="Cutoff Date"
-          value={cutOffDate}
-          onChange={e => setCutOffDate(e.target.value)}
-        />
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Kategori</label>
-          <select
-            value={categoryId}
-            onChange={e => setCategoryId(e.target.value)}
-            className="border border-gray-300 rounded px-3 py-2 text-sm"
-          >
-            <option value="">Semua</option>
-            {categories.map(c => (
-              <option key={c.id} value={c.id}>{c.name}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-          <select
-            value={status}
-            onChange={e => setStatus(e.target.value)}
-            className="border border-gray-300 rounded px-3 py-2 text-sm"
-          >
-            <option value="all">Semua</option>
-            <option value="active">Aktif</option>
-            <option value="disposed">Dilepas</option>
-            <option value="fully_depreciated">Penyusutan Selesai</option>
-          </select>
-        </div>
-        <button
-          onClick={handleLoad}
-          disabled={loading}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-60 text-sm font-medium"
-        >
-          Tampilkan
-        </button>
-      </div>
+        <Space align="end" wrap>
+          <DateInput
+            label="Cutoff Date"
+            value={cutOffDate}
+            onChange={e => setCutOffDate(e.target.value)}
+          />
+          <Space direction="vertical" size={4}>
+            <Text type="secondary" style={{ fontSize: 12 }}>Kategori</Text>
+            <Select
+              value={categoryId}
+              onChange={setCategoryId}
+              options={categoryOptions}
+              style={{ width: 160 }}
+            />
+          </Space>
+          <Space direction="vertical" size={4}>
+            <Text type="secondary" style={{ fontSize: 12 }}>Status</Text>
+            <Select
+              value={status}
+              onChange={setStatus}
+              options={statusOptions}
+              style={{ width: 200 }}
+            />
+          </Space>
+          <Button type="primary" onClick={handleLoad} loading={loading}>
+            Tampilkan
+          </Button>
+        </Space>
 
-      {error && <div className="text-red-600 text-sm">{error}</div>}
+        {error && <Alert type="error" message={error} showIcon />}
 
-      {rows.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex gap-2">
-            <button
-              onClick={exportPDF}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm font-medium"
-            >
-              <FileText size={16} /> Export PDF
-            </button>
-            <button
-              onClick={exportExcel}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm font-medium"
-            >
-              <Download size={16} /> Export Excel
-            </button>
-          </div>
+        {rows.length > 0 && (
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Space>
+              <Button icon={<FileText size={14} />} onClick={exportPDF}>Export PDF</Button>
+              <Button icon={<Download size={14} />} onClick={exportExcel}>Export Excel</Button>
+            </Space>
 
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-4 py-2 text-left font-medium text-gray-600">Kode</th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-600">Nama</th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-600">Kategori</th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-600">Tgl Perolehan</th>
-                  <th className="px-4 py-2 text-right font-medium text-gray-600">Harga Perolehan</th>
-                  <th className="px-4 py-2 text-right font-medium text-gray-600">Akumulasi</th>
-                  <th className="px-4 py-2 text-right font-medium text-gray-600">Nilai Buku</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {rows.map((r, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 font-mono text-gray-700">{r.code}</td>
-                    <td className="px-4 py-2">{r.name}</td>
-                    <td className="px-4 py-2 text-gray-500 text-xs">{r.category}</td>
-                    <td className="px-4 py-2 font-mono text-gray-600">{formatDate(r.acquisitionDate)}</td>
-                    <td className="px-4 py-2 text-right">{formatCurrency(r.acquisitionCost)}</td>
-                    <td className="px-4 py-2 text-right">{formatCurrency(r.accumulated)}</td>
-                    <td className="px-4 py-2 text-right font-medium">{formatCurrency(r.bookValue)}</td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot className="bg-gray-50 border-t border-gray-300 font-semibold">
-                <tr>
-                  <td colSpan="4" className="px-4 py-2">Total ({rows.length} aset)</td>
-                  <td className="px-4 py-2 text-right">{formatCurrency(total.acquisitionCost)}</td>
-                  <td className="px-4 py-2 text-right">{formatCurrency(total.accumulated)}</td>
-                  <td className="px-4 py-2 text-right">{formatCurrency(total.bookValue)}</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </div>
-      )}
+            <Card styles={{ body: { padding: 0 } }}>
+              <Table
+                dataSource={rows}
+                columns={columns}
+                rowKey={(_, i) => i}
+                pagination={false}
+                size="small"
+                summary={() => (
+                  <Table.Summary.Row>
+                    <Table.Summary.Cell colSpan={4} index={0}>
+                      <Text strong>Total ({rows.length} aset)</Text>
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell index={4} align="right">
+                      <Text strong>{formatCurrency(total.acquisitionCost)}</Text>
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell index={5} align="right">
+                      <Text strong>{formatCurrency(total.accumulated)}</Text>
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell index={6} align="right">
+                      <Text strong>{formatCurrency(total.bookValue)}</Text>
+                    </Table.Summary.Cell>
+                  </Table.Summary.Row>
+                )}
+              />
+            </Card>
+          </Space>
+        )}
 
-      {rows.length === 0 && !loading && !error && (
-        <div className="text-center text-gray-400 py-8">Klik "Tampilkan" untuk melihat laporan.</div>
-      )}
+        {rows.length === 0 && !loading && !error && (
+          <Text type="secondary" style={{ display: 'block', textAlign: 'center', padding: '32px 0' }}>
+            Klik "Tampilkan" untuk melihat laporan.
+          </Text>
+        )}
 
-      {loading && (
-        <div className="text-center text-gray-500 py-8">Memuat...</div>
-      )}
+        {loading && (
+          <Text type="secondary" style={{ display: 'block', textAlign: 'center', padding: '32px 0' }}>
+            Memuat...
+          </Text>
+        )}
+      </Space>
     </div>
   )
 }

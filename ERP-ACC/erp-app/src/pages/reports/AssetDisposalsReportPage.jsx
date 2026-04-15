@@ -7,6 +7,9 @@ import 'jspdf-autotable'
 import * as XLSX from 'xlsx'
 import { Download, FileText } from 'lucide-react'
 import DateInput from '../../components/ui/DateInput'
+import { Space, Card, Typography, Alert, Table, Select, Button, Tag } from 'antd'
+
+const { Title, Text } = Typography
 
 export default function AssetDisposalsReportPage() {
   const [dateFrom, setDateFrom] = useState(new Date(new Date().setFullYear(new Date().getFullYear() - 1)).toISOString().slice(0, 10))
@@ -39,7 +42,6 @@ export default function AssetDisposalsReportPage() {
       const { data, error: dErr } = await query.order('disposal_date', { ascending: false })
       if (dErr) throw dErr
 
-      // Calculate bookValue and gainLoss
       const result = data.map(d => ({
         disposalDate: d.disposal_date,
         code: d.asset?.code || '—',
@@ -47,7 +49,7 @@ export default function AssetDisposalsReportPage() {
         type: d.disposal_type,
         salePrice: d.sale_price || 0,
         acquisitionCost: d.asset?.acquisition_cost || 0,
-        bookValue: d.asset?.acquisition_cost || 0, // Simplified: actual would need to query schedules
+        bookValue: d.asset?.acquisition_cost || 0,
         gainLoss: d.disposal_type === 'sale' ? (d.sale_price - (d.asset?.acquisition_cost || 0)) : -(d.asset?.acquisition_cost || 0),
       }))
       setRows(result)
@@ -101,98 +103,110 @@ export default function AssetDisposalsReportPage() {
   const totalSalePrice = rows.reduce((s, r) => s + r.salePrice, 0)
   const totalGainLoss = rows.reduce((s, r) => s + r.gainLoss, 0)
 
+  const disposalTypeOptions = [
+    { value: 'all', label: 'Semua' },
+    { value: 'sale', label: 'Penjualan' },
+    { value: 'writeoff', label: 'Penghapusan' },
+  ]
+
+  const columns = [
+    { title: 'Tanggal', dataIndex: 'disposalDate', key: 'disposalDate', width: 110, render: v => <Text code>{formatDate(v)}</Text> },
+    { title: 'Kode', dataIndex: 'code', key: 'code', width: 90, render: v => <Text code>{v}</Text> },
+    { title: 'Nama', dataIndex: 'name', key: 'name' },
+    {
+      title: 'Tipe',
+      dataIndex: 'type',
+      key: 'type',
+      render: v => <Tag color={v === 'sale' ? 'blue' : 'red'}>{v === 'sale' ? 'Penjualan' : 'Penghapusan'}</Tag>,
+    },
+    { title: 'Harga Jual', dataIndex: 'salePrice', key: 'salePrice', align: 'right', render: v => formatCurrency(v) },
+    {
+      title: 'Gain/Loss',
+      dataIndex: 'gainLoss',
+      key: 'gainLoss',
+      align: 'right',
+      render: v => <Text strong type={v >= 0 ? 'success' : 'danger'}>{formatCurrency(v)}</Text>,
+    },
+  ]
+
   return (
-    <div className="space-y-6 p-6">
-      <h1 className="text-3xl font-bold text-gray-900">Disposal Aset</h1>
+    <div style={{ padding: 24 }}>
+      <Space direction="vertical" style={{ width: '100%' }}>
+        <Title level={2}>Disposal Aset</Title>
 
-      <div className="flex gap-4 items-end flex-wrap">
-        <DateInput
-          label="Dari Tanggal"
-          value={dateFrom}
-          onChange={e => setDateFrom(e.target.value)}
-        />
-        <DateInput
-          label="Sampai Tanggal"
-          value={dateTo}
-          onChange={e => setDateTo(e.target.value)}
-        />
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Tipe Disposal</label>
-          <select
-            value={disposalType}
-            onChange={e => setDisposalType(e.target.value)}
-            className="border border-gray-300 rounded px-3 py-2 text-sm"
-          >
-            <option value="all">Semua</option>
-            <option value="sale">Penjualan</option>
-            <option value="writeoff">Penghapusan</option>
-          </select>
-        </div>
-        <button
-          onClick={handleLoad}
-          disabled={loading}
-          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-60 text-sm font-medium"
-        >
-          Tampilkan
-        </button>
-      </div>
+        <Space align="end" wrap>
+          <DateInput
+            label="Dari Tanggal"
+            value={dateFrom}
+            onChange={e => setDateFrom(e.target.value)}
+          />
+          <DateInput
+            label="Sampai Tanggal"
+            value={dateTo}
+            onChange={e => setDateTo(e.target.value)}
+          />
+          <Space direction="vertical" size={4}>
+            <Text type="secondary" style={{ fontSize: 12 }}>Tipe Disposal</Text>
+            <Select
+              value={disposalType}
+              onChange={setDisposalType}
+              options={disposalTypeOptions}
+              style={{ width: 160 }}
+            />
+          </Space>
+          <Button type="primary" onClick={handleLoad} loading={loading}>
+            Tampilkan
+          </Button>
+        </Space>
 
-      {error && <div className="text-red-600 text-sm">{error}</div>}
+        {error && <Alert type="error" message={error} showIcon />}
 
-      {rows.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex gap-2">
-            <button onClick={exportPDF} className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm font-medium">
-              <FileText size={16} /> Export PDF
-            </button>
-            <button onClick={exportExcel} className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 text-sm font-medium">
-              <Download size={16} /> Export Excel
-            </button>
-          </div>
+        {rows.length > 0 && (
+          <Space direction="vertical" style={{ width: '100%' }}>
+            <Space>
+              <Button icon={<FileText size={14} />} onClick={exportPDF}>Export PDF</Button>
+              <Button icon={<Download size={14} />} onClick={exportExcel}>Export Excel</Button>
+            </Space>
 
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-4 py-2 text-left font-medium text-gray-600">Tanggal</th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-600">Kode</th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-600">Nama</th>
-                  <th className="px-4 py-2 text-left font-medium text-gray-600">Tipe</th>
-                  <th className="px-4 py-2 text-right font-medium text-gray-600">Harga Jual</th>
-                  <th className="px-4 py-2 text-right font-medium text-gray-600">Gain/Loss</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {rows.map((r, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 font-mono">{formatDate(r.disposalDate)}</td>
-                    <td className="px-4 py-2 font-mono">{r.code}</td>
-                    <td className="px-4 py-2">{r.name}</td>
-                    <td className="px-4 py-2 text-xs"><span className="bg-gray-100 px-2 py-1 rounded">{r.type === 'sale' ? 'Penjualan' : 'Penghapusan'}</span></td>
-                    <td className="px-4 py-2 text-right">{formatCurrency(r.salePrice)}</td>
-                    <td className={`px-4 py-2 text-right font-medium ${r.gainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {formatCurrency(r.gainLoss)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot className="bg-gray-50 border-t border-gray-300 font-semibold">
-                <tr>
-                  <td colSpan="4" className="px-4 py-2">Total ({rows.length})</td>
-                  <td className="px-4 py-2 text-right">{formatCurrency(totalSalePrice)}</td>
-                  <td className={`px-4 py-2 text-right ${totalGainLoss >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatCurrency(totalGainLoss)}</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </div>
-      )}
+            <Card styles={{ body: { padding: 0 } }}>
+              <Table
+                dataSource={rows}
+                columns={columns}
+                rowKey={(_, i) => i}
+                pagination={false}
+                size="small"
+                summary={() => (
+                  <Table.Summary.Row>
+                    <Table.Summary.Cell colSpan={4} index={0}>
+                      <Text strong>Total ({rows.length})</Text>
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell index={4} align="right">
+                      <Text strong>{formatCurrency(totalSalePrice)}</Text>
+                    </Table.Summary.Cell>
+                    <Table.Summary.Cell index={5} align="right">
+                      <Text strong type={totalGainLoss >= 0 ? 'success' : 'danger'}>
+                        {formatCurrency(totalGainLoss)}
+                      </Text>
+                    </Table.Summary.Cell>
+                  </Table.Summary.Row>
+                )}
+              />
+            </Card>
+          </Space>
+        )}
 
-      {rows.length === 0 && !loading && !error && (
-        <div className="text-center text-gray-400 py-8">Klik "Tampilkan" untuk melihat laporan.</div>
-      )}
+        {rows.length === 0 && !loading && !error && (
+          <Text type="secondary" style={{ display: 'block', textAlign: 'center', padding: '32px 0' }}>
+            Klik "Tampilkan" untuk melihat laporan.
+          </Text>
+        )}
 
-      {loading && <div className="text-center text-gray-500 py-8">Memuat...</div>}
+        {loading && (
+          <Text type="secondary" style={{ display: 'block', textAlign: 'center', padding: '32px 0' }}>
+            Memuat...
+          </Text>
+        )}
+      </Space>
     </div>
   )
 }

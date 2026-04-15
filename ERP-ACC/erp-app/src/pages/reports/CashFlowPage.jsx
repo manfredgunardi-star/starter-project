@@ -6,6 +6,9 @@ import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import DateInput from '../../components/ui/DateInput'
 import { Search } from 'lucide-react'
+import { Space, Row, Col, Card, Typography, Alert, Statistic, Table } from 'antd'
+
+const { Title, Text } = Typography
 
 function yearStart() {
   return new Date().getFullYear() + '-01-01'
@@ -40,11 +43,39 @@ export default function CashFlowPage() {
   const totalOut = outgoing.reduce((s, p) => s + Number(p.amount), 0)
   const netCash = totalIn - totalOut
 
-  return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">Arus Kas (Cash Flow)</h1>
+  const incomingColumns = [
+    { title: 'Tanggal', dataIndex: 'date', key: 'date', width: 110, render: v => formatDate(v) },
+    { title: 'Customer', dataIndex: 'customer', key: 'customer', render: v => v?.name || '—' },
+    { title: 'Akun', dataIndex: 'account', key: 'account', render: v => v?.name || '—' },
+    { title: 'Ref. Invoice', dataIndex: 'invoice', key: 'invoice', render: v => <Text code>{v?.invoice_number || '—'}</Text> },
+    {
+      title: 'Jumlah',
+      dataIndex: 'amount',
+      key: 'amount',
+      align: 'right',
+      render: v => <Text type="success">{formatCurrency(v)}</Text>,
+    },
+  ]
 
-      <div className="flex gap-4 items-end">
+  const outgoingColumns = [
+    { title: 'Tanggal', dataIndex: 'date', key: 'date', width: 110, render: v => formatDate(v) },
+    { title: 'Supplier', dataIndex: 'supplier', key: 'supplier', render: v => v?.name || '—' },
+    { title: 'Akun', dataIndex: 'account', key: 'account', render: v => v?.name || '—' },
+    { title: 'Ref. Invoice', dataIndex: 'invoice', key: 'invoice', render: v => <Text code>{v?.invoice_number || '—'}</Text> },
+    {
+      title: 'Jumlah',
+      dataIndex: 'amount',
+      key: 'amount',
+      align: 'right',
+      render: v => <Text type="danger">{formatCurrency(v)}</Text>,
+    },
+  ]
+
+  return (
+    <Space direction="vertical" style={{ width: '100%' }}>
+      <Title level={2}>Arus Kas (Cash Flow)</Title>
+
+      <Space align="end">
         <DateInput
           label="Dari Tanggal"
           value={startDate}
@@ -58,118 +89,99 @@ export default function CashFlowPage() {
         <Button variant="primary" onClick={handleLoad} loading={loading}>
           <Search size={16} /> Tampilkan
         </Button>
-      </div>
+      </Space>
 
       {loading && <LoadingSpinner message="Memuat arus kas..." />}
-      {error && <div className="text-red-600">{error}</div>}
+      {error && <Alert type="error" message={error} showIcon />}
 
       {data && !loading && (
-        <div className="space-y-6">
-          {/* Summary cards */}
-          <div className="grid grid-cols-3 gap-4">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
-              <p className="text-sm text-green-700">Total Kas Masuk</p>
-              <p className="text-2xl font-bold text-green-900">{formatCurrency(totalIn)}</p>
-            </div>
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-center">
-              <p className="text-sm text-red-700">Total Kas Keluar</p>
-              <p className="text-2xl font-bold text-red-900">{formatCurrency(totalOut)}</p>
-            </div>
-            <div className={`border rounded-lg p-4 text-center ${
-              netCash >= 0 ? 'bg-blue-50 border-blue-200' : 'bg-orange-50 border-orange-200'
-            }`}>
-              <p className={`text-sm ${netCash >= 0 ? 'text-blue-700' : 'text-orange-700'}`}>
-                {netCash >= 0 ? 'Arus Kas Bersih (+)' : 'Arus Kas Bersih (-)'}
-              </p>
-              <p className={`text-2xl font-bold ${netCash >= 0 ? 'text-blue-900' : 'text-orange-900'}`}>
-                {formatCurrency(Math.abs(netCash))}
-              </p>
-            </div>
-          </div>
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <Row gutter={16}>
+            <Col span={8}>
+              <Statistic
+                title="Total Kas Masuk"
+                value={totalIn}
+                formatter={v => formatCurrency(v)}
+                valueStyle={{ color: '#16a34a' }}
+              />
+            </Col>
+            <Col span={8}>
+              <Statistic
+                title="Total Kas Keluar"
+                value={totalOut}
+                formatter={v => formatCurrency(v)}
+                valueStyle={{ color: '#dc2626' }}
+              />
+            </Col>
+            <Col span={8}>
+              <Statistic
+                title={netCash >= 0 ? 'Arus Kas Bersih (+)' : 'Arus Kas Bersih (-)'}
+                value={Math.abs(netCash)}
+                formatter={v => formatCurrency(v)}
+                valueStyle={{ color: netCash >= 0 ? '#1d4ed8' : '#ea580c' }}
+              />
+            </Col>
+          </Row>
 
-          {/* Kas Masuk */}
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <div className="bg-green-100 px-4 py-2 font-semibold text-sm text-green-800 border-b border-green-200">
-              Kas Masuk (dari Customer) — {incoming.length} transaksi
-            </div>
-            <table className="w-full border-collapse">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-600">Tanggal</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-600">Customer</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-600">Akun</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-600">Ref. Invoice</th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-600">Jumlah</th>
-                </tr>
-              </thead>
-              <tbody>
-                {incoming.length === 0 ? (
-                  <tr><td colSpan={5} className="px-4 py-4 text-sm text-gray-400 text-center">Tidak ada transaksi</td></tr>
-                ) : (
-                  incoming.map((p, i) => (
-                    <tr key={i} className="border-b border-gray-200 hover:bg-gray-50">
-                      <td className="px-4 py-2 text-sm text-gray-700">{formatDate(p.date)}</td>
-                      <td className="px-4 py-2 text-sm text-gray-900">{p.customer?.name || '—'}</td>
-                      <td className="px-4 py-2 text-sm text-gray-600">{p.account?.name || '—'}</td>
-                      <td className="px-4 py-2 text-sm font-mono text-gray-500">{p.invoice?.invoice_number || '—'}</td>
-                      <td className="px-4 py-2 text-sm text-right font-medium text-green-700">{formatCurrency(p.amount)}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-              {incoming.length > 0 && (
-                <tfoot className="bg-green-50 border-t border-green-200">
-                  <tr>
-                    <td colSpan={4} className="px-4 py-2 text-sm font-semibold text-right">Total Masuk</td>
-                    <td className="px-4 py-2 text-sm font-bold text-right text-green-700">{formatCurrency(totalIn)}</td>
-                  </tr>
-                </tfoot>
-              )}
-            </table>
-          </div>
+          <Card
+            title={
+              <Text strong style={{ color: '#166534' }}>
+                Kas Masuk (dari Customer) — {incoming.length} transaksi
+              </Text>
+            }
+            size="small"
+            styles={{ body: { padding: 0 } }}
+          >
+            <Table
+              dataSource={incoming}
+              columns={incomingColumns}
+              rowKey={(_, i) => i}
+              pagination={false}
+              size="small"
+              summary={() => incoming.length > 0 ? (
+                <Table.Summary.Row>
+                  <Table.Summary.Cell colSpan={4} index={0}>
+                    <Text strong style={{ float: 'right' }}>Total Masuk</Text>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={4} align="right">
+                    <Text strong type="success">{formatCurrency(totalIn)}</Text>
+                  </Table.Summary.Cell>
+                </Table.Summary.Row>
+              ) : null}
+              locale={{ emptyText: 'Tidak ada transaksi' }}
+            />
+          </Card>
 
-          {/* Kas Keluar */}
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <div className="bg-red-100 px-4 py-2 font-semibold text-sm text-red-800 border-b border-red-200">
-              Kas Keluar (ke Supplier) — {outgoing.length} transaksi
-            </div>
-            <table className="w-full border-collapse">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-600">Tanggal</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-600">Supplier</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-600">Akun</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-600">Ref. Invoice</th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-600">Jumlah</th>
-                </tr>
-              </thead>
-              <tbody>
-                {outgoing.length === 0 ? (
-                  <tr><td colSpan={5} className="px-4 py-4 text-sm text-gray-400 text-center">Tidak ada transaksi</td></tr>
-                ) : (
-                  outgoing.map((p, i) => (
-                    <tr key={i} className="border-b border-gray-200 hover:bg-gray-50">
-                      <td className="px-4 py-2 text-sm text-gray-700">{formatDate(p.date)}</td>
-                      <td className="px-4 py-2 text-sm text-gray-900">{p.supplier?.name || '—'}</td>
-                      <td className="px-4 py-2 text-sm text-gray-600">{p.account?.name || '—'}</td>
-                      <td className="px-4 py-2 text-sm font-mono text-gray-500">{p.invoice?.invoice_number || '—'}</td>
-                      <td className="px-4 py-2 text-sm text-right font-medium text-red-700">{formatCurrency(p.amount)}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-              {outgoing.length > 0 && (
-                <tfoot className="bg-red-50 border-t border-red-200">
-                  <tr>
-                    <td colSpan={4} className="px-4 py-2 text-sm font-semibold text-right">Total Keluar</td>
-                    <td className="px-4 py-2 text-sm font-bold text-right text-red-700">{formatCurrency(totalOut)}</td>
-                  </tr>
-                </tfoot>
-              )}
-            </table>
-          </div>
-        </div>
+          <Card
+            title={
+              <Text strong style={{ color: '#991b1b' }}>
+                Kas Keluar (ke Supplier) — {outgoing.length} transaksi
+              </Text>
+            }
+            size="small"
+            styles={{ body: { padding: 0 } }}
+          >
+            <Table
+              dataSource={outgoing}
+              columns={outgoingColumns}
+              rowKey={(_, i) => i}
+              pagination={false}
+              size="small"
+              summary={() => outgoing.length > 0 ? (
+                <Table.Summary.Row>
+                  <Table.Summary.Cell colSpan={4} index={0}>
+                    <Text strong style={{ float: 'right' }}>Total Keluar</Text>
+                  </Table.Summary.Cell>
+                  <Table.Summary.Cell index={4} align="right">
+                    <Text strong type="danger">{formatCurrency(totalOut)}</Text>
+                  </Table.Summary.Cell>
+                </Table.Summary.Row>
+              ) : null}
+              locale={{ emptyText: 'Tidak ada transaksi' }}
+            />
+          </Card>
+        </Space>
       )}
-    </div>
+    </Space>
   )
 }
