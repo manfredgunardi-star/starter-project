@@ -1,38 +1,34 @@
 import { forwardRef } from 'react'
+import { Select as AntdSelect } from 'antd'
 
 const Select = forwardRef(({
   label,
   error,
   options = [],
   placeholder = 'Pilih...',
+  value,
+  onChange,
   ...props
 }, ref) => {
   return (
-    <div className="space-y-1">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
       {label && (
-        <label className="block text-sm font-medium text-gray-700">
-          {label}
-        </label>
+        <label style={{ fontSize: 14, fontWeight: 500 }}>{label}</label>
       )}
-      <select
+      <AntdSelect
         ref={ref}
-        className={`w-full px-3 py-2 border rounded-lg text-gray-900 transition ${
-          error
-            ? 'border-red-500 focus:ring-red-500 focus:border-red-500'
-            : 'border-gray-300 focus:ring-blue-500 focus:border-blue-500'
-        } focus:outline-none focus:ring-1`}
+        placeholder={placeholder}
+        value={value === '' ? undefined : value}
+        onChange={(val) => onChange && onChange({ target: { value: val ?? '' } })}
+        options={options.map(o => ({ value: o.value, label: o.label }))}
+        status={error ? 'error' : undefined}
+        allowClear
+        showSearch
+        optionFilterProp="label"
+        style={{ width: '100%' }}
         {...props}
-      >
-        <option value="">{placeholder}</option>
-        {options.map(opt => (
-          <option key={opt.value} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
-      {error && (
-        <p className="text-sm text-red-600">{error}</p>
-      )}
+      />
+      {error && <span style={{ color: '#ff4d4f', fontSize: 12 }}>{error}</span>}
     </div>
   )
 })
