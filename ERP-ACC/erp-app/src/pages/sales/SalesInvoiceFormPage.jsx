@@ -11,7 +11,8 @@ import Button from '../../components/ui/Button'
 import DocumentHeader from '../../components/shared/DocumentHeader'
 import LineItemsTable from '../../components/shared/LineItemsTable'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
-import { ArrowLeft, Save, Send } from 'lucide-react'
+import { usePrintInvoice } from '../../hooks/usePrintInvoice'
+import { ArrowLeft, Save, Send, Printer, FileDown } from 'lucide-react'
 
 export default function SalesInvoiceFormPage() {
   const { id } = useParams()
@@ -19,6 +20,8 @@ export default function SalesInvoiceFormPage() {
   const navigate = useNavigate()
   const { canPost, canWrite } = useAuth()
   const toast = useToast()
+  const { triggerPrint, triggerPDF, loadingIds } = usePrintInvoice()
+  const isPrinting = loadingIds[id] || false
   const isNew = !id || id === 'new'
 
   const { products } = useProducts()
@@ -133,6 +136,16 @@ export default function SalesInvoiceFormPage() {
             <Button variant="primary" onClick={() => navigate(`/cash/payments/new?invoice=${id}`)}>
               Terima Pembayaran
             </Button>
+          )}
+          {!isNew && (
+            <>
+              <Button variant="secondary" onClick={() => triggerPrint(id)} loading={isPrinting} disabled={isPrinting}>
+                <Printer size={18} /> Print
+              </Button>
+              <Button variant="secondary" onClick={() => triggerPDF(id)} loading={isPrinting} disabled={isPrinting}>
+                <FileDown size={18} /> PDF
+              </Button>
+            </>
           )}
         </Space>
       </Flex>
