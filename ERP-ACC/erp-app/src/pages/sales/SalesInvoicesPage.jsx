@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Space, Flex, Typography } from 'antd'
+import { Space, Flex, Typography, Spin } from 'antd'
 import { useSalesInvoices } from '../../hooks/useSales'
 import { useAuth } from '../../contexts/AuthContext'
 import { formatCurrency } from '../../utils/currency'
@@ -8,7 +8,8 @@ import { formatDate } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import StatusBadge from '../../components/ui/StatusBadge'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
-import { Plus, Search } from 'lucide-react'
+import { Plus, Search, Printer, FileDown } from 'lucide-react'
+import { usePrintInvoice } from '../../hooks/usePrintInvoice'
 
 export default function SalesInvoicesPage() {
   const navigate = useNavigate()
@@ -16,6 +17,7 @@ export default function SalesInvoicesPage() {
   const { invoices, loading, error } = useSalesInvoices()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const { triggerPrint, triggerPDF, loadingIds } = usePrintInvoice()
 
   const filtered = useMemo(() => {
     return invoices.filter(inv => {
@@ -76,12 +78,13 @@ export default function SalesInvoicesPage() {
               <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Status</th>
               <th style={{ padding: '12px 24px', textAlign: 'right', fontSize: 14, fontWeight: 500 }}>Total</th>
               <th style={{ padding: '12px 24px', textAlign: 'right', fontSize: 14, fontWeight: 500 }}>Dibayar</th>
+              <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: 14, fontWeight: 500 }}>Aksi</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} style={{ padding: '32px 24px', textAlign: 'center', fontSize: 14, color: '#6b7280' }}>Belum ada invoice</td>
+                <td colSpan={8} style={{ padding: '32px 24px', textAlign: 'center', fontSize: 14, color: '#6b7280' }}>Belum ada invoice</td>
               </tr>
             ) : (
               filtered.map(inv => (
@@ -97,6 +100,31 @@ export default function SalesInvoicesPage() {
                   <td style={{ padding: '12px 24px', fontSize: 14 }}><StatusBadge status={inv.status} /></td>
                   <td style={{ padding: '12px 24px', fontSize: 14, textAlign: 'right', fontWeight: 500 }}>{formatCurrency(inv.total)}</td>
                   <td style={{ padding: '12px 24px', fontSize: 14, textAlign: 'right' }}>{formatCurrency(inv.amount_paid)}</td>
+                  <td
+                    style={{ padding: '8px 16px', textAlign: 'center' }}
+                    onClick={e => e.stopPropagation()}
+                  >
+                    {loadingIds[inv.id] ? (
+                      <Spin size="small" />
+                    ) : (
+                      <Space size={4}>
+                        <button
+                          title="Cetak"
+                          onClick={() => triggerPrint(inv.id)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: 4, display: 'inline-flex', alignItems: 'center' }}
+                        >
+                          <Printer size={16} />
+                        </button>
+                        <button
+                          title="Unduh PDF"
+                          onClick={() => triggerPDF(inv.id)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', padding: 4, display: 'inline-flex', alignItems: 'center' }}
+                        >
+                          <FileDown size={16} />
+                        </button>
+                      </Space>
+                    )}
+                  </td>
                 </tr>
               ))
             )}
