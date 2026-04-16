@@ -112,10 +112,11 @@ const menuGroups = [
     label: 'Settings',
     icon: Settings,
     key: 'settings',
-    minRole: 'admin',
+    minRole: 'write',
     items: [
-      { label: 'Users', path: '/settings/users' },
-      { label: 'Audit Log', path: '/settings/audit-log' }
+      { label: 'Pengaturan Perusahaan', path: '/settings/company', minRole: 'write' },
+      { label: 'Users', path: '/settings/users', minRole: 'admin' },
+      { label: 'Audit Log', path: '/settings/audit-log', minRole: 'admin' },
     ]
   }
 ]
