@@ -73,6 +73,7 @@ import AssetsSummaryReportPage from './pages/reports/AssetsSummaryReportPage'
 // Settings
 import AuditLogPage from './pages/settings/AuditLogPage'
 import UsersPage from './pages/settings/UsersPage'
+import CompanySettingsPage from './pages/settings/CompanySettingsPage'
 
 
 function AppContent() {
@@ -81,7 +82,7 @@ function AppContent() {
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
-        <Spin size="large" tip="Memuat..." />
+        <Spin size="large" description="Memuat..." />
       </div>
     )
   }
@@ -91,7 +92,7 @@ function AppContent() {
   }
 
   return (
-    <Suspense fallback={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}><Spin size="large" tip="Memuat..." /></div>}>
+    <Suspense fallback={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}><Spin size="large" description="Memuat..." /></div>}>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route
@@ -168,6 +169,7 @@ function AppContent() {
           <Route path="assets/:id/dispose" element={<RoleGuard require="isAdmin"><AssetDisposalFormPage /></RoleGuard>} />
 
           {/* Settings */}
+          <Route path="settings/company" element={<RoleGuard require="canWrite"><CompanySettingsPage /></RoleGuard>} />
           <Route path="settings/users" element={<RoleGuard require="isAdmin"><UsersPage /></RoleGuard>} />
           <Route path="settings/audit-log" element={<RoleGuard require="isAdmin"><AuditLogPage /></RoleGuard>} />
 
@@ -184,6 +186,7 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <ToastProvider>
+          <div id="invoice-print-root" style={{ display: 'none' }} />
           <AppContent />
         </ToastProvider>
       </AuthProvider>
