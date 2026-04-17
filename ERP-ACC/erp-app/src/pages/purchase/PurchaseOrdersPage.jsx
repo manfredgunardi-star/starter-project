@@ -1,13 +1,14 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Space, Flex, Typography, Tag } from 'antd'
+import { Space, Flex, Typography, Tag, Spin } from 'antd'
 import { usePurchaseOrders } from '../../hooks/usePurchase'
 import { useAuth } from '../../contexts/AuthContext'
 import { formatCurrency } from '../../utils/currency'
 import { formatDate } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
-import { Plus, Search } from 'lucide-react'
+import { Plus, Search, Printer, FileDown } from 'lucide-react'
+import { usePrintPO } from '../../hooks/usePrintPO'
 
 const STATUS_COLOR = {
   draft: 'default',
@@ -19,6 +20,7 @@ const STATUS_COLOR = {
 export default function PurchaseOrdersPage() {
   const navigate = useNavigate()
   const { canWrite } = useAuth()
+  const { triggerPrint, triggerPDF, loadingIds } = usePrintPO()
   const { purchaseOrders, loading, error } = usePurchaseOrders()
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
@@ -80,12 +82,13 @@ export default function PurchaseOrdersPage() {
               <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Supplier</th>
               <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Status</th>
               <th style={{ padding: '12px 24px', textAlign: 'right', fontSize: 14, fontWeight: 500 }}>Total</th>
+              <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: 14, fontWeight: 500 }}>Aksi</th>
             </tr>
           </thead>
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={5} style={{ padding: '32px 24px', textAlign: 'center', fontSize: 14, color: '#6b7280' }}>
+                <td colSpan={6} style={{ padding: '32px 24px', textAlign: 'center', fontSize: 14, color: '#6b7280' }}>
                   Belum ada data PO
                 </td>
               </tr>
@@ -106,6 +109,31 @@ export default function PurchaseOrdersPage() {
                   </td>
                   <td style={{ padding: '12px 24px', fontSize: 14, textAlign: 'right', fontWeight: 500 }}>
                     {formatCurrency(po.total)}
+                  </td>
+                  <td
+                    style={{ padding: '12px 16px', textAlign: 'center', whiteSpace: 'nowrap' }}
+                    onClick={e => e.stopPropagation()}
+                  >
+                    {loadingIds[po.id] ? (
+                      <Spin size="small" />
+                    ) : (
+                      <>
+                        <button
+                          title="Print PO"
+                          onClick={() => triggerPrint(po.id)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px', color: '#6b7280' }}
+                        >
+                          <Printer size={16} />
+                        </button>
+                        <button
+                          title="Download PDF"
+                          onClick={() => triggerPDF(po.id)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 6px', color: '#6b7280' }}
+                        >
+                          <FileDown size={16} />
+                        </button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))
