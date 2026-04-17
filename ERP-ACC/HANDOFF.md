@@ -1,218 +1,224 @@
-# Handoff: ERP-ACC Ant Design Migration
+# Handoff: ERP-ACC — Current State (2026-04-17)
 
-**Status**: ✅ COMPLETE (2026-04-15)
+**Status**: ✅ Production Live
 
-**Branch**: `main` (pushed to remote)
+**Branch**: `main`
 
-**Commits**: `47aee2a` (spec) → `732d1f5` (final residual cleanup)
+**Production URL**: https://erp-app-umber.vercel.app
 
----
-
-## Apa yang Selesai
-
-### 1. Full Ant Design Migration
-- ✅ 19 implementasi task selesai
-- ✅ Semua komponen UI (`src/components/ui/`) di-convert ke AntD wrappers
-- ✅ AppLayout, Sidebar, Login migrated
-- ✅ Semua page components swepped
-- ✅ Zero residual Tailwind classNames (habis di-cleanup)
-- ✅ Build passing: 2,613 kB / 773 kB gzip (di bawah target 3MB)
-
-### 2. Technical Setup
-```
-antd: 6.3.5
-dayjs: untuk date handling (ganti native Date)
-ConfigProvider: locale id_ID, AntdApp context
-Lucide React: tetap (icons)
-Tailwind CSS: DIHAPUS dari build pipeline
-```
-
-### 3. Component Wrappers (API Kompatibel)
-| Wrapper | Basis | Catatan |
-|---------|-------|---------|
-| Button | AntD Button | variant+size mapping |
-| Input | AntD Input | forwardRef, type branching (text/number/textarea) |
-| Select | AntD Select | options format mapping, emulates onChange event |
-| Modal | AntD Modal | isOpen→open, onClose→onCancel |
-| ConfirmDialog | AntD Modal | React component (bukan imperative) |
-| StatusBadge | AntD Tag | color mapping ke business status |
-| LoadingSpinner | AntD Spin | message prop |
-| Toast | AntdApp.useApp().message | ToastContext bridge |
-| DataTable | AntD Table | columns format mapping |
-| DateInput | AntD DatePicker | ISO string I/O `YYYY-MM-DD` |
+**Commit terbaru**: `f433dd1` test: fix Playwright PO print spec
 
 ---
 
-## Key Implementation Details
+## State Saat Ini
 
-### Event Emulation Pattern
-Input, Select, DateInput components emit `onChange(e)` dengan `e.target.value` untuk backward compatibility—page code tidak perlu diubah:
-
-```jsx
-// Select example
-const handleChange = (val) => {
-  if (onChange) onChange({ target: { value: val || '' } })
-}
-```
-
-### DateInput Pattern
-- Input: ISO string `YYYY-MM-DD`
-- Konversi ke dayjs untuk picker
-- Output: ISO string via `{target:{value}}`
-- Mendukung `name` field jika needed
-
-```jsx
-const dayjsValue = value ? dayjs(value) : null
-const handleChange = (d) => {
-  const iso = d ? d.format('YYYY-MM-DD') : ''
-  if (onChange) onChange({ target: { value: iso } })
-}
-```
-
-### ToastProvider → AntdApp
-- ToastProvider kini hanya passthrough wrapper
-- Actual toast via `AntdApp.useApp().message`
-- Semua call site tetap menggunakan `useToast()`—**zero breaking changes**
-
-### DataTable Pagination
-- Default pageSize: 20
-- rowKey: `row.id ?? index` (disimpan sebagai `__key`)
-- onRow: support untuk row click handler
+Project ERP-ACC dalam kondisi stabil di `main`. Tiga fitur besar telah selesai:
+1. **AntD Migration** (2026-04-15) — full Tailwind → Ant Design 6 migration
+2. **Print Sales Invoice** (2026-04-17) — fitur cetak & PDF invoice penjualan + Company Settings
+3. **Print Purchase Order** (2026-04-17) — fitur cetak & PDF purchase order + Playwright E2E tests
 
 ---
 
-## File Structure
+## Fitur Terakhir: Print Purchase Order
+
+### Yang Diimplementasikan
+
+| File Baru | Tujuan |
+|-----------|--------|
+| `erp-app/src/components/shared/POPrintTemplate.jsx` | Template HTML PO (reuse InvoicePrintTemplate.css) |
+| `erp-app/src/hooks/usePrintPO.js` | Hook: triggerPrint, triggerPDF, loadingIds |
+| `erp-app/tests/po-print.spec.js` | 7 Playwright E2E tests — semua passing |
+
+| File Dimodifikasi | Perubahan |
+|-------------------|-----------|
+| `erp-app/src/pages/purchase/PurchaseOrderFormPage.jsx` | Tombol Print + PDF di toolbar (hanya untuk PO yang sudah tersimpan) |
+| `erp-app/src/pages/purchase/PurchaseOrdersPage.jsx` | Kolom Aksi (icon print/PDF per baris) |
+| `erp-app/.gitignore` | Tambah `.env.test`, `tests/.auth.json` |
+
+### Arsitektur Print PO
+
+Identik dengan Sales Invoice print — reuse container + CSS yang sama:
 
 ```
-erp-app/
-├── src/
-│   ├── main.jsx                    # ConfigProvider + AntdApp setup
-│   ├── index.css                   # Cleared (no @tailwindcss import)
-│   ├── App.jsx                     # Minimal updates (Spin only)
-│   ├── components/
-│   │   ├── ui/
-│   │   │   ├── Button.jsx          # ✅ AntD wrapper
-│   │   │   ├── Input.jsx           # ✅ forwardRef, type branching
-│   │   │   ├── Select.jsx          # ✅ forwardRef, options mapping
-│   │   │   ├── Modal.jsx           # ✅ AntD Modal
-│   │   │   ├── ConfirmDialog.jsx   # ✅ AntD Modal (React component)
-│   │   │   ├── StatusBadge.jsx     # ✅ AntD Tag
-│   │   │   ├── LoadingSpinner.jsx  # ✅ AntD Spin
-│   │   │   ├── Toast.jsx           # ✅ Stubbed (null)
-│   │   │   ├── ToastContext.jsx    # ✅ Bridge to AntdApp
-│   │   │   ├── DataTable.jsx       # ✅ AntD Table
-│   │   │   └── DateInput.jsx       # ✅ NEW: AntD DatePicker
-│   │   ├── layout/
-│   │   │   ├── AppLayout.jsx       # ✅ AntD Layout + Content
-│   │   │   └── Sidebar.jsx         # ✅ AntD Sider + Menu
-│   │   └── ...
-│   ├── pages/
-│   │   ├── LoginPage.jsx           # ✅ AntD Card + form
-│   │   └── [all others]            # ✅ Swepped (component references only)
-│   └── ...
-├── vite.config.js                   # ✅ Removed @tailwindcss/vite
-├── package.json                     # ✅ Added antd, dayjs; removed tailwindcss
-└── package-lock.json               # Generated
+Company Settings (Supabase) ──► getCompanySettings()
+                                        │
+                              usePrintPO hook
+                             ┌──────────┴──────────┐
+                       triggerPrint()         triggerPDF()
+                             │                     │
+                   Render ke #invoice-print-root   │
+                             │                     │
+                      window.print()     jsPDF.html() + html2canvas
+                                               doc.save(`po-{nomor}-{tanggal}.pdf`)
 ```
 
----
+**Perbedaan dari Sales Invoice:**
+- Tidak ada baris PPN di totals
+- Menampilkan Supplier (bukan Customer)
+- Filename PDF: `po-{po_number}-{date}.pdf`
+- Print button hanya muncul saat edit PO existing (`{id}` ada) — tidak di form new
 
-## Known Limitations / Follow-up (Optional)
+### Playwright E2E Tests (`po-print.spec.js`)
 
-1. **Manual State + Validation Pattern Kept**
-   - Pages tetap gunakan manual `useState` + form validation
-   - AntD `<Form>` component belum diadopsi (bisa dilakukan untuk halaman baru)
-   - Alasan: Meminimalkan perubahan page logic, fokus pada styling layer
+7 tests, 100% pass, run time ~17 detik:
 
-2. **No Test Framework**
-   - Verification: `npm run build` passing
-   - Manual smoke test: Semua modul (master, inventory, sales, purchase, cash, accounting, assets, reports) tested + working
+| Test | Verifikasi |
+|------|------------|
+| 1 | PO list loads dengan kolom Aksi |
+| 2 | Print icon di list → `window.print` dipanggil |
+| 3 | PDF icon di list → file `po-*.pdf` terdownload |
+| 4 | PO form existing → tombol Print + PDF terlihat |
+| 5 | Print button di form → `window.print` dipanggil |
+| 6 | PDF button di form → file `po-*.pdf` terdownload |
+| 7 | Form PO baru → tombol Print/PDF tidak muncul |
 
-3. **Bundle Size**
-   - Current: 2,613 kB / 773 kB gzip
-   - Di bawah target 3MB ✅
-   - Jika perlu lebih kecil: manual chunk splitting (future optimization)
+**Test setup**: `beforeAll` create test supplier + product + PO via Supabase client, `afterAll` hard-delete semua. Test data tidak pernah tampil di UI.
 
-4. **Lucide vs @ant-design/icons**
-   - Tetap gunakan Lucide React (alasan: consistency, existing usage)
-   - Bisa switch ke @ant-design/icons di masa depan jika desired
+**Auth**: storageState dibangun manual dari Supabase session token (bukan browser login) — lebih reliable dengan AntD controlled inputs.
 
----
-
-## How to Continue
-
-### Setup Lokal
 ```bash
-cd c:\Project\ERP-ACC\erp-app
-npm install
-npm run dev          # Dev server
-npm run build        # Production build
+# Jalankan PO print tests
+cd C:\Project\ERP-ACC\erp-app
+npm run dev          # Terminal 1
+npx playwright test tests/po-print.spec.js --reporter=list  # Terminal 2
 ```
 
-### Adding New Pages
-1. Use existing wrapper components (Button, Input, Select, etc.)
-2. For date inputs: gunakan DateInput
-3. For forms: manual state + validation (pattern ada di existing pages)
-4. For toasts: gunakan `useToast()` hook
-5. For layouts: gunakan AntD `<Layout>`, `<Space>`, `<Row>`, `<Col>`, `<Card>`
+### Manual Test Steps
 
-### Styling Guidelines
-- **Never use Tailwind classNames** (removed dari build)
-- Inline styles via `style={{}}` untuk custom styling
-- AntD components + props untuk theming
-- Lucide icons untuk icon needs
-
-### Branching Strategy (Post-Migration)
-- `main` is stable (fully migrated)
-- Create feature branches dari `main`
-- Semua feature harus:
-  - No Tailwind classNames
-  - Use wrapper components / AntD primitives
-  - Build passing sebelum merge
-  - Commit messages: English conventional style
+Verifikasi di production:
+1. Buka `/purchase/orders` → kolom Aksi muncul di tabel
+2. Klik icon Print per baris → dialog print terbuka, layout A4, tampilkan "Purchase Order"
+3. Klik icon PDF per baris → file `po-*.pdf` terunduh
+4. Buka PO existing → toolbar ada tombol Print + Download PDF
+5. Form PO baru (`/purchase/orders/new`) → tidak ada tombol Print/PDF
+6. Data supplier, tanggal, items, subtotal, total muncul benar di template
+7. Logo & info perusahaan dari Company Settings muncul di header
 
 ---
 
-## Verification Checklist
+## Fitur Sebelumnya: Print Sales Invoice
 
-Sebelum claim work done, verify:
-- [ ] `npm run build` passing (no errors/warnings)
-- [ ] No Tailwind classNames di code (`grep -r "className=" src/`)
-- [ ] All imports dari `src/components/ui/` (wrappers, bukan bare AntD)
-- [ ] Date inputs: gunakan DateInput wrapper (ISO string I/O)
-- [ ] Forms: gunakan wrapper components
-- [ ] Toasts: gunakan `useToast()` (via ToastContext)
-- [ ] Manual browser smoke test (jika ada UI changes)
+### Yang Diimplementasikan
 
----
+| File Baru | Tujuan |
+|-----------|--------|
+| `erp-app/migrations/001_company_settings.sql` | SQL migration tabel company_settings + storage bucket |
+| `erp-app/src/services/companySettingsService.js` | CRUD Supabase (get, update, uploadLogo) |
+| `erp-app/src/hooks/useCompanySettings.js` | React hook fetch company settings |
+| `erp-app/src/pages/settings/CompanySettingsPage.jsx` | Form edit info perusahaan |
+| `erp-app/src/components/shared/InvoicePrintTemplate.jsx` | Template HTML invoice (pure HTML) |
+| `erp-app/src/components/shared/InvoicePrintTemplate.css` | CSS print styles (@media print, A4) |
+| `erp-app/src/hooks/usePrintInvoice.js` | Hook: triggerPrint, triggerPDF, loadingIds |
+| `erp-app/playwright.config.js` | Playwright test configuration |
+| `erp-app/tests/invoice-print.spec.js` | 8 test cases — semua passing |
 
-## Git History (Summary)
-
-| Phase | Commits | Task |
-|-------|---------|------|
-| Setup | 977477d | Install antd 6.3.5, ConfigProvider setup |
-| UI Wrappers | d48c4d9–bb7b244 | Button, Input, Select, Modal, etc. (9 commits) |
-| DateInput | f96eed4 | NEW DateInput wrapper (dayjs-based) |
-| Date Sweep | 8fdd631 | Sweep 17 date inputs |
-| Master/Purchase/Sales | 0f92673 | Sweep master, purchase, sales pages |
-| Accounting/Cash | 1d70339 | Sweep accounting, cash pages |
-| Assets/Inventory | 3cce49b | Sweep assets, inventory pages |
-| Reports | 0304fc4 | Sweep reports pages |
-| Shell + Login | 6f1ff85 | AppLayout, Sidebar, LoginPage |
-| Build Cleanup | 141a02f | Remove Tailwind from vite.config + index.css |
-| Residual Sweep | 732d1f5 | Remove last 9 Tailwind classNames |
+| File Dimodifikasi | Perubahan |
+|-------------------|-----------|
+| `erp-app/src/App.jsx` | Route `/settings/company`, div `#invoice-print-root`, fix Spin tip→description |
+| `erp-app/src/components/layout/Sidebar.jsx` | Menu "Pengaturan Perusahaan" (minRole: write) |
+| `erp-app/src/pages/sales/SalesInvoiceFormPage.jsx` | Tombol Print + PDF di toolbar |
+| `erp-app/src/pages/sales/SalesInvoicesPage.jsx` | Kolom Aksi (icon print/PDF per baris) |
 
 ---
 
-## Contact / Questions
+## Infrastructure
 
-Jika ada pertanyaan tentang setup atau implementation details:
-- Check memory file: `C:\Users\m3m31\.claude\projects\c--Project\memory\project_erp_acc_antd_migration.md`
-- Check design spec: `docs/superpowers/specs/2026-04-15-antd-migration-design.md`
-- Check implementation plan: `docs/superpowers/plans/2026-04-15-antd-migration.md`
+### Deployment
+
+| Setting | Value |
+|---------|-------|
+| Platform | Vercel |
+| Project | `manfred-gunardis-projects/erp-app` |
+| URL | https://erp-app-umber.vercel.app |
+| Cara deploy | `vercel --prod` dari dalam `erp-app/` |
+
+```bash
+cd C:\Project\ERP-ACC\erp-app
+vercel --prod
+```
+
+### Supabase
+
+| Setting | Value |
+|---------|-------|
+| Project ID | `cjnszzfbxgyszoskfgva` |
+| URL | `https://cjnszzfbxgyszoskfgva.supabase.co` |
+| Env vars | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` |
+
+Env vars sudah dikonfigurasi di Vercel dashboard (Production + Preview + Development).
+
+### Testing (Playwright)
+
+```bash
+cd C:\Project\ERP-ACC\erp-app
+
+# Dev server harus running
+npm run dev
+
+# Jalankan semua tests (terminal lain)
+npx playwright test
+
+# Hasil terakhir: 15 passing (8 invoice + 7 PO)
+
+# Credentials test di .env.test (gitignored)
+# Units harus ada di database (pcs/dus/kg) — selalu ada
+```
+
+**Catatan**: `.env.test` berisi credentials asli — jangan pernah di-commit.
 
 ---
 
-**Documented**: 2026-04-15  
-**Status**: ✅ Production Ready  
-**Build**: 2,613 kB (773 kB gzip) ✅
+## Tech Stack Saat Ini
+
+```
+Frontend:  React 18 + Vite 8 + Ant Design 6.3.5
+Icons:     Lucide React (bukan @ant-design/icons)
+PDF:       jsPDF 4.2.1 + html2canvas
+Backend:   Supabase (PostgreSQL + Auth + Storage)
+Deploy:    Vercel
+Testing:   Playwright 1.59.1 + @supabase/supabase-js + dotenv
+```
+
+### Konvensi yang Harus Diikuti
+
+- **Jangan pakai Tailwind** — sudah dihapus dari build pipeline
+- **Gunakan wrapper components** (`src/components/ui/`) untuk Button, Input, Select, Modal, dll
+- **Date input**: gunakan `DateInput` wrapper (ISO string I/O)
+- **Toast**: gunakan `useToast()` hook
+- **Styling**: inline `style={{}}` atau AntD props
+- **Print template**: pure HTML + inline styles (tanpa AntD/Tailwind) — intentional agar reliabel dengan jsPDF
+
+---
+
+## Setup Lokal
+
+```bash
+cd C:\Project\ERP-ACC\erp-app
+npm install
+npm run dev          # Dev server → localhost:5173
+npm run build        # Production build (harus passing sebelum deploy)
+```
+
+---
+
+## Known Issues / Catatan
+
+- **Chunk size warning** saat build: normal (html2canvas 199KB + AntD bundle). Bukan blocking.
+- **Company Settings** hanya untuk `canWrite`. Viewer tidak bisa akses halaman, tapi tetap bisa print.
+- **Logo**: satu file aktif — upload baru overwrite yang lama.
+- **Print template visibility**: container `#invoice-print-root` pakai `display: none` by default, hanya visible via `@media print` atau saat PDF rendering. Test pakai `state: 'attached'` bukan `state: 'visible'`.
+
+---
+
+## Next Steps (Opsional)
+
+Tidak ada task wajib. Kemungkinan next:
+- Print untuk Purchase Invoice
+- Print untuk Goods Receipt
+- Print preview in-app sebelum dialog print
+- Fitur ERP berikutnya sesuai kebutuhan bisnis
+
+---
+
+**Documented**: 2026-04-17  
+**Status**: ✅ Production Live — https://erp-app-umber.vercel.app
