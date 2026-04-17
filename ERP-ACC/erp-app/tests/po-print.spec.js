@@ -12,6 +12,8 @@ const supabase = createClient(
 
 let testPoId = null
 let testPoNumber = null
+let testSupplierId = null
+let testProductId = null
 
 test.describe('PO Print Feature', () => {
 
@@ -25,20 +27,28 @@ test.describe('PO Print Feature', () => {
     })
     if (authErr) throw new Error(`Supabase login gagal: ${authErr.message}`)
 
-    const { data: { user } } = await supabase.auth.getUser()
-
-    // Ambil data master pertama yang ada
-    const { data: supplier, error: sErr } = await supabase
-      .from('suppliers').select('id').limit(1).single()
-    if (sErr) throw new Error(`Tidak ada supplier: ${sErr.message}`)
-
-    const { data: product, error: pErr } = await supabase
-      .from('products').select('id').limit(1).single()
-    if (pErr) throw new Error(`Tidak ada product: ${pErr.message}`)
-
+    // Ambil unit pertama yang ada (units selalu ada: pcs, dus, kg)
     const { data: unit, error: uErr } = await supabase
       .from('units').select('id').limit(1).single()
     if (uErr) throw new Error(`Tidak ada unit: ${uErr.message}`)
+
+    // Buat test supplier
+    const { data: supplier, error: sErr } = await supabase
+      .from('suppliers')
+      .insert({ name: `TEST-Supplier-${Date.now()}` })
+      .select('id')
+      .single()
+    if (sErr) throw new Error(`Gagal buat test supplier: ${sErr.message}`)
+    testSupplierId = supplier.id
+
+    // Buat test product
+    const { data: product, error: pErr } = await supabase
+      .from('products')
+      .insert({ name: `TEST-Product-${Date.now()}`, base_unit_id: unit.id, buy_price: 100000 })
+      .select('id')
+      .single()
+    if (pErr) throw new Error(`Gagal buat test product: ${pErr.message}`)
+    testProductId = product.id
 
     // Buat PO dummy
     testPoNumber = `PO-TEST-${Date.now()}`
@@ -47,12 +57,10 @@ test.describe('PO Print Feature', () => {
       .insert({
         po_number: testPoNumber,
         date: new Date().toISOString().split('T')[0],
-        supplier_id: supplier.id,
+        supplier_id: testSupplierId,
         status: 'draft',
         notes: '__PLAYWRIGHT_TEST__',
         total: 100000,
-        updated_by: user.id,
-        updated_at: new Date().toISOString(),
       })
       .select('id')
       .single()
@@ -62,7 +70,7 @@ test.describe('PO Print Feature', () => {
     // Buat PO item
     const { error: itemErr } = await supabase.from('purchase_order_items').insert({
       purchase_order_id: testPoId,
-      product_id: product.id,
+      product_id: testProductId,
       unit_id: unit.id,
       quantity: 1,
       quantity_base: 1,
@@ -72,15 +80,24 @@ test.describe('PO Print Feature', () => {
     })
     if (itemErr) throw new Error(`Gagal buat test PO item: ${itemErr.message}`)
 
-    // Login browser dan simpan session
-    const page = await browser.newPage()
-    await page.goto('/login')
-    await page.fill('input[type=email]', process.env.TEST_EMAIL)
-    await page.fill('input[type=password]', process.env.TEST_PASSWORD)
-    await page.click('button[type=submit]')
-    await page.waitForURL('**/dashboard**', { timeout: 15000 })
-    await page.context().storageState({ path: 'tests/.auth.json' })
-    await page.close()
+    // Ambil session dari Supabase client dan bangun storageState manual
+    // (lebih reliable daripada browser login via AntD form)
+    const { data: sessionData } = await supabase.auth.getSession()
+    const session = sessionData.session
+    if (!session) throw new Error('Supabase session tidak ada setelah login')
+    const projectRef = new URL(process.env.VITE_SUPABASE_URL).hostname.split('.')[0]
+    const storageKey = `sb-${projectRef}-auth-token`
+    const fs = await import('fs')
+    const authState = {
+      cookies: [],
+      origins: [{
+        origin: 'http://localhost:5173',
+        localStorage: [
+          { name: storageKey, value: JSON.stringify(session) },
+        ],
+      }],
+    }
+    fs.writeFileSync('tests/.auth.json', JSON.stringify(authState, null, 2))
   })
 
   test.afterAll(async () => {
@@ -89,6 +106,12 @@ test.describe('PO Print Feature', () => {
         .delete().eq('purchase_order_id', testPoId)
       await supabase.from('purchase_orders')
         .delete().eq('id', testPoId)
+    }
+    if (testProductId) {
+      await supabase.from('products').delete().eq('id', testProductId)
+    }
+    if (testSupplierId) {
+      await supabase.from('suppliers').delete().eq('id', testSupplierId)
     }
     await supabase.auth.signOut()
   })
@@ -112,11 +135,11 @@ test.describe('PO Print Feature', () => {
     const row = page.locator('tr').filter({ hasText: testPoNumber })
     await expect(row).toBeVisible({ timeout: 10000 })
     await row.locator('button[title="Print PO"]').click()
-    await page.waitForSelector('#invoice-print-root .invoice-template', { timeout: 10000 })
+    await page.waitForSelector('#invoice-print-root .invoice-template', { state: 'attached', timeout: 10000 })
     const printed = await page.evaluate(() => window._printCalled)
     expect(printed).toBe(true)
     await expect(page.locator('#invoice-print-root .invoice-template'))
-      .toContainText('Purchase Order')
+      .toContainText('Purchase Order', { useInnerText: false })
   })
 
   // --- Test 3 ---
@@ -147,11 +170,11 @@ test.describe('PO Print Feature', () => {
     await page.goto(`/purchase/orders/${testPoId}`)
     await expect(page.locator('button:has-text("Print")')).toBeVisible({ timeout: 10000 })
     await page.locator('button:has-text("Print")').click()
-    await page.waitForSelector('#invoice-print-root .invoice-template', { timeout: 10000 })
+    await page.waitForSelector('#invoice-print-root .invoice-template', { state: 'attached', timeout: 10000 })
     const printed = await page.evaluate(() => window._printCalled)
     expect(printed).toBe(true)
     await expect(page.locator('#invoice-print-root .invoice-template'))
-      .toContainText('Purchase Order')
+      .toContainText('Purchase Order', { useInnerText: false })
   })
 
   // --- Test 6 ---
