@@ -13,13 +13,16 @@ import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import DocumentHeader from '../../components/shared/DocumentHeader'
 import LineItemsTable from '../../components/shared/LineItemsTable'
-import { ArrowLeft, Save, Check } from 'lucide-react'
+import { ArrowLeft, Save, Check, Printer, FileDown } from 'lucide-react'
+import { usePrintPO } from '../../hooks/usePrintPO'
+import { Spin } from 'antd'
 
 export default function PurchaseOrderFormPage() {
   const navigate = useNavigate()
   const { id } = useParams()
   const { canWrite, canPost } = useAuth()
   const toast = useToast()
+  const { triggerPrint, triggerPDF, loadingIds } = usePrintPO()
 
   const { suppliers } = useSuppliers()
   const { products } = useProducts()
@@ -164,6 +167,26 @@ export default function PurchaseOrderFormPage() {
               <Button variant="primary" onClick={handleConfirm} loading={submitting}>
                 <Check size={18} /> Konfirmasi
               </Button>
+            )}
+            {id && (
+              <>
+                <Button
+                  variant="secondary"
+                  onClick={() => triggerPrint(id)}
+                  disabled={loadingIds[id]}
+                >
+                  {loadingIds[id] ? <Spin size="small" /> : <Printer size={18} />}
+                  Print
+                </Button>
+                <Button
+                  variant="secondary"
+                  onClick={() => triggerPDF(id)}
+                  disabled={loadingIds[id]}
+                >
+                  {loadingIds[id] ? <Spin size="small" /> : <FileDown size={18} />}
+                  Download PDF
+                </Button>
+              </>
             )}
           </Flex>
         </Space>
