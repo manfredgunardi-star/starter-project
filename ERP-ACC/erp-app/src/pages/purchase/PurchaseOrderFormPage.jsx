@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Space, Flex, Typography, Card, Alert } from 'antd'
+import { Space, Flex, Typography, Card, Alert, Spin } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { usePurchaseOrders } from '../../hooks/usePurchase'
@@ -15,7 +15,6 @@ import DocumentHeader from '../../components/shared/DocumentHeader'
 import LineItemsTable from '../../components/shared/LineItemsTable'
 import { ArrowLeft, Save, Check, Printer, FileDown } from 'lucide-react'
 import { usePrintPO } from '../../hooks/usePrintPO'
-import { Spin } from 'antd'
 
 export default function PurchaseOrderFormPage() {
   const navigate = useNavigate()
