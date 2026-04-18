@@ -80,6 +80,16 @@ export async function saveGoodsReceipt(gr, items) {
 }
 
 export async function postGoodsReceipt(id) {
+  const { data: gr, error: fetchErr } = await supabase
+    .from('goods_receipts')
+    .select('date')
+    .eq('id', id)
+    .single()
+  if (fetchErr) throw fetchErr
+  const { closedPeriods } = await getClosedPeriods()
+  if (isPeriodClosed(gr.date, closedPeriods)) {
+    throw new Error(`Periode ${gr.date.slice(0, 7)} sudah ditutup. Tidak dapat memposting penerimaan barang.`)
+  }
   const { error } = await supabase.rpc('post_goods_receipt', { p_gr_id: id })
   if (error) throw error
 }

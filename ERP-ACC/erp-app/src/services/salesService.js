@@ -171,6 +171,16 @@ export async function saveGoodsDelivery(gd, items) {
 }
 
 export async function postGoodsDelivery(id) {
+  const { data: gd, error: fetchErr } = await supabase
+    .from('goods_deliveries')
+    .select('date')
+    .eq('id', id)
+    .single()
+  if (fetchErr) throw fetchErr
+  const { closedPeriods } = await getClosedPeriods()
+  if (isPeriodClosed(gd.date, closedPeriods)) {
+    throw new Error(`Periode ${gd.date.slice(0, 7)} sudah ditutup. Tidak dapat memposting pengiriman barang.`)
+  }
   const { error } = await supabase.rpc('post_goods_delivery', { p_gd_id: id })
   if (error) throw error
 }

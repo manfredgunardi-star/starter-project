@@ -132,7 +132,7 @@ export default function ClosingPeriodPage() {
           >
             <Button
               variant="secondary"
-              size="small"
+              size="sm"
               loading={actionLoading === row.key}
             >
               Buka Kembali
@@ -148,7 +148,7 @@ export default function ClosingPeriodPage() {
           >
             <Button
               variant="danger"
-              size="small"
+              size="sm"
               loading={actionLoading === row.key}
             >
               Tutup Periode
