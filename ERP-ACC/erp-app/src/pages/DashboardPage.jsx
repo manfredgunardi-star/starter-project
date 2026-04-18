@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { getDashboardMetrics } from '../services/dashboardService'
+import { getDashboardMetrics, getMonthlyTrend } from '../services/dashboardService'
 import { formatCurrency } from '../utils/currency'
 import { formatDate } from '../utils/date'
 import LoadingSpinner from '../components/ui/LoadingSpinner'
+import MonthlyTrendChart from '../components/dashboard/MonthlyTrendChart'
 import {
   Row,
   Col,
@@ -22,6 +23,9 @@ import {
   Package,
   ArrowRight,
   Banknote,
+  ArrowUpRight,
+  ArrowDownRight,
+  Clock,
 } from 'lucide-react'
 
 const { Title, Text } = Typography
@@ -43,7 +47,11 @@ function MetricCard({ icon: Icon, label, value, color, sub }) {
         <div>
           <Text style={{ fontSize: 13, opacity: 0.75, color: color?.text }}>{label}</Text>
           <div style={{ fontSize: 22, fontWeight: 700, color: color?.text, lineHeight: '1.3' }}>{value}</div>
-          {sub && <Text style={{ fontSize: 12, opacity: 0.6, color: color?.text }}>{sub}</Text>}
+          {sub && (
+            typeof sub === 'string'
+              ? <Text style={{ fontSize: 12, opacity: 0.6, color: color?.text }}>{sub}</Text>
+              : sub
+          )}
         </div>
       </Space>
     </Card>
@@ -63,14 +71,34 @@ function SectionHeader({ title, linkTo, linkLabel }) {
   )
 }
 
+function MomIndicator({ current, previous }) {
+  if (!previous || previous === 0) return null
+  const pct = ((current - previous) / previous * 100).toFixed(1)
+  const up = current >= previous
+  return (
+    <Flex align="center" gap={2} style={{ marginTop: 2 }}>
+      {up
+        ? <ArrowUpRight size={12} color="#16a34a" />
+        : <ArrowDownRight size={12} color="#dc2626" />}
+      <span style={{ fontSize: 12, color: up ? '#16a34a' : '#dc2626' }}>
+        {Math.abs(pct)}% vs bulan lalu
+      </span>
+    </Flex>
+  )
+}
+
 export default function DashboardPage() {
   const [metrics, setMetrics] = useState(null)
+  const [trend, setTrend] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
   useEffect(() => {
-    getDashboardMetrics()
-      .then(setMetrics)
+    Promise.all([getDashboardMetrics(), getMonthlyTrend()])
+      .then(([m, t]) => {
+        setMetrics(m)
+        setTrend(t)
+      })
       .catch(err => setError(err.message))
       .finally(() => setLoading(false))
   }, [])
@@ -93,7 +121,12 @@ export default function DashboardPage() {
             label="Penjualan Bulan Ini"
             value={formatCurrency(metrics.totalPenjualan)}
             color={{ bg: '#f0fdf4', border: '#bbf7d0', text: '#14532d' }}
-            sub={currentMonth}
+            sub={
+              <Space direction="vertical" size={0}>
+                <Text style={{ fontSize: 12, opacity: 0.6, color: '#14532d' }}>{currentMonth}</Text>
+                <MomIndicator current={metrics.totalPenjualan} previous={metrics.lastMonthPenjualan} />
+              </Space>
+            }
           />
         </Col>
         <Col xs={24} sm={12} xl={6}>
@@ -124,6 +157,48 @@ export default function DashboardPage() {
           />
         </Col>
       </Row>
+
+      {/* Overdue Alert Row */}
+      {(metrics.totalOverduePiutang > 0 || metrics.totalOverdueHutang > 0) && (
+        <Row gutter={[16, 16]}>
+          {metrics.totalOverduePiutang > 0 && (
+            <Col xs={24} sm={12}>
+              <MetricCard
+                icon={Clock}
+                label="Piutang Jatuh Tempo"
+                value={formatCurrency(metrics.totalOverduePiutang)}
+                color={{ bg: '#fff7ed', border: '#fed7aa', text: '#7c2d12' }}
+                sub="AR sudah lewat jatuh tempo"
+              />
+            </Col>
+          )}
+          {metrics.totalOverdueHutang > 0 && (
+            <Col xs={24} sm={12}>
+              <MetricCard
+                icon={AlertTriangle}
+                label="Hutang Jatuh Tempo"
+                value={formatCurrency(metrics.totalOverdueHutang)}
+                color={{ bg: '#fef2f2', border: '#fecaca', text: '#7f1d1d' }}
+                sub="AP sudah lewat jatuh tempo"
+              />
+            </Col>
+          )}
+        </Row>
+      )}
+
+      {/* Monthly Revenue & Expense Trend Chart */}
+      {trend.length > 0 && (
+        <Card
+          title={
+            <span style={{ fontWeight: 600, color: '#1f2937' }}>
+              Tren Penjualan &amp; Pembelian (6 Bulan)
+            </span>
+          }
+          size="small"
+        >
+          <MonthlyTrendChart data={trend} />
+        </Card>
+      )}
 
       <Row gutter={[16, 16]}>
         {/* Recent Sales Invoices */}
