@@ -193,20 +193,25 @@ export async function getMonthlyTrend() {
     d.setMonth(d.getMonth() - i)
     months.push({
       key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
-      label: d.toLocaleString('id-ID', { month: 'short', year: '2-digit' }),
+      label: (() => {
+        const MONTHS_ID = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des']
+        return `${MONTHS_ID[d.getMonth()]} ${d.getFullYear().toString().slice(2)}`
+      })(),
       revenue: 0,
       expense: 0,
     })
   }
 
+  const monthMap = new Map(months.map(m => [m.key, m]))
+
   for (const inv of salesRes.data || []) {
     const key = inv.date.slice(0, 7)
-    const m = months.find(b => b.key === key)
+    const m = monthMap.get(key)
     if (m) m.revenue += Number(inv.total) || 0
   }
   for (const inv of purchaseRes.data || []) {
     const key = inv.date.slice(0, 7)
-    const m = months.find(b => b.key === key)
+    const m = monthMap.get(key)
     if (m) m.expense += Number(inv.total) || 0
   }
 
