@@ -186,6 +186,7 @@ export async function getMonthlyTrend() {
   if (purchaseRes.error) throw purchaseRes.error
 
   // Bangun 6 bucket bulan: dari 5 bulan lalu hingga bulan ini
+  const MONTHS_ID = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des']
   const months = []
   for (let i = 5; i >= 0; i--) {
     const d = new Date()
@@ -193,10 +194,7 @@ export async function getMonthlyTrend() {
     d.setMonth(d.getMonth() - i)
     months.push({
       key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
-      label: (() => {
-        const MONTHS_ID = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des']
-        return `${MONTHS_ID[d.getMonth()]} ${d.getFullYear().toString().slice(2)}`
-      })(),
+      label: `${MONTHS_ID[d.getMonth()]} ${d.getFullYear().toString().slice(2)}`,
       revenue: 0,
       expense: 0,
     })
