@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { getARAgingData, getAPAgingData } from '../../services/reportService'
 import { formatCurrency } from '../../utils/currency'
-import { formatDate } from '../../utils/date'
+import { formatDate, today } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import DateInput from '../../components/ui/DateInput'
@@ -26,10 +26,6 @@ const BUCKET_COLORS = {
   '31-60': 'orange',
   '61-90': 'volcano',
   '90+': 'red',
-}
-
-function today() {
-  return new Date().toISOString().slice(0, 10)
 }
 
 function getAgingBucket(dueDate, asOfDate) {
