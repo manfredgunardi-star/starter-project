@@ -1,0 +1,5 @@
+[    7749ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ https://starter-project-lemon.vercel.app/:0
+[ 1275406ms] [ERROR] Access to fetch at 'https://cjnszzfbxgyszoskfgva.supabase.co/functions/v1/create-user' from origin 'https://starter-project-lemon.vercel.app' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://starter-project-lemon.vercel.app/settings/users:0
+[ 1275407ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://cjnszzfbxgyszoskfgva.supabase.co/functions/v1/create-user:0
+[ 1615559ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ https://starter-project-lemon.vercel.app/settings/users:0
+[ 4020371ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ https://starter-project-lemon.vercel.app/sales/orders:0

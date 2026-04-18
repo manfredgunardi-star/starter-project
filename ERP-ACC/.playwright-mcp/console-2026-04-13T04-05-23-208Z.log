@@ -1,0 +1,18 @@
+[     254ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=8ee1b6f2:14337
+[   29112ms] [ERROR] Failed to load resource: the server responded with a status of 400 () @ https://cjnszzfbxgyszoskfgva.supabase.co/rest/v1/rpc/post_depreciation_batch:0
+[   45645ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5174/assets/depreciation:0
+[  356969ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5174/src/pages/assets/AssetFormPage.jsx?t=1776053479998:0
+[  356970ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5174/src/services/assetService.js?t=1776053479998:0
+[  356978ms] [ERROR] [vite] Failed to reload /src/pages/assets/AssetFormPage.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5174/@vite/client:509
+[  356981ms] [ERROR] [vite] Failed to reload /src/pages/assets/AssetBulkImportPage.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5174/@vite/client:509
+[  356983ms] [ERROR] [vite] Failed to reload /src/pages/assets/AssetsPage.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5174/@vite/client:509
+[  356984ms] [ERROR] [vite] Failed to reload /src/pages/assets/AssetDetailPage.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5174/@vite/client:509
+[  356985ms] [ERROR] [vite] Failed to reload /src/pages/assets/AssetDisposalFormPage.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5174/@vite/client:509
+[  357039ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5174/src/pages/assets/AssetFormPage.jsx?t=1776053480004:0
+[  357043ms] [ERROR] [vite] Failed to reload /src/pages/assets/AssetFormPage.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5174/@vite/client:509
+[  357134ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5174/src/components/assets/DisposalPreviewCard.jsx?t=1776053480202:0
+[  357135ms] [ERROR] [vite] Failed to reload /src/components/assets/DisposalPreviewCard.jsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5174/@vite/client:509
+[  357405ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=8ee1b6f2:14337
+[  357634ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5174/assets/depreciation:0
+[  359735ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5174/node_modules/.vite/deps/react-dom_client.js?v=8ee1b6f2:14337
+[  359961ms] [VERBOSE] [DOM] Input elements should have autocomplete attributes (suggested: "current-password"): (More info: https://goo.gl/9p2vKq) %o @ http://localhost:5174/assets/depreciation:0

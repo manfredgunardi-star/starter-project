@@ -1,0 +1,239 @@
+- generic [ref=e7]:
+  - generic [ref=e8]:
+    - heading "ERP Pembukuan" [level=1] [ref=e10]
+    - navigation [ref=e11]:
+      - link "Dashboard" [ref=e13] [cursor=pointer]:
+        - /url: /
+        - img [ref=e14]
+        - generic [ref=e19]: Dashboard
+      - generic [ref=e20]:
+        - button "Master Data" [ref=e21]:
+          - img [ref=e22]
+          - generic [ref=e26]: Master Data
+          - img [ref=e27]
+        - generic [ref=e29]:
+          - link "Satuan" [ref=e30] [cursor=pointer]:
+            - /url: /master/units
+          - link "Produk" [ref=e31] [cursor=pointer]:
+            - /url: /master/products
+          - link "Customer" [ref=e32] [cursor=pointer]:
+            - /url: /master/customers
+          - link "Supplier" [ref=e33] [cursor=pointer]:
+            - /url: /master/suppliers
+          - link "COA" [ref=e34] [cursor=pointer]:
+            - /url: /master/coa
+      - generic [ref=e35]:
+        - button "Inventory" [ref=e36]:
+          - img [ref=e37]
+          - generic [ref=e41]: Inventory
+          - img [ref=e42]
+        - generic [ref=e44]:
+          - link "Stok" [ref=e45] [cursor=pointer]:
+            - /url: /inventory/stock
+          - link "Kartu Stok" [ref=e46] [cursor=pointer]:
+            - /url: /inventory/stock-card
+      - generic [ref=e47]:
+        - button "Penjualan" [ref=e48]:
+          - img [ref=e49]
+          - generic [ref=e53]: Penjualan
+          - img [ref=e54]
+        - generic [ref=e56]:
+          - link "Sales Order" [ref=e57] [cursor=pointer]:
+            - /url: /sales/orders
+          - link "Pengiriman" [ref=e58] [cursor=pointer]:
+            - /url: /sales/deliveries
+          - link "Invoice Penjualan" [ref=e59] [cursor=pointer]:
+            - /url: /sales/invoices
+      - generic [ref=e60]:
+        - button "Pembelian" [ref=e61]:
+          - img [ref=e62]
+          - generic [ref=e67]: Pembelian
+          - img [ref=e68]
+        - generic [ref=e70]:
+          - link "Purchase Order" [ref=e71] [cursor=pointer]:
+            - /url: /purchase/orders
+          - link "Penerimaan" [ref=e72] [cursor=pointer]:
+            - /url: /purchase/receipts
+          - link "Invoice Pembelian" [ref=e73] [cursor=pointer]:
+            - /url: /purchase/invoices
+      - generic [ref=e74]:
+        - button "Kas & Bank" [ref=e75]:
+          - img [ref=e76]
+          - generic [ref=e78]: Kas & Bank
+          - img [ref=e79]
+        - generic [ref=e81]:
+          - link "Akun" [ref=e82] [cursor=pointer]:
+            - /url: /cash/accounts
+          - link "Pembayaran" [ref=e83] [cursor=pointer]:
+            - /url: /cash/payments
+          - link "Transfer" [ref=e84] [cursor=pointer]:
+            - /url: /cash/transfers/new
+          - link "Rekonsiliasi" [ref=e85] [cursor=pointer]:
+            - /url: /cash/reconciliation
+      - generic [ref=e86]:
+        - button "Pembukuan" [ref=e87]:
+          - img [ref=e88]
+          - generic [ref=e90]: Pembukuan
+          - img [ref=e91]
+        - generic [ref=e93]:
+          - link "Jurnal" [ref=e94] [cursor=pointer]:
+            - /url: /accounting/journals
+          - link "Buku Besar" [ref=e95] [cursor=pointer]:
+            - /url: /accounting/ledger
+      - generic [ref=e96]:
+        - button "Aset Tetap" [ref=e97]:
+          - img [ref=e98]
+          - generic [ref=e102]: Aset Tetap
+          - img [ref=e103]
+        - generic [ref=e105]:
+          - link "Daftar Aset" [ref=e106] [cursor=pointer]:
+            - /url: /assets
+          - link "Kategori Aset" [ref=e107] [cursor=pointer]:
+            - /url: /assets/categories
+          - link "Post Penyusutan" [ref=e108] [cursor=pointer]:
+            - /url: /assets/depreciation
+          - link "Import Aset" [ref=e109] [cursor=pointer]:
+            - /url: /assets/bulk-import
+      - generic [ref=e110]:
+        - button "Laporan" [ref=e111]:
+          - img [ref=e112]
+          - generic [ref=e114]: Laporan
+          - img [ref=e115]
+        - generic [ref=e117]:
+          - link "Neraca" [ref=e118] [cursor=pointer]:
+            - /url: /reports/balance-sheet
+          - link "Laba Rugi" [ref=e119] [cursor=pointer]:
+            - /url: /reports/income-statement
+          - link "Arus Kas" [ref=e120] [cursor=pointer]:
+            - /url: /reports/cash-flow
+          - link "Daftar Aset Tetap" [ref=e121] [cursor=pointer]:
+            - /url: /reports/assets-list
+          - link "Penyusutan per Periode" [ref=e122] [cursor=pointer]:
+            - /url: /reports/depreciation-period
+          - link "Disposal Aset" [ref=e123] [cursor=pointer]:
+            - /url: /reports/asset-disposals
+          - link "Summary Aset per Kategori" [ref=e124] [cursor=pointer]:
+            - /url: /reports/assets-summary
+      - generic [ref=e125]:
+        - button "Settings" [ref=e126]:
+          - img [ref=e127]
+          - generic [ref=e130]: Settings
+          - img [ref=e131]
+        - generic [ref=e133]:
+          - link "Users" [ref=e134] [cursor=pointer]:
+            - /url: /settings/users
+          - link "Audit Log" [ref=e135] [cursor=pointer]:
+            - /url: /settings/audit-log
+  - generic [ref=e136]:
+    - banner [ref=e137]:
+      - generic [ref=e138]: Selamat datang, Manfred Gunardi
+      - button "Keluar" [ref=e139]:
+        - img [ref=e140]
+        - text: Keluar
+    - main [ref=e143]:
+      - generic [ref=e144]:
+        - generic [ref=e145]:
+          - heading "Tambah Aset Tetap" [level=1] [ref=e146]
+          - button "Batal" [ref=e147]
+        - generic [ref=e237]:
+          - img [ref=e238]
+          - generic [ref=e240]: Could not find the function public.generate_asset_code(category_code) in the schema cache
+        - generic [ref=e148]:
+          - generic [ref=e149]:
+            - heading "Informasi Aset" [level=2] [ref=e150]
+            - generic [ref=e151]:
+              - generic [ref=e152]: Nama Aset *
+              - 'textbox "Contoh: Truk Hino 500" [ref=e153]': Mobil Avanza
+            - generic [ref=e154]:
+              - generic [ref=e155]: Kategori Aset *
+              - combobox [ref=e156]:
+                - option "Pilih kategori..."
+                - option "BLD — Bangunan"
+                - option "EQP — Peralatan"
+                - option "LPT — Laptop Kerja"
+                - option "MCH — Mesin"
+                - option "OFI — Inventaris Kantor"
+                - option "VHC — Kendaraan" [selected]
+            - generic [ref=e157]:
+              - generic [ref=e158]: Lokasi (opsional)
+              - 'textbox "Contoh: Gudang Utama" [ref=e159]'
+            - generic [ref=e160]:
+              - generic [ref=e161]: Keterangan (opsional)
+              - textbox "Catatan tambahan tentang aset ini..." [ref=e162]
+          - generic [ref=e163]:
+            - heading "Keuangan" [level=2] [ref=e165]
+            - generic [ref=e166]:
+              - generic [ref=e167]: Tanggal Perolehan *
+              - textbox [ref=e168]: 2026-01-15
+            - generic [ref=e169]:
+              - generic [ref=e170]: Harga Perolehan (Rp) *
+              - spinbutton [ref=e171]: "250000000"
+            - generic [ref=e172]:
+              - generic [ref=e173]: Nilai Sisa (Rp)
+              - spinbutton [ref=e174]: "50000000"
+            - generic [ref=e175]:
+              - generic [ref=e176]: Masa Manfaat (bulan) *
+              - spinbutton [ref=e177]: "96"
+            - generic [ref=e178]:
+              - generic [ref=e179]: "Mulai Penyusutan(otomatis: awal bulan setelah perolehan)"
+              - textbox [ref=e180]: 2026-01-31
+          - generic [ref=e181]:
+            - heading "Pembayaran Akuisisi" [level=2] [ref=e182]
+            - generic [ref=e183]:
+              - heading "Metode Pembayaran Akuisisi" [level=3] [ref=e184]
+              - generic [ref=e185]:
+                - generic [ref=e186]: Pilih Metode Pembayaran
+                - generic [ref=e187]:
+                  - generic [ref=e188] [cursor=pointer]:
+                    - radio "Tunai/Bank Pembayaran langsung dari rekening kas/bank" [checked] [ref=e189]
+                    - generic [ref=e190]:
+                      - generic [ref=e191]: Tunai/Bank
+                      - generic [ref=e192]: Pembayaran langsung dari rekening kas/bank
+                  - generic [ref=e193] [cursor=pointer]:
+                    - radio "Hutang Dagang Pembayaran cicilan kepada supplier" [ref=e194]
+                    - generic [ref=e195]:
+                      - generic [ref=e196]: Hutang Dagang
+                      - generic [ref=e197]: Pembayaran cicilan kepada supplier
+                  - generic [ref=e198] [cursor=pointer]:
+                    - radio "Uang Muka Pemakaian dana uang muka" [ref=e199]
+                    - generic [ref=e200]:
+                      - generic [ref=e201]: Uang Muka
+                      - generic [ref=e202]: Pemakaian dana uang muka
+                  - generic [ref=e203] [cursor=pointer]:
+                    - radio "Campur Kombinasi dari berbagai metode" [ref=e204]
+                    - generic [ref=e205]:
+                      - generic [ref=e206]: Campur
+                      - generic [ref=e207]: Kombinasi dari berbagai metode
+              - generic [ref=e208]:
+                - paragraph [ref=e209]: Pembayaran Tunai/Bank
+                - generic [ref=e210]:
+                  - generic [ref=e211]: Akun Kas/Bank
+                  - combobox [ref=e212]:
+                    - option "Pilih akun kas/bank (1-11___ atau 1-12___)"
+                    - option "1-11000 — Kas"
+                    - option "1-12000 — Bank" [selected]
+                - generic [ref=e213]:
+                  - generic [ref=e214]: Jumlah Pembayaran
+                  - textbox "Rp 0" [disabled] [ref=e215]: Rp 250.000.000
+                - generic [ref=e216]:
+                  - strong [ref=e217]: "Total:"
+                  - text: Rp 250.000.000
+          - generic [ref=e221]:
+            - heading "Preview Penyusutan (Garis Lurus)" [level=2] [ref=e222]
+            - generic [ref=e223]:
+              - generic [ref=e224]:
+                - paragraph [ref=e225]: Per bulan
+                - paragraph [ref=e226]: Rp 2.083.333,33
+              - generic [ref=e227]:
+                - paragraph [ref=e228]: Per tahun
+                - paragraph [ref=e229]: Rp 25.000.000
+              - generic [ref=e230]:
+                - paragraph [ref=e231]: Total bulan
+                - paragraph [ref=e232]: 96 bulan
+              - generic [ref=e233]:
+                - paragraph [ref=e234]: Berakhir
+                - paragraph [ref=e235]: 31 Jan 2034
+            - paragraph [ref=e236]: "Nilai yang dapat disusutkan: Rp 200.000.000 (harga perolehan − nilai sisa)"
+          - generic [ref=e218]:
+            - button "Batal" [ref=e219]
+            - button "Buat Aset" [ref=e220]

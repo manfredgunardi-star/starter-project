@@ -1,0 +1,545 @@
+- generic:
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - banner:
+            - generic:
+              - generic:
+                - link:
+                  - /url: /dashboard/org/knwqmtvwknsyytwggasd
+                  - img
+                - generic:
+                  - generic:
+                    - img
+                  - generic:
+                    - link:
+                      - /url: /dashboard/org/knwqmtvwknsyytwggasd
+                      - img
+                      - generic: Manfred's Organization
+                      - generic: Free
+                    - button:
+                      - generic:
+                        - img
+                  - generic:
+                    - generic:
+                      - img
+                    - generic:
+                      - link:
+                        - /url: /dashboard/project/cjnszzfbxgyszoskfgva
+                        - img
+                        - generic: ERP-MG
+                      - button:
+                        - generic:
+                          - img
+                    - generic:
+                      - img
+                    - generic:
+                      - link:
+                        - /url: /dashboard/project/cjnszzfbxgyszoskfgva
+                        - generic: main
+                        - generic: Production
+                      - button:
+                        - generic:
+                          - img
+                - button [ref=e659] [cursor=pointer]:
+                  - img [ref=e64]
+                  - generic [ref=e66]: Connect
+              - generic:
+                - generic:
+                  - generic: Feedback
+                - generic:
+                  - button:
+                    - generic:
+                      - img
+                      - paragraph: Search...
+                    - generic:
+                      - generic: Ctrl K
+                  - button [ref=e79] [cursor=pointer]:
+                    - img [ref=e81]
+                  - button [ref=e85] [cursor=pointer]:
+                    - img [ref=e87]
+                  - button [ref=e90] [cursor=pointer]:
+                    - img [ref=e92]
+                  - button [ref=e94] [cursor=pointer]:
+                    - img [ref=e98]
+                - link:
+                  - /url: /dashboard/org/knwqmtvwknsyytwggasd/billing?panel=subscriptionPlan&source=headerUpgradeCta
+                  - generic: Upgrade to Pro
+                - button [ref=e103] [cursor=pointer]:
+                  - figure [ref=e105]:
+                    - img [ref=e106]
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - list:
+                      - generic:
+                        - listitem:
+                          - link:
+                            - /url: /dashboard/project/cjnszzfbxgyszoskfgva
+                            - img
+                        - listitem:
+                          - link:
+                            - /url: /dashboard/project/cjnszzfbxgyszoskfgva/editor
+                            - img
+                        - listitem:
+                          - link:
+                            - /url: /dashboard/project/cjnszzfbxgyszoskfgva/sql
+                            - img
+                      - generic:
+                        - listitem:
+                          - link:
+                            - /url: /dashboard/project/cjnszzfbxgyszoskfgva/database/schemas
+                            - img
+                        - listitem:
+                          - link:
+                            - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/users
+                            - img
+                        - listitem:
+                          - link:
+                            - /url: /dashboard/project/cjnszzfbxgyszoskfgva/storage/files
+                            - img
+                        - listitem:
+                          - link:
+                            - /url: /dashboard/project/cjnszzfbxgyszoskfgva/functions
+                            - img
+                        - listitem:
+                          - link:
+                            - /url: /dashboard/project/cjnszzfbxgyszoskfgva/realtime/inspector
+                            - img
+                      - generic:
+                        - generic:
+                          - listitem:
+                            - link:
+                              - /url: /dashboard/project/cjnszzfbxgyszoskfgva/advisors/security
+                              - img
+                        - listitem:
+                          - link:
+                            - /url: /dashboard/project/cjnszzfbxgyszoskfgva/observability
+                            - img
+                        - listitem:
+                          - link:
+                            - /url: /dashboard/project/cjnszzfbxgyszoskfgva/logs/explorer
+                            - img
+                        - listitem:
+                          - link:
+                            - /url: /dashboard/project/cjnszzfbxgyszoskfgva/integrations
+                            - img
+                      - generic:
+                        - listitem:
+                          - link:
+                            - /url: /dashboard/project/cjnszzfbxgyszoskfgva/settings/general
+                            - img
+                - generic:
+                  - generic:
+                    - button:
+                      - generic:
+                        - img
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - heading [level=4]: Authentication
+                              - generic:
+                                - generic:
+                                  - menu [disabled]:
+                                    - list:
+                                      - generic:
+                                        - generic:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: Manage
+                                            - generic:
+                                              - link [disabled]:
+                                                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/users
+                                                - menuitem [disabled]:
+                                                  - generic:
+                                                    - generic:
+                                                      - generic:
+                                                        - generic: Users
+                                              - link [disabled]:
+                                                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/oauth-apps
+                                                - menuitem [disabled]:
+                                                  - generic:
+                                                    - generic:
+                                                      - generic:
+                                                        - generic: OAuth Apps
+                                      - generic:
+                                        - generic:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: Notifications
+                                            - generic:
+                                              - link [disabled]:
+                                                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/templates
+                                                - menuitem [disabled]:
+                                                  - generic:
+                                                    - generic:
+                                                      - generic:
+                                                        - generic: Email
+                                      - generic:
+                                        - generic:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - generic:
+                                                  - generic: Configuration
+                                            - generic:
+                                              - link [disabled]:
+                                                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/policies
+                                                - menuitem [disabled]:
+                                                  - generic:
+                                                    - generic:
+                                                      - generic:
+                                                        - generic: Policies
+                                              - link [disabled]:
+                                                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/providers
+                                                - menuitem [disabled]:
+                                                  - generic:
+                                                    - generic:
+                                                      - generic:
+                                                        - generic: Sign In / Providers
+                                              - link [disabled]:
+                                                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/oauth-server
+                                                - menuitem [disabled]:
+                                                  - generic:
+                                                    - generic:
+                                                      - generic:
+                                                        - generic: OAuth Server
+                                                        - generic: Beta
+                                              - link [disabled]:
+                                                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/sessions
+                                                - menuitem [disabled]:
+                                                  - generic:
+                                                    - generic:
+                                                      - generic:
+                                                        - generic: Sessions
+                                              - link [disabled]:
+                                                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/rate-limits
+                                                - menuitem [disabled]:
+                                                  - generic:
+                                                    - generic:
+                                                      - generic:
+                                                        - generic: Rate Limits
+                                              - link [disabled]:
+                                                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/mfa
+                                                - menuitem [disabled]:
+                                                  - generic:
+                                                    - generic:
+                                                      - generic:
+                                                        - generic: Multi-Factor
+                                              - link [disabled]:
+                                                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/url-configuration
+                                                - menuitem [disabled]:
+                                                  - generic:
+                                                    - generic:
+                                                      - generic:
+                                                        - generic: URL Configuration
+                                              - link [disabled]:
+                                                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/protection
+                                                - menuitem [disabled]:
+                                                  - generic:
+                                                    - generic:
+                                                      - generic:
+                                                        - generic: Attack Protection
+                                              - link [disabled]:
+                                                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/hooks
+                                                - menuitem [disabled]:
+                                                  - generic:
+                                                    - generic:
+                                                      - generic:
+                                                        - generic: Auth Hooks
+                                                        - generic: Beta
+                                              - link [disabled]:
+                                                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/audit-logs
+                                                - menuitem [disabled]:
+                                                  - generic:
+                                                    - generic:
+                                                      - generic:
+                                                        - generic: Audit Logs
+                                              - link [disabled]:
+                                                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/performance
+                                                - menuitem [disabled]:
+                                                  - generic:
+                                                    - generic:
+                                                      - generic:
+                                                        - generic: Performance
+                      - separator [disabled]:
+                        - generic:
+                          - img
+                      - generic:
+                        - generic:
+                          - main:
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - heading [level=3]: Users
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - generic:
+                                      - img
+                                    - combobox:
+                                      - generic: Email address
+                                      - img
+                                    - group:
+                                      - textbox:
+                                        - /placeholder: Search by email
+                                  - generic:
+                                    - generic: All columns
+                                    - generic:
+                                      - img
+                                  - button [disabled] [ref=e660]:
+                                    - img [ref=e355]
+                                    - generic [ref=e357]: Sorted by user ID
+                                - generic:
+                                  - button [ref=e359] [cursor=pointer]:
+                                    - img [ref=e361]
+                                  - button:
+                                    - generic: Add user
+                                    - generic:
+                                      - img
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - generic:
+                                      - grid:
+                                        - row:
+                                          - columnheader
+                                          - columnheader:
+                                            - generic:
+                                              - generic:
+                                                - paragraph: UID
+                                          - columnheader:
+                                            - generic:
+                                              - generic:
+                                                - paragraph: Display name
+                                          - columnheader:
+                                            - generic:
+                                              - generic:
+                                                - paragraph: Email
+                                          - columnheader:
+                                            - generic:
+                                              - generic:
+                                                - paragraph: Phone
+                                          - columnheader:
+                                            - generic:
+                                              - generic:
+                                                - paragraph: Providers
+                                          - columnheader:
+                                            - generic:
+                                              - generic:
+                                                - paragraph: Provider type
+                                        - row:
+                                          - gridcell:
+                                            - generic:
+                                              - checkbox
+                                              - generic:
+                                                - img
+                                          - gridcell:
+                                            - generic:
+                                              - paragraph: 1804c1f8-74d0-4dcd-a99e-8b660a7eb2a8
+                                          - gridcell:
+                                            - generic:
+                                              - paragraph: "-"
+                                          - gridcell:
+                                            - generic:
+                                              - paragraph: manfred.gunardi@gmail.com
+                                          - gridcell:
+                                            - generic:
+                                              - paragraph: "-"
+                                          - gridcell:
+                                            - generic:
+                                              - generic:
+                                                - img
+                                              - paragraph: Email
+                                          - gridcell:
+                                            - generic:
+                                              - paragraph: "-"
+                                        - row:
+                                          - gridcell:
+                                            - generic:
+                                              - checkbox
+                                              - generic:
+                                                - img
+                                          - gridcell:
+                                            - generic:
+                                              - paragraph: ebc51960-579b-4a9a-bc02-da3ee9120ea6
+                                          - gridcell:
+                                            - generic:
+                                              - paragraph: "-"
+                                          - gridcell:
+                                            - generic:
+                                              - paragraph: testviewer@erp-test.com
+                                          - gridcell:
+                                            - generic:
+                                              - paragraph: "-"
+                                          - gridcell:
+                                            - generic:
+                                              - generic:
+                                                - img
+                                              - paragraph: Email
+                                          - gridcell:
+                                            - generic:
+                                              - paragraph: "-"
+                                - separator:
+                                  - generic:
+                                    - img
+                                - generic:
+                                  - generic:
+                                    - button:
+                                      - generic:
+                                        - img
+                                    - generic:
+                                      - tablist:
+                                        - tab [selected]: Overview
+                                        - tab: Logs
+                                        - tab: Raw JSON
+                                      - tabpanel:
+                                        - generic:
+                                          - generic:
+                                            - generic:
+                                              - paragraph: testviewer@erp-test.com
+                                              - button:
+                                                - generic:
+                                                  - img
+                                          - generic:
+                                            - generic:
+                                              - paragraph: User UID
+                                              - generic:
+                                                - paragraph: ebc51960-579b-4a9a-bc02-da3ee9120ea6
+                                                - button:
+                                                  - generic:
+                                                    - img
+                                            - generic:
+                                              - paragraph: Created at
+                                              - generic:
+                                                - paragraph: 13 Apr, 2026 11:03
+                                                - button:
+                                                  - generic:
+                                                    - img
+                                            - generic:
+                                              - paragraph: Updated at
+                                              - generic:
+                                                - paragraph: 13 Apr, 2026 11:05
+                                                - button:
+                                                  - generic:
+                                                    - img
+                                            - generic:
+                                              - paragraph: Invited at
+                                              - generic:
+                                                - paragraph: "-"
+                                            - generic:
+                                              - paragraph: Confirmation sent at
+                                              - generic:
+                                                - paragraph: "-"
+                                            - generic:
+                                              - paragraph: Confirmed at
+                                              - generic:
+                                                - paragraph: 13 Apr, 2026 11:03
+                                                - button:
+                                                  - generic:
+                                                    - img
+                                            - generic:
+                                              - paragraph: Last signed in
+                                              - generic:
+                                                - paragraph: 13 Apr, 2026 11:05
+                                                - button:
+                                                  - generic:
+                                                    - img
+                                            - generic:
+                                              - paragraph: SSO
+                                              - generic:
+                                                - generic:
+                                                  - img
+                                          - generic:
+                                            - paragraph: Provider Information
+                                            - paragraph: The user has the following providers
+                                          - generic:
+                                            - generic:
+                                              - img
+                                              - generic:
+                                                - paragraph: email
+                                                - paragraph: Signed in with a email account via OAuth
+                                                - link:
+                                                  - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/providers?provider=email
+                                                  - generic: Configure email provider
+                                              - generic:
+                                                - generic:
+                                                  - img
+                                                - generic: Enabled
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - paragraph: Reset password
+                                                - paragraph: Send a password recovery email to the user
+                                              - button [ref=e661] [cursor=pointer]:
+                                                - img [ref=e610]
+                                                - generic [ref=e613]: Send password recovery
+                                            - generic:
+                                              - generic:
+                                                - paragraph: Send Magic Link
+                                                - paragraph: Passwordless login via email for the user
+                                              - button [ref=e662] [cursor=pointer]:
+                                                - img [ref=e620]
+                                                - generic [ref=e623]: Send magic link
+                                          - generic:
+                                            - paragraph: Danger zone
+                                            - paragraph: Be wary of the following features as they cannot be undone.
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - paragraph: Remove MFA factors
+                                                - paragraph: Removes all MFA factors associated with the user
+                                              - button [ref=e663] [cursor=pointer]:
+                                                - img [ref=e634]
+                                                - generic [ref=e638]: Remove MFA factors
+                                            - generic:
+                                              - generic:
+                                                - paragraph: Ban user
+                                                - paragraph: Revoke access to the project for a set duration
+                                              - button [ref=e664] [cursor=pointer]:
+                                                - img [ref=e645]
+                                                - generic [ref=e648]: Ban user
+                                            - generic:
+                                              - generic:
+                                                - paragraph: Delete user
+                                                - paragraph: User will no longer have access to the project
+                                              - button [ref=e665] [cursor=pointer]:
+                                                - img [ref=e655]
+                                                - generic [ref=e658]: Delete user
+                              - generic:
+                                - generic:
+                                  - generic: "Total: 2 users"
+  - generic:
+    - alert: Users | Authentication | ERP-MG | Manfred's Organization | Supabase
+  - dialog "Confirm to delete user" [ref=e667]:
+    - heading "Confirm to delete user" [level=2] [ref=e669]
+    - alert [ref=e670]:
+      - img [ref=e671]
+      - generic [ref=e674]:
+        - heading "Deleting a user is irreversible" [level=5] [ref=e675]
+        - paragraph [ref=e677]: This will remove the selected the user from the project and all associated data.
+    - paragraph [ref=e679]: This is permanent! Are you sure you want to delete the user testviewer@erp-test.com?
+    - generic [ref=e681]:
+      - button "Cancel" [active] [ref=e682] [cursor=pointer]:
+        - generic [ref=e683]: Cancel
+      - button "Delete" [ref=e684] [cursor=pointer]:
+        - generic [ref=e685]: Delete
+    - button "Close" [ref=e686] [cursor=pointer]:
+      - img [ref=e687]
+      - generic [ref=e690]: Close

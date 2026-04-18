@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Multi-company ERP for sand/stone logistics businesses. Three independent React SPAs share one git repo, each with its own Firebase project:
+A mini ERP system that is able to accomodate the user's job as an accountant and tax professional for multi companies.
 
 ```
 C:\Project/
@@ -19,7 +19,9 @@ C:\Project/
 └── ERP-ACC/          # Git worktree for isolated development
 ```
 
-Each sub-project is a **separate company** with its own Firestore database and deployment.
+Each sub-project is a **separate company** with its own Firestore/supabase database and deployment.
+
+Always read the documentation in C:\Project/ERP-ACC/Memory
 
 ## Tech Stack
 
@@ -44,36 +46,6 @@ cd BUL-monitor && npm run build
 ```
 
 **Deployment**: Claude may deploy to dev/staging only. Never deploy to production. Use `firebase deploy --only hosting` from the project directory.
-
-## Module Boundaries
-
-### sj-monitor
-| Module | Key files | Purpose |
-|---|---|---|
-| Surat Jalan (SJ) | App.jsx | Create, edit, track delivery notes |
-| Invoice | App.jsx | Generate invoices with Harga Per Rute pricing |
-| Uang Muka | App.jsx | Down payment tracking per route/customer |
-| Kas / Laporan Kas | LaporanKasPage.jsx | Cash flow reporting |
-| Laporan Truk | LaporanTrukPage.jsx | Truck activity reports |
-| Payslip | PayslipExport/Report/Table.jsx | Driver payslip generation |
-| Ritasi | RitasiBulkUpload.jsx | Bulk trip data import |
-| Master Data | firestoreService.js, App.jsx | Rute, Material, Armada, Supir |
-
-### BUL-accounting
-| Module | Key files | Purpose |
-|---|---|---|
-| COA | COAPage.jsx | Chart of Accounts management |
-| Jurnal | JurnalPage.jsx, JournalEntryForm.jsx | Double-entry journal entries |
-| Kas/Bank | KasBankPage.jsx | Cash and bank transactions |
-| Penjualan | PenjualanPage.jsx | Sales records |
-| Biaya | BiayaPage.jsx | Expense tracking |
-| Aset | AsetPage.jsx | Asset management |
-| Laporan | LaporanPage.jsx | Financial reports |
-| Pelanggan/Supplier | PelangganPage.jsx, SupplierPage.jsx | Customer/vendor master data |
-| Armada | ArmadaPage.jsx | Fleet management |
-
-### BUL-monitor
-Variant of sj-monitor for a different company. Main logic in App.jsx (7,249 lines).
 
 ## Data Safety Rules
 

@@ -1,0 +1,315 @@
+- generic [ref=e7]:
+  - generic [ref=e8]:
+    - heading "ERP Pembukuan" [level=1] [ref=e10]
+    - navigation [ref=e11]:
+      - link "Dashboard" [ref=e13] [cursor=pointer]:
+        - /url: /
+        - img [ref=e14]
+        - generic [ref=e19]: Dashboard
+      - generic [ref=e20]:
+        - button "Master Data" [ref=e21]:
+          - img [ref=e22]
+          - generic [ref=e26]: Master Data
+          - img [ref=e27]
+        - generic [ref=e29]:
+          - link "Satuan" [ref=e30] [cursor=pointer]:
+            - /url: /master/units
+          - link "Produk" [ref=e31] [cursor=pointer]:
+            - /url: /master/products
+          - link "Customer" [ref=e32] [cursor=pointer]:
+            - /url: /master/customers
+          - link "Supplier" [ref=e33] [cursor=pointer]:
+            - /url: /master/suppliers
+          - link "COA" [ref=e34] [cursor=pointer]:
+            - /url: /master/coa
+      - generic [ref=e35]:
+        - button "Inventory" [ref=e36]:
+          - img [ref=e37]
+          - generic [ref=e41]: Inventory
+          - img [ref=e42]
+        - generic [ref=e44]:
+          - link "Stok" [ref=e45] [cursor=pointer]:
+            - /url: /inventory/stock
+          - link "Kartu Stok" [ref=e46] [cursor=pointer]:
+            - /url: /inventory/stock-card
+      - generic [ref=e47]:
+        - button "Penjualan" [ref=e48]:
+          - img [ref=e49]
+          - generic [ref=e53]: Penjualan
+          - img [ref=e54]
+        - generic [ref=e56]:
+          - link "Sales Order" [ref=e57] [cursor=pointer]:
+            - /url: /sales/orders
+          - link "Pengiriman" [ref=e58] [cursor=pointer]:
+            - /url: /sales/deliveries
+          - link "Invoice Penjualan" [ref=e59] [cursor=pointer]:
+            - /url: /sales/invoices
+      - generic [ref=e60]:
+        - button "Pembelian" [ref=e61]:
+          - img [ref=e62]
+          - generic [ref=e67]: Pembelian
+          - img [ref=e68]
+        - generic [ref=e70]:
+          - link "Purchase Order" [ref=e71] [cursor=pointer]:
+            - /url: /purchase/orders
+          - link "Penerimaan" [ref=e72] [cursor=pointer]:
+            - /url: /purchase/receipts
+          - link "Invoice Pembelian" [ref=e73] [cursor=pointer]:
+            - /url: /purchase/invoices
+      - generic [ref=e74]:
+        - button "Kas & Bank" [ref=e75]:
+          - img [ref=e76]
+          - generic [ref=e78]: Kas & Bank
+          - img [ref=e79]
+        - generic [ref=e81]:
+          - link "Akun" [ref=e82] [cursor=pointer]:
+            - /url: /cash/accounts
+          - link "Pembayaran" [ref=e83] [cursor=pointer]:
+            - /url: /cash/payments
+          - link "Transfer" [ref=e84] [cursor=pointer]:
+            - /url: /cash/transfers/new
+          - link "Rekonsiliasi" [ref=e85] [cursor=pointer]:
+            - /url: /cash/reconciliation
+      - generic [ref=e86]:
+        - button "Pembukuan" [ref=e87]:
+          - img [ref=e88]
+          - generic [ref=e90]: Pembukuan
+          - img [ref=e91]
+        - generic [ref=e93]:
+          - link "Jurnal" [ref=e94] [cursor=pointer]:
+            - /url: /accounting/journals
+          - link "Buku Besar" [ref=e95] [cursor=pointer]:
+            - /url: /accounting/ledger
+      - generic [ref=e96]:
+        - button "Aset Tetap" [ref=e97]:
+          - img [ref=e98]
+          - generic [ref=e102]: Aset Tetap
+          - img [ref=e103]
+        - generic [ref=e105]:
+          - link "Daftar Aset" [ref=e106] [cursor=pointer]:
+            - /url: /assets
+          - link "Kategori Aset" [ref=e107] [cursor=pointer]:
+            - /url: /assets/categories
+          - link "Post Penyusutan" [ref=e108] [cursor=pointer]:
+            - /url: /assets/depreciation
+          - link "Import Aset" [ref=e109] [cursor=pointer]:
+            - /url: /assets/bulk-import
+      - generic [ref=e110]:
+        - button "Laporan" [ref=e111]:
+          - img [ref=e112]
+          - generic [ref=e114]: Laporan
+          - img [ref=e115]
+        - generic [ref=e117]:
+          - link "Neraca" [ref=e118] [cursor=pointer]:
+            - /url: /reports/balance-sheet
+          - link "Laba Rugi" [ref=e119] [cursor=pointer]:
+            - /url: /reports/income-statement
+          - link "Arus Kas" [ref=e120] [cursor=pointer]:
+            - /url: /reports/cash-flow
+          - link "Daftar Aset Tetap" [ref=e121] [cursor=pointer]:
+            - /url: /reports/assets-list
+          - link "Penyusutan per Periode" [ref=e122] [cursor=pointer]:
+            - /url: /reports/depreciation-period
+          - link "Disposal Aset" [ref=e123] [cursor=pointer]:
+            - /url: /reports/asset-disposals
+          - link "Summary Aset per Kategori" [ref=e124] [cursor=pointer]:
+            - /url: /reports/assets-summary
+      - generic [ref=e125]:
+        - button "Settings" [ref=e126]:
+          - img [ref=e127]
+          - generic [ref=e130]: Settings
+          - img [ref=e131]
+        - generic [ref=e133]:
+          - link "Users" [ref=e134] [cursor=pointer]:
+            - /url: /settings/users
+          - link "Audit Log" [ref=e135] [cursor=pointer]:
+            - /url: /settings/audit-log
+  - generic [ref=e136]:
+    - banner [ref=e137]:
+      - generic [ref=e138]: Selamat datang, Manfred Gunardi
+      - button "Keluar" [ref=e139]:
+        - img [ref=e140]
+        - text: Keluar
+    - main [ref=e143]:
+      - generic [ref=e144]:
+        - button "Kembali ke Daftar Aset" [ref=e145]:
+          - img [ref=e146]
+          - text: Kembali ke Daftar Aset
+        - generic [ref=e148]:
+          - heading "Bulk Import Aset" [level=1] [ref=e149]
+          - button "Download Template" [ref=e150]:
+            - img [ref=e151]
+            - text: Download Template
+        - generic [ref=e154]:
+          - heading "Upload File Excel" [level=2] [ref=e155]
+          - paragraph [ref=e156]:
+            - text: "Download template di atas, isi data aset, lalu upload file .xlsx. Format tanggal:"
+            - code [ref=e157]: YYYY-MM-DD
+            - text: .
+          - generic [ref=e158] [cursor=pointer]:
+            - img [ref=e159]
+            - paragraph [ref=e162]: Klik untuk pilih file .xlsx
+        - generic [ref=e364]:
+          - generic [ref=e365]:
+            - heading "Preview (10 baris)" [level=2] [ref=e366]
+            - generic [ref=e367]:
+              - generic [ref=e368]:
+                - img [ref=e369]
+                - text: 9 valid
+              - generic [ref=e372]:
+                - img [ref=e373]
+                - text: 1 error
+          - table [ref=e378]:
+            - rowgroup [ref=e379]:
+              - row "# Nama Kategori Tgl Perolehan Harga Residu Umur (bln) Status" [ref=e380]:
+                - columnheader "#" [ref=e381]
+                - columnheader "Nama" [ref=e382]
+                - columnheader "Kategori" [ref=e383]
+                - columnheader "Tgl Perolehan" [ref=e384]
+                - columnheader "Harga" [ref=e385]
+                - columnheader "Residu" [ref=e386]
+                - columnheader "Umur (bln)" [ref=e387]
+                - columnheader "Status" [ref=e388]
+            - rowgroup [ref=e389]:
+              - row "2 Laptop Dell Inspiron 1 EQP 2026-01-10 Rp 15.000.000 Rp 1.000.000 48 Valid" [ref=e390]:
+                - cell "2" [ref=e391]
+                - cell "Laptop Dell Inspiron 1" [ref=e392]
+                - cell "EQP" [ref=e393]
+                - cell "2026-01-10" [ref=e394]
+                - cell "Rp 15.000.000" [ref=e395]
+                - cell "Rp 1.000.000" [ref=e396]
+                - cell "48" [ref=e397]
+                - cell "Valid" [ref=e398]:
+                  - generic [ref=e399]:
+                    - img [ref=e400]
+                    - text: Valid
+              - row "3 Laptop Dell Inspiron 2 EQP 2026-01-10 Rp 15.000.000 Rp 1.000.000 48 Valid" [ref=e403]:
+                - cell "3" [ref=e404]
+                - cell "Laptop Dell Inspiron 2" [ref=e405]
+                - cell "EQP" [ref=e406]
+                - cell "2026-01-10" [ref=e407]
+                - cell "Rp 15.000.000" [ref=e408]
+                - cell "Rp 1.000.000" [ref=e409]
+                - cell "48" [ref=e410]
+                - cell "Valid" [ref=e411]:
+                  - generic [ref=e412]:
+                    - img [ref=e413]
+                    - text: Valid
+              - row "4 Laptop Dell Inspiron 3 EQP 2026-01-10 Rp 15.000.000 Rp 1.000.000 48 Valid" [ref=e416]:
+                - cell "4" [ref=e417]
+                - cell "Laptop Dell Inspiron 3" [ref=e418]
+                - cell "EQP" [ref=e419]
+                - cell "2026-01-10" [ref=e420]
+                - cell "Rp 15.000.000" [ref=e421]
+                - cell "Rp 1.000.000" [ref=e422]
+                - cell "48" [ref=e423]
+                - cell "Valid" [ref=e424]:
+                  - generic [ref=e425]:
+                    - img [ref=e426]
+                    - text: Valid
+              - row "5 Printer Canon 1 EQP 2026-02-01 Rp 5.000.000 Rp 500.000 36 Valid" [ref=e429]:
+                - cell "5" [ref=e430]
+                - cell "Printer Canon 1" [ref=e431]
+                - cell "EQP" [ref=e432]
+                - cell "2026-02-01" [ref=e433]
+                - cell "Rp 5.000.000" [ref=e434]
+                - cell "Rp 500.000" [ref=e435]
+                - cell "36" [ref=e436]
+                - cell "Valid" [ref=e437]:
+                  - generic [ref=e438]:
+                    - img [ref=e439]
+                    - text: Valid
+              - row "6 Printer Canon 2 EQP 2026-02-01 Rp 5.000.000 Rp 500.000 36 Valid" [ref=e442]:
+                - cell "6" [ref=e443]
+                - cell "Printer Canon 2" [ref=e444]
+                - cell "EQP" [ref=e445]
+                - cell "2026-02-01" [ref=e446]
+                - cell "Rp 5.000.000" [ref=e447]
+                - cell "Rp 500.000" [ref=e448]
+                - cell "36" [ref=e449]
+                - cell "Valid" [ref=e450]:
+                  - generic [ref=e451]:
+                    - img [ref=e452]
+                    - text: Valid
+              - row "7 Motor Honda Revo 1 VHC 2026-01-15 Rp 20.000.000 Rp 2.000.000 60 Valid" [ref=e455]:
+                - cell "7" [ref=e456]
+                - cell "Motor Honda Revo 1" [ref=e457]
+                - cell "VHC" [ref=e458]
+                - cell "2026-01-15" [ref=e459]
+                - cell "Rp 20.000.000" [ref=e460]
+                - cell "Rp 2.000.000" [ref=e461]
+                - cell "60" [ref=e462]
+                - cell "Valid" [ref=e463]:
+                  - generic [ref=e464]:
+                    - img [ref=e465]
+                    - text: Valid
+              - row "8 Motor Honda Revo 2 VHC 2026-01-15 Rp 20.000.000 Rp 2.000.000 60 Valid" [ref=e468]:
+                - cell "8" [ref=e469]
+                - cell "Motor Honda Revo 2" [ref=e470]
+                - cell "VHC" [ref=e471]
+                - cell "2026-01-15" [ref=e472]
+                - cell "Rp 20.000.000" [ref=e473]
+                - cell "Rp 2.000.000" [ref=e474]
+                - cell "60" [ref=e475]
+                - cell "Valid" [ref=e476]:
+                  - generic [ref=e477]:
+                    - img [ref=e478]
+                    - text: Valid
+              - row "9 Mesin Genset 1 MCH 2026-03-01 Rp 30.000.000 Rp 3.000.000 72 Valid" [ref=e481]:
+                - cell "9" [ref=e482]
+                - cell "Mesin Genset 1" [ref=e483]
+                - cell "MCH" [ref=e484]
+                - cell "2026-03-01" [ref=e485]
+                - cell "Rp 30.000.000" [ref=e486]
+                - cell "Rp 3.000.000" [ref=e487]
+                - cell "72" [ref=e488]
+                - cell "Valid" [ref=e489]:
+                  - generic [ref=e490]:
+                    - img [ref=e491]
+                    - text: Valid
+              - row "10 Mesin Genset 2 MCH 2026-03-01 Rp 30.000.000 Rp 3.000.000 72 Valid" [ref=e494]:
+                - cell "10" [ref=e495]
+                - cell "Mesin Genset 2" [ref=e496]
+                - cell "MCH" [ref=e497]
+                - cell "2026-03-01" [ref=e498]
+                - cell "Rp 30.000.000" [ref=e499]
+                - cell "Rp 3.000.000" [ref=e500]
+                - cell "72" [ref=e501]
+                - cell "Valid" [ref=e502]:
+                  - generic [ref=e503]:
+                    - img [ref=e504]
+                    - text: Valid
+              - row "11 Aset Invalid Test — 2026-01-01 Rp 10.000.000 Rp 0 24 1 error" [ref=e507]:
+                - cell "11" [ref=e508]
+                - cell "Aset Invalid Test" [ref=e509]
+                - cell "—" [ref=e510]
+                - cell "2026-01-01" [ref=e511]
+                - cell "Rp 10.000.000" [ref=e512]
+                - cell "Rp 0" [ref=e513]
+                - cell "24" [ref=e514]
+                - cell "1 error" [ref=e515]:
+                  - generic "category_code 'INVALID_CODE' tidak ditemukan" [ref=e516]:
+                    - img [ref=e517]
+                    - text: 1 error
+          - generic [ref=e521]:
+            - paragraph [ref=e522]: "Detail error:"
+            - list [ref=e523]:
+              - listitem [ref=e524]:
+                - generic [ref=e525]: "Baris 11:"
+                - text: category_code 'INVALID_CODE' tidak ditemukan
+        - generic [ref=e540]:
+          - heading "Hasil Import" [level=2] [ref=e541]
+          - generic [ref=e542]:
+            - generic [ref=e543]:
+              - img [ref=e544]
+              - generic [ref=e547]:
+                - generic [ref=e548]: "9"
+                - generic [ref=e549]: Aset berhasil diimpor
+            - generic [ref=e550]:
+              - img [ref=e551]
+              - generic [ref=e555]:
+                - generic [ref=e556]: "0"
+                - generic [ref=e557]: Gagal diimpor
+          - generic [ref=e558]:
+            - button "Lihat Daftar Aset" [ref=e559]
+            - button "Import Lagi" [ref=e560]

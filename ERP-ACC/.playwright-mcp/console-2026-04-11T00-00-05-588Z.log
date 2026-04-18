@@ -1,0 +1,94 @@
+[     855ms] [LOG] %c
+▲
+
+__  __                                     _            __
+\ \/ /___  __  __   _________ _____       (_)_  _______/ /_
+ \  / __ \/ / / /  / ___/ __ `/ __ \     / / / / / ___/ __/
+ / / /_/ / /_/ /  / /__/ /_/ / / / /    / / /_/ (__  ) /_
+/_/\____/\__,_/   \___/\__,_/_/ /_/  __/ /\__,_/____/\__/
+         __    _          __  __    /___/
+   _____/ /_  (_)___     / /_/ /_  (_)___  ____ ______
+  / ___/ __ \/ / __ \   / __/ __ \/ / __ \/ __ `/ ___/
+ (__  ) / / / / /_/ /  / /_/ / / / / / / / /_/ (__  )
+/____/_/ /_/_/ .___/   \__/_/ /_/_/_/ /_/\__, /____/
+            /_/                         /____/
+  
+
+Hello!
+
+- Open Source https://vercel.com/oss
+- Careers https://vercel.com/careers
+- Status https://vercel-status.com
+
+ font-family: "Geist Mono", monospace; white-space: pre; line-height: 1; @ https://vercel.com/_next/static/chunks/3vt9z9-00w7jo.js?dpl=dpl_HQLEjYfuVeYMGvcevP91zqeq7aSk:72
+[    1469ms] [WARNING] [GSI_LOGGER]: Your client application uses one of the Google One Tap prompt UI status methods that may stop functioning when FedCM becomes mandatory. Refer to the migration guide to update your code accordingly and opt-in to FedCM to test your changes. Learn more: https://developers.google.com/identity/gsi/web/guides/fedcm-migration?s=dc#display_moment and https://developers.google.com/identity/gsi/web/guides/fedcm-migration?s=dc#skipped_moment @ https://accounts.google.com/gsi/client:84
+[    1489ms] [ERROR] Not signed in with the identity provider. @ https://vercel.com/login?next=%2Fdashboard:0
+[    1560ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://vercel.com/api/jwt:0
+[    1664ms] [WARNING] Deprecated API for given entry type. @ https://vercel.com/_next/static/chunks/0835ycci1b4sv.js?dpl=dpl_HQLEjYfuVeYMGvcevP91zqeq7aSk:18
+[    2700ms] [ERROR] [GSI_LOGGER]: FedCM get() rejects with NetworkError: Error retrieving a token. @ https://vercel.com/_next/static/chunks/1av8y0pp781cu.js?dpl=dpl_HQLEjYfuVeYMGvcevP91zqeq7aSk:2
+[    2898ms] [ERROR] Failed to load resource: the server responded with a status of 429 () @ https://o205439.ingest.sentry.io/api/1323670/envelope/?sentry_key=d00780d432ac4ccf882f60dd02062e14&sentry_version=7&sentry_client=sentry.javascript.browser%2F7.111.0:0
+[    5965ms] [WARNING] The resource https://vercel.com/_next/static/chunks/1mkn1n4cf7-_i.css?dpl=dpl_HQLEjYfuVeYMGvcevP91zqeq7aSk was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://vercel.com/login?next=%2Fdashboard:0
+[    5965ms] [WARNING] The resource https://vercel.com/_next/static/media/stripe-light.2l_1jctpe6k_4.svg?dpl=dpl_HQLEjYfuVeYMGvcevP91zqeq7aSk was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://vercel.com/login?next=%2Fdashboard:0
+[    5965ms] [WARNING] The resource https://vercel.com/_next/static/media/ebay-dark.34mho2a18qqlt.svg?dpl=dpl_HQLEjYfuVeYMGvcevP91zqeq7aSk was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://vercel.com/login?next=%2Fdashboard:0
+[    5965ms] [WARNING] The resource https://vercel.com/_next/static/media/stripe-dark.16ozjth2vgb_3.svg?dpl=dpl_HQLEjYfuVeYMGvcevP91zqeq7aSk was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://vercel.com/login?next=%2Fdashboard:0
+[    5965ms] [WARNING] The resource https://vercel.com/_next/static/media/ebay-light.3ft_ki8203ov0.svg?dpl=dpl_HQLEjYfuVeYMGvcevP91zqeq7aSk was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://vercel.com/login?next=%2Fdashboard:0
+[    5965ms] [WARNING] The resource https://vercel.com/_next/static/media/adobe-light.406_7oryl71va.svg?dpl=dpl_HQLEjYfuVeYMGvcevP91zqeq7aSk was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://vercel.com/login?next=%2Fdashboard:0
+[   56343ms] [WARNING] The resource https://vercel.com/_next/static/chunks/1mkn1n4cf7-_i.css?dpl=dpl_HQLEjYfuVeYMGvcevP91zqeq7aSk was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://vercel.com/login?next=%2Fdashboard:0
+[   56343ms] [WARNING] The resource https://vercel.com/_next/static/media/stripe-light.2l_1jctpe6k_4.svg?dpl=dpl_HQLEjYfuVeYMGvcevP91zqeq7aSk was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://vercel.com/login?next=%2Fdashboard:0
+[   56343ms] [WARNING] The resource https://vercel.com/_next/static/media/ebay-dark.34mho2a18qqlt.svg?dpl=dpl_HQLEjYfuVeYMGvcevP91zqeq7aSk was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://vercel.com/login?next=%2Fdashboard:0
+[   56343ms] [WARNING] The resource https://vercel.com/_next/static/media/stripe-dark.16ozjth2vgb_3.svg?dpl=dpl_HQLEjYfuVeYMGvcevP91zqeq7aSk was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://vercel.com/login?next=%2Fdashboard:0
+[   56343ms] [WARNING] The resource https://vercel.com/_next/static/media/ebay-light.3ft_ki8203ov0.svg?dpl=dpl_HQLEjYfuVeYMGvcevP91zqeq7aSk was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://vercel.com/login?next=%2Fdashboard:0
+[   56343ms] [WARNING] The resource https://vercel.com/_next/static/media/adobe-light.406_7oryl71va.svg?dpl=dpl_HQLEjYfuVeYMGvcevP91zqeq7aSk was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://vercel.com/login?next=%2Fdashboard:0
+[   88454ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ https://accounts.google.com/v3/signin/identifier?opparams=%253F&dsh=S1980107355%3A1775865692919874&client_id=1078992815106-brpsupgvhheqg35tupphbh0qk9c32nq8.apps.googleusercontent.com&code_challenge=mV3eFY826ER3GIs9COAxKVpm_MLWCKQJIOBmNw35rbg&code_challenge_method=S256&nonce=f2f5e055cdc9622d6363895671796fc2&o2v=2&prompt=select_account&redirect_uri=https%3A%2F%2Fgithub.com%2Fsessions%2Fsocial%2Fgoogle%2Fcallback&response_type=code&scope=openid+email+profile&service=lso&state=fee41e7892f5a1c30639e4d35912033a&flowName=GeneralOAuthFlow&continue=https%3A%2F%2Faccounts.google.com%2Fsignin%2Foauth%2Fconsent%3Fauthuser%3Dunknown%26part%3DAJi8hAPfNWGjLkUF8UXiR4L_0a203ONq2PGyw4mirNQ4ReYQRxQVvBBO4maNuuXDy5YHpsveOE_UQLXwkOxWm_BpG96EhwKP8h3S4JQNcw1Urw7O1wacL6aZ9F2Z2sIJvQpFtvc1g1fHY4M5V8YzPJimFBX8DXimf_cthDR7Qx93f_JFglwpcCDw_fM_LGUa0hApGWS0O6EbbEJaQRxgsNMaO6fw0ZgkzQCtgyoNMqOnsGGlhG-0iYuC8k2ofkT7ExcVfbEdc_dgTfotDYfWL-QQRhQsSUOXtxrH5e9GKe7IbvKLNfQDOGXIH8egs740EYdUpj8rRjzKMEjjIz4lFKYqK0FkDIVsgYL8RYkQ1pURM5dbnJSJb0EW7kmix6vmOk2auMz-_eOM3JcHNFkeLApYM1HH9T07IXXbGItn3fs1nmBNQOoIVr2Y3ZELaeFPrDcS_NLv_KXUBIPW_AjmkBBSEwX-9NuhMA%26flowName%3DGeneralOAuthFlow%26as%3DS1980107355%253A1775865692919874%26client_id%3D1078992815106-brpsupgvhheqg35tupphbh0qk9c32nq8.apps.googleusercontent.com%26requestPath%3D%252Fsignin%252Foauth%252Fconsent%23&app_domain=https%3A%2F%2Fgithub.com&rart=ANgoxceI_BD3Bs970_rM-t46g75g4dlePAAHbgXyPjAeVzOPl-2_S2mYQeKmX71EFOmkGxs7l3vg-h7D9BOFhsD06bHsWJj-zQNT7Ab86u6_8ponsdVFLlo:0
+[   88463ms] [LOG] %c%s color: red; background: yellow; font-size: 24px; WARNING! @ https://www.gstatic.com/_/mss/boq-identity/_/js/k=boq-identity.AccountsSignInUi.en_US.llpEXSAT6Ik.es5.O/am=Kf8GAABCEUgGwP__HzIAIACCaOB6FoAmEBkAAAAAAAAAALBCAAAaAQ/d=1/excm=_b,_tp,identifierview/ed=1/dg=0/wt=2/ujg=1/rs=AOaEmlGwd16Z56q10PL7BHGe8iySZmaNug/dti=1/m=_b,_tp:468
+[   88463ms] [LOG] %c%s font-size: 18px; Using this console may allow attackers to impersonate you and steal your information using an attack called Self-XSS.
+Do not enter or paste code that you do not understand. @ https://www.gstatic.com/_/mss/boq-identity/_/js/k=boq-identity.AccountsSignInUi.en_US.llpEXSAT6Ik.es5.O/am=Kf8GAABCEUgGwP__HzIAIACCaOB6FoAmEBkAAAAAAAAAALBCAAAaAQ/d=1/excm=_b,_tp,identifierview/ed=1/dg=0/wt=2/ujg=1/rs=AOaEmlGwd16Z56q10PL7BHGe8iySZmaNug/dti=1/m=_b,_tp:468
+[   96444ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ https://accounts.google.com/v3/signin/challenge/pwd?TL=AIgtPP0efFkXJ_TVmS7EdmMD3Xg2MVMAVwzK36CMc1VvuY__rwBaJB_nCsRldo1D&app_domain=https%3A%2F%2Fgithub.com&checkConnection=youtube%3A220&checkedDomains=youtube&cid=2&client_id=1078992815106-brpsupgvhheqg35tupphbh0qk9c32nq8.apps.googleusercontent.com&code_challenge=mV3eFY826ER3GIs9COAxKVpm_MLWCKQJIOBmNw35rbg&code_challenge_method=S256&continue=https%3A%2F%2Faccounts.google.com%2Fsignin%2Foauth%2Fconsent%3Fauthuser%3Dunknown%26part%3DAJi8hAPfNWGjLkUF8UXiR4L_0a203ONq2PGyw4mirNQ4ReYQRxQVvBBO4maNuuXDy5YHpsveOE_UQLXwkOxWm_BpG96EhwKP8h3S4JQNcw1Urw7O1wacL6aZ9F2Z2sIJvQpFtvc1g1fHY4M5V8YzPJimFBX8DXimf_cthDR7Qx93f_JFglwpcCDw_fM_LGUa0hApGWS0O6EbbEJaQRxgsNMaO6fw0ZgkzQCtgyoNMqOnsGGlhG-0iYuC8k2ofkT7ExcVfbEdc_dgTfotDYfWL-QQRhQsSUOXtxrH5e9GKe7IbvKLNfQDOGXIH8egs740EYdUpj8rRjzKMEjjIz4lFKYqK0FkDIVsgYL8RYkQ1pURM5dbnJSJb0EW7kmix6vmOk2auMz-_eOM3JcHNFkeLApYM1HH9T07IXXbGItn3fs1nmBNQOoIVr2Y3ZELaeFPrDcS_NLv_KXUBIPW_AjmkBBSEwX-9NuhMA%26flowName%3DGeneralOAuthFlow%26as%3DS1980107355%253A1775865692919874%26client_id%3D1078992815106-brpsupgvhheqg35tupphbh0qk9c32nq8.apps.googleusercontent.com%26requestPath%3D%252Fsignin%252Foauth%252Fconsent%23&dsh=S1980107355%3A1775865692919874&flowName=GeneralOAuthFlow&nonce=f2f5e055cdc9622d6363895671796fc2&o2v=2&opparams=%253F&prompt=select_account&pstMsg=1&rart=ANgoxceI_BD3Bs970_rM-t46g75g4dlePAAHbgXyPjAeVzOPl-2_S2mYQeKmX71EFOmkGxs7l3vg-h7D9BOFhsD06bHsWJj-zQNT7Ab86u6_8ponsdVFLlo&redirect_uri=https%3A%2F%2Fgithub.com%2Fsessions%2Fsocial%2Fgoogle%2Fcallback&response_type=code&scope=openid%20email%20profile&service=lso&state=fee41e7892f5a1c30639e4d35912033a:0
+[  123826ms] [LOG] %c
+▲
+
+  ________            ___    ____   ________                __
+ /_  __/ /_  ___     /   |  /  _/  / ____/ /___  __  ______/ /
+  / / / __ \/ _ \   / /| |  / /   / /   / / __ \/ / / / __  /
+ / / / / / /  __/  / ___ |_/ /   / /___/ / /_/ / /_/ / /_/ /
+/_/ /_/ /_/\___/  /_/  |_/___/   \____/_/\____/\__,_/\__,_/
+  
+
+Hello!
+
+- Open Source https://vercel.com/oss
+- Careers https://vercel.com/careers
+- Status https://vercel-status.com
+
+ font-family: "Geist Mono", monospace; white-space: pre; line-height: 1; @ https://vercel.com/_next/static/chunks/0_q5942vh4opf.js?dpl=dpl_HQLEjYfuVeYMGvcevP91zqeq7aSk:72
+[  124123ms] [WARNING] Deprecated API for given entry type. @ https://vercel.com/_next/static/chunks/3tis6bcdp-j00.js?dpl=dpl_HQLEjYfuVeYMGvcevP91zqeq7aSk:18
+[  124299ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://vercel.com/api/jwt:0
+[  125629ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vercel.com/_next/data/build-TfctsWXpff2fKS/manfred-gunardis-projects.json:0
+[  127265ms] [LOG] %c
+▲
+
+    ____                               _ __
+   / __ \________  ____ _____ ___     (_) /_
+  / / / / ___/ _ \/ __ `/ __ `__ \   / / __/
+ / /_/ / /  /  __/ /_/ / / / / / /  / / /__
+/_____/_/   \___/\__,_/_/ /_/ /_/  /_/\__( )
+   _____ __    _          _ __           |/
+  / ___// /_  (_)___     (_) /_
+  \__ \/ __ \/ / __ \   / / __/
+ ___/ / / / / / /_/ /  / / /_
+/____/_/ /_/_/ .___/  /_/\__/
+            /_/
+  
+
+Hello!
+
+- Open Source https://vercel.com/oss
+- Careers https://vercel.com/careers
+- Status https://vercel-status.com
+
+ font-family: "Geist Mono", monospace; white-space: pre; line-height: 1; @ https://vercel.com/_next/static/chunks/3vt9z9-00w7jo.js?dpl=dpl_HQLEjYfuVeYMGvcevP91zqeq7aSk:72
+[  129780ms] [WARNING] Deprecated API for given entry type. @ https://vercel.com/_next/static/chunks/0835ycci1b4sv.js?dpl=dpl_HQLEjYfuVeYMGvcevP91zqeq7aSk:18
+[  135446ms] [WARNING] The resource https://vercel.com/_next/static/chunks/1mkn1n4cf7-_i.css?dpl=dpl_HQLEjYfuVeYMGvcevP91zqeq7aSk was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://vercel.com/manfred-gunardis-projects:0
+[  135447ms] [WARNING] The resource https://vercel.com/_next/static/chunks/10d_gdngwj33l.css?dpl=dpl_HQLEjYfuVeYMGvcevP91zqeq7aSk was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://vercel.com/manfred-gunardis-projects:0
+[  148351ms] [WARNING] The resource https://vercel.com/_next/static/chunks/1mkn1n4cf7-_i.css?dpl=dpl_HQLEjYfuVeYMGvcevP91zqeq7aSk was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://vercel.com/manfred-gunardis-projects:0
+[  148351ms] [WARNING] The resource https://vercel.com/_next/static/chunks/10d_gdngwj33l.css?dpl=dpl_HQLEjYfuVeYMGvcevP91zqeq7aSk was preloaded using link preload but not used within a few seconds from the window's load event. Please make sure it has an appropriate `as` value and it is preloaded intentionally. @ https://vercel.com/manfred-gunardis-projects:0

@@ -1,0 +1,302 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - banner [ref=e6]:
+      - generic [ref=e7]:
+        - generic [ref=e8]:
+          - link "Supabase" [ref=e9] [cursor=pointer]:
+            - /url: /dashboard/org/knwqmtvwknsyytwggasd
+            - img "Supabase" [ref=e10]
+          - generic [ref=e11]:
+            - img [ref=e13]
+            - generic [ref=e15]:
+              - link "Manfred's Organization Free" [ref=e16] [cursor=pointer]:
+                - /url: /dashboard/org/knwqmtvwknsyytwggasd
+                - img [ref=e17]
+                - generic [ref=e27]: Manfred's Organization
+                - generic [ref=e28]: Free
+              - button [ref=e29] [cursor=pointer]:
+                - img [ref=e31]
+            - generic [ref=e34]:
+              - img [ref=e36]
+              - generic [ref=e38]:
+                - link "ERP-MG" [ref=e39] [cursor=pointer]:
+                  - /url: /dashboard/project/cjnszzfbxgyszoskfgva
+                  - img [ref=e40]
+                  - generic "ERP-MG" [ref=e43]
+                - button [ref=e44] [cursor=pointer]:
+                  - img [ref=e46]
+              - img [ref=e50]
+              - generic [ref=e52]:
+                - link "main Production" [ref=e53] [cursor=pointer]:
+                  - /url: /dashboard/project/cjnszzfbxgyszoskfgva
+                  - generic "main" [ref=e54]
+                  - generic [ref=e55]: Production
+                - button [ref=e56] [cursor=pointer]:
+                  - img [ref=e58]
+          - button "Connect" [ref=e508] [cursor=pointer]:
+            - img [ref=e64]
+            - generic [ref=e66]: Connect
+        - generic [ref=e67]:
+          - generic [ref=e69] [cursor=pointer]: Feedback
+          - generic [ref=e70]:
+            - button "Search..." [ref=e71] [cursor=pointer]:
+              - generic [ref=e72]:
+                - img [ref=e73]
+                - paragraph [ref=e76]: Search...
+              - generic [ref=e78]: Ctrl K
+            - button [ref=e79] [cursor=pointer]:
+              - img [ref=e81]
+            - button [ref=e85] [cursor=pointer]:
+              - img [ref=e87]
+            - button [ref=e90] [cursor=pointer]:
+              - img [ref=e92]
+            - button [ref=e94] [cursor=pointer]:
+              - img [ref=e98]
+          - link "Upgrade to Pro" [ref=e101] [cursor=pointer]:
+            - /url: /dashboard/org/knwqmtvwknsyytwggasd/billing?panel=subscriptionPlan&source=headerUpgradeCta
+            - generic [ref=e102]: Upgrade to Pro
+          - button [ref=e103] [cursor=pointer]:
+            - figure [ref=e105]:
+              - img [ref=e106]
+    - generic [ref=e108]:
+      - generic [ref=e112]:
+        - list [ref=e115]:
+          - generic [ref=e116]:
+            - listitem [ref=e117]:
+              - link "Project Overview" [ref=e118] [cursor=pointer]:
+                - /url: /dashboard/project/cjnszzfbxgyszoskfgva
+                - img [ref=e119]
+                - generic: Project Overview
+            - listitem [ref=e121]:
+              - link "Table Editor" [ref=e122] [cursor=pointer]:
+                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/editor
+                - img [ref=e123]
+                - generic: Table Editor
+            - listitem [ref=e125]:
+              - link "SQL Editor" [ref=e126] [cursor=pointer]:
+                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/sql
+                - img [ref=e127]
+                - generic: SQL Editor
+          - generic [ref=e129]:
+            - listitem [ref=e130]:
+              - link "Database" [ref=e131] [cursor=pointer]:
+                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/database/schemas
+                - img [ref=e132]
+                - generic: Database
+            - listitem [ref=e136]:
+              - link "Authentication" [ref=e137] [cursor=pointer]:
+                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/users
+                - img [ref=e138]
+                - generic: Authentication
+            - listitem [ref=e140]:
+              - link "Storage" [ref=e141] [cursor=pointer]:
+                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/storage/files
+                - img [ref=e142]
+                - generic: Storage
+            - listitem [ref=e144]:
+              - link "Edge Functions" [ref=e145] [cursor=pointer]:
+                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/functions
+                - img [ref=e146]
+                - generic: Edge Functions
+            - listitem [ref=e151]:
+              - link "Realtime" [ref=e152] [cursor=pointer]:
+                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/realtime/inspector
+                - img [ref=e153]
+                - generic: Realtime
+          - generic [ref=e155]:
+            - listitem [ref=e157]:
+              - link "Advisors" [ref=e158] [cursor=pointer]:
+                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/advisors/security
+                - img [ref=e159]
+                - generic: Advisors
+            - listitem [ref=e161]:
+              - link "Observability" [ref=e162] [cursor=pointer]:
+                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/observability
+                - img [ref=e163]
+                - generic: Observability
+            - listitem [ref=e171]:
+              - link "Logs" [ref=e172] [cursor=pointer]:
+                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/logs/explorer
+                - img [ref=e173]
+                - generic: Logs
+            - listitem [ref=e174]:
+              - link "Integrations" [ref=e175] [cursor=pointer]:
+                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/integrations
+                - img [ref=e176]
+                - generic: Integrations
+          - listitem [ref=e180]:
+            - link "Project Settings" [ref=e181] [cursor=pointer]:
+              - /url: /dashboard/project/cjnszzfbxgyszoskfgva/settings/general
+              - img [ref=e182]
+              - generic: Project Settings
+        - button [ref=e187] [cursor=pointer]:
+          - img [ref=e189]
+      - generic [ref=e196]:
+        - generic [ref=e200]:
+          - heading "Authentication" [level=4] [ref=e202]
+          - menu "Sidebar" [disabled] [ref=e205]:
+            - list [ref=e206]:
+              - generic [ref=e209]:
+                - generic [ref=e213]: Manage
+                - generic [ref=e214]:
+                  - link "Users" [disabled] [ref=e215] [cursor=pointer]:
+                    - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/users
+                    - menuitem "Users" [disabled] [ref=e216]:
+                      - generic "Users" [ref=e219]:
+                        - generic [ref=e220]: Users
+                  - link "OAuth Apps" [disabled] [ref=e221] [cursor=pointer]:
+                    - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/oauth-apps
+                    - menuitem "OAuth Apps" [disabled] [ref=e222]:
+                      - generic "OAuth Apps" [ref=e225]:
+                        - generic [ref=e226]: OAuth Apps
+              - generic [ref=e230]:
+                - generic [ref=e234]: Notifications
+                - link "Email" [disabled] [ref=e236] [cursor=pointer]:
+                  - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/templates
+                  - menuitem "Email" [disabled] [ref=e237]:
+                    - generic "Email" [ref=e240]:
+                      - generic [ref=e241]: Email
+              - generic [ref=e245]:
+                - generic [ref=e249]: Configuration
+                - generic [ref=e250]:
+                  - link "Policies" [disabled] [ref=e251] [cursor=pointer]:
+                    - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/policies
+                    - menuitem "Policies" [disabled] [ref=e252]:
+                      - generic "Policies" [ref=e255]:
+                        - generic [ref=e256]: Policies
+                  - link "Sign In / Providers" [disabled] [ref=e257] [cursor=pointer]:
+                    - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/providers
+                    - menuitem "Sign In / Providers" [disabled] [ref=e258]:
+                      - generic "Sign In / Providers" [ref=e261]:
+                        - generic [ref=e262]: Sign In / Providers
+                  - link "OAuth Server Beta" [disabled] [ref=e263] [cursor=pointer]:
+                    - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/oauth-server
+                    - menuitem "OAuth Server Beta" [disabled] [ref=e264]:
+                      - generic "OAuth Server" [ref=e267]:
+                        - generic [ref=e268]: OAuth Server
+                        - generic [ref=e269]: Beta
+                  - link "Sessions" [disabled] [ref=e270] [cursor=pointer]:
+                    - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/sessions
+                    - menuitem "Sessions" [disabled] [ref=e271]:
+                      - generic "Sessions" [ref=e274]:
+                        - generic [ref=e275]: Sessions
+                  - link "Rate Limits" [disabled] [ref=e276] [cursor=pointer]:
+                    - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/rate-limits
+                    - menuitem "Rate Limits" [disabled] [ref=e277]:
+                      - generic "Rate Limits" [ref=e280]:
+                        - generic [ref=e281]: Rate Limits
+                  - link "Multi-Factor" [disabled] [ref=e282] [cursor=pointer]:
+                    - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/mfa
+                    - menuitem "Multi-Factor" [disabled] [ref=e283]:
+                      - generic "Multi-Factor" [ref=e286]:
+                        - generic [ref=e287]: Multi-Factor
+                  - link "URL Configuration" [disabled] [ref=e288] [cursor=pointer]:
+                    - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/url-configuration
+                    - menuitem "URL Configuration" [disabled] [ref=e289]:
+                      - generic "URL Configuration" [ref=e292]:
+                        - generic [ref=e293]: URL Configuration
+                  - link "Attack Protection" [disabled] [ref=e294] [cursor=pointer]:
+                    - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/protection
+                    - menuitem "Attack Protection" [disabled] [ref=e295]:
+                      - generic "Attack Protection" [ref=e298]:
+                        - generic [ref=e299]: Attack Protection
+                  - link "Auth Hooks Beta" [disabled] [ref=e300] [cursor=pointer]:
+                    - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/hooks
+                    - menuitem "Auth Hooks Beta" [disabled] [ref=e301]:
+                      - generic "Auth Hooks" [ref=e304]:
+                        - generic [ref=e305]: Auth Hooks
+                        - generic [ref=e306]: Beta
+                  - link "Audit Logs" [disabled] [ref=e307] [cursor=pointer]:
+                    - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/audit-logs
+                    - menuitem "Audit Logs" [disabled] [ref=e308]:
+                      - generic "Audit Logs" [ref=e311]:
+                        - generic [ref=e312]: Audit Logs
+                  - link "Performance" [disabled] [ref=e313] [cursor=pointer]:
+                    - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/performance
+                    - menuitem "Performance" [disabled] [ref=e314]:
+                      - generic "Performance" [ref=e317]:
+                        - generic [ref=e318]: Performance
+        - separator [disabled] [ref=e319]:
+          - img [ref=e321]
+        - main [ref=e330]:
+          - generic [ref=e331]:
+            - heading "Users" [level=3] [ref=e334]
+            - generic [ref=e335]:
+              - generic [ref=e336]:
+                - generic [ref=e337]:
+                  - img [ref=e339]
+                  - combobox [ref=e342] [cursor=pointer]:
+                    - generic: Email address
+                    - img [ref=e343]
+                  - group [ref=e345]:
+                    - textbox "Search by email" [ref=e346]
+                - generic [ref=e348] [cursor=pointer]:
+                  - generic [ref=e349]: All columns
+                  - img [ref=e351]
+                - button "Sorted by user ID" [disabled] [ref=e509]:
+                  - img [ref=e355]
+                  - generic [ref=e357]: Sorted by user ID
+              - generic [ref=e358]:
+                - button [ref=e359] [cursor=pointer]:
+                  - img [ref=e493]
+                - button "Add user" [ref=e366] [cursor=pointer]:
+                  - generic [ref=e367]: Add user
+                  - img [ref=e369]
+            - grid [ref=e377]:
+              - row "UID Display name Email Phone Providers Provider type" [ref=e378]:
+                - columnheader [ref=e379]
+                - columnheader "UID" [ref=e380]:
+                  - paragraph [ref=e383]: UID
+                - columnheader "Display name" [ref=e385]:
+                  - paragraph [ref=e388]: Display name
+                - columnheader "Email" [ref=e390]:
+                  - paragraph [ref=e393]: Email
+                - columnheader "Phone" [ref=e395]:
+                  - paragraph [ref=e398]: Phone
+                - columnheader "Providers" [ref=e400]:
+                  - paragraph [ref=e403]: Providers
+                - columnheader "Provider type" [ref=e405]:
+                  - paragraph [ref=e408]: Provider type
+              - row "1804c1f8-74d0-4dcd-a99e-8b660a7eb2a8 - manfred.gunardi@gmail.com - email auth icon Email -" [ref=e410] [cursor=pointer]:
+                - gridcell [ref=e411]:
+                  - generic [ref=e412]:
+                    - checkbox [ref=e413]
+                    - img [ref=e415]
+                - gridcell "1804c1f8-74d0-4dcd-a99e-8b660a7eb2a8" [ref=e418]:
+                  - paragraph [ref=e420]: 1804c1f8-74d0-4dcd-a99e-8b660a7eb2a8
+                - gridcell "-" [ref=e421]:
+                  - paragraph [ref=e423]: "-"
+                - gridcell "manfred.gunardi@gmail.com" [ref=e424]:
+                  - paragraph [ref=e426]: manfred.gunardi@gmail.com
+                - gridcell "-" [ref=e427]:
+                  - paragraph [ref=e429]: "-"
+                - gridcell "email auth icon Email" [ref=e430]:
+                  - generic [ref=e431]:
+                    - img "email auth icon" [ref=e433]
+                    - paragraph [ref=e434]: Email
+                - gridcell "-" [ref=e435]:
+                  - paragraph [ref=e437]: "-"
+              - row "ebc51960-579b-4a9a-bc02-da3ee9120ea6 - testviewer@erp-test.com - email auth icon Email -" [ref=e510] [cursor=pointer]:
+                - gridcell [ref=e511]:
+                  - generic [ref=e512]:
+                    - checkbox [ref=e513]
+                    - img [ref=e515]
+                - gridcell "ebc51960-579b-4a9a-bc02-da3ee9120ea6" [ref=e518]:
+                  - paragraph [ref=e520]: ebc51960-579b-4a9a-bc02-da3ee9120ea6
+                - gridcell "-" [ref=e521]:
+                  - paragraph [ref=e523]: "-"
+                - gridcell "testviewer@erp-test.com" [ref=e524]:
+                  - paragraph [ref=e526]: testviewer@erp-test.com
+                - gridcell "-" [ref=e527]:
+                  - paragraph [ref=e529]: "-"
+                - gridcell "email auth icon Email" [ref=e530]:
+                  - generic [ref=e531]:
+                    - img "email auth icon" [ref=e533]
+                    - paragraph [ref=e534]: Email
+                - gridcell "-" [ref=e535]:
+                  - paragraph [ref=e537]: "-"
+            - generic [ref=e439]:
+              - generic [ref=e440]: "Total: 10 users (estimated)"
+              - button [ref=e538] [cursor=pointer]:
+                - img [ref=e540]
+  - alert [ref=e446]: Users | Authentication | ERP-MG | Manfred's Organization | Supabase

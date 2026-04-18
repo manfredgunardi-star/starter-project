@@ -1,0 +1,270 @@
+- generic [ref=e7]:
+  - generic [ref=e8]:
+    - heading "ERP Pembukuan" [level=1] [ref=e10]
+    - navigation [ref=e11]:
+      - link "Dashboard" [ref=e13] [cursor=pointer]:
+        - /url: /
+        - img [ref=e14]
+        - generic [ref=e19]: Dashboard
+      - generic [ref=e20]:
+        - button "Master Data" [ref=e21]:
+          - img [ref=e22]
+          - generic [ref=e26]: Master Data
+          - img [ref=e27]
+        - generic [ref=e29]:
+          - link "Satuan" [ref=e30] [cursor=pointer]:
+            - /url: /master/units
+          - link "Produk" [ref=e31] [cursor=pointer]:
+            - /url: /master/products
+          - link "Customer" [ref=e32] [cursor=pointer]:
+            - /url: /master/customers
+          - link "Supplier" [ref=e33] [cursor=pointer]:
+            - /url: /master/suppliers
+          - link "COA" [ref=e34] [cursor=pointer]:
+            - /url: /master/coa
+      - generic [ref=e35]:
+        - button "Inventory" [ref=e36]:
+          - img [ref=e37]
+          - generic [ref=e41]: Inventory
+          - img [ref=e42]
+        - generic [ref=e44]:
+          - link "Stok" [ref=e45] [cursor=pointer]:
+            - /url: /inventory/stock
+          - link "Kartu Stok" [ref=e46] [cursor=pointer]:
+            - /url: /inventory/stock-card
+      - generic [ref=e47]:
+        - button "Penjualan" [ref=e48]:
+          - img [ref=e49]
+          - generic [ref=e53]: Penjualan
+          - img [ref=e54]
+        - generic [ref=e56]:
+          - link "Sales Order" [ref=e57] [cursor=pointer]:
+            - /url: /sales/orders
+          - link "Pengiriman" [ref=e58] [cursor=pointer]:
+            - /url: /sales/deliveries
+          - link "Invoice Penjualan" [ref=e59] [cursor=pointer]:
+            - /url: /sales/invoices
+      - generic [ref=e60]:
+        - button "Pembelian" [ref=e61]:
+          - img [ref=e62]
+          - generic [ref=e67]: Pembelian
+          - img [ref=e68]
+        - generic [ref=e70]:
+          - link "Purchase Order" [ref=e71] [cursor=pointer]:
+            - /url: /purchase/orders
+          - link "Penerimaan" [ref=e72] [cursor=pointer]:
+            - /url: /purchase/receipts
+          - link "Invoice Pembelian" [ref=e73] [cursor=pointer]:
+            - /url: /purchase/invoices
+      - generic [ref=e74]:
+        - button "Kas & Bank" [ref=e75]:
+          - img [ref=e76]
+          - generic [ref=e78]: Kas & Bank
+          - img [ref=e79]
+        - generic [ref=e81]:
+          - link "Akun" [ref=e82] [cursor=pointer]:
+            - /url: /cash/accounts
+          - link "Pembayaran" [ref=e83] [cursor=pointer]:
+            - /url: /cash/payments
+          - link "Transfer" [ref=e84] [cursor=pointer]:
+            - /url: /cash/transfers/new
+          - link "Rekonsiliasi" [ref=e85] [cursor=pointer]:
+            - /url: /cash/reconciliation
+      - generic [ref=e86]:
+        - button "Pembukuan" [ref=e87]:
+          - img [ref=e88]
+          - generic [ref=e90]: Pembukuan
+          - img [ref=e91]
+        - generic [ref=e93]:
+          - link "Jurnal" [ref=e94] [cursor=pointer]:
+            - /url: /accounting/journals
+          - link "Buku Besar" [ref=e95] [cursor=pointer]:
+            - /url: /accounting/ledger
+      - generic [ref=e96]:
+        - button "Aset Tetap" [ref=e97]:
+          - img [ref=e98]
+          - generic [ref=e102]: Aset Tetap
+          - img [ref=e103]
+        - generic [ref=e105]:
+          - link "Daftar Aset" [ref=e106] [cursor=pointer]:
+            - /url: /assets
+          - link "Kategori Aset" [ref=e107] [cursor=pointer]:
+            - /url: /assets/categories
+          - link "Post Penyusutan" [ref=e108] [cursor=pointer]:
+            - /url: /assets/depreciation
+          - link "Import Aset" [ref=e109] [cursor=pointer]:
+            - /url: /assets/bulk-import
+      - generic [ref=e110]:
+        - button "Laporan" [ref=e111]:
+          - img [ref=e112]
+          - generic [ref=e114]: Laporan
+          - img [ref=e115]
+        - generic [ref=e117]:
+          - link "Neraca" [ref=e118] [cursor=pointer]:
+            - /url: /reports/balance-sheet
+          - link "Laba Rugi" [ref=e119] [cursor=pointer]:
+            - /url: /reports/income-statement
+          - link "Arus Kas" [ref=e120] [cursor=pointer]:
+            - /url: /reports/cash-flow
+          - link "Daftar Aset Tetap" [ref=e121] [cursor=pointer]:
+            - /url: /reports/assets-list
+          - link "Penyusutan per Periode" [ref=e122] [cursor=pointer]:
+            - /url: /reports/depreciation-period
+          - link "Disposal Aset" [ref=e123] [cursor=pointer]:
+            - /url: /reports/asset-disposals
+          - link "Summary Aset per Kategori" [ref=e124] [cursor=pointer]:
+            - /url: /reports/assets-summary
+      - generic [ref=e125]:
+        - button "Settings" [ref=e126]:
+          - img [ref=e127]
+          - generic [ref=e130]: Settings
+          - img [ref=e131]
+        - generic [ref=e133]:
+          - link "Users" [ref=e134] [cursor=pointer]:
+            - /url: /settings/users
+          - link "Audit Log" [ref=e135] [cursor=pointer]:
+            - /url: /settings/audit-log
+  - generic [ref=e136]:
+    - banner [ref=e137]:
+      - generic [ref=e138]: Selamat datang, Manfred Gunardi
+      - button "Keluar" [ref=e139]:
+        - img [ref=e140]
+        - text: Keluar
+    - main [ref=e143]:
+      - generic [ref=e144]:
+        - generic [ref=e145]:
+          - heading "Kategori Aset Tetap" [level=1] [ref=e146]
+          - button "Tambah Kategori" [ref=e147]:
+            - img [ref=e148]
+            - text: Tambah Kategori
+        - table [ref=e150]:
+          - rowgroup [ref=e151]:
+            - row "Kode Nama Umur Manfaat (bulan) Akun Aset Akun Akumulasi Akun Beban Aksi" [ref=e152]:
+              - columnheader "Kode" [ref=e153]
+              - columnheader "Nama" [ref=e154]
+              - columnheader "Umur Manfaat (bulan)" [ref=e155]
+              - columnheader "Akun Aset" [ref=e156]
+              - columnheader "Akun Akumulasi" [ref=e157]
+              - columnheader "Akun Beban" [ref=e158]
+              - columnheader "Aksi" [ref=e159]
+          - rowgroup [ref=e160]:
+            - row "BLD Bangunan 240 bulan 1-24000 — Bangunan 1-29400 — Akum. Penyusutan Bangunan 5-17400 — Beban Penyusutan Bangunan" [ref=e161]:
+              - cell "BLD" [ref=e162]
+              - cell "Bangunan" [ref=e163]
+              - cell "240 bulan" [ref=e164]
+              - cell "1-24000 — Bangunan" [ref=e165]
+              - cell "1-29400 — Akum. Penyusutan Bangunan" [ref=e166]
+              - cell "5-17400 — Beban Penyusutan Bangunan" [ref=e167]
+              - cell [ref=e168]:
+                - generic [ref=e169]:
+                  - button "Edit" [ref=e170]:
+                    - img [ref=e171]
+                  - button "Hapus" [ref=e173]:
+                    - img [ref=e174]
+            - row "EQP Peralatan 48 bulan 1-21000 — Peralatan 1-29100 — Akum. Penyusutan Peralatan 5-17100 — Beban Penyusutan Peralatan" [ref=e177]:
+              - cell "EQP" [ref=e178]
+              - cell "Peralatan" [ref=e179]
+              - cell "48 bulan" [ref=e180]
+              - cell "1-21000 — Peralatan" [ref=e181]
+              - cell "1-29100 — Akum. Penyusutan Peralatan" [ref=e182]
+              - cell "5-17100 — Beban Penyusutan Peralatan" [ref=e183]
+              - cell [ref=e184]:
+                - generic [ref=e185]:
+                  - button "Edit" [ref=e186]:
+                    - img [ref=e187]
+                  - button "Hapus" [ref=e189]:
+                    - img [ref=e190]
+            - row "MCH Mesin 96 bulan 1-23000 — Mesin 1-29300 — Akum. Penyusutan Mesin 5-17300 — Beban Penyusutan Mesin" [ref=e193]:
+              - cell "MCH" [ref=e194]
+              - cell "Mesin" [ref=e195]
+              - cell "96 bulan" [ref=e196]
+              - cell "1-23000 — Mesin" [ref=e197]
+              - cell "1-29300 — Akum. Penyusutan Mesin" [ref=e198]
+              - cell "5-17300 — Beban Penyusutan Mesin" [ref=e199]
+              - cell [ref=e200]:
+                - generic [ref=e201]:
+                  - button "Edit" [ref=e202]:
+                    - img [ref=e203]
+                  - button "Hapus" [ref=e205]:
+                    - img [ref=e206]
+            - row "OFI Inventaris Kantor 48 bulan 1-25000 — Inventaris Kantor 1-29500 — Akum. Penyusutan Inventaris Kantor 5-17500 — Beban Penyusutan Inventaris Kantor" [ref=e209]:
+              - cell "OFI" [ref=e210]
+              - cell "Inventaris Kantor" [ref=e211]
+              - cell "48 bulan" [ref=e212]
+              - cell "1-25000 — Inventaris Kantor" [ref=e213]
+              - cell "1-29500 — Akum. Penyusutan Inventaris Kantor" [ref=e214]
+              - cell "5-17500 — Beban Penyusutan Inventaris Kantor" [ref=e215]
+              - cell [ref=e216]:
+                - generic [ref=e217]:
+                  - button "Edit" [ref=e218]:
+                    - img [ref=e219]
+                  - button "Hapus" [ref=e221]:
+                    - img [ref=e222]
+            - row "VHC Kendaraan 96 bulan 1-22000 — Kendaraan 1-29200 — Akum. Penyusutan Kendaraan 5-17200 — Beban Penyusutan Kendaraan" [ref=e225]:
+              - cell "VHC" [ref=e226]
+              - cell "Kendaraan" [ref=e227]
+              - cell "96 bulan" [ref=e228]
+              - cell "1-22000 — Kendaraan" [ref=e229]
+              - cell "1-29200 — Akum. Penyusutan Kendaraan" [ref=e230]
+              - cell "5-17200 — Beban Penyusutan Kendaraan" [ref=e231]
+              - cell [ref=e232]:
+                - generic [ref=e233]:
+                  - button "Edit" [ref=e234]:
+                    - img [ref=e235]
+                  - button "Hapus" [ref=e237]:
+                    - img [ref=e238]
+        - generic [ref=e242]:
+          - generic [ref=e243]:
+            - heading "Tambah Kategori Aset Tetap" [level=2] [ref=e244]
+            - button [ref=e245]:
+              - img [ref=e246]
+          - generic [ref=e250]:
+            - generic [ref=e251]:
+              - generic [ref=e252]:
+                - generic [ref=e253]: Kode Kategori
+                - 'textbox "Contoh: EQP" [ref=e254]': LPT
+              - generic [ref=e255]:
+                - generic [ref=e256]: Nama Kategori
+                - 'textbox "Contoh: Equipment" [ref=e257]': Laptop Kerja
+            - generic [ref=e258]:
+              - generic [ref=e259]: Umur Manfaat Default (bulan)
+              - spinbutton [active] [ref=e260]: "48"
+            - generic [ref=e261]:
+              - generic [ref=e262]: Akun Aset
+              - combobox [ref=e263]:
+                - option "Pilih akun aset (1-2___)"
+                - option "1-20000 — Aset Tetap"
+                - option "1-21000 — Peralatan" [selected]
+                - option "1-22000 — Kendaraan"
+                - option "1-23000 — Mesin"
+                - option "1-24000 — Bangunan"
+                - option "1-25000 — Inventaris Kantor"
+                - option "1-29000 — Akumulasi Penyusutan"
+                - option "1-29100 — Akum. Penyusutan Peralatan"
+                - option "1-29200 — Akum. Penyusutan Kendaraan"
+                - option "1-29300 — Akum. Penyusutan Mesin"
+                - option "1-29400 — Akum. Penyusutan Bangunan"
+                - option "1-29500 — Akum. Penyusutan Inventaris Kantor"
+            - generic [ref=e264]:
+              - generic [ref=e265]: Akun Akumulasi Depresiasi
+              - combobox [ref=e266]:
+                - option "Pilih akun akumulasi (1-29___)"
+                - option "1-29000 — Akumulasi Penyusutan"
+                - option "1-29100 — Akum. Penyusutan Peralatan" [selected]
+                - option "1-29200 — Akum. Penyusutan Kendaraan"
+                - option "1-29300 — Akum. Penyusutan Mesin"
+                - option "1-29400 — Akum. Penyusutan Bangunan"
+                - option "1-29500 — Akum. Penyusutan Inventaris Kantor"
+            - generic [ref=e267]:
+              - generic [ref=e268]: Akun Beban Depresiasi
+              - combobox [ref=e269]:
+                - option "Pilih akun beban (5-17___)" [selected]
+                - option "5-17000 — Beban Penyusutan"
+                - option "5-17100 — Beban Penyusutan Peralatan"
+                - option "5-17200 — Beban Penyusutan Kendaraan"
+                - option "5-17300 — Beban Penyusutan Mesin"
+                - option "5-17400 — Beban Penyusutan Bangunan"
+                - option "5-17500 — Beban Penyusutan Inventaris Kantor"
+            - generic [ref=e270]:
+              - button "Batal" [ref=e271]
+              - button "Tambah" [ref=e272]

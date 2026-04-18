@@ -26,3 +26,5 @@ dist-ssr
 # Test credentials and session
 .env.test
 tests/.auth.json
+
+.vercel

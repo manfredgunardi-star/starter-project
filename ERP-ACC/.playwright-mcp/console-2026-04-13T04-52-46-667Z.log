@@ -1,0 +1,5 @@
+[   10689ms] [ERROR] Framing 'https://ogs.google.com/' violates the following report-only Content Security Policy directive: "frame-ancestors 'self'". The violation has been logged, but no further action has been taken.
+ @ :0
+[   14894ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ https://surat-jalan-monitor.web.app/:0
+[   15183ms] [WARNING] [subscription] users collection tidak dapat diakses (role tidak cukup): permission-denied @ https://surat-jalan-monitor.web.app/assets/index-Ct_mtulH.js:102
+[   15183ms] [WARNING] Failed to fetch settings/forceLogout: FirebaseError: Missing or insufficient permissions. @ https://surat-jalan-monitor.web.app/assets/index-Ct_mtulH.js:102

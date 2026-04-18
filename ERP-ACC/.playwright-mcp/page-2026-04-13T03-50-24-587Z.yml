@@ -1,0 +1,142 @@
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - heading "ERP Pembukuan" [level=1] [ref=e6]
+    - navigation [ref=e7]:
+      - link "Dashboard" [ref=e9] [cursor=pointer]:
+        - /url: /
+        - img [ref=e10]
+        - generic [ref=e15]: Dashboard
+      - generic [ref=e16]:
+        - button "Master Data" [ref=e17]:
+          - img [ref=e18]
+          - generic [ref=e22]: Master Data
+          - img [ref=e23]
+        - generic [ref=e25]:
+          - link "Satuan" [ref=e26] [cursor=pointer]:
+            - /url: /master/units
+          - link "Produk" [ref=e27] [cursor=pointer]:
+            - /url: /master/products
+          - link "Customer" [ref=e28] [cursor=pointer]:
+            - /url: /master/customers
+          - link "Supplier" [ref=e29] [cursor=pointer]:
+            - /url: /master/suppliers
+          - link "COA" [ref=e30] [cursor=pointer]:
+            - /url: /master/coa
+      - generic [ref=e31]:
+        - button "Inventory" [ref=e32]:
+          - img [ref=e33]
+          - generic [ref=e37]: Inventory
+          - img [ref=e38]
+        - generic [ref=e40]:
+          - link "Stok" [ref=e41] [cursor=pointer]:
+            - /url: /inventory/stock
+          - link "Kartu Stok" [ref=e42] [cursor=pointer]:
+            - /url: /inventory/stock-card
+      - generic [ref=e43]:
+        - button "Penjualan" [ref=e44]:
+          - img [ref=e45]
+          - generic [ref=e49]: Penjualan
+          - img [ref=e50]
+        - generic [ref=e52]:
+          - link "Sales Order" [ref=e53] [cursor=pointer]:
+            - /url: /sales/orders
+          - link "Pengiriman" [ref=e54] [cursor=pointer]:
+            - /url: /sales/deliveries
+          - link "Invoice Penjualan" [ref=e55] [cursor=pointer]:
+            - /url: /sales/invoices
+      - generic [ref=e56]:
+        - button "Pembelian" [ref=e57]:
+          - img [ref=e58]
+          - generic [ref=e63]: Pembelian
+          - img [ref=e64]
+        - generic [ref=e66]:
+          - link "Purchase Order" [ref=e67] [cursor=pointer]:
+            - /url: /purchase/orders
+          - link "Penerimaan" [ref=e68] [cursor=pointer]:
+            - /url: /purchase/receipts
+          - link "Invoice Pembelian" [ref=e69] [cursor=pointer]:
+            - /url: /purchase/invoices
+      - generic [ref=e70]:
+        - button "Kas & Bank" [ref=e71]:
+          - img [ref=e72]
+          - generic [ref=e74]: Kas & Bank
+          - img [ref=e75]
+        - generic [ref=e77]:
+          - link "Akun" [ref=e78] [cursor=pointer]:
+            - /url: /cash/accounts
+          - link "Pembayaran" [ref=e79] [cursor=pointer]:
+            - /url: /cash/payments
+          - link "Transfer" [ref=e80] [cursor=pointer]:
+            - /url: /cash/transfers/new
+          - link "Rekonsiliasi" [ref=e81] [cursor=pointer]:
+            - /url: /cash/reconciliation
+      - generic [ref=e82]:
+        - button "Pembukuan" [ref=e83]:
+          - img [ref=e84]
+          - generic [ref=e86]: Pembukuan
+          - img [ref=e87]
+        - generic [ref=e89]:
+          - link "Jurnal" [ref=e90] [cursor=pointer]:
+            - /url: /accounting/journals
+          - link "Buku Besar" [ref=e91] [cursor=pointer]:
+            - /url: /accounting/ledger
+      - generic [ref=e92]:
+        - button "Aset Tetap" [ref=e93]:
+          - img [ref=e94]
+          - generic [ref=e98]: Aset Tetap
+          - img [ref=e99]
+        - generic [ref=e101]:
+          - link "Daftar Aset" [ref=e102] [cursor=pointer]:
+            - /url: /assets
+          - link "Kategori Aset" [ref=e103] [cursor=pointer]:
+            - /url: /assets/categories
+          - link "Post Penyusutan" [ref=e104] [cursor=pointer]:
+            - /url: /assets/depreciation
+          - link "Import Aset" [ref=e105] [cursor=pointer]:
+            - /url: /assets/bulk-import
+      - generic [ref=e106]:
+        - button "Laporan" [ref=e107]:
+          - img [ref=e108]
+          - generic [ref=e110]: Laporan
+          - img [ref=e111]
+        - generic [ref=e113]:
+          - link "Neraca" [ref=e114] [cursor=pointer]:
+            - /url: /reports/balance-sheet
+          - link "Laba Rugi" [ref=e115] [cursor=pointer]:
+            - /url: /reports/income-statement
+          - link "Arus Kas" [ref=e116] [cursor=pointer]:
+            - /url: /reports/cash-flow
+          - link "Daftar Aset Tetap" [ref=e117] [cursor=pointer]:
+            - /url: /reports/assets-list
+          - link "Penyusutan per Periode" [ref=e118] [cursor=pointer]:
+            - /url: /reports/depreciation-period
+          - link "Disposal Aset" [ref=e119] [cursor=pointer]:
+            - /url: /reports/asset-disposals
+          - link "Summary Aset per Kategori" [ref=e120] [cursor=pointer]:
+            - /url: /reports/assets-summary
+      - generic [ref=e121]:
+        - button "Settings" [ref=e122]:
+          - img [ref=e123]
+          - generic [ref=e126]: Settings
+          - img [ref=e127]
+        - generic [ref=e129]:
+          - link "Users" [ref=e130] [cursor=pointer]:
+            - /url: /settings/users
+          - link "Audit Log" [ref=e131] [cursor=pointer]:
+            - /url: /settings/audit-log
+  - generic [ref=e132]:
+    - banner [ref=e133]:
+      - generic [ref=e134]: Selamat datang, Manfred Gunardi
+      - button "Keluar" [ref=e135]:
+        - img [ref=e136]
+        - text: Keluar
+    - main [ref=e139]:
+      - generic [ref=e140]:
+        - heading "Neraca (Balance Sheet)" [level=1] [ref=e141]
+        - generic [ref=e142]:
+          - generic [ref=e143]:
+            - generic [ref=e144]: Per Tanggal
+            - textbox [ref=e145]: 2026-04-13
+          - button "Tampilkan" [ref=e146]:
+            - img [ref=e147]
+            - text: Tampilkan

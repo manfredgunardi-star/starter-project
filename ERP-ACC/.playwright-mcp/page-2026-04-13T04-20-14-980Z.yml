@@ -1,0 +1,403 @@
+- generic:
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - banner:
+            - generic:
+              - generic:
+                - link:
+                  - /url: /dashboard/org/knwqmtvwknsyytwggasd
+                  - img
+                - generic:
+                  - generic:
+                    - img
+                  - generic:
+                    - link:
+                      - /url: /dashboard/org/knwqmtvwknsyytwggasd
+                      - img
+                      - generic: Manfred's Organization
+                      - generic: Free
+                    - button:
+                      - generic:
+                        - img
+                  - generic:
+                    - generic:
+                      - img
+                    - generic:
+                      - link:
+                        - /url: /dashboard/project/cjnszzfbxgyszoskfgva
+                        - img
+                        - generic: ERP-MG
+                      - button:
+                        - generic:
+                          - img
+                    - generic:
+                      - img
+                    - generic:
+                      - link:
+                        - /url: /dashboard/project/cjnszzfbxgyszoskfgva
+                        - generic: main
+                        - generic: Production
+                      - button:
+                        - generic:
+                          - img
+                - button [ref=e665] [cursor=pointer]:
+                  - img [ref=e64]
+                  - generic [ref=e66]: Connect
+              - generic:
+                - generic:
+                  - generic: Feedback
+                - generic:
+                  - button:
+                    - generic:
+                      - img
+                      - paragraph: Search...
+                    - generic:
+                      - generic: Ctrl K
+                  - button [ref=e79] [cursor=pointer]:
+                    - img [ref=e81]
+                  - button [ref=e85] [cursor=pointer]:
+                    - img [ref=e87]
+                  - button [ref=e90] [cursor=pointer]:
+                    - img [ref=e92]
+                  - button [ref=e94] [cursor=pointer]:
+                    - img [ref=e98]
+                - link:
+                  - /url: /dashboard/org/knwqmtvwknsyytwggasd/billing?panel=subscriptionPlan&source=headerUpgradeCta
+                  - generic: Upgrade to Pro
+                - button [ref=e103] [cursor=pointer]:
+                  - figure [ref=e105]:
+                    - img [ref=e106]
+        - generic:
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - list:
+                      - generic:
+                        - listitem:
+                          - link:
+                            - /url: /dashboard/project/cjnszzfbxgyszoskfgva
+                            - img
+                        - listitem:
+                          - link:
+                            - /url: /dashboard/project/cjnszzfbxgyszoskfgva/editor
+                            - img
+                        - listitem:
+                          - link:
+                            - /url: /dashboard/project/cjnszzfbxgyszoskfgva/sql
+                            - img
+                      - generic:
+                        - listitem:
+                          - link:
+                            - /url: /dashboard/project/cjnszzfbxgyszoskfgva/database/schemas
+                            - img
+                        - listitem:
+                          - link:
+                            - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/users
+                            - img
+                        - listitem:
+                          - link:
+                            - /url: /dashboard/project/cjnszzfbxgyszoskfgva/storage/files
+                            - img
+                        - listitem:
+                          - link:
+                            - /url: /dashboard/project/cjnszzfbxgyszoskfgva/functions
+                            - img
+                        - listitem:
+                          - link:
+                            - /url: /dashboard/project/cjnszzfbxgyszoskfgva/realtime/inspector
+                            - img
+                      - generic:
+                        - generic:
+                          - listitem:
+                            - link:
+                              - /url: /dashboard/project/cjnszzfbxgyszoskfgva/advisors/security
+                              - img
+                        - listitem:
+                          - link:
+                            - /url: /dashboard/project/cjnszzfbxgyszoskfgva/observability
+                            - img
+                        - listitem:
+                          - link:
+                            - /url: /dashboard/project/cjnszzfbxgyszoskfgva/logs/explorer
+                            - img
+                        - listitem:
+                          - link:
+                            - /url: /dashboard/project/cjnszzfbxgyszoskfgva/integrations
+                            - img
+                      - generic:
+                        - listitem:
+                          - link:
+                            - /url: /dashboard/project/cjnszzfbxgyszoskfgva/settings/general
+                            - img
+                - generic:
+                  - generic:
+                    - button:
+                      - generic:
+                        - img
+          - generic:
+            - generic:
+              - generic:
+                - generic:
+                  - generic:
+                    - generic:
+                      - generic:
+                        - generic:
+                          - generic:
+                            - generic:
+                              - generic:
+                                - heading [level=4]: SQL Editor
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - generic:
+                                      - generic:
+                                        - generic:
+                                          - generic: Search queries
+                                          - textbox:
+                                            - /placeholder: Search queries...
+                                          - button:
+                                            - img
+                                          - img
+                                      - button:
+                                        - generic:
+                                          - img
+                                    - generic:
+                                      - button:
+                                        - img
+                                        - generic: Shared
+                                    - generic:
+                                      - button:
+                                        - img
+                                        - generic: Favorites
+                                    - generic:
+                                      - button [expanded]:
+                                        - img
+                                        - generic: PRIVATE (2)
+                                      - generic:
+                                        - tree:
+                                          - generic:
+                                            - generic:
+                                              - img
+                                              - generic: List Public Generate Routines
+                                          - generic:
+                                            - generic:
+                                              - img
+                                              - generic: User Profiles with Role-Based RLS
+                                    - generic:
+                                      - button [expanded]:
+                                        - img
+                                        - generic: Community
+                                      - generic:
+                                        - link:
+                                          - /url: /dashboard/project/cjnszzfbxgyszoskfgva/sql/templates
+                                          - img
+                                          - text: templates
+                                        - link:
+                                          - /url: /dashboard/project/cjnszzfbxgyszoskfgva/sql/quickstarts
+                                          - img
+                                          - text: quickstarts
+                                  - generic:
+                                    - button:
+                                      - generic: View running queries
+                      - separator:
+                        - generic:
+                          - img
+                      - generic:
+                        - generic:
+                          - main:
+                            - generic:
+                              - generic:
+                                - generic:
+                                  - button:
+                                    - img
+                                  - tablist:
+                                    - generic:
+                                      - button:
+                                        - tab [selected]:
+                                          - img
+                                          - generic:
+                                            - generic: List Public Generate Routines
+                                          - button:
+                                            - img
+                                        - separator
+                                    - button:
+                                      - img
+                                - status
+                              - generic:
+                                - generic:
+                                  - generic:
+                                    - generic:
+                                      - generic:
+                                        - generic:
+                                          - generic:
+                                            - generic:
+                                              - generic:
+                                                - code:
+                                                  - generic:
+                                                    - generic:
+                                                      - generic:
+                                                        - generic:
+                                                          - generic: "1"
+                                                        - generic:
+                                                          - generic: "2"
+                                                        - generic:
+                                                          - generic: "3"
+                                                        - generic:
+                                                          - generic: "4"
+                                                        - generic:
+                                                          - generic: "5"
+                                                        - generic:
+                                                          - generic: 
+                                                          - generic: "6"
+                                                        - generic:
+                                                          - generic: "7"
+                                                        - generic:
+                                                          - generic: 
+                                                          - generic: "8"
+                                                        - generic:
+                                                          - generic: "9"
+                                                        - generic:
+                                                          - generic: 
+                                                          - generic: "10"
+                                                        - generic:
+                                                          - generic: "11"
+                                                        - generic:
+                                                          - generic: "12"
+                                                        - generic:
+                                                          - generic: "13"
+                                                        - generic:
+                                                          - generic: "14"
+                                                        - generic:
+                                                          - generic: "15"
+                                                        - generic:
+                                                          - generic: "16"
+                                                        - generic:
+                                                          - generic: "17"
+                                                        - generic:
+                                                          - generic: "18"
+                                                        - generic:
+                                                          - generic: "19"
+                                                        - generic:
+                                                          - generic: "20"
+                                                        - generic:
+                                                          - generic: "21"
+                                                        - generic:
+                                                          - generic: "22"
+                                                        - generic:
+                                                          - generic: "23"
+                                                    - generic:
+                                                      - generic:
+                                                        - generic:
+                                                          - generic: "-- ============================================================"
+                                                        - generic:
+                                                          - generic: "-- CLEANUP: Hapus semua data test Fixed Assets"
+                                                        - generic:
+                                                          - generic: "-- ============================================================"
+                                                        - generic:
+                                                          - generic: DO $$
+                                                        - generic:
+                                                          - generic: DECLARE
+                                                        - generic:
+                                                          - generic: v_journal_ids uuid[];
+                                                        - generic:
+                                                          - generic: BEGIN
+                                                        - generic:
+                                                          - generic: "-- Kumpulkan semua journal ID terkait aset"
+                                                        - generic:
+                                                          - generic: SELECT ARRAY(
+                                                        - generic:
+                                                          - generic: SELECT acquisition_journal_id FROM assets WHERE acquisition_journal_id IS NOT NULL
+                                                        - generic:
+                                                          - generic: UNION
+                                                        - generic:
+                                                          - generic: SELECT disposal_journal_id FROM assets WHERE disposal_journal_id IS NOT NULL
+                                                        - generic:
+                                                          - generic: UNION
+                                                        - generic:
+                                                          - generic: SELECT journal_id FROM depreciation_schedules WHERE journal_id IS NOT NULL
+                                                        - generic:
+                                                          - generic: ) INTO v_journal_ids;
+                                                        - generic:
+                                                          - generic: "-- 1. Hapus journal items"
+                                                        - generic:
+                                                          - generic: DELETE FROM journal_items WHERE journal_id = ANY(v_journal_ids);
+                                                        - generic:
+                                                          - generic: "-- 2. Hapus depreciation schedules"
+                                                        - generic:
+                                                          - generic: DELETE FROM depreciation_schedules;
+                                                    - textbox: "-- ============================================================ -- CLEANUP: Hapus semua data test Fixed Assets -- ============================================================ DO $$ DECLARE v_journal_ids uuid[]; BEGIN -- Kumpulkan semua journal ID terkait aset SELECT ARRAY("
+                                    - separator:
+                                      - generic:
+                                        - img
+                                    - generic:
+                                      - generic:
+                                        - generic:
+                                          - tablist:
+                                            - generic:
+                                              - tab [selected]:
+                                                - generic: Results
+                                              - tab:
+                                                - generic: Explain
+                                              - tab:
+                                                - generic: Chart
+                                            - generic:
+                                              - generic:
+                                                - button:
+                                                  - generic:
+                                                    - img
+                                                - button:
+                                                  - generic:
+                                                    - img
+                                                - button:
+                                                  - generic:
+                                                    - img
+                                              - generic:
+                                                - generic:
+                                                  - generic:
+                                                    - generic: Source
+                                                    - button:
+                                                      - generic: Primary database
+                                                      - generic:
+                                                        - img
+                                                  - button:
+                                                    - generic:
+                                                      - generic:
+                                                        - generic: Role
+                                                        - generic: postgres
+                                                        - img
+                                                  - button:
+                                                    - generic: Run
+                                                    - generic:
+                                                      - generic: Ctrl ↵
+                                          - generic:
+                                            - paragraph:
+                                              - text: Click
+                                              - code: Run
+                                              - text: to execute your query.
+  - generic:
+    - alert: List Public Generate Routines | SQL Editor | Supabase
+  - dialog "Potential issue detected with your query" [ref=e667]:
+    - heading "Potential issue detected with your query" [level=2] [ref=e669]
+    - alert [ref=e670]:
+      - img [ref=e671]
+      - generic [ref=e674]:
+        - heading "The following potential issue has been detected:" [level=5] [ref=e675]
+        - paragraph [ref=e677]: Ensure that these are intentional before executing this query
+    - generic [ref=e678]:
+      - list [ref=e680]:
+        - listitem [ref=e681]:
+          - generic [ref=e682]: Query has destructive operations
+          - generic [ref=e683]: Make sure you are not accidentally removing something important.
+      - paragraph [ref=e684]: Please confirm that you would like to execute this query.
+    - generic [ref=e686]:
+      - button "Cancel" [active] [ref=e687] [cursor=pointer]:
+        - generic [ref=e688]: Cancel
+      - button "Run this query" [ref=e689] [cursor=pointer]:
+        - generic [ref=e690]: Run this query
+    - button "Close" [ref=e691] [cursor=pointer]:
+      - img [ref=e692]
+      - generic [ref=e695]: Close

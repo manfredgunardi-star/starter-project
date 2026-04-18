@@ -1,0 +1,410 @@
+- generic [ref=e7]:
+  - generic [ref=e8]:
+    - heading "ERP Pembukuan" [level=1] [ref=e10]
+    - navigation [ref=e11]:
+      - link "Dashboard" [ref=e13] [cursor=pointer]:
+        - /url: /
+        - img [ref=e14]
+        - generic [ref=e19]: Dashboard
+      - generic [ref=e20]:
+        - button "Master Data" [ref=e21]:
+          - img [ref=e22]
+          - generic [ref=e26]: Master Data
+          - img [ref=e27]
+        - generic [ref=e29]:
+          - link "Satuan" [ref=e30] [cursor=pointer]:
+            - /url: /master/units
+          - link "Produk" [ref=e31] [cursor=pointer]:
+            - /url: /master/products
+          - link "Customer" [ref=e32] [cursor=pointer]:
+            - /url: /master/customers
+          - link "Supplier" [ref=e33] [cursor=pointer]:
+            - /url: /master/suppliers
+          - link "COA" [ref=e34] [cursor=pointer]:
+            - /url: /master/coa
+      - generic [ref=e35]:
+        - button "Inventory" [ref=e36]:
+          - img [ref=e37]
+          - generic [ref=e41]: Inventory
+          - img [ref=e42]
+        - generic [ref=e44]:
+          - link "Stok" [ref=e45] [cursor=pointer]:
+            - /url: /inventory/stock
+          - link "Kartu Stok" [ref=e46] [cursor=pointer]:
+            - /url: /inventory/stock-card
+      - generic [ref=e47]:
+        - button "Penjualan" [ref=e48]:
+          - img [ref=e49]
+          - generic [ref=e53]: Penjualan
+          - img [ref=e54]
+        - generic [ref=e56]:
+          - link "Sales Order" [ref=e57] [cursor=pointer]:
+            - /url: /sales/orders
+          - link "Pengiriman" [ref=e58] [cursor=pointer]:
+            - /url: /sales/deliveries
+          - link "Invoice Penjualan" [ref=e59] [cursor=pointer]:
+            - /url: /sales/invoices
+      - generic [ref=e60]:
+        - button "Pembelian" [ref=e61]:
+          - img [ref=e62]
+          - generic [ref=e67]: Pembelian
+          - img [ref=e68]
+        - generic [ref=e70]:
+          - link "Purchase Order" [ref=e71] [cursor=pointer]:
+            - /url: /purchase/orders
+          - link "Penerimaan" [ref=e72] [cursor=pointer]:
+            - /url: /purchase/receipts
+          - link "Invoice Pembelian" [ref=e73] [cursor=pointer]:
+            - /url: /purchase/invoices
+      - generic [ref=e74]:
+        - button "Kas & Bank" [ref=e75]:
+          - img [ref=e76]
+          - generic [ref=e78]: Kas & Bank
+          - img [ref=e79]
+        - generic [ref=e81]:
+          - link "Akun" [ref=e82] [cursor=pointer]:
+            - /url: /cash/accounts
+          - link "Pembayaran" [ref=e83] [cursor=pointer]:
+            - /url: /cash/payments
+          - link "Transfer" [ref=e84] [cursor=pointer]:
+            - /url: /cash/transfers/new
+          - link "Rekonsiliasi" [ref=e85] [cursor=pointer]:
+            - /url: /cash/reconciliation
+      - generic [ref=e86]:
+        - button "Pembukuan" [ref=e87]:
+          - img [ref=e88]
+          - generic [ref=e90]: Pembukuan
+          - img [ref=e91]
+        - generic [ref=e93]:
+          - link "Jurnal" [ref=e94] [cursor=pointer]:
+            - /url: /accounting/journals
+          - link "Buku Besar" [ref=e95] [cursor=pointer]:
+            - /url: /accounting/ledger
+      - generic [ref=e96]:
+        - button "Aset Tetap" [ref=e97]:
+          - img [ref=e98]
+          - generic [ref=e102]: Aset Tetap
+          - img [ref=e103]
+        - generic [ref=e105]:
+          - link "Daftar Aset" [ref=e106] [cursor=pointer]:
+            - /url: /assets
+          - link "Kategori Aset" [ref=e107] [cursor=pointer]:
+            - /url: /assets/categories
+          - link "Post Penyusutan" [ref=e108] [cursor=pointer]:
+            - /url: /assets/depreciation
+          - link "Import Aset" [ref=e109] [cursor=pointer]:
+            - /url: /assets/bulk-import
+      - generic [ref=e110]:
+        - button "Laporan" [ref=e111]:
+          - img [ref=e112]
+          - generic [ref=e114]: Laporan
+          - img [ref=e115]
+        - generic [ref=e117]:
+          - link "Neraca" [ref=e118] [cursor=pointer]:
+            - /url: /reports/balance-sheet
+          - link "Laba Rugi" [ref=e119] [cursor=pointer]:
+            - /url: /reports/income-statement
+          - link "Arus Kas" [ref=e120] [cursor=pointer]:
+            - /url: /reports/cash-flow
+          - link "Daftar Aset Tetap" [ref=e121] [cursor=pointer]:
+            - /url: /reports/assets-list
+          - link "Penyusutan per Periode" [ref=e122] [cursor=pointer]:
+            - /url: /reports/depreciation-period
+          - link "Disposal Aset" [ref=e123] [cursor=pointer]:
+            - /url: /reports/asset-disposals
+          - link "Summary Aset per Kategori" [ref=e124] [cursor=pointer]:
+            - /url: /reports/assets-summary
+      - generic [ref=e125]:
+        - button "Settings" [ref=e126]:
+          - img [ref=e127]
+          - generic [ref=e130]: Settings
+          - img [ref=e131]
+        - generic [ref=e133]:
+          - link "Users" [ref=e134] [cursor=pointer]:
+            - /url: /settings/users
+          - link "Audit Log" [ref=e135] [cursor=pointer]:
+            - /url: /settings/audit-log
+  - generic [ref=e136]:
+    - banner [ref=e137]:
+      - generic [ref=e138]: Selamat datang, Manfred Gunardi
+      - button "Keluar" [ref=e139]:
+        - img [ref=e140]
+        - text: Keluar
+    - main [ref=e143]:
+      - generic [ref=e237]:
+        - button "Kembali" [ref=e238]:
+          - img [ref=e239]
+          - text: Kembali
+        - generic [ref=e241]:
+          - generic [ref=e242]:
+            - generic [ref=e243]:
+              - heading "MCH-2026-0001" [level=1] [ref=e244]
+              - paragraph [ref=e245]: Mesin Pompa Test
+            - generic [ref=e246]: Aktif
+          - generic [ref=e247]:
+            - generic [ref=e248]:
+              - generic [ref=e249]: Kategori
+              - generic [ref=e250]: Mesin
+            - generic [ref=e251]:
+              - generic [ref=e252]: Tanggal Perolehan
+              - generic [ref=e253]: 01 Feb 2026
+            - generic [ref=e254]:
+              - generic [ref=e255]: Harga Perolehan
+              - generic [ref=e256]: Rp 24.000.000
+            - generic [ref=e257]:
+              - generic [ref=e258]: Umur Manfaat
+              - generic [ref=e259]: 24 bulan
+            - generic [ref=e260]:
+              - generic [ref=e261]: Nilai Residu
+              - generic [ref=e262]: Rp 0
+            - generic [ref=e263]:
+              - generic [ref=e264]: Lokasi
+              - generic [ref=e265]: —
+            - generic [ref=e266]:
+              - generic [ref=e267]: Deskripsi
+              - generic [ref=e268]: —
+            - generic [ref=e269]:
+              - generic [ref=e270]: Mulai Penyusutan
+              - generic [ref=e271]: 01 Mar 2026
+          - generic [ref=e272]:
+            - button "Edit" [ref=e273]:
+              - img [ref=e274]
+              - text: Edit
+            - button "Lepas Aset" [ref=e276]:
+              - img [ref=e277]
+              - text: Lepas Aset
+        - generic [ref=e281]:
+          - generic [ref=e282]: Nilai Buku Saat Ini
+          - generic [ref=e283]: Rp 24.000.000
+        - generic [ref=e284]:
+          - generic [ref=e285]:
+            - button "Jadwal Penyusutan" [ref=e286]
+            - button "Riwayat Jurnal" [ref=e287]
+            - button "Audit Log" [ref=e288]
+          - table [ref=e291]:
+            - rowgroup [ref=e292]:
+              - row "# Periode Beban Akumulasi Nilai Buku Akhir Status Jurnal" [ref=e293]:
+                - columnheader "#" [ref=e294]
+                - columnheader "Periode" [ref=e295]
+                - columnheader "Beban" [ref=e296]
+                - columnheader "Akumulasi" [ref=e297]
+                - columnheader "Nilai Buku Akhir" [ref=e298]
+                - columnheader "Status" [ref=e299]
+                - columnheader "Jurnal" [ref=e300]
+            - rowgroup [ref=e301]:
+              - row "1 2026-03 Rp 1.000.000 Rp 1.000.000 Rp 23.000.000 Pending —" [ref=e302]:
+                - cell "1" [ref=e303]
+                - cell "2026-03" [ref=e304]
+                - cell "Rp 1.000.000" [ref=e305]
+                - cell "Rp 1.000.000" [ref=e306]
+                - cell "Rp 23.000.000" [ref=e307]
+                - cell "Pending" [ref=e308]:
+                  - generic [ref=e309]: Pending
+                - cell "—" [ref=e310]
+              - row "2 2026-04 Rp 1.000.000 Rp 2.000.000 Rp 22.000.000 Pending —" [ref=e311]:
+                - cell "2" [ref=e312]
+                - cell "2026-04" [ref=e313]
+                - cell "Rp 1.000.000" [ref=e314]
+                - cell "Rp 2.000.000" [ref=e315]
+                - cell "Rp 22.000.000" [ref=e316]
+                - cell "Pending" [ref=e317]:
+                  - generic [ref=e318]: Pending
+                - cell "—" [ref=e319]
+              - row "3 2026-05 Rp 1.000.000 Rp 3.000.000 Rp 21.000.000 Pending —" [ref=e320]:
+                - cell "3" [ref=e321]
+                - cell "2026-05" [ref=e322]
+                - cell "Rp 1.000.000" [ref=e323]
+                - cell "Rp 3.000.000" [ref=e324]
+                - cell "Rp 21.000.000" [ref=e325]
+                - cell "Pending" [ref=e326]:
+                  - generic [ref=e327]: Pending
+                - cell "—" [ref=e328]
+              - row "4 2026-06 Rp 1.000.000 Rp 4.000.000 Rp 20.000.000 Pending —" [ref=e329]:
+                - cell "4" [ref=e330]
+                - cell "2026-06" [ref=e331]
+                - cell "Rp 1.000.000" [ref=e332]
+                - cell "Rp 4.000.000" [ref=e333]
+                - cell "Rp 20.000.000" [ref=e334]
+                - cell "Pending" [ref=e335]:
+                  - generic [ref=e336]: Pending
+                - cell "—" [ref=e337]
+              - row "5 2026-07 Rp 1.000.000 Rp 5.000.000 Rp 19.000.000 Pending —" [ref=e338]:
+                - cell "5" [ref=e339]
+                - cell "2026-07" [ref=e340]
+                - cell "Rp 1.000.000" [ref=e341]
+                - cell "Rp 5.000.000" [ref=e342]
+                - cell "Rp 19.000.000" [ref=e343]
+                - cell "Pending" [ref=e344]:
+                  - generic [ref=e345]: Pending
+                - cell "—" [ref=e346]
+              - row "6 2026-08 Rp 1.000.000 Rp 6.000.000 Rp 18.000.000 Pending —" [ref=e347]:
+                - cell "6" [ref=e348]
+                - cell "2026-08" [ref=e349]
+                - cell "Rp 1.000.000" [ref=e350]
+                - cell "Rp 6.000.000" [ref=e351]
+                - cell "Rp 18.000.000" [ref=e352]
+                - cell "Pending" [ref=e353]:
+                  - generic [ref=e354]: Pending
+                - cell "—" [ref=e355]
+              - row "7 2026-09 Rp 1.000.000 Rp 7.000.000 Rp 17.000.000 Pending —" [ref=e356]:
+                - cell "7" [ref=e357]
+                - cell "2026-09" [ref=e358]
+                - cell "Rp 1.000.000" [ref=e359]
+                - cell "Rp 7.000.000" [ref=e360]
+                - cell "Rp 17.000.000" [ref=e361]
+                - cell "Pending" [ref=e362]:
+                  - generic [ref=e363]: Pending
+                - cell "—" [ref=e364]
+              - row "8 2026-10 Rp 1.000.000 Rp 8.000.000 Rp 16.000.000 Pending —" [ref=e365]:
+                - cell "8" [ref=e366]
+                - cell "2026-10" [ref=e367]
+                - cell "Rp 1.000.000" [ref=e368]
+                - cell "Rp 8.000.000" [ref=e369]
+                - cell "Rp 16.000.000" [ref=e370]
+                - cell "Pending" [ref=e371]:
+                  - generic [ref=e372]: Pending
+                - cell "—" [ref=e373]
+              - row "9 2026-11 Rp 1.000.000 Rp 9.000.000 Rp 15.000.000 Pending —" [ref=e374]:
+                - cell "9" [ref=e375]
+                - cell "2026-11" [ref=e376]
+                - cell "Rp 1.000.000" [ref=e377]
+                - cell "Rp 9.000.000" [ref=e378]
+                - cell "Rp 15.000.000" [ref=e379]
+                - cell "Pending" [ref=e380]:
+                  - generic [ref=e381]: Pending
+                - cell "—" [ref=e382]
+              - row "10 2026-12 Rp 1.000.000 Rp 10.000.000 Rp 14.000.000 Pending —" [ref=e383]:
+                - cell "10" [ref=e384]
+                - cell "2026-12" [ref=e385]
+                - cell "Rp 1.000.000" [ref=e386]
+                - cell "Rp 10.000.000" [ref=e387]
+                - cell "Rp 14.000.000" [ref=e388]
+                - cell "Pending" [ref=e389]:
+                  - generic [ref=e390]: Pending
+                - cell "—" [ref=e391]
+              - row "11 2027-01 Rp 1.000.000 Rp 11.000.000 Rp 13.000.000 Pending —" [ref=e392]:
+                - cell "11" [ref=e393]
+                - cell "2027-01" [ref=e394]
+                - cell "Rp 1.000.000" [ref=e395]
+                - cell "Rp 11.000.000" [ref=e396]
+                - cell "Rp 13.000.000" [ref=e397]
+                - cell "Pending" [ref=e398]:
+                  - generic [ref=e399]: Pending
+                - cell "—" [ref=e400]
+              - row "12 2027-02 Rp 1.000.000 Rp 12.000.000 Rp 12.000.000 Pending —" [ref=e401]:
+                - cell "12" [ref=e402]
+                - cell "2027-02" [ref=e403]
+                - cell "Rp 1.000.000" [ref=e404]
+                - cell "Rp 12.000.000" [ref=e405]
+                - cell "Rp 12.000.000" [ref=e406]
+                - cell "Pending" [ref=e407]:
+                  - generic [ref=e408]: Pending
+                - cell "—" [ref=e409]
+              - row "13 2027-03 Rp 1.000.000 Rp 13.000.000 Rp 11.000.000 Pending —" [ref=e410]:
+                - cell "13" [ref=e411]
+                - cell "2027-03" [ref=e412]
+                - cell "Rp 1.000.000" [ref=e413]
+                - cell "Rp 13.000.000" [ref=e414]
+                - cell "Rp 11.000.000" [ref=e415]
+                - cell "Pending" [ref=e416]:
+                  - generic [ref=e417]: Pending
+                - cell "—" [ref=e418]
+              - row "14 2027-04 Rp 1.000.000 Rp 14.000.000 Rp 10.000.000 Pending —" [ref=e419]:
+                - cell "14" [ref=e420]
+                - cell "2027-04" [ref=e421]
+                - cell "Rp 1.000.000" [ref=e422]
+                - cell "Rp 14.000.000" [ref=e423]
+                - cell "Rp 10.000.000" [ref=e424]
+                - cell "Pending" [ref=e425]:
+                  - generic [ref=e426]: Pending
+                - cell "—" [ref=e427]
+              - row "15 2027-05 Rp 1.000.000 Rp 15.000.000 Rp 9.000.000 Pending —" [ref=e428]:
+                - cell "15" [ref=e429]
+                - cell "2027-05" [ref=e430]
+                - cell "Rp 1.000.000" [ref=e431]
+                - cell "Rp 15.000.000" [ref=e432]
+                - cell "Rp 9.000.000" [ref=e433]
+                - cell "Pending" [ref=e434]:
+                  - generic [ref=e435]: Pending
+                - cell "—" [ref=e436]
+              - row "16 2027-06 Rp 1.000.000 Rp 16.000.000 Rp 8.000.000 Pending —" [ref=e437]:
+                - cell "16" [ref=e438]
+                - cell "2027-06" [ref=e439]
+                - cell "Rp 1.000.000" [ref=e440]
+                - cell "Rp 16.000.000" [ref=e441]
+                - cell "Rp 8.000.000" [ref=e442]
+                - cell "Pending" [ref=e443]:
+                  - generic [ref=e444]: Pending
+                - cell "—" [ref=e445]
+              - row "17 2027-07 Rp 1.000.000 Rp 17.000.000 Rp 7.000.000 Pending —" [ref=e446]:
+                - cell "17" [ref=e447]
+                - cell "2027-07" [ref=e448]
+                - cell "Rp 1.000.000" [ref=e449]
+                - cell "Rp 17.000.000" [ref=e450]
+                - cell "Rp 7.000.000" [ref=e451]
+                - cell "Pending" [ref=e452]:
+                  - generic [ref=e453]: Pending
+                - cell "—" [ref=e454]
+              - row "18 2027-08 Rp 1.000.000 Rp 18.000.000 Rp 6.000.000 Pending —" [ref=e455]:
+                - cell "18" [ref=e456]
+                - cell "2027-08" [ref=e457]
+                - cell "Rp 1.000.000" [ref=e458]
+                - cell "Rp 18.000.000" [ref=e459]
+                - cell "Rp 6.000.000" [ref=e460]
+                - cell "Pending" [ref=e461]:
+                  - generic [ref=e462]: Pending
+                - cell "—" [ref=e463]
+              - row "19 2027-09 Rp 1.000.000 Rp 19.000.000 Rp 5.000.000 Pending —" [ref=e464]:
+                - cell "19" [ref=e465]
+                - cell "2027-09" [ref=e466]
+                - cell "Rp 1.000.000" [ref=e467]
+                - cell "Rp 19.000.000" [ref=e468]
+                - cell "Rp 5.000.000" [ref=e469]
+                - cell "Pending" [ref=e470]:
+                  - generic [ref=e471]: Pending
+                - cell "—" [ref=e472]
+              - row "20 2027-10 Rp 1.000.000 Rp 20.000.000 Rp 4.000.000 Pending —" [ref=e473]:
+                - cell "20" [ref=e474]
+                - cell "2027-10" [ref=e475]
+                - cell "Rp 1.000.000" [ref=e476]
+                - cell "Rp 20.000.000" [ref=e477]
+                - cell "Rp 4.000.000" [ref=e478]
+                - cell "Pending" [ref=e479]:
+                  - generic [ref=e480]: Pending
+                - cell "—" [ref=e481]
+              - row "21 2027-11 Rp 1.000.000 Rp 21.000.000 Rp 3.000.000 Pending —" [ref=e482]:
+                - cell "21" [ref=e483]
+                - cell "2027-11" [ref=e484]
+                - cell "Rp 1.000.000" [ref=e485]
+                - cell "Rp 21.000.000" [ref=e486]
+                - cell "Rp 3.000.000" [ref=e487]
+                - cell "Pending" [ref=e488]:
+                  - generic [ref=e489]: Pending
+                - cell "—" [ref=e490]
+              - row "22 2027-12 Rp 1.000.000 Rp 22.000.000 Rp 2.000.000 Pending —" [ref=e491]:
+                - cell "22" [ref=e492]
+                - cell "2027-12" [ref=e493]
+                - cell "Rp 1.000.000" [ref=e494]
+                - cell "Rp 22.000.000" [ref=e495]
+                - cell "Rp 2.000.000" [ref=e496]
+                - cell "Pending" [ref=e497]:
+                  - generic [ref=e498]: Pending
+                - cell "—" [ref=e499]
+              - row "23 2028-01 Rp 1.000.000 Rp 23.000.000 Rp 1.000.000 Pending —" [ref=e500]:
+                - cell "23" [ref=e501]
+                - cell "2028-01" [ref=e502]
+                - cell "Rp 1.000.000" [ref=e503]
+                - cell "Rp 23.000.000" [ref=e504]
+                - cell "Rp 1.000.000" [ref=e505]
+                - cell "Pending" [ref=e506]:
+                  - generic [ref=e507]: Pending
+                - cell "—" [ref=e508]
+              - row "24 2028-02 Rp 1.000.000 Rp 24.000.000 Rp 0 Pending —" [ref=e509]:
+                - cell "24" [ref=e510]
+                - cell "2028-02" [ref=e511]
+                - cell "Rp 1.000.000" [ref=e512]
+                - cell "Rp 24.000.000" [ref=e513]
+                - cell "Rp 0" [ref=e514]
+                - cell "Pending" [ref=e515]:
+                  - generic [ref=e516]: Pending
+                - cell "—" [ref=e517]

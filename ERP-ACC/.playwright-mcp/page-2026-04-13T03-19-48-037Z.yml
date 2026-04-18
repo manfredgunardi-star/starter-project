@@ -1,0 +1,734 @@
+- generic [ref=e7]:
+  - generic [ref=e8]:
+    - heading "ERP Pembukuan" [level=1] [ref=e10]
+    - navigation [ref=e11]:
+      - link "Dashboard" [ref=e13] [cursor=pointer]:
+        - /url: /
+        - img [ref=e14]
+        - generic [ref=e19]: Dashboard
+      - generic [ref=e20]:
+        - button "Master Data" [ref=e21]:
+          - img [ref=e22]
+          - generic [ref=e26]: Master Data
+          - img [ref=e27]
+        - generic [ref=e29]:
+          - link "Satuan" [ref=e30] [cursor=pointer]:
+            - /url: /master/units
+          - link "Produk" [ref=e31] [cursor=pointer]:
+            - /url: /master/products
+          - link "Customer" [ref=e32] [cursor=pointer]:
+            - /url: /master/customers
+          - link "Supplier" [ref=e33] [cursor=pointer]:
+            - /url: /master/suppliers
+          - link "COA" [ref=e34] [cursor=pointer]:
+            - /url: /master/coa
+      - generic [ref=e35]:
+        - button "Inventory" [ref=e36]:
+          - img [ref=e37]
+          - generic [ref=e41]: Inventory
+          - img [ref=e42]
+        - generic [ref=e44]:
+          - link "Stok" [ref=e45] [cursor=pointer]:
+            - /url: /inventory/stock
+          - link "Kartu Stok" [ref=e46] [cursor=pointer]:
+            - /url: /inventory/stock-card
+      - generic [ref=e47]:
+        - button "Penjualan" [ref=e48]:
+          - img [ref=e49]
+          - generic [ref=e53]: Penjualan
+          - img [ref=e54]
+        - generic [ref=e56]:
+          - link "Sales Order" [ref=e57] [cursor=pointer]:
+            - /url: /sales/orders
+          - link "Pengiriman" [ref=e58] [cursor=pointer]:
+            - /url: /sales/deliveries
+          - link "Invoice Penjualan" [ref=e59] [cursor=pointer]:
+            - /url: /sales/invoices
+      - generic [ref=e60]:
+        - button "Pembelian" [ref=e61]:
+          - img [ref=e62]
+          - generic [ref=e67]: Pembelian
+          - img [ref=e68]
+        - generic [ref=e70]:
+          - link "Purchase Order" [ref=e71] [cursor=pointer]:
+            - /url: /purchase/orders
+          - link "Penerimaan" [ref=e72] [cursor=pointer]:
+            - /url: /purchase/receipts
+          - link "Invoice Pembelian" [ref=e73] [cursor=pointer]:
+            - /url: /purchase/invoices
+      - generic [ref=e74]:
+        - button "Kas & Bank" [ref=e75]:
+          - img [ref=e76]
+          - generic [ref=e78]: Kas & Bank
+          - img [ref=e79]
+        - generic [ref=e81]:
+          - link "Akun" [ref=e82] [cursor=pointer]:
+            - /url: /cash/accounts
+          - link "Pembayaran" [ref=e83] [cursor=pointer]:
+            - /url: /cash/payments
+          - link "Transfer" [ref=e84] [cursor=pointer]:
+            - /url: /cash/transfers/new
+          - link "Rekonsiliasi" [ref=e85] [cursor=pointer]:
+            - /url: /cash/reconciliation
+      - generic [ref=e86]:
+        - button "Pembukuan" [ref=e87]:
+          - img [ref=e88]
+          - generic [ref=e90]: Pembukuan
+          - img [ref=e91]
+        - generic [ref=e93]:
+          - link "Jurnal" [ref=e94] [cursor=pointer]:
+            - /url: /accounting/journals
+          - link "Buku Besar" [ref=e95] [cursor=pointer]:
+            - /url: /accounting/ledger
+      - generic [ref=e96]:
+        - button "Aset Tetap" [ref=e97]:
+          - img [ref=e98]
+          - generic [ref=e102]: Aset Tetap
+          - img [ref=e103]
+        - generic [ref=e105]:
+          - link "Daftar Aset" [ref=e106] [cursor=pointer]:
+            - /url: /assets
+          - link "Kategori Aset" [ref=e107] [cursor=pointer]:
+            - /url: /assets/categories
+          - link "Post Penyusutan" [ref=e108] [cursor=pointer]:
+            - /url: /assets/depreciation
+          - link "Import Aset" [ref=e109] [cursor=pointer]:
+            - /url: /assets/bulk-import
+      - generic [ref=e110]:
+        - button "Laporan" [ref=e111]:
+          - img [ref=e112]
+          - generic [ref=e114]: Laporan
+          - img [ref=e115]
+        - generic [ref=e117]:
+          - link "Neraca" [ref=e118] [cursor=pointer]:
+            - /url: /reports/balance-sheet
+          - link "Laba Rugi" [ref=e119] [cursor=pointer]:
+            - /url: /reports/income-statement
+          - link "Arus Kas" [ref=e120] [cursor=pointer]:
+            - /url: /reports/cash-flow
+          - link "Daftar Aset Tetap" [ref=e121] [cursor=pointer]:
+            - /url: /reports/assets-list
+          - link "Penyusutan per Periode" [ref=e122] [cursor=pointer]:
+            - /url: /reports/depreciation-period
+          - link "Disposal Aset" [ref=e123] [cursor=pointer]:
+            - /url: /reports/asset-disposals
+          - link "Summary Aset per Kategori" [ref=e124] [cursor=pointer]:
+            - /url: /reports/assets-summary
+      - generic [ref=e125]:
+        - button "Settings" [ref=e126]:
+          - img [ref=e127]
+          - generic [ref=e130]: Settings
+          - img [ref=e131]
+        - generic [ref=e133]:
+          - link "Users" [ref=e134] [cursor=pointer]:
+            - /url: /settings/users
+          - link "Audit Log" [ref=e135] [cursor=pointer]:
+            - /url: /settings/audit-log
+  - generic [ref=e136]:
+    - banner [ref=e137]:
+      - generic [ref=e138]: Selamat datang, Manfred Gunardi
+      - button "Keluar" [ref=e139]:
+        - img [ref=e140]
+        - text: Keluar
+    - main [ref=e143]:
+      - generic [ref=e288]:
+        - button "Kembali" [ref=e289]:
+          - img [ref=e290]
+          - text: Kembali
+        - generic [ref=e292]:
+          - generic [ref=e293]:
+            - generic [ref=e294]:
+              - heading "EQP-2026-0001" [level=1] [ref=e295]
+              - paragraph [ref=e296]: Server Rack Dell R740
+            - generic [ref=e297]: Dilepas
+          - generic [ref=e298]:
+            - generic [ref=e299]:
+              - generic [ref=e300]: Kategori
+              - generic [ref=e301]: Peralatan
+            - generic [ref=e302]:
+              - generic [ref=e303]: Tanggal Perolehan
+              - generic [ref=e304]: 01 Mar 2026
+            - generic [ref=e305]:
+              - generic [ref=e306]: Harga Perolehan
+              - generic [ref=e307]: Rp 180.000.000
+            - generic [ref=e308]:
+              - generic [ref=e309]: Umur Manfaat
+              - generic [ref=e310]: 60 bulan
+            - generic [ref=e311]:
+              - generic [ref=e312]: Nilai Residu
+              - generic [ref=e313]: Rp 0
+            - generic [ref=e314]:
+              - generic [ref=e315]: Lokasi
+              - generic [ref=e316]: —
+            - generic [ref=e317]:
+              - generic [ref=e318]: Deskripsi
+              - generic [ref=e319]: —
+            - generic [ref=e320]:
+              - generic [ref=e321]: Mulai Penyusutan
+              - generic [ref=e322]: 01 Apr 2026
+          - generic [ref=e323]:
+            - button "Edit" [ref=e324]:
+              - img [ref=e325]
+              - text: Edit
+            - button "Lepas Aset" [disabled] [ref=e327]:
+              - img [ref=e328]
+              - text: Lepas Aset
+        - generic [ref=e332]:
+          - generic [ref=e333]: Nilai Buku Saat Ini
+          - generic [ref=e334]: Rp 135.000.000
+        - generic [ref=e335]:
+          - generic [ref=e336]:
+            - button "Jadwal Penyusutan" [ref=e337]
+            - button "Riwayat Jurnal" [ref=e338]
+            - button "Audit Log" [ref=e339]
+          - table [ref=e342]:
+            - rowgroup [ref=e343]:
+              - row "# Periode Beban Akumulasi Nilai Buku Akhir Status Jurnal" [ref=e344]:
+                - columnheader "#" [ref=e345]
+                - columnheader "Periode" [ref=e346]
+                - columnheader "Beban" [ref=e347]
+                - columnheader "Akumulasi" [ref=e348]
+                - columnheader "Nilai Buku Akhir" [ref=e349]
+                - columnheader "Status" [ref=e350]
+                - columnheader "Jurnal" [ref=e351]
+            - rowgroup [ref=e352]:
+              - row "1 2026-04 Rp 3.000.000 Rp 3.000.000 Rp 177.000.000 Posted —" [ref=e353]:
+                - cell "1" [ref=e354]
+                - cell "2026-04" [ref=e355]
+                - cell "Rp 3.000.000" [ref=e356]
+                - cell "Rp 3.000.000" [ref=e357]
+                - cell "Rp 177.000.000" [ref=e358]
+                - cell "Posted" [ref=e359]:
+                  - generic [ref=e360]: Posted
+                - cell "—" [ref=e361]
+              - row "2 2026-05 Rp 3.000.000 Rp 6.000.000 Rp 174.000.000 Posted —" [ref=e362]:
+                - cell "2" [ref=e363]
+                - cell "2026-05" [ref=e364]
+                - cell "Rp 3.000.000" [ref=e365]
+                - cell "Rp 6.000.000" [ref=e366]
+                - cell "Rp 174.000.000" [ref=e367]
+                - cell "Posted" [ref=e368]:
+                  - generic [ref=e369]: Posted
+                - cell "—" [ref=e370]
+              - row "3 2026-06 Rp 3.000.000 Rp 9.000.000 Rp 171.000.000 Posted —" [ref=e371]:
+                - cell "3" [ref=e372]
+                - cell "2026-06" [ref=e373]
+                - cell "Rp 3.000.000" [ref=e374]
+                - cell "Rp 9.000.000" [ref=e375]
+                - cell "Rp 171.000.000" [ref=e376]
+                - cell "Posted" [ref=e377]:
+                  - generic [ref=e378]: Posted
+                - cell "—" [ref=e379]
+              - row "4 2026-07 Rp 3.000.000 Rp 12.000.000 Rp 168.000.000 Posted —" [ref=e380]:
+                - cell "4" [ref=e381]
+                - cell "2026-07" [ref=e382]
+                - cell "Rp 3.000.000" [ref=e383]
+                - cell "Rp 12.000.000" [ref=e384]
+                - cell "Rp 168.000.000" [ref=e385]
+                - cell "Posted" [ref=e386]:
+                  - generic [ref=e387]: Posted
+                - cell "—" [ref=e388]
+              - row "5 2026-08 Rp 3.000.000 Rp 15.000.000 Rp 165.000.000 Posted —" [ref=e389]:
+                - cell "5" [ref=e390]
+                - cell "2026-08" [ref=e391]
+                - cell "Rp 3.000.000" [ref=e392]
+                - cell "Rp 15.000.000" [ref=e393]
+                - cell "Rp 165.000.000" [ref=e394]
+                - cell "Posted" [ref=e395]:
+                  - generic [ref=e396]: Posted
+                - cell "—" [ref=e397]
+              - row "6 2026-09 Rp 3.000.000 Rp 18.000.000 Rp 162.000.000 Batal —" [ref=e398]:
+                - cell "6" [ref=e399]
+                - cell "2026-09" [ref=e400]
+                - cell "Rp 3.000.000" [ref=e401]
+                - cell "Rp 18.000.000" [ref=e402]
+                - cell "Rp 162.000.000" [ref=e403]
+                - cell "Batal" [ref=e404]:
+                  - generic [ref=e405]: Batal
+                - cell "—" [ref=e406]
+              - row "7 2026-10 Rp 3.000.000 Rp 21.000.000 Rp 159.000.000 Batal —" [ref=e407]:
+                - cell "7" [ref=e408]
+                - cell "2026-10" [ref=e409]
+                - cell "Rp 3.000.000" [ref=e410]
+                - cell "Rp 21.000.000" [ref=e411]
+                - cell "Rp 159.000.000" [ref=e412]
+                - cell "Batal" [ref=e413]:
+                  - generic [ref=e414]: Batal
+                - cell "—" [ref=e415]
+              - row "8 2026-11 Rp 3.000.000 Rp 24.000.000 Rp 156.000.000 Batal —" [ref=e416]:
+                - cell "8" [ref=e417]
+                - cell "2026-11" [ref=e418]
+                - cell "Rp 3.000.000" [ref=e419]
+                - cell "Rp 24.000.000" [ref=e420]
+                - cell "Rp 156.000.000" [ref=e421]
+                - cell "Batal" [ref=e422]:
+                  - generic [ref=e423]: Batal
+                - cell "—" [ref=e424]
+              - row "9 2026-12 Rp 3.000.000 Rp 27.000.000 Rp 153.000.000 Batal —" [ref=e425]:
+                - cell "9" [ref=e426]
+                - cell "2026-12" [ref=e427]
+                - cell "Rp 3.000.000" [ref=e428]
+                - cell "Rp 27.000.000" [ref=e429]
+                - cell "Rp 153.000.000" [ref=e430]
+                - cell "Batal" [ref=e431]:
+                  - generic [ref=e432]: Batal
+                - cell "—" [ref=e433]
+              - row "10 2027-01 Rp 3.000.000 Rp 30.000.000 Rp 150.000.000 Batal —" [ref=e434]:
+                - cell "10" [ref=e435]
+                - cell "2027-01" [ref=e436]
+                - cell "Rp 3.000.000" [ref=e437]
+                - cell "Rp 30.000.000" [ref=e438]
+                - cell "Rp 150.000.000" [ref=e439]
+                - cell "Batal" [ref=e440]:
+                  - generic [ref=e441]: Batal
+                - cell "—" [ref=e442]
+              - row "11 2027-02 Rp 3.000.000 Rp 33.000.000 Rp 147.000.000 Batal —" [ref=e443]:
+                - cell "11" [ref=e444]
+                - cell "2027-02" [ref=e445]
+                - cell "Rp 3.000.000" [ref=e446]
+                - cell "Rp 33.000.000" [ref=e447]
+                - cell "Rp 147.000.000" [ref=e448]
+                - cell "Batal" [ref=e449]:
+                  - generic [ref=e450]: Batal
+                - cell "—" [ref=e451]
+              - row "12 2027-03 Rp 3.000.000 Rp 36.000.000 Rp 144.000.000 Batal —" [ref=e452]:
+                - cell "12" [ref=e453]
+                - cell "2027-03" [ref=e454]
+                - cell "Rp 3.000.000" [ref=e455]
+                - cell "Rp 36.000.000" [ref=e456]
+                - cell "Rp 144.000.000" [ref=e457]
+                - cell "Batal" [ref=e458]:
+                  - generic [ref=e459]: Batal
+                - cell "—" [ref=e460]
+              - row "13 2027-04 Rp 3.000.000 Rp 39.000.000 Rp 141.000.000 Batal —" [ref=e461]:
+                - cell "13" [ref=e462]
+                - cell "2027-04" [ref=e463]
+                - cell "Rp 3.000.000" [ref=e464]
+                - cell "Rp 39.000.000" [ref=e465]
+                - cell "Rp 141.000.000" [ref=e466]
+                - cell "Batal" [ref=e467]:
+                  - generic [ref=e468]: Batal
+                - cell "—" [ref=e469]
+              - row "14 2027-05 Rp 3.000.000 Rp 42.000.000 Rp 138.000.000 Batal —" [ref=e470]:
+                - cell "14" [ref=e471]
+                - cell "2027-05" [ref=e472]
+                - cell "Rp 3.000.000" [ref=e473]
+                - cell "Rp 42.000.000" [ref=e474]
+                - cell "Rp 138.000.000" [ref=e475]
+                - cell "Batal" [ref=e476]:
+                  - generic [ref=e477]: Batal
+                - cell "—" [ref=e478]
+              - row "15 2027-06 Rp 3.000.000 Rp 45.000.000 Rp 135.000.000 Batal —" [ref=e479]:
+                - cell "15" [ref=e480]
+                - cell "2027-06" [ref=e481]
+                - cell "Rp 3.000.000" [ref=e482]
+                - cell "Rp 45.000.000" [ref=e483]
+                - cell "Rp 135.000.000" [ref=e484]
+                - cell "Batal" [ref=e485]:
+                  - generic [ref=e486]: Batal
+                - cell "—" [ref=e487]
+              - row "16 2027-07 Rp 3.000.000 Rp 48.000.000 Rp 132.000.000 Batal —" [ref=e488]:
+                - cell "16" [ref=e489]
+                - cell "2027-07" [ref=e490]
+                - cell "Rp 3.000.000" [ref=e491]
+                - cell "Rp 48.000.000" [ref=e492]
+                - cell "Rp 132.000.000" [ref=e493]
+                - cell "Batal" [ref=e494]:
+                  - generic [ref=e495]: Batal
+                - cell "—" [ref=e496]
+              - row "17 2027-08 Rp 3.000.000 Rp 51.000.000 Rp 129.000.000 Batal —" [ref=e497]:
+                - cell "17" [ref=e498]
+                - cell "2027-08" [ref=e499]
+                - cell "Rp 3.000.000" [ref=e500]
+                - cell "Rp 51.000.000" [ref=e501]
+                - cell "Rp 129.000.000" [ref=e502]
+                - cell "Batal" [ref=e503]:
+                  - generic [ref=e504]: Batal
+                - cell "—" [ref=e505]
+              - row "18 2027-09 Rp 3.000.000 Rp 54.000.000 Rp 126.000.000 Batal —" [ref=e506]:
+                - cell "18" [ref=e507]
+                - cell "2027-09" [ref=e508]
+                - cell "Rp 3.000.000" [ref=e509]
+                - cell "Rp 54.000.000" [ref=e510]
+                - cell "Rp 126.000.000" [ref=e511]
+                - cell "Batal" [ref=e512]:
+                  - generic [ref=e513]: Batal
+                - cell "—" [ref=e514]
+              - row "19 2027-10 Rp 3.000.000 Rp 57.000.000 Rp 123.000.000 Batal —" [ref=e515]:
+                - cell "19" [ref=e516]
+                - cell "2027-10" [ref=e517]
+                - cell "Rp 3.000.000" [ref=e518]
+                - cell "Rp 57.000.000" [ref=e519]
+                - cell "Rp 123.000.000" [ref=e520]
+                - cell "Batal" [ref=e521]:
+                  - generic [ref=e522]: Batal
+                - cell "—" [ref=e523]
+              - row "20 2027-11 Rp 3.000.000 Rp 60.000.000 Rp 120.000.000 Batal —" [ref=e524]:
+                - cell "20" [ref=e525]
+                - cell "2027-11" [ref=e526]
+                - cell "Rp 3.000.000" [ref=e527]
+                - cell "Rp 60.000.000" [ref=e528]
+                - cell "Rp 120.000.000" [ref=e529]
+                - cell "Batal" [ref=e530]:
+                  - generic [ref=e531]: Batal
+                - cell "—" [ref=e532]
+              - row "21 2027-12 Rp 3.000.000 Rp 63.000.000 Rp 117.000.000 Batal —" [ref=e533]:
+                - cell "21" [ref=e534]
+                - cell "2027-12" [ref=e535]
+                - cell "Rp 3.000.000" [ref=e536]
+                - cell "Rp 63.000.000" [ref=e537]
+                - cell "Rp 117.000.000" [ref=e538]
+                - cell "Batal" [ref=e539]:
+                  - generic [ref=e540]: Batal
+                - cell "—" [ref=e541]
+              - row "22 2028-01 Rp 3.000.000 Rp 66.000.000 Rp 114.000.000 Batal —" [ref=e542]:
+                - cell "22" [ref=e543]
+                - cell "2028-01" [ref=e544]
+                - cell "Rp 3.000.000" [ref=e545]
+                - cell "Rp 66.000.000" [ref=e546]
+                - cell "Rp 114.000.000" [ref=e547]
+                - cell "Batal" [ref=e548]:
+                  - generic [ref=e549]: Batal
+                - cell "—" [ref=e550]
+              - row "23 2028-02 Rp 3.000.000 Rp 69.000.000 Rp 111.000.000 Batal —" [ref=e551]:
+                - cell "23" [ref=e552]
+                - cell "2028-02" [ref=e553]
+                - cell "Rp 3.000.000" [ref=e554]
+                - cell "Rp 69.000.000" [ref=e555]
+                - cell "Rp 111.000.000" [ref=e556]
+                - cell "Batal" [ref=e557]:
+                  - generic [ref=e558]: Batal
+                - cell "—" [ref=e559]
+              - row "24 2028-03 Rp 3.000.000 Rp 72.000.000 Rp 108.000.000 Batal —" [ref=e560]:
+                - cell "24" [ref=e561]
+                - cell "2028-03" [ref=e562]
+                - cell "Rp 3.000.000" [ref=e563]
+                - cell "Rp 72.000.000" [ref=e564]
+                - cell "Rp 108.000.000" [ref=e565]
+                - cell "Batal" [ref=e566]:
+                  - generic [ref=e567]: Batal
+                - cell "—" [ref=e568]
+              - row "25 2028-04 Rp 3.000.000 Rp 75.000.000 Rp 105.000.000 Batal —" [ref=e569]:
+                - cell "25" [ref=e570]
+                - cell "2028-04" [ref=e571]
+                - cell "Rp 3.000.000" [ref=e572]
+                - cell "Rp 75.000.000" [ref=e573]
+                - cell "Rp 105.000.000" [ref=e574]
+                - cell "Batal" [ref=e575]:
+                  - generic [ref=e576]: Batal
+                - cell "—" [ref=e577]
+              - row "26 2028-05 Rp 3.000.000 Rp 78.000.000 Rp 102.000.000 Batal —" [ref=e578]:
+                - cell "26" [ref=e579]
+                - cell "2028-05" [ref=e580]
+                - cell "Rp 3.000.000" [ref=e581]
+                - cell "Rp 78.000.000" [ref=e582]
+                - cell "Rp 102.000.000" [ref=e583]
+                - cell "Batal" [ref=e584]:
+                  - generic [ref=e585]: Batal
+                - cell "—" [ref=e586]
+              - row "27 2028-06 Rp 3.000.000 Rp 81.000.000 Rp 99.000.000 Batal —" [ref=e587]:
+                - cell "27" [ref=e588]
+                - cell "2028-06" [ref=e589]
+                - cell "Rp 3.000.000" [ref=e590]
+                - cell "Rp 81.000.000" [ref=e591]
+                - cell "Rp 99.000.000" [ref=e592]
+                - cell "Batal" [ref=e593]:
+                  - generic [ref=e594]: Batal
+                - cell "—" [ref=e595]
+              - row "28 2028-07 Rp 3.000.000 Rp 84.000.000 Rp 96.000.000 Batal —" [ref=e596]:
+                - cell "28" [ref=e597]
+                - cell "2028-07" [ref=e598]
+                - cell "Rp 3.000.000" [ref=e599]
+                - cell "Rp 84.000.000" [ref=e600]
+                - cell "Rp 96.000.000" [ref=e601]
+                - cell "Batal" [ref=e602]:
+                  - generic [ref=e603]: Batal
+                - cell "—" [ref=e604]
+              - row "29 2028-08 Rp 3.000.000 Rp 87.000.000 Rp 93.000.000 Batal —" [ref=e605]:
+                - cell "29" [ref=e606]
+                - cell "2028-08" [ref=e607]
+                - cell "Rp 3.000.000" [ref=e608]
+                - cell "Rp 87.000.000" [ref=e609]
+                - cell "Rp 93.000.000" [ref=e610]
+                - cell "Batal" [ref=e611]:
+                  - generic [ref=e612]: Batal
+                - cell "—" [ref=e613]
+              - row "30 2028-09 Rp 3.000.000 Rp 90.000.000 Rp 90.000.000 Batal —" [ref=e614]:
+                - cell "30" [ref=e615]
+                - cell "2028-09" [ref=e616]
+                - cell "Rp 3.000.000" [ref=e617]
+                - cell "Rp 90.000.000" [ref=e618]
+                - cell "Rp 90.000.000" [ref=e619]
+                - cell "Batal" [ref=e620]:
+                  - generic [ref=e621]: Batal
+                - cell "—" [ref=e622]
+              - row "31 2028-10 Rp 3.000.000 Rp 93.000.000 Rp 87.000.000 Batal —" [ref=e623]:
+                - cell "31" [ref=e624]
+                - cell "2028-10" [ref=e625]
+                - cell "Rp 3.000.000" [ref=e626]
+                - cell "Rp 93.000.000" [ref=e627]
+                - cell "Rp 87.000.000" [ref=e628]
+                - cell "Batal" [ref=e629]:
+                  - generic [ref=e630]: Batal
+                - cell "—" [ref=e631]
+              - row "32 2028-11 Rp 3.000.000 Rp 96.000.000 Rp 84.000.000 Batal —" [ref=e632]:
+                - cell "32" [ref=e633]
+                - cell "2028-11" [ref=e634]
+                - cell "Rp 3.000.000" [ref=e635]
+                - cell "Rp 96.000.000" [ref=e636]
+                - cell "Rp 84.000.000" [ref=e637]
+                - cell "Batal" [ref=e638]:
+                  - generic [ref=e639]: Batal
+                - cell "—" [ref=e640]
+              - row "33 2028-12 Rp 3.000.000 Rp 99.000.000 Rp 81.000.000 Batal —" [ref=e641]:
+                - cell "33" [ref=e642]
+                - cell "2028-12" [ref=e643]
+                - cell "Rp 3.000.000" [ref=e644]
+                - cell "Rp 99.000.000" [ref=e645]
+                - cell "Rp 81.000.000" [ref=e646]
+                - cell "Batal" [ref=e647]:
+                  - generic [ref=e648]: Batal
+                - cell "—" [ref=e649]
+              - row "34 2029-01 Rp 3.000.000 Rp 102.000.000 Rp 78.000.000 Batal —" [ref=e650]:
+                - cell "34" [ref=e651]
+                - cell "2029-01" [ref=e652]
+                - cell "Rp 3.000.000" [ref=e653]
+                - cell "Rp 102.000.000" [ref=e654]
+                - cell "Rp 78.000.000" [ref=e655]
+                - cell "Batal" [ref=e656]:
+                  - generic [ref=e657]: Batal
+                - cell "—" [ref=e658]
+              - row "35 2029-02 Rp 3.000.000 Rp 105.000.000 Rp 75.000.000 Batal —" [ref=e659]:
+                - cell "35" [ref=e660]
+                - cell "2029-02" [ref=e661]
+                - cell "Rp 3.000.000" [ref=e662]
+                - cell "Rp 105.000.000" [ref=e663]
+                - cell "Rp 75.000.000" [ref=e664]
+                - cell "Batal" [ref=e665]:
+                  - generic [ref=e666]: Batal
+                - cell "—" [ref=e667]
+              - row "36 2029-03 Rp 3.000.000 Rp 108.000.000 Rp 72.000.000 Batal —" [ref=e668]:
+                - cell "36" [ref=e669]
+                - cell "2029-03" [ref=e670]
+                - cell "Rp 3.000.000" [ref=e671]
+                - cell "Rp 108.000.000" [ref=e672]
+                - cell "Rp 72.000.000" [ref=e673]
+                - cell "Batal" [ref=e674]:
+                  - generic [ref=e675]: Batal
+                - cell "—" [ref=e676]
+              - row "37 2029-04 Rp 3.000.000 Rp 111.000.000 Rp 69.000.000 Batal —" [ref=e677]:
+                - cell "37" [ref=e678]
+                - cell "2029-04" [ref=e679]
+                - cell "Rp 3.000.000" [ref=e680]
+                - cell "Rp 111.000.000" [ref=e681]
+                - cell "Rp 69.000.000" [ref=e682]
+                - cell "Batal" [ref=e683]:
+                  - generic [ref=e684]: Batal
+                - cell "—" [ref=e685]
+              - row "38 2029-05 Rp 3.000.000 Rp 114.000.000 Rp 66.000.000 Batal —" [ref=e686]:
+                - cell "38" [ref=e687]
+                - cell "2029-05" [ref=e688]
+                - cell "Rp 3.000.000" [ref=e689]
+                - cell "Rp 114.000.000" [ref=e690]
+                - cell "Rp 66.000.000" [ref=e691]
+                - cell "Batal" [ref=e692]:
+                  - generic [ref=e693]: Batal
+                - cell "—" [ref=e694]
+              - row "39 2029-06 Rp 3.000.000 Rp 117.000.000 Rp 63.000.000 Batal —" [ref=e695]:
+                - cell "39" [ref=e696]
+                - cell "2029-06" [ref=e697]
+                - cell "Rp 3.000.000" [ref=e698]
+                - cell "Rp 117.000.000" [ref=e699]
+                - cell "Rp 63.000.000" [ref=e700]
+                - cell "Batal" [ref=e701]:
+                  - generic [ref=e702]: Batal
+                - cell "—" [ref=e703]
+              - row "40 2029-07 Rp 3.000.000 Rp 120.000.000 Rp 60.000.000 Batal —" [ref=e704]:
+                - cell "40" [ref=e705]
+                - cell "2029-07" [ref=e706]
+                - cell "Rp 3.000.000" [ref=e707]
+                - cell "Rp 120.000.000" [ref=e708]
+                - cell "Rp 60.000.000" [ref=e709]
+                - cell "Batal" [ref=e710]:
+                  - generic [ref=e711]: Batal
+                - cell "—" [ref=e712]
+              - row "41 2029-08 Rp 3.000.000 Rp 123.000.000 Rp 57.000.000 Batal —" [ref=e713]:
+                - cell "41" [ref=e714]
+                - cell "2029-08" [ref=e715]
+                - cell "Rp 3.000.000" [ref=e716]
+                - cell "Rp 123.000.000" [ref=e717]
+                - cell "Rp 57.000.000" [ref=e718]
+                - cell "Batal" [ref=e719]:
+                  - generic [ref=e720]: Batal
+                - cell "—" [ref=e721]
+              - row "42 2029-09 Rp 3.000.000 Rp 126.000.000 Rp 54.000.000 Batal —" [ref=e722]:
+                - cell "42" [ref=e723]
+                - cell "2029-09" [ref=e724]
+                - cell "Rp 3.000.000" [ref=e725]
+                - cell "Rp 126.000.000" [ref=e726]
+                - cell "Rp 54.000.000" [ref=e727]
+                - cell "Batal" [ref=e728]:
+                  - generic [ref=e729]: Batal
+                - cell "—" [ref=e730]
+              - row "43 2029-10 Rp 3.000.000 Rp 129.000.000 Rp 51.000.000 Batal —" [ref=e731]:
+                - cell "43" [ref=e732]
+                - cell "2029-10" [ref=e733]
+                - cell "Rp 3.000.000" [ref=e734]
+                - cell "Rp 129.000.000" [ref=e735]
+                - cell "Rp 51.000.000" [ref=e736]
+                - cell "Batal" [ref=e737]:
+                  - generic [ref=e738]: Batal
+                - cell "—" [ref=e739]
+              - row "44 2029-11 Rp 3.000.000 Rp 132.000.000 Rp 48.000.000 Batal —" [ref=e740]:
+                - cell "44" [ref=e741]
+                - cell "2029-11" [ref=e742]
+                - cell "Rp 3.000.000" [ref=e743]
+                - cell "Rp 132.000.000" [ref=e744]
+                - cell "Rp 48.000.000" [ref=e745]
+                - cell "Batal" [ref=e746]:
+                  - generic [ref=e747]: Batal
+                - cell "—" [ref=e748]
+              - row "45 2029-12 Rp 3.000.000 Rp 135.000.000 Rp 45.000.000 Batal —" [ref=e749]:
+                - cell "45" [ref=e750]
+                - cell "2029-12" [ref=e751]
+                - cell "Rp 3.000.000" [ref=e752]
+                - cell "Rp 135.000.000" [ref=e753]
+                - cell "Rp 45.000.000" [ref=e754]
+                - cell "Batal" [ref=e755]:
+                  - generic [ref=e756]: Batal
+                - cell "—" [ref=e757]
+              - row "46 2030-01 Rp 3.000.000 Rp 138.000.000 Rp 42.000.000 Batal —" [ref=e758]:
+                - cell "46" [ref=e759]
+                - cell "2030-01" [ref=e760]
+                - cell "Rp 3.000.000" [ref=e761]
+                - cell "Rp 138.000.000" [ref=e762]
+                - cell "Rp 42.000.000" [ref=e763]
+                - cell "Batal" [ref=e764]:
+                  - generic [ref=e765]: Batal
+                - cell "—" [ref=e766]
+              - row "47 2030-02 Rp 3.000.000 Rp 141.000.000 Rp 39.000.000 Batal —" [ref=e767]:
+                - cell "47" [ref=e768]
+                - cell "2030-02" [ref=e769]
+                - cell "Rp 3.000.000" [ref=e770]
+                - cell "Rp 141.000.000" [ref=e771]
+                - cell "Rp 39.000.000" [ref=e772]
+                - cell "Batal" [ref=e773]:
+                  - generic [ref=e774]: Batal
+                - cell "—" [ref=e775]
+              - row "48 2030-03 Rp 3.000.000 Rp 144.000.000 Rp 36.000.000 Batal —" [ref=e776]:
+                - cell "48" [ref=e777]
+                - cell "2030-03" [ref=e778]
+                - cell "Rp 3.000.000" [ref=e779]
+                - cell "Rp 144.000.000" [ref=e780]
+                - cell "Rp 36.000.000" [ref=e781]
+                - cell "Batal" [ref=e782]:
+                  - generic [ref=e783]: Batal
+                - cell "—" [ref=e784]
+              - row "49 2030-04 Rp 3.000.000 Rp 147.000.000 Rp 33.000.000 Batal —" [ref=e785]:
+                - cell "49" [ref=e786]
+                - cell "2030-04" [ref=e787]
+                - cell "Rp 3.000.000" [ref=e788]
+                - cell "Rp 147.000.000" [ref=e789]
+                - cell "Rp 33.000.000" [ref=e790]
+                - cell "Batal" [ref=e791]:
+                  - generic [ref=e792]: Batal
+                - cell "—" [ref=e793]
+              - row "50 2030-05 Rp 3.000.000 Rp 150.000.000 Rp 30.000.000 Batal —" [ref=e794]:
+                - cell "50" [ref=e795]
+                - cell "2030-05" [ref=e796]
+                - cell "Rp 3.000.000" [ref=e797]
+                - cell "Rp 150.000.000" [ref=e798]
+                - cell "Rp 30.000.000" [ref=e799]
+                - cell "Batal" [ref=e800]:
+                  - generic [ref=e801]: Batal
+                - cell "—" [ref=e802]
+              - row "51 2030-06 Rp 3.000.000 Rp 153.000.000 Rp 27.000.000 Batal —" [ref=e803]:
+                - cell "51" [ref=e804]
+                - cell "2030-06" [ref=e805]
+                - cell "Rp 3.000.000" [ref=e806]
+                - cell "Rp 153.000.000" [ref=e807]
+                - cell "Rp 27.000.000" [ref=e808]
+                - cell "Batal" [ref=e809]:
+                  - generic [ref=e810]: Batal
+                - cell "—" [ref=e811]
+              - row "52 2030-07 Rp 3.000.000 Rp 156.000.000 Rp 24.000.000 Batal —" [ref=e812]:
+                - cell "52" [ref=e813]
+                - cell "2030-07" [ref=e814]
+                - cell "Rp 3.000.000" [ref=e815]
+                - cell "Rp 156.000.000" [ref=e816]
+                - cell "Rp 24.000.000" [ref=e817]
+                - cell "Batal" [ref=e818]:
+                  - generic [ref=e819]: Batal
+                - cell "—" [ref=e820]
+              - row "53 2030-08 Rp 3.000.000 Rp 159.000.000 Rp 21.000.000 Batal —" [ref=e821]:
+                - cell "53" [ref=e822]
+                - cell "2030-08" [ref=e823]
+                - cell "Rp 3.000.000" [ref=e824]
+                - cell "Rp 159.000.000" [ref=e825]
+                - cell "Rp 21.000.000" [ref=e826]
+                - cell "Batal" [ref=e827]:
+                  - generic [ref=e828]: Batal
+                - cell "—" [ref=e829]
+              - row "54 2030-09 Rp 3.000.000 Rp 162.000.000 Rp 18.000.000 Batal —" [ref=e830]:
+                - cell "54" [ref=e831]
+                - cell "2030-09" [ref=e832]
+                - cell "Rp 3.000.000" [ref=e833]
+                - cell "Rp 162.000.000" [ref=e834]
+                - cell "Rp 18.000.000" [ref=e835]
+                - cell "Batal" [ref=e836]:
+                  - generic [ref=e837]: Batal
+                - cell "—" [ref=e838]
+              - row "55 2030-10 Rp 3.000.000 Rp 165.000.000 Rp 15.000.000 Batal —" [ref=e839]:
+                - cell "55" [ref=e840]
+                - cell "2030-10" [ref=e841]
+                - cell "Rp 3.000.000" [ref=e842]
+                - cell "Rp 165.000.000" [ref=e843]
+                - cell "Rp 15.000.000" [ref=e844]
+                - cell "Batal" [ref=e845]:
+                  - generic [ref=e846]: Batal
+                - cell "—" [ref=e847]
+              - row "56 2030-11 Rp 3.000.000 Rp 168.000.000 Rp 12.000.000 Batal —" [ref=e848]:
+                - cell "56" [ref=e849]
+                - cell "2030-11" [ref=e850]
+                - cell "Rp 3.000.000" [ref=e851]
+                - cell "Rp 168.000.000" [ref=e852]
+                - cell "Rp 12.000.000" [ref=e853]
+                - cell "Batal" [ref=e854]:
+                  - generic [ref=e855]: Batal
+                - cell "—" [ref=e856]
+              - row "57 2030-12 Rp 3.000.000 Rp 171.000.000 Rp 9.000.000 Batal —" [ref=e857]:
+                - cell "57" [ref=e858]
+                - cell "2030-12" [ref=e859]
+                - cell "Rp 3.000.000" [ref=e860]
+                - cell "Rp 171.000.000" [ref=e861]
+                - cell "Rp 9.000.000" [ref=e862]
+                - cell "Batal" [ref=e863]:
+                  - generic [ref=e864]: Batal
+                - cell "—" [ref=e865]
+              - row "58 2031-01 Rp 3.000.000 Rp 174.000.000 Rp 6.000.000 Batal —" [ref=e866]:
+                - cell "58" [ref=e867]
+                - cell "2031-01" [ref=e868]
+                - cell "Rp 3.000.000" [ref=e869]
+                - cell "Rp 174.000.000" [ref=e870]
+                - cell "Rp 6.000.000" [ref=e871]
+                - cell "Batal" [ref=e872]:
+                  - generic [ref=e873]: Batal
+                - cell "—" [ref=e874]
+              - row "59 2031-02 Rp 3.000.000 Rp 177.000.000 Rp 3.000.000 Batal —" [ref=e875]:
+                - cell "59" [ref=e876]
+                - cell "2031-02" [ref=e877]
+                - cell "Rp 3.000.000" [ref=e878]
+                - cell "Rp 177.000.000" [ref=e879]
+                - cell "Rp 3.000.000" [ref=e880]
+                - cell "Batal" [ref=e881]:
+                  - generic [ref=e882]: Batal
+                - cell "—" [ref=e883]
+              - row "60 2031-03 Rp 3.000.000 Rp 180.000.000 Rp 0 Batal —" [ref=e884]:
+                - cell "60" [ref=e885]
+                - cell "2031-03" [ref=e886]
+                - cell "Rp 3.000.000" [ref=e887]
+                - cell "Rp 180.000.000" [ref=e888]
+                - cell "Rp 0" [ref=e889]
+                - cell "Batal" [ref=e890]:
+                  - generic [ref=e891]: Batal
+                - cell "—" [ref=e892]

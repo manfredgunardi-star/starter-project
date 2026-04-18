@@ -1,0 +1,286 @@
+- generic [ref=e1]:
+  - generic [ref=e4]:
+    - banner [ref=e6]:
+      - generic [ref=e7]:
+        - generic [ref=e8]:
+          - link "Supabase" [ref=e9] [cursor=pointer]:
+            - /url: /dashboard/org/knwqmtvwknsyytwggasd
+            - img "Supabase" [ref=e10]
+          - generic [ref=e11]:
+            - img [ref=e13]
+            - generic [ref=e15]:
+              - link "Manfred's Organization Free" [ref=e16] [cursor=pointer]:
+                - /url: /dashboard/org/knwqmtvwknsyytwggasd
+                - img [ref=e17]
+                - generic [ref=e27]: Manfred's Organization
+                - generic [ref=e28]: Free
+              - button [ref=e29] [cursor=pointer]:
+                - img [ref=e31]
+            - generic [ref=e34]:
+              - img [ref=e36]
+              - generic [ref=e38]:
+                - link "ERP-MG" [ref=e39] [cursor=pointer]:
+                  - /url: /dashboard/project/cjnszzfbxgyszoskfgva
+                  - img [ref=e40]
+                  - generic "ERP-MG" [ref=e43]
+                - button [ref=e44] [cursor=pointer]:
+                  - img [ref=e46]
+              - img [ref=e50]
+              - generic [ref=e52]:
+                - link "main Production" [ref=e53] [cursor=pointer]:
+                  - /url: /dashboard/project/cjnszzfbxgyszoskfgva
+                  - generic "main" [ref=e54]
+                  - generic [ref=e55]: Production
+                - button [ref=e56] [cursor=pointer]:
+                  - img [ref=e58]
+          - button "Connect" [ref=e62] [cursor=pointer]:
+            - img [ref=e64]
+            - generic [ref=e66]: Connect
+        - generic [ref=e67]:
+          - generic [ref=e69] [cursor=pointer]: Feedback
+          - generic [ref=e70]:
+            - button "Search..." [ref=e71] [cursor=pointer]:
+              - generic [ref=e72]:
+                - img [ref=e73]
+                - paragraph [ref=e76]: Search...
+              - generic [ref=e78]: Ctrl K
+            - button [ref=e79] [cursor=pointer]:
+              - img [ref=e81]
+            - button [ref=e85] [cursor=pointer]:
+              - img [ref=e87]
+            - button [ref=e90] [cursor=pointer]:
+              - img [ref=e92]
+            - button [ref=e94] [cursor=pointer]:
+              - img [ref=e98]
+          - link "Upgrade to Pro" [ref=e101] [cursor=pointer]:
+            - /url: /dashboard/org/knwqmtvwknsyytwggasd/billing?panel=subscriptionPlan&source=headerUpgradeCta
+            - generic [ref=e102]: Upgrade to Pro
+          - button [ref=e103] [cursor=pointer]:
+            - figure [ref=e105]:
+              - img [ref=e106]
+    - generic [ref=e108]:
+      - generic [ref=e112]:
+        - list [ref=e115]:
+          - generic [ref=e116]:
+            - listitem [ref=e117]:
+              - link "Project Overview" [ref=e118] [cursor=pointer]:
+                - /url: /dashboard/project/cjnszzfbxgyszoskfgva
+                - img [ref=e119]
+                - generic: Project Overview
+            - listitem [ref=e121]:
+              - link "Table Editor" [ref=e122] [cursor=pointer]:
+                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/editor
+                - img [ref=e123]
+                - generic: Table Editor
+            - listitem [ref=e125]:
+              - link "SQL Editor" [ref=e126] [cursor=pointer]:
+                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/sql
+                - img [ref=e127]
+                - generic: SQL Editor
+          - generic [ref=e129]:
+            - listitem [ref=e130]:
+              - link "Database" [ref=e131] [cursor=pointer]:
+                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/database/schemas
+                - img [ref=e132]
+                - generic: Database
+            - listitem [ref=e136]:
+              - link "Authentication" [ref=e137] [cursor=pointer]:
+                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/auth/users
+                - img [ref=e138]
+                - generic: Authentication
+            - listitem [ref=e140]:
+              - link "Storage" [ref=e141] [cursor=pointer]:
+                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/storage/files
+                - img [ref=e142]
+                - generic: Storage
+            - listitem [ref=e144]:
+              - link "Edge Functions" [ref=e145] [cursor=pointer]:
+                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/functions
+                - img [ref=e146]
+                - generic: Edge Functions
+            - listitem [ref=e151]:
+              - link "Realtime" [ref=e152] [cursor=pointer]:
+                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/realtime/inspector
+                - img [ref=e153]
+                - generic: Realtime
+          - generic [ref=e155]:
+            - listitem [ref=e157]:
+              - link "Advisors" [ref=e158] [cursor=pointer]:
+                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/advisors/security
+                - img [ref=e159]
+                - generic: Advisors
+            - listitem [ref=e161]:
+              - link "Observability" [ref=e162] [cursor=pointer]:
+                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/observability
+                - img [ref=e163]
+                - generic: Observability
+            - listitem [ref=e171]:
+              - link "Logs" [ref=e172] [cursor=pointer]:
+                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/logs/explorer
+                - img [ref=e173]
+                - generic: Logs
+            - listitem [ref=e174]:
+              - link "Integrations" [ref=e175] [cursor=pointer]:
+                - /url: /dashboard/project/cjnszzfbxgyszoskfgva/integrations
+                - img [ref=e176]
+                - generic: Integrations
+          - listitem [ref=e180]:
+            - link "Project Settings" [ref=e181] [cursor=pointer]:
+              - /url: /dashboard/project/cjnszzfbxgyszoskfgva/settings/general
+              - img [ref=e182]
+              - generic: Project Settings
+        - button [ref=e187] [cursor=pointer]:
+          - img [ref=e189]
+      - generic [ref=e196]:
+        - generic [ref=e200]:
+          - heading "SQL Editor" [level=4] [ref=e202]
+          - generic [ref=e204]:
+            - generic [ref=e205]:
+              - generic [ref=e206]:
+                - generic [ref=e208]:
+                  - generic [ref=e209]: Search queries
+                  - textbox "Search queries..." [ref=e210]
+                  - button [ref=e211] [cursor=pointer]:
+                    - img [ref=e212]
+                  - img [ref=e215]
+                - button [ref=e218] [cursor=pointer]:
+                  - img [ref=e220]
+              - button "Shared" [ref=e223] [cursor=pointer]:
+                - img [ref=e224]
+                - generic [ref=e226]: Shared
+              - button "Favorites" [ref=e229] [cursor=pointer]:
+                - img [ref=e230]
+                - generic [ref=e232]: Favorites
+              - generic [ref=e234]:
+                - button "PRIVATE (2)" [expanded] [ref=e235] [cursor=pointer]:
+                  - img [ref=e236]
+                  - generic [ref=e238]: PRIVATE (2)
+                - tree "private-snippets" [ref=e240]:
+                  - generic "List Public Generate Routines" [ref=e241] [cursor=pointer]:
+                    - generic [ref=e243]:
+                      - img [ref=e244]
+                      - generic [ref=e250]: List Public Generate Routines
+                  - generic "User Profiles with Role-Based RLS" [ref=e251] [cursor=pointer]:
+                    - generic [ref=e252]:
+                      - img [ref=e253]
+                      - generic [ref=e259]: User Profiles with Role-Based RLS
+              - generic [ref=e261]:
+                - button "Community" [expanded] [ref=e262] [cursor=pointer]:
+                  - img [ref=e263]
+                  - generic [ref=e265]: Community
+                - generic [ref=e266]:
+                  - link "templates" [ref=e267] [cursor=pointer]:
+                    - /url: /dashboard/project/cjnszzfbxgyszoskfgva/sql/templates
+                    - img [ref=e268]
+                    - text: templates
+                  - link "quickstarts" [ref=e270] [cursor=pointer]:
+                    - /url: /dashboard/project/cjnszzfbxgyszoskfgva/sql/quickstarts
+                    - img [ref=e271]
+                    - text: quickstarts
+            - button "View running queries" [ref=e275] [cursor=pointer]:
+              - generic [ref=e276]: View running queries
+        - separator [ref=e277]:
+          - img [ref=e279]
+        - main [ref=e288]:
+          - generic [ref=e289]:
+            - generic [ref=e290]:
+              - generic [ref=e291]:
+                - button [ref=e292] [cursor=pointer]:
+                  - img [ref=e293]
+                - tablist [ref=e296]:
+                  - button "List Public Generate Routines" [ref=e298] [cursor=pointer]:
+                    - tab "List Public Generate Routines" [selected] [ref=e299]:
+                      - img [ref=e300]
+                      - generic [ref=e307]: List Public Generate Routines
+                      - button [ref=e308]:
+                        - img [ref=e309]
+                    - separator [ref=e313]
+                  - button [ref=e314] [cursor=pointer]:
+                    - img [ref=e315]
+              - status [ref=e317]
+            - generic [ref=e320]:
+              - code [ref=e327]:
+                - generic [ref=e328]:
+                  - generic [ref=e330]:
+                    - generic [ref=e419]: "1"
+                    - generic [ref=e458]: "2"
+                    - generic [ref=e460]: "3"
+                    - generic [ref=e462]: "4"
+                    - generic [ref=e464]: "5"
+                    - generic [ref=e514]: "6"
+                    - generic [ref=e577]:
+                      - generic [ref=e578] [cursor=pointer]: 
+                      - generic [ref=e579]: "7"
+                    - generic [ref=e518]: "8"
+                    - generic [ref=e520]: "9"
+                    - generic [ref=e522]: "10"
+                    - generic [ref=e524]: "11"
+                    - generic [ref=e526]: "12"
+                    - generic [ref=e528]: "13"
+                    - generic [ref=e530]: "14"
+                    - generic [ref=e533]: "15"
+                  - generic [ref=e352]:
+                    - generic [ref=e477]: "-- Verifikasi 1: Journal balance integrity (harus 0 rows)"
+                    - generic [ref=e495]: select journal_id, sum(debit), sum(credit), sum(debit) - sum(credit) as diff
+                    - generic [ref=e497]: from journal_items
+                    - generic [ref=e499]: where journal_id in (select id from journals where source like 'asset_%')
+                    - generic [ref=e501]: group by journal_id
+                    - generic [ref=e581]: "2: Schedule math (harus 0 rows jika benar)"
+                    - generic [ref=e583]: select a.code, a.acquisition_cost, a.salvage_value,
+                    - generic [ref=e585]: sum(ds.amount) as total_sched,
+                    - generic [ref=e587]: (a.acquisition_cost - a.salvage_value) as expected,
+                    - generic [ref=e589]: abs(sum(ds.amount) - (a.acquisition_cost - a.salvage_value)) as diff
+                    - generic [ref=e591]: from assets a
+                    - generic [ref=e593]: join depreciation_schedules ds on ds.asset_id = a.id
+                    - generic [ref=e595]: where ds.status != 'cancelled'
+                    - generic [ref=e597]: group by a.id
+                    - generic [ref=e599]: having abs(sum(ds.amount) - (a.acquisition_cost - a.salvage_value)) > 0.01;
+                  - textbox "Editor content" [active] [ref=e363]: from assets a join depreciation_schedules ds on ds.asset_id = a.id where ds.status != 'cancelled' group by a.id having abs(sum(ds.amount) - (a.acquisition_cost - a.salvage_value)) > 0.01;
+              - separator [ref=e364]:
+                - img [ref=e366]
+              - generic [ref=e375]:
+                - tablist [ref=e376]:
+                  - generic [ref=e377]:
+                    - tab "Results" [selected] [ref=e378] [cursor=pointer]:
+                      - generic [ref=e379]: Results
+                    - tab "Explain" [ref=e380] [cursor=pointer]:
+                      - generic [ref=e381]: Explain
+                    - tab "Chart" [ref=e382] [cursor=pointer]:
+                      - generic [ref=e383]: Chart
+                    - button "Export" [disabled]:
+                      - generic: Export
+                      - generic:
+                        - img
+                  - generic [ref=e384]:
+                    - button [ref=e385] [cursor=pointer]:
+                      - img [ref=e387]
+                    - generic [ref=e392]:
+                      - generic [ref=e393] [cursor=pointer]:
+                        - generic [ref=e394]: Source
+                        - button "Primary database" [ref=e395]:
+                          - generic [ref=e396]: Primary database
+                          - img [ref=e398]
+                      - button "Role postgres" [ref=e400] [cursor=pointer]:
+                        - generic [ref=e402]:
+                          - generic [ref=e403]: Role
+                          - generic [ref=e404]: postgres
+                          - img [ref=e405]
+                      - button "Run Ctrl ↵" [ref=e490] [cursor=pointer]:
+                        - generic [ref=e408]: Run
+                        - generic [ref=e607]: Ctrl ↵
+                - generic [ref=e608]:
+                  - paragraph [ref=e610]: "Error: Failed to run sql query: ERROR: 42601: syntax error at or near \"2\" LINE 6: 2: Schedule math (harus 0 rows jika benar) ^"
+                  - generic [ref=e612]:
+                    - button "Debug with Assistant" [ref=e613] [cursor=pointer]:
+                      - img [ref=e617]
+                      - generic [ref=e620]: Debug with Assistant
+                    - button [ref=e621] [cursor=pointer]:
+                      - img [ref=e623]
+              - generic "Table grid footer" [ref=e625]:
+                - button "0 row" [ref=e626] [cursor=pointer]:
+                  - paragraph [ref=e627]:
+                    - generic [ref=e628]: 0 row
+  - alert [ref=e415]: List Public Generate Routines | SQL Editor | ERP-MG | Manfred's Organization | Supabase
+  - generic [ref=e416]:
+    - alert
+    - alert
