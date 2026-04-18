@@ -39,3 +39,33 @@ export async function uploadCompanyLogo(file) {
   // Bust cache dengan timestamp agar browser tidak pakai versi lama
   return `${data.publicUrl}?t=${Date.now()}`
 }
+
+export async function getClosedPeriods() {
+  const { data, error } = await supabase
+    .from('company_settings')
+    .select('id, closed_periods')
+    .single()
+  if (error) throw error
+  return { id: data.id, closedPeriods: data.closed_periods || [] }
+}
+
+export async function closeAccountingPeriod(periodKey) {
+  const { id, closedPeriods } = await getClosedPeriods()
+  if (closedPeriods.includes(periodKey)) return
+  const updated = [...closedPeriods, periodKey].sort()
+  const { error } = await supabase
+    .from('company_settings')
+    .update({ closed_periods: updated, updated_at: new Date().toISOString() })
+    .eq('id', id)
+  if (error) throw error
+}
+
+export async function reopenAccountingPeriod(periodKey) {
+  const { id, closedPeriods } = await getClosedPeriods()
+  const updated = closedPeriods.filter(p => p !== periodKey)
+  const { error } = await supabase
+    .from('company_settings')
+    .update({ closed_periods: updated, updated_at: new Date().toISOString() })
+    .eq('id', id)
+  if (error) throw error
+}
