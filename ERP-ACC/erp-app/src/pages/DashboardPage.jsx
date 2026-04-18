@@ -12,12 +12,10 @@ import {
   Typography,
   Space,
   Flex,
-  Alert,
   Tag,
 } from 'antd'
 import {
   TrendingUp,
-  TrendingDown,
   Wallet,
   AlertTriangle,
   Package,
@@ -81,7 +79,7 @@ function MomIndicator({ current, previous }) {
         ? <ArrowUpRight size={12} color="#16a34a" />
         : <ArrowDownRight size={12} color="#dc2626" />}
       <span style={{ fontSize: 12, color: up ? '#16a34a' : '#dc2626' }}>
-        {Math.abs(pct)}% vs bulan lalu
+        {Math.abs(Number(pct))}% vs bulan lalu
       </span>
     </Flex>
   )
