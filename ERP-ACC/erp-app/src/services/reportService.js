@@ -35,3 +35,35 @@ export async function getCashFlowData(startDate, endDate) {
   if (error) throw error
   return data
 }
+
+export async function getARAgingData(asOfDate) {
+  const { data, error } = await supabase
+    .from('invoices')
+    .select(`
+      id, invoice_number, date, due_date, total, amount_paid, status,
+      customer:customers(id, name)
+    `)
+    .eq('type', 'sales')
+    .in('status', ['posted', 'partial'])
+    .lte('date', asOfDate)
+    .order('customer_id')
+    .order('due_date')
+  if (error) throw error
+  return data
+}
+
+export async function getAPAgingData(asOfDate) {
+  const { data, error } = await supabase
+    .from('invoices')
+    .select(`
+      id, invoice_number, date, due_date, total, amount_paid, status,
+      supplier:suppliers(id, name)
+    `)
+    .eq('type', 'purchase')
+    .in('status', ['posted', 'partial'])
+    .lte('date', asOfDate)
+    .order('supplier_id')
+    .order('due_date')
+  if (error) throw error
+  return data
+}
