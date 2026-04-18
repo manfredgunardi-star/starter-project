@@ -1,4 +1,6 @@
 import { supabase } from '../lib/supabase'
+import { getClosedPeriods } from './companySettingsService'
+import { isPeriodClosed } from '../utils/periodUtils'
 
 export async function getJournals({ startDate, endDate, source } = {}) {
   let query = supabase
@@ -35,6 +37,11 @@ export async function getJournal(id) {
 export async function saveManualJournal(header, items) {
   const { data: { user } } = await supabase.auth.getUser()
 
+  const { closedPeriods } = await getClosedPeriods()
+  if (isPeriodClosed(header.date, closedPeriods)) {
+    throw new Error(`Periode ${header.date.slice(0, 7)} sudah ditutup. Tidak dapat menyimpan jurnal.`)
+  }
+
   const { data: num, error: numErr } = await supabase.rpc('generate_number', { p_prefix: 'JRN' })
   if (numErr) throw numErr
 
@@ -66,6 +73,17 @@ export async function saveManualJournal(header, items) {
 }
 
 export async function postManualJournal(id) {
+  const { data: journal, error: fetchErr } = await supabase
+    .from('journals')
+    .select('date')
+    .eq('id', id)
+    .single()
+  if (fetchErr) throw fetchErr
+  const { closedPeriods } = await getClosedPeriods()
+  if (isPeriodClosed(journal.date, closedPeriods)) {
+    throw new Error(`Periode ${journal.date.slice(0, 7)} sudah ditutup. Tidak dapat memposting jurnal.`)
+  }
+
   const { error } = await supabase.rpc('post_manual_journal', { p_journal_id: id })
   if (error) throw error
 }

@@ -1,4 +1,6 @@
 import { supabase } from '../lib/supabase'
+import { getClosedPeriods } from './companySettingsService'
+import { isPeriodClosed } from '../utils/periodUtils'
 
 export async function getPayments(type) {
   const query = supabase
@@ -19,6 +21,11 @@ export async function getPayments(type) {
 
 export async function savePayment(payment) {
   const { data: { user } } = await supabase.auth.getUser()
+
+  const { closedPeriods } = await getClosedPeriods()
+  if (isPeriodClosed(payment.date, closedPeriods)) {
+    throw new Error(`Periode ${payment.date.slice(0, 7)} sudah ditutup. Tidak dapat menyimpan pembayaran.`)
+  }
 
   const { data: num, error: numErr } = await supabase.rpc('generate_number', { p_prefix: 'PAY' })
   if (numErr) throw numErr

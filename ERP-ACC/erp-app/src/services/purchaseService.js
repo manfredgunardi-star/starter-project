@@ -1,4 +1,6 @@
 import { supabase } from '../lib/supabase'
+import { getClosedPeriods } from './companySettingsService'
+import { isPeriodClosed } from '../utils/periodUtils'
 
 // ---- GOODS RECEIPTS ----
 
@@ -116,6 +118,11 @@ export async function getPurchaseInvoice(id) {
 export async function savePurchaseInvoice(invoice, items) {
   const { data: { user } } = await supabase.auth.getUser()
 
+  const { closedPeriods } = await getClosedPeriods()
+  if (isPeriodClosed(invoice.date, closedPeriods)) {
+    throw new Error(`Periode ${invoice.date.slice(0, 7)} sudah ditutup. Tidak dapat menyimpan invoice pembelian.`)
+  }
+
   let invNumber = invoice.invoice_number
   if (!invoice.id) {
     const { data: num, error: numErr } = await supabase.rpc('generate_number', { p_prefix: 'PINV' })
@@ -172,6 +179,17 @@ export async function savePurchaseInvoice(invoice, items) {
 }
 
 export async function postPurchaseInvoice(id) {
+  const { data: inv, error: fetchErr } = await supabase
+    .from('invoices')
+    .select('date')
+    .eq('id', id)
+    .single()
+  if (fetchErr) throw fetchErr
+  const { closedPeriods } = await getClosedPeriods()
+  if (isPeriodClosed(inv.date, closedPeriods)) {
+    throw new Error(`Periode ${inv.date.slice(0, 7)} sudah ditutup. Tidak dapat memposting invoice pembelian.`)
+  }
+
   const { error } = await supabase.rpc('post_purchase_invoice', { p_invoice_id: id })
   if (error) throw error
 }
