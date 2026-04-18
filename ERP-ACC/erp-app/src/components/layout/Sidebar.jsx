@@ -102,6 +102,7 @@ const menuGroups = [
       { label: 'Neraca', path: '/reports/balance-sheet' },
       { label: 'Laba Rugi', path: '/reports/income-statement' },
       { label: 'Arus Kas', path: '/reports/cash-flow' },
+      { label: 'AR/AP Aging', path: '/reports/ar-ap-aging' },
       { label: 'Daftar Aset Tetap', path: '/reports/assets-list' },
       { label: 'Penyusutan per Periode', path: '/reports/depreciation-period' },
       { label: 'Disposal Aset', path: '/reports/asset-disposals' },

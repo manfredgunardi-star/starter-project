@@ -51,6 +51,7 @@ import LedgerPage from './pages/accounting/LedgerPage'
 import BalanceSheetPage from './pages/reports/BalanceSheetPage'
 import IncomeStatementPage from './pages/reports/IncomeStatementPage'
 import CashFlowPage from './pages/reports/CashFlowPage'
+import ARAPAgingPage from './pages/reports/ARAPAgingPage'
 
 // Dashboard
 import DashboardPage from './pages/DashboardPage'
@@ -153,6 +154,7 @@ function AppContent() {
           <Route path="reports/balance-sheet" element={<BalanceSheetPage />} />
           <Route path="reports/income-statement" element={<IncomeStatementPage />} />
           <Route path="reports/cash-flow" element={<CashFlowPage />} />
+          <Route path="reports/ar-ap-aging" element={<ARAPAgingPage />} />
           <Route path="reports/assets-list" element={<AssetsListReportPage />} />
           <Route path="reports/depreciation-period" element={<DepreciationPeriodReportPage />} />
           <Route path="reports/asset-disposals" element={<AssetDisposalsReportPage />} />
