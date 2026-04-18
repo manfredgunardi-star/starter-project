@@ -75,6 +75,7 @@ import AssetsSummaryReportPage from './pages/reports/AssetsSummaryReportPage'
 import AuditLogPage from './pages/settings/AuditLogPage'
 import UsersPage from './pages/settings/UsersPage'
 import CompanySettingsPage from './pages/settings/CompanySettingsPage'
+import ClosingPeriodPage from './pages/settings/ClosingPeriodPage'
 
 
 function AppContent() {
@@ -174,6 +175,7 @@ function AppContent() {
           <Route path="settings/company" element={<RoleGuard require="canWrite"><CompanySettingsPage /></RoleGuard>} />
           <Route path="settings/users" element={<RoleGuard require="isAdmin"><UsersPage /></RoleGuard>} />
           <Route path="settings/audit-log" element={<RoleGuard require="isAdmin"><AuditLogPage /></RoleGuard>} />
+          <Route path="settings/closing-period" element={<RoleGuard require="canPost"><ClosingPeriodPage /></RoleGuard>} />
 
           {/* Default */}
           <Route index element={<DashboardPage />} />

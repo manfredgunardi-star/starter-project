@@ -118,6 +118,7 @@ const menuGroups = [
       { label: 'Pengaturan Perusahaan', path: '/settings/company', minRole: 'write' },
       { label: 'Users', path: '/settings/users', minRole: 'admin' },
       { label: 'Audit Log', path: '/settings/audit-log', minRole: 'admin' },
+      { label: 'Closing Period', path: '/settings/closing-period', minRole: 'admin' },
     ]
   }
 ]
