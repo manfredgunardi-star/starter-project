@@ -158,3 +158,57 @@ export async function getDashboardMetrics() {
     accounts: cashResult.data || [],
   }
 }
+
+function sixMonthsAgo() {
+  const d = new Date()
+  d.setDate(1)
+  d.setMonth(d.getMonth() - 5) // bulan ini + 5 bulan sebelumnya = 6 bulan total
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
+}
+
+export async function getMonthlyTrend() {
+  const start = sixMonthsAgo()
+  const [salesRes, purchaseRes] = await Promise.all([
+    supabase
+      .from('invoices')
+      .select('date, total')
+      .eq('type', 'sales')
+      .in('status', ['posted', 'partial', 'paid'])
+      .gte('date', start),
+    supabase
+      .from('invoices')
+      .select('date, total')
+      .eq('type', 'purchase')
+      .in('status', ['posted', 'partial', 'paid'])
+      .gte('date', start),
+  ])
+  if (salesRes.error) throw salesRes.error
+  if (purchaseRes.error) throw purchaseRes.error
+
+  // Bangun 6 bucket bulan: dari 5 bulan lalu hingga bulan ini
+  const months = []
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date()
+    d.setDate(1)
+    d.setMonth(d.getMonth() - i)
+    months.push({
+      key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+      label: d.toLocaleString('id-ID', { month: 'short', year: '2-digit' }),
+      revenue: 0,
+      expense: 0,
+    })
+  }
+
+  for (const inv of salesRes.data || []) {
+    const key = inv.date.slice(0, 7)
+    const m = months.find(b => b.key === key)
+    if (m) m.revenue += Number(inv.total) || 0
+  }
+  for (const inv of purchaseRes.data || []) {
+    const key = inv.date.slice(0, 7)
+    const m = months.find(b => b.key === key)
+    if (m) m.expense += Number(inv.total) || 0
+  }
+
+  return months
+}
