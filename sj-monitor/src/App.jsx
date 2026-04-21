@@ -28,7 +28,10 @@ import {
 
 
 
-import { AlertCircle, Package, Truck, FileText, DollarSign, Users, User, Settings, Database, LogOut, Plus, Edit, Trash2, Eye, CheckCircle, XCircle, Clock, Search, RefreshCw } from 'lucide-react';
+import { AlertCircle, Package, Truck, FileText, DollarSign, Users, Settings, Database, LogOut, Plus, Edit, Trash2, Eye, CheckCircle, XCircle, Clock, Search, RefreshCw } from 'lucide-react';
+import { motion } from 'framer-motion';
+import TopBar from './components/TopBar.jsx';
+import DockNav from './components/DockNav.jsx';
 
 
 // Compact status badge for table rows
@@ -2402,19 +2405,6 @@ try { unsubTransaksi(); } catch {}
     );
   }
 
-  const PAGE_TITLES = {
-    'surat-jalan': 'Surat Jalan',
-    'keuangan': 'Keuangan',
-    'laporan-kas': 'Laporan Kas',
-    'laporan-truk': 'Laporan Truk',
-    'payslip': 'Laporan Gaji',
-    'invoicing': 'Invoicing',
-    'uang-muka': 'Uang Muka',
-    'master-data': 'Master Data',
-    'users': 'Kelola User',
-    'settings': 'Pengaturan',
-  };
-
   const DOCK_ITEMS = [
     { tab: 'surat-jalan', icon: Package,     label: 'SJ',       roles: ['superadmin','admin_sj','admin_keuangan','admin_invoice','reader'] },
     { tab: 'keuangan',    icon: DollarSign,  label: 'Keuangan', roles: ['superadmin','admin_keuangan','reader'] },
@@ -2429,27 +2419,14 @@ try { unsubTransaksi(); } catch {}
   ].filter(item => item.roles.includes(effectiveRole ?? ''));
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Minimal top bar */}
+    <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)' }}>
+      {/* Liquid Glass Top Bar */}
       {effectiveRole && (
-        <div className="sticky top-0 z-20 bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between">
-          <h1 className="text-lg font-bold text-slate-900">
-            {PAGE_TITLES[activeTab] ?? 'Monitoring SJ'}
-          </h1>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2 bg-blue-50 text-blue-600 rounded-full px-3 py-1 text-xs font-semibold">
-              <User className="w-3 h-3" />
-              <span>{currentUser?.name ?? ''}</span>
-            </div>
-            <button
-              onClick={handleLogout}
-              title="Keluar"
-              className="flex items-center justify-center w-8 h-8 rounded-full bg-red-600 hover:bg-red-700 active:bg-red-800 text-white transition-colors duration-150 shadow-sm"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
+        <TopBar
+          activeTab={activeTab}
+          currentUser={currentUser}
+          onLogout={handleLogout}
+        />
       )}
 
       {/* Force Logout Warning Banner */}
@@ -2959,39 +2936,13 @@ try { unsubTransaksi(); } catch {}
         </div>
       )}
 
-      {/* Floating bottom dock */}
+      {/* Liquid Glass Dock */}
       {effectiveRole && (
-        <nav className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-2rem)] max-w-lg">
-          <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-xl shadow-black/10 ring-1 ring-white/80 flex items-center justify-around px-2 py-2">
-            {DOCK_ITEMS.map(item => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.tab;
-              return (
-                <button
-                  key={item.tab}
-                  onClick={() => setActiveTab(item.tab)}
-                  className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-2xl transition-colors duration-150 min-w-[48px] cursor-pointer ${
-                    isActive ? 'bg-blue-50' : 'hover:bg-slate-50'
-                  }`}
-                  title={item.label}
-                >
-                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${
-                    isActive ? 'bg-blue-600' : ''
-                  }`}>
-                    <Icon className={`w-[18px] h-[18px] ${
-                      isActive ? 'text-white' : 'text-slate-400'
-                    }`} />
-                  </div>
-                  <span className={`text-[10px] font-semibold leading-none ${
-                    isActive ? 'text-blue-600' : 'text-slate-400'
-                  }`}>
-                    {item.label}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </nav>
+        <DockNav
+          items={DOCK_ITEMS}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        />
       )}
     </div>
   );
