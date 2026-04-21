@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 
 const spring = { type: 'spring', stiffness: 150, damping: 20 };
 
@@ -26,6 +26,7 @@ export default function DockNav({ items, activeTab, onTabChange }) {
         boxShadow: '0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)',
       }}
     >
+      <LayoutGroup>
       {items.map((item) => {
         const Icon = item.icon;
         const isActive = activeTab === item.tab;
@@ -82,6 +83,7 @@ export default function DockNav({ items, activeTab, onTabChange }) {
           </motion.button>
         );
       })}
+      </LayoutGroup>
     </motion.nav>
   );
 }
