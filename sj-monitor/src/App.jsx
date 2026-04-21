@@ -29,7 +29,6 @@ import {
 
 
 import { AlertCircle, Package, Truck, FileText, DollarSign, Users, Settings, Database, LogOut, Plus, Edit, Trash2, Eye, CheckCircle, XCircle, Clock, Search, RefreshCw } from 'lucide-react';
-import { motion } from 'framer-motion';
 import TopBar from './components/TopBar.jsx';
 import DockNav from './components/DockNav.jsx';
 
