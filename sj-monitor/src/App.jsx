@@ -2395,7 +2395,7 @@ try { unsubTransaksi(); } catch {}
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(160deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)' }}>
         <div className="text-center">
           <Package className="w-16 h-16 text-blue-600 animate-pulse mx-auto mb-4" />
           <p className="text-gray-600">Memuat data...</p>
