@@ -102,6 +102,7 @@ export default function TopBar({ activeTab, currentUser, onLogout }) {
 
           {/* Logout button */}
           <motion.button
+            type="button"
             onClick={onLogout}
             title="Keluar"
             whileTap={{ scale: 0.92 }}
