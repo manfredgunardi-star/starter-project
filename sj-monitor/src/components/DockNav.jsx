@@ -1,8 +1,13 @@
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
-
-const spring = { type: 'spring', stiffness: 150, damping: 20 };
+import { useReducedMotion } from '../hooks/useReducedMotion.js';
 
 export default function DockNav({ items, activeTab, onTabChange }) {
+  const prefersReducedMotion = useReducedMotion();
+
+  const spring = prefersReducedMotion
+    ? { duration: 0 }
+    : { type: 'spring', stiffness: 150, damping: 20 };
+
   return (
     <motion.nav
       initial={{ opacity: 0, y: 24, scale: 0.95 }}

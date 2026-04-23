@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { LogOut } from 'lucide-react';
+import { useReducedMotion } from '../hooks/useReducedMotion.js';
 
 const PAGE_TITLES = {
   'surat-jalan':  'Surat Jalan',
@@ -15,6 +16,16 @@ const PAGE_TITLES = {
 };
 
 export default function TopBar({ activeTab, currentUser, onLogout }) {
+  const prefersReducedMotion = useReducedMotion();
+
+  const springTransition = prefersReducedMotion
+    ? { duration: 0 }
+    : { type: 'spring', stiffness: 150, damping: 20 };
+
+  const tapSpring = prefersReducedMotion
+    ? { duration: 0 }
+    : { type: 'spring', stiffness: 300, damping: 20 };
+
   const pageTitle = PAGE_TITLES[activeTab] ?? 'Monitoring SJ';
   const initials = (currentUser?.name ?? 'U').charAt(0).toUpperCase();
 
@@ -22,7 +33,7 @@ export default function TopBar({ activeTab, currentUser, onLogout }) {
     <motion.header
       initial={{ opacity: 0, y: -8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ type: 'spring', stiffness: 150, damping: 20 }}
+      transition={springTransition}
       style={{
         position: 'sticky',
         top: 0,
@@ -106,7 +117,7 @@ export default function TopBar({ activeTab, currentUser, onLogout }) {
             onClick={onLogout}
             title="Keluar"
             whileTap={{ scale: 0.92 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            transition={tapSpring}
             style={{
               width: 32,
               height: 32,
