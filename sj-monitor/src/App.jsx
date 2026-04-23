@@ -33,6 +33,15 @@ import TopBar from './components/TopBar.jsx';
 import DockNav from './components/DockNav.jsx';
 
 
+// Returns ISO date string for the 1st of the month, 12 months ago
+const getQueryStartISO = () => {
+  const d = new Date();
+  d.setMonth(d.getMonth() - 12);
+  d.setDate(1);
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString().slice(0, 10);
+};
+
 // Compact status badge for table rows
 const STATUS_BADGE_STYLES = {
   'dalam perjalanan': 'bg-orange-50 text-orange-600',
@@ -2200,6 +2209,8 @@ setTransaksiList(updatedTransaksiList);
       return;
     }
 
+const qStartISO = getQueryStartISO();
+
 // DATA OPERASIONAL: source of truth dari Firestore
 let sjDocs = [];
 
@@ -2221,12 +2232,16 @@ const applySJ = () => {
   didFirstLoadRef.current = true;
 };
 
-const unsubSuratJalan = onSnapshot(collection(db, "surat_jalan"), (snap) => {
+const unsubSuratJalan = onSnapshot(
+  query(collection(db, "surat_jalan"), where("tanggalSJ", ">=", qStartISO)),
+  (snap) => {
   sjDocs = snap.docs.map((d) => normalizeSJ(d.data() || {}, d.id));
   applySJ();
 });
 
-const unsubBiaya = onSnapshot(collection(db, "biaya"), (snap) => {
+const unsubBiaya = onSnapshot(
+  query(collection(db, "biaya"), where("tanggal", ">=", qStartISO)),
+  (snap) => {
   const data = snap.docs
     .map((d) => {
       const row = d.data() || {};
@@ -2272,17 +2287,23 @@ const applyInv = () => {
   setInvoiceList(normalized);
 };
 
-const unsubInvoice = onSnapshot(collection(db, "invoice"), (snap) => {
+const unsubInvoice = onSnapshot(
+  query(collection(db, "invoice"), where("tglInvoice", ">=", qStartISO)),
+  (snap) => {
   invPrimary = snap.docs.map((d) => normalizeInv(d.data() || {}, d.id));
   applyInv();
 });
 
-const unsubInvoiceLegacy = onSnapshot(collection(db, "invoices"), (snap) => {
+const unsubInvoiceLegacy = onSnapshot(
+  query(collection(db, "invoices"), where("tglInvoice", ">=", qStartISO)),
+  (snap) => {
   invLegacy = snap.docs.map((d) => normalizeInv(d.data() || {}, d.id));
   applyInv();
 });
 
-const unsubUangMuka = onSnapshot(collection(db, "uang_muka"), (snap) => {
+const unsubUangMuka = onSnapshot(
+  query(collection(db, "uang_muka"), where("tanggal", ">=", qStartISO)),
+  (snap) => {
   const data = snap.docs
     .map((d) => {
       const row = d.data() || {};
@@ -2311,7 +2332,9 @@ const unsubHistory = onSnapshot(collection(db, "history_log"), (snap) => {
   setHistoryLog([]);
 });
 
-const unsubTransaksi = onSnapshot(collection(db, "transaksi"), (snap) => {
+const unsubTransaksi = onSnapshot(
+  query(collection(db, "transaksi"), where("tanggal", ">=", qStartISO)),
+  (snap) => {
   const data = snap.docs
     .map((d) => {
       const row = d.data() || {};
