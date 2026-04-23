@@ -35,11 +35,11 @@ import DockNav from './components/DockNav.jsx';
 
 // Returns ISO date string for the 1st of the month, 12 months ago
 const getQueryStartISO = () => {
-  const d = new Date();
-  d.setMonth(d.getMonth() - 12);
-  d.setDate(1);
-  d.setHours(0, 0, 0, 0);
-  return d.toISOString().slice(0, 10);
+  const now = new Date();
+  let year = now.getFullYear();
+  let month = now.getMonth() - 12; // 0-indexed
+  if (month < 0) { month += 12; year -= 1; }
+  return `${year}-${String(month + 1).padStart(2, '0')}-01`;
 };
 
 // Compact status badge for table rows
@@ -2317,6 +2317,7 @@ const unsubUangMuka = onSnapshot(
   setUangMukaList([]);
 });
 
+// intentionally unfiltered — history_log is converted to on-demand fetch in a later task
 const unsubHistory = onSnapshot(collection(db, "history_log"), (snap) => {
   const data = snap.docs
     .map((d) => {
