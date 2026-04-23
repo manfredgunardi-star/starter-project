@@ -1,7 +1,4 @@
 import React, { useState } from "react";
-import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
-import "jspdf-autotable";
 import { formatCurrency, formatDate } from "../utils/payslipHelpers";
 
 export default function PayslipExport({ payslip }) {
@@ -11,6 +8,7 @@ export default function PayslipExport({ payslip }) {
     try {
       setExporting("excel");
 
+      const XLSX = await import('xlsx');
       const workbook = XLSX.utils.book_new();
 
       // Summary sheet
@@ -73,6 +71,8 @@ export default function PayslipExport({ payslip }) {
     try {
       setExporting("pdf");
 
+      const { default: jsPDF } = await import('jspdf');
+      await import('jspdf-autotable');
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
       let yPos = 15;
