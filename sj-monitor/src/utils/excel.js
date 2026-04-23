@@ -1,7 +1,7 @@
 // src/utils/excel.js
-import * as XLSX from 'xlsx';
 
-export const downloadSJRecapToExcel = (suratJalanList = [], options = {}) => {
+export const downloadSJRecapToExcel = async (suratJalanList = [], options = {}) => {
+  const XLSX = await import('xlsx');
   const { startDate = '', endDate = '', dateField = 'tanggalSJ' } = options || {};
 
   const normDate = (v) => {

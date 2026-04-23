@@ -2643,7 +2643,7 @@ try { unsubTransaksi(); } catch {}
                   </label>
 
                   <button
-                    onClick={() => downloadSJRecapToExcel(suratJalanList, { startDate: sjRecapStartDate, endDate: sjRecapEndDate, dateField: sjRecapDateField })}
+                    onClick={async () => { await downloadSJRecapToExcel(suratJalanList, { startDate: sjRecapStartDate, endDate: sjRecapEndDate, dateField: sjRecapDateField }); }}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base transition"
                   >
                     <FileText className="w-4 h-4" />
@@ -2716,7 +2716,7 @@ try { unsubTransaksi(); } catch {}
             </div>
             <div>
               <button
-                onClick={() => downloadSJRecapToExcel(suratJalanList, { startDate: sjRecapStartDate, endDate: sjRecapEndDate, dateField: sjRecapDateField })}
+                onClick={async () => { await downloadSJRecapToExcel(suratJalanList, { startDate: sjRecapStartDate, endDate: sjRecapEndDate, dateField: sjRecapDateField }); }}
                 className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition"
               >
                 <FileText className="w-4 h-4" />
