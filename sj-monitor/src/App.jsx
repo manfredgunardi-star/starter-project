@@ -639,31 +639,6 @@ const SuratJalanMonitor = () => {
     }
   };
 
-  const fetchHistoryLog = useCallback(async () => {
-    try {
-      const snap = await getDocs(collection(db, "history_log"));
-      const data = snap.docs
-        .map((d) => {
-          const row = d.data() || {};
-          return { ...row, id: row.id || d.id };
-        })
-        .filter((x) => !x?.deletedAt && x?.isActive !== false);
-      data.sort((a, b) => (new Date(b?.timestamp).getTime() || 0) - (new Date(a?.timestamp).getTime() || 0));
-      setHistoryLog(data);
-    } catch (err) {
-      console.warn('[fetch] history_log tidak dapat diakses:', err.code);
-      setHistoryLog([]);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (activeTab === 'surat-jalan') {
-      fetchHistoryLog();
-    }
-  }, [activeTab, fetchHistoryLog]);
-
-
-
 
   // ===== Auto Transaksi Uang Jalan (derived from Surat Jalan) =====
   // Deterministic ID -> idempotent (tidak dobel meskipun sync dijalankan berkali-kali)
