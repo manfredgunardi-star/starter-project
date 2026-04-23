@@ -25,6 +25,7 @@ import {
   softDeleteItemInFirestore,
   resolveSuratJalanDocRef,
 } from './firestoreService.js';
+import { useVirtualizer } from '@tanstack/react-virtual';
 
 
 
@@ -611,6 +612,7 @@ const SuratJalanMonitor = () => {
   const [sjRecapEndDate, setSjRecapEndDate] = useState('');
   const didFirstLoadRef = useRef(false);
   const isMountedRef = useRef(true);
+  const sjListParentRef = useRef(null);
   const [activeTab, setActiveTab] = useState('surat-jalan');
   const [confirmDialog, setConfirmDialog] = useState({ show: false, message: '', onConfirm: null });
   const {
@@ -2213,6 +2215,13 @@ setTransaksiList(prev => prev.filter(t => t.suratJalanId !== id));
     [suratJalanList, filter]
   );
 
+  const sjVirtualizer = useVirtualizer({
+    count: filteredSuratJalan.length,
+    getScrollElement: () => sjListParentRef.current,
+    estimateSize: () => 130,
+    overscan: 5,
+  });
+
   const sjStatusCounts = useMemo(() => ({
     pending: suratJalanList.filter(s => s.status === 'pending').length,
     terkirim: suratJalanList.filter(s => s.status === 'terkirim').length,
@@ -2786,24 +2795,44 @@ try { unsubTransaksi(); } catch {}
               )}
             </div>
           ) : (
-            <div className="divide-y divide-slate-50">
-              {filteredSuratJalan.map(sj => (
-                <SuratJalanCard
-                  key={sj.id}
-                  suratJalan={sj}
-                  biayaList={biayaList.filter(b => b.suratJalanId === sj.id)}
-                  totalBiaya={getTotalBiaya(sj.id)}
-                  currentUser={currentUser}
-                  onUpdate={handleSJCardUpdate}
-                  onEditTerkirim={handleSJCardEditTerkirim}
-                  onMarkGagal={markAsGagal}
-                  onRestore={restoreFromGagal}
-                  onDeleteBiaya={deleteBiaya}
-                  formatCurrency={formatCurrency}
-                  getStatusColor={getStatusColor}
-                  getStatusIcon={getStatusIcon}
-                />
-              ))}
+            <div
+              ref={sjListParentRef}
+              style={{ height: '70vh', overflowY: 'auto' }}
+            >
+              <div style={{ height: `${sjVirtualizer.getTotalSize()}px`, position: 'relative' }}>
+                {sjVirtualizer.getVirtualItems().map((virtualItem) => {
+                  const sj = filteredSuratJalan[virtualItem.index];
+                  return (
+                    <div
+                      key={virtualItem.key}
+                      data-index={virtualItem.index}
+                      ref={sjVirtualizer.measureElement}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        transform: `translateY(${virtualItem.start}px)`,
+                      }}
+                    >
+                      <SuratJalanCard
+                        suratJalan={sj}
+                        biayaList={biayaList.filter(b => b.suratJalanId === sj.id)}
+                        totalBiaya={getTotalBiaya(sj.id)}
+                        currentUser={currentUser}
+                        onUpdate={handleSJCardUpdate}
+                        onEditTerkirim={handleSJCardEditTerkirim}
+                        onMarkGagal={markAsGagal}
+                        onRestore={restoreFromGagal}
+                        onDeleteBiaya={deleteBiaya}
+                        formatCurrency={formatCurrency}
+                        getStatusColor={getStatusColor}
+                        getStatusIcon={getStatusIcon}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
