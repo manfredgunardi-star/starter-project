@@ -630,7 +630,7 @@ const SuratJalanMonitor = () => {
   // Data loading: source of truth dari Firestore (lihat useEffect subscription di bawah)
 
 // History Log Helper
-  const addHistoryLog = async (action, suratJalanId, suratJalanNo, details = {}) => {
+  const addHistoryLog = useCallback(async (action, suratJalanId, suratJalanNo, details = {}) => {
     const newLog = {
       id: 'LOG-' + Date.now(),
       action, // 'mark_gagal', 'restore_from_gagal', 'mark_terkirim', 'create_invoice', etc
@@ -642,19 +642,18 @@ const SuratJalanMonitor = () => {
       userRole: currentUser?.role || 'unknown'
     };
 
-    const newHistoryLog = [...historyLog, newLog];
-    setHistoryLog(newHistoryLog);
+    setHistoryLog(prev => [...prev, newLog]);
     try {
       await upsertItemToFirestore(db, "history_log", { ...newLog, isActive: true });
     } catch (err) {
       console.error('[addHistoryLog] Firestore error:', err);
     }
-  };
+  }, [currentUser]);
 
 
   // ===== Auto Transaksi Uang Jalan (derived from Surat Jalan) =====
   // Deterministic ID -> idempotent (tidak dobel meskipun sync dijalankan berkali-kali)
-  const buildUangJalanTransaksiId = (sjId) => `TX-UJ-${String(sjId)}`;
+  const buildUangJalanTransaksiId = useCallback((sjId) => `TX-UJ-${String(sjId)}`, []);
 
   const upsertUangJalanTransaksiForSJ = async (sj, opts = {}) => {
     if (!sj) return;
@@ -681,7 +680,7 @@ const SuratJalanMonitor = () => {
       isActive: true,
     });
   };
-  const addTransaksi = async (data) => {
+  const addTransaksi = useCallback(async (data) => {
     // data bisa datang dari modal (tanpa id) atau dari auto-uang-jalan (dengan id deterministik)
     const nowIso = new Date().toISOString();
     const who = currentUser?.name || "system";
@@ -724,7 +723,7 @@ const SuratJalanMonitor = () => {
       console.error("addTransaksi -> Firestore failed", e);
       setAlertMessage("⚠️ Gagal menyimpan transaksi ke Firebase. Perubahan tersimpan di cache lokal.");
     }
-  };
+  }, [currentUser]);
 
 
   const deleteTransaksi = async (id) => {
@@ -1956,7 +1955,7 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
     
   };
 
-  const updateSuratJalan = async (id, updates) => {
+  const updateSuratJalan = useCallback(async (id, updates) => {
     const sj = suratJalanList.find((x) => String(x.id) === String(id));
     const nowIso = new Date().toISOString();
     const who = currentUser?.name || 'system';
@@ -1987,10 +1986,9 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
       patch.uangJalan = 0;
     }
 
-    const updatedSJList = suratJalanList.map((x) =>
-      String(x.id) === String(id) ? { ...x, ...patch } : x
+    setSuratJalanList((prev) =>
+      prev.map((x) => String(x.id) === String(id) ? { ...x, ...patch } : x)
     );
-    setSuratJalanList(updatedSJList);
 
     // Persist ke Firestore
     await updateDoc(doc(db, 'surat_jalan', String(id)), sanitizeForFirestore(patch));
@@ -2007,7 +2005,7 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
         console.warn('Soft delete transaksi uang jalan gagal:', e);
       }
     }
-  };
+  }, [suratJalanList, transaksiList, currentUser, buildUangJalanTransaksiId]);
 
   const markAsGagal = useCallback(async (id) => {
     const sj = suratJalanList.find(s => s.id === id);
@@ -2169,12 +2167,11 @@ setTransaksiList(updatedTransaksiList);
       message: 'Yakin ingin menghapus biaya ini?',
       onConfirm: async () => {
   await softDeleteItemInFirestore(db, "biaya", id, currentUser?.name || "system").catch(() => {});
-  const newList = biayaList.filter(b => b.id !== id);
-        setBiayaList(newList);
+        setBiayaList(prev => prev.filter(b => b.id !== id));
         setConfirmDialog({ show: false, message: '', onConfirm: null });
       }
     });
-  }, [biayaList, currentUser]);
+  }, [currentUser]);
 
   const getTotalBiaya = useCallback((suratJalanId) => {
     return biayaList
