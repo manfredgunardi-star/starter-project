@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tanstack/react-virtual": "^3.13.24",
     "firebase": "10.14.1",
     "framer-motion": "^12.38.0",
     "jspdf": "^4.2.1",
