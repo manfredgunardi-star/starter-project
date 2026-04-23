@@ -1,7 +1,7 @@
 import { collection, doc, writeBatch, onSnapshot, getDoc, setDoc, updateDoc, getDocs, query, where } from "firebase/firestore";
 import { db, auth, ensureAuthed, createUserWithRoleFn } from "./config/firebase-config";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { formatCurrency, formatTanggalID } from './utils/currency.js';
 import { isSJTerinvoice, isSJBelumInvoice, mergeById } from './utils/sjHelpers.js';
 import { calculateSJPenalty } from './utils/payslipHelpers.js';
@@ -639,7 +639,28 @@ const SuratJalanMonitor = () => {
     }
   };
 
+  const fetchHistoryLog = useCallback(async () => {
+    try {
+      const snap = await getDocs(collection(db, "history_log"));
+      const data = snap.docs
+        .map((d) => {
+          const row = d.data() || {};
+          return { ...row, id: row.id || d.id };
+        })
+        .filter((x) => !x?.deletedAt && x?.isActive !== false);
+      data.sort((a, b) => (new Date(b?.timestamp).getTime() || 0) - (new Date(a?.timestamp).getTime() || 0));
+      setHistoryLog(data);
+    } catch (err) {
+      console.warn('[fetch] history_log tidak dapat diakses:', err.code);
+      setHistoryLog([]);
+    }
+  }, []);
 
+  useEffect(() => {
+    if (activeTab === 'surat-jalan') {
+      fetchHistoryLog();
+    }
+  }, [activeTab, fetchHistoryLog]);
 
 
 
@@ -2317,21 +2338,6 @@ const unsubUangMuka = onSnapshot(
   setUangMukaList([]);
 });
 
-// intentionally unfiltered — history_log is converted to on-demand fetch in a later task
-const unsubHistory = onSnapshot(collection(db, "history_log"), (snap) => {
-  const data = snap.docs
-    .map((d) => {
-      const row = d.data() || {};
-      const id = row.id || d.id;
-      return { ...row, id };
-    })
-    .filter((x) => !x?.deletedAt && x?.isActive !== false);
-  data.sort((a, b) => (new Date(b?.timestamp).getTime() || 0) - (new Date(a?.timestamp).getTime() || 0));
-  setHistoryLog(data);
-}, (err) => {
-  console.warn('[subscription] history_log tidak dapat diakses (role tidak cukup):', err.code);
-  setHistoryLog([]);
-});
 
 const unsubTransaksi = onSnapshot(
   query(collection(db, "transaksi"), where("tanggal", ">=", qStartISO)),
@@ -2358,7 +2364,6 @@ try { unsubBiaya(); } catch {}
 try { unsubInvoice(); } catch {}
 try { unsubInvoiceLegacy(); } catch {}
 try { unsubUangMuka(); } catch {}
-try { unsubHistory(); } catch {}
 try { unsubTransaksi(); } catch {}
   };
 // IMPORTANT: depend on authReady, firebaseUser, currentUser?.id so subscriptions
