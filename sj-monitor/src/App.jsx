@@ -73,12 +73,18 @@ const InvoiceManagement = ({
     return effectiveRole === 'superadmin' || effectiveRole === 'admin_invoice';
   };
   
-  const sjBelumTerinvoice = suratJalanList.filter((sj) => isSJBelumInvoice(sj));
-  
-  const sjTerinvoice = suratJalanList.filter((sj) =>
-    String(sj?.status || '').toLowerCase() === 'terkirim' && isSJTerinvoice(sj)
+  const sjBelumTerinvoice = useMemo(
+    () => suratJalanList.filter((sj) => isSJBelumInvoice(sj)),
+    [suratJalanList]
   );
-  
+
+  const sjTerinvoice = useMemo(
+    () => suratJalanList.filter((sj) =>
+      String(sj?.status || '').toLowerCase() === 'terkirim' && isSJTerinvoice(sj)
+    ),
+    [suratJalanList]
+  );
+
   const filteredSJ = activeFilter === 'belum-terinvoice' ? sjBelumTerinvoice : sjTerinvoice;
   
   // Escape CSV cell values untuk mencegah CSV Injection (formula injection di Excel/Sheets)
@@ -418,20 +424,26 @@ const UangMukaManagement = ({
     return effectiveRole === 'superadmin' || effectiveRole === 'admin_invoice';
   };
 
-  const umBySJ = {};
-  uangMukaList.forEach(um => {
-    if (!umBySJ[um.sjId]) umBySJ[um.sjId] = [];
-    umBySJ[um.sjId].push(um);
-  });
+  const umBySJ = useMemo(() => {
+    const map = {};
+    uangMukaList.forEach(um => {
+      if (!map[um.sjId]) map[um.sjId] = [];
+      map[um.sjId].push(um);
+    });
+    return map;
+  }, [uangMukaList]);
 
-  const filteredUM = uangMukaList.filter(um => {
-    if (!searchUM) return true;
-    const search = searchUM.toLowerCase();
-    return (
-      (um.nomorSJ || '').toLowerCase().includes(search) ||
-      (um.keterangan || '').toLowerCase().includes(search)
-    );
-  });
+  const filteredUM = useMemo(() =>
+    uangMukaList.filter(um => {
+      if (!searchUM) return true;
+      const search = searchUM.toLowerCase();
+      return (
+        (um.nomorSJ || '').toLowerCase().includes(search) ||
+        (um.keterangan || '').toLowerCase().includes(search)
+      );
+    }),
+    [uangMukaList, searchUM]
+  );
 
   return (
     <div className="space-y-6">
@@ -2189,9 +2201,16 @@ setTransaksiList(updatedTransaksiList);
     return icons[status] || <FileText className="w-4 h-4" />;
   };
 
-  const filteredSuratJalan = suratJalanList.filter(sj => 
-    filter === 'all' || sj.status === filter
+  const filteredSuratJalan = useMemo(
+    () => suratJalanList.filter(sj => filter === 'all' || sj.status === filter),
+    [suratJalanList, filter]
   );
+
+  const sjStatusCounts = useMemo(() => ({
+    pending: suratJalanList.filter(s => s.status === 'pending').length,
+    terkirim: suratJalanList.filter(s => s.status === 'terkirim').length,
+    gagal: suratJalanList.filter(s => s.status === 'gagal').length,
+  }), [suratJalanList]);
 
 
 // Cleanup on unmount
@@ -2588,19 +2607,19 @@ try { unsubTransaksi(); } catch {}
           />
           <StatCard
             title="Pending"
-            value={suratJalanList.filter(s => s.status === 'pending').length}
+            value={sjStatusCounts.pending}
             icon={<Clock className="w-6 h-6" />}
             color="bg-yellow-500"
           />
           <StatCard
             title="Terkirim"
-            value={suratJalanList.filter(s => s.status === 'terkirim').length}
+            value={sjStatusCounts.terkirim}
             icon={<CheckCircle className="w-6 h-6" />}
             color="bg-green-500"
           />
           <StatCard
             title="Gagal"
-            value={suratJalanList.filter(s => s.status === 'gagal').length}
+            value={sjStatusCounts.gagal}
             icon={<XCircle className="w-6 h-6" />}
             color="bg-red-500"
           />
@@ -3821,27 +3840,42 @@ const KeuanganManagement = ({ transaksiList, currentUser, onAddTransaksi, onDele
   const [filter, setFilter] = useState('all');
   const [filterPT, setFilterPT] = useState('');
   
-  const activeTransaksiList = (Array.isArray(transaksiList) ? transaksiList : []).filter(
-    (t) => t?.isActive !== false && !t?.deletedAt
+  const activeTransaksiList = useMemo(
+    () => (Array.isArray(transaksiList) ? transaksiList : []).filter(
+      (t) => t?.isActive !== false && !t?.deletedAt
+    ),
+    [transaksiList]
   );
 
   // Get unique PT list
-  const ptList = [...new Set(activeTransaksiList.map(t => t.pt).filter(Boolean))].sort();
-  
-  const filteredTransaksi = activeTransaksiList.filter(t => {
-    if (filter !== 'all' && t.tipe !== filter) return false;
-    if (filterPT && t.pt !== filterPT) return false;
-    return true;
-  });
+  const ptList = useMemo(
+    () => [...new Set(activeTransaksiList.map(t => t.pt).filter(Boolean))].sort(),
+    [activeTransaksiList]
+  );
 
-  const totalPemasukan = activeTransaksiList
-    .filter(t => t.tipe === 'pemasukan' && (!filterPT || t.pt === filterPT))
-    .reduce((sum, t) => sum + parseFloat(t.nominal || 0), 0);
-  
-  const totalPengeluaran = activeTransaksiList
-    .filter(t => t.tipe === 'pengeluaran' && (!filterPT || t.pt === filterPT))
-    .reduce((sum, t) => sum + parseFloat(t.nominal || 0), 0);
-  
+  const filteredTransaksi = useMemo(
+    () => activeTransaksiList.filter(t => {
+      if (filter !== 'all' && t.tipe !== filter) return false;
+      if (filterPT && t.pt !== filterPT) return false;
+      return true;
+    }),
+    [activeTransaksiList, filter, filterPT]
+  );
+
+  const totalPemasukan = useMemo(
+    () => activeTransaksiList
+      .filter(t => t.tipe === 'pemasukan' && (!filterPT || t.pt === filterPT))
+      .reduce((sum, t) => sum + parseFloat(t.nominal || 0), 0),
+    [activeTransaksiList, filterPT]
+  );
+
+  const totalPengeluaran = useMemo(
+    () => activeTransaksiList
+      .filter(t => t.tipe === 'pengeluaran' && (!filterPT || t.pt === filterPT))
+      .reduce((sum, t) => sum + parseFloat(t.nominal || 0), 0),
+    [activeTransaksiList, filterPT]
+  );
+
   const saldoKas = totalPemasukan - totalPengeluaran;
 
   const canAddTransaksi = effectiveRole === 'superadmin' || effectiveRole === 'admin_keuangan';
