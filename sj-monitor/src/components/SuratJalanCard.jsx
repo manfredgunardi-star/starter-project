@@ -183,6 +183,7 @@ export default React.memo(SuratJalanCard, (prev, next) => {
   return (
     prev.suratJalan?.id === next.suratJalan?.id &&
     prev.suratJalan?.updatedAt === next.suratJalan?.updatedAt &&
-    prev.suratJalan?.status === next.suratJalan?.status
+    prev.suratJalan?.status === next.suratJalan?.status &&
+    prev.totalBiaya === next.totalBiaya
   );
 });
