@@ -2034,8 +2034,7 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
 if (uangJalanTransaksi?.id) {
   await softDeleteItemInFirestore(db, "transaksi", uangJalanTransaksi.id, currentUser?.name || "system").catch(() => {});
 }
-const updatedTransaksiList = transaksiList.filter(t => t.suratJalanId !== id);
-setTransaksiList(updatedTransaksiList);
+setTransaksiList(prev => prev.filter(t => t.suratJalanId !== id));
 // Add to history log
         await addHistoryLog('mark_gagal', id, sj?.nomorSJ, {
           previousStatus: sj?.status,
