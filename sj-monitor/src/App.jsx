@@ -1,7 +1,7 @@
 import { collection, doc, writeBatch, onSnapshot, getDoc, setDoc, updateDoc, getDocs, query, where } from "firebase/firestore";
 import { db, auth, ensureAuthed, createUserWithRoleFn } from "./config/firebase-config";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, Suspense } from 'react';
 import { formatCurrency, formatTanggalID } from './utils/currency.js';
 import { isSJTerinvoice, isSJBelumInvoice, mergeById } from './utils/sjHelpers.js';
 import { calculateSJPenalty } from './utils/payslipHelpers.js';
@@ -15,10 +15,10 @@ import StatCard from './components/StatCard.jsx';
 import AlertBanner from './components/AlertBanner.jsx';
 import SuratJalanCard from './components/SuratJalanCard.jsx';
 import LoginPage from './pages/LoginPage.jsx';
-import LaporanKasPage from './pages/LaporanKasPage.jsx';
-import LaporanTrukPage from './pages/LaporanTrukPage.jsx';
-import PayslipReport from './components/PayslipReport.jsx';
-import RitasiBulkUpload from './components/RitasiBulkUpload.jsx';
+const LaporanKasPage   = React.lazy(() => import('./pages/LaporanKasPage.jsx'));
+const LaporanTrukPage  = React.lazy(() => import('./pages/LaporanTrukPage.jsx'));
+const PayslipReport    = React.lazy(() => import('./components/PayslipReport.jsx'));
+const RitasiBulkUpload = React.lazy(() => import('./components/RitasiBulkUpload.jsx'));
 import {
   sanitizeForFirestore,
   upsertItemToFirestore,
@@ -2530,20 +2530,26 @@ try { unsubTransaksi(); } catch {}
             onDeleteTransaksi={deleteTransaksi}
           />
         ) : activeTab === 'laporan-kas' ? (
-          <LaporanKasPage
-            suratJalanList={suratJalanList}
-            transaksiList={transaksiList}
-          />
+          <Suspense fallback={<div className="flex items-center justify-center h-32 text-slate-400 text-sm">Memuat...</div>}>
+            <LaporanKasPage
+              suratJalanList={suratJalanList}
+              transaksiList={transaksiList}
+            />
+          </Suspense>
         ) : activeTab === 'laporan-truk' ? (
-          <LaporanTrukPage
-            suratJalanList={suratJalanList}
-            truckList={truckList}
-            currentUser={currentUser}
-          />
+          <Suspense fallback={<div className="flex items-center justify-center h-32 text-slate-400 text-sm">Memuat...</div>}>
+            <LaporanTrukPage
+              suratJalanList={suratJalanList}
+              truckList={truckList}
+              currentUser={currentUser}
+            />
+          </Suspense>
         ) : activeTab === 'payslip' ? (
-          <PayslipReport
-            currentUser={currentUser}
-          />
+          <Suspense fallback={<div className="flex items-center justify-center h-32 text-slate-400 text-sm">Memuat...</div>}>
+            <PayslipReport
+              currentUser={currentUser}
+            />
+          </Suspense>
         ) : activeTab === 'uang-muka' ? (
           <UangMukaManagement
             uangMukaList={uangMukaList}
@@ -2927,13 +2933,15 @@ try { unsubTransaksi(); } catch {}
                   ×
                 </button>
               </div>
-              <RitasiBulkUpload
-                ruteList={ruteList}
-                onSuccess={() => {
-                  setShowRitasiBulkUpload(false);
-                  loadRuteData();
-                }}
-              />
+              <Suspense fallback={<div className="flex items-center justify-center h-32 text-slate-400 text-sm">Memuat...</div>}>
+                <RitasiBulkUpload
+                  ruteList={ruteList}
+                  onSuccess={() => {
+                    setShowRitasiBulkUpload(false);
+                    loadRuteData();
+                  }}
+                />
+              </Suspense>
             </div>
           </div>
         </div>
