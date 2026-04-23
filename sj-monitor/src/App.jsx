@@ -1,7 +1,7 @@
 import { collection, doc, writeBatch, onSnapshot, getDoc, setDoc, updateDoc, getDocs, query, where } from "firebase/firestore";
 import { db, auth, ensureAuthed, createUserWithRoleFn } from "./config/firebase-config";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, Suspense } from 'react';
 import { formatCurrency, formatTanggalID } from './utils/currency.js';
 import { isSJTerinvoice, isSJBelumInvoice, mergeById } from './utils/sjHelpers.js';
 import { calculateSJPenalty } from './utils/payslipHelpers.js';
@@ -15,16 +15,17 @@ import StatCard from './components/StatCard.jsx';
 import AlertBanner from './components/AlertBanner.jsx';
 import SuratJalanCard from './components/SuratJalanCard.jsx';
 import LoginPage from './pages/LoginPage.jsx';
-import LaporanKasPage from './pages/LaporanKasPage.jsx';
-import LaporanTrukPage from './pages/LaporanTrukPage.jsx';
-import PayslipReport from './components/PayslipReport.jsx';
-import RitasiBulkUpload from './components/RitasiBulkUpload.jsx';
+const LaporanKasPage   = React.lazy(() => import('./pages/LaporanKasPage.jsx'));
+const LaporanTrukPage  = React.lazy(() => import('./pages/LaporanTrukPage.jsx'));
+const PayslipReport    = React.lazy(() => import('./components/PayslipReport.jsx'));
+const RitasiBulkUpload = React.lazy(() => import('./components/RitasiBulkUpload.jsx'));
 import {
   sanitizeForFirestore,
   upsertItemToFirestore,
   softDeleteItemInFirestore,
   resolveSuratJalanDocRef,
 } from './firestoreService.js';
+import { useVirtualizer } from '@tanstack/react-virtual';
 
 
 
@@ -32,6 +33,15 @@ import { AlertCircle, Package, Truck, FileText, DollarSign, Users, Settings, Dat
 import TopBar from './components/TopBar.jsx';
 import DockNav from './components/DockNav.jsx';
 
+
+// Returns ISO date string for the 1st of the month, 12 months ago
+const getQueryStartISO = () => {
+  const now = new Date();
+  let year = now.getFullYear();
+  let month = now.getMonth() - 12; // 0-indexed
+  if (month < 0) { month += 12; year -= 1; }
+  return `${year}-${String(month + 1).padStart(2, '0')}-01`;
+};
 
 // Compact status badge for table rows
 const STATUS_BADGE_STYLES = {
@@ -64,12 +74,18 @@ const InvoiceManagement = ({
     return effectiveRole === 'superadmin' || effectiveRole === 'admin_invoice';
   };
   
-  const sjBelumTerinvoice = suratJalanList.filter((sj) => isSJBelumInvoice(sj));
-  
-  const sjTerinvoice = suratJalanList.filter((sj) =>
-    String(sj?.status || '').toLowerCase() === 'terkirim' && isSJTerinvoice(sj)
+  const sjBelumTerinvoice = useMemo(
+    () => suratJalanList.filter((sj) => isSJBelumInvoice(sj)),
+    [suratJalanList]
   );
-  
+
+  const sjTerinvoice = useMemo(
+    () => suratJalanList.filter((sj) =>
+      String(sj?.status || '').toLowerCase() === 'terkirim' && isSJTerinvoice(sj)
+    ),
+    [suratJalanList]
+  );
+
   const filteredSJ = activeFilter === 'belum-terinvoice' ? sjBelumTerinvoice : sjTerinvoice;
   
   // Escape CSV cell values untuk mencegah CSV Injection (formula injection di Excel/Sheets)
@@ -409,20 +425,26 @@ const UangMukaManagement = ({
     return effectiveRole === 'superadmin' || effectiveRole === 'admin_invoice';
   };
 
-  const umBySJ = {};
-  uangMukaList.forEach(um => {
-    if (!umBySJ[um.sjId]) umBySJ[um.sjId] = [];
-    umBySJ[um.sjId].push(um);
-  });
+  const umBySJ = useMemo(() => {
+    const map = {};
+    uangMukaList.forEach(um => {
+      if (!map[um.sjId]) map[um.sjId] = [];
+      map[um.sjId].push(um);
+    });
+    return map;
+  }, [uangMukaList]);
 
-  const filteredUM = uangMukaList.filter(um => {
-    if (!searchUM) return true;
-    const search = searchUM.toLowerCase();
-    return (
-      (um.nomorSJ || '').toLowerCase().includes(search) ||
-      (um.keterangan || '').toLowerCase().includes(search)
-    );
-  });
+  const filteredUM = useMemo(() =>
+    uangMukaList.filter(um => {
+      if (!searchUM) return true;
+      const search = searchUM.toLowerCase();
+      return (
+        (um.nomorSJ || '').toLowerCase().includes(search) ||
+        (um.keterangan || '').toLowerCase().includes(search)
+      );
+    }),
+    [uangMukaList, searchUM]
+  );
 
   return (
     <div className="space-y-6">
@@ -590,6 +612,7 @@ const SuratJalanMonitor = () => {
   const [sjRecapEndDate, setSjRecapEndDate] = useState('');
   const didFirstLoadRef = useRef(false);
   const isMountedRef = useRef(true);
+  const sjListParentRef = useRef(null);
   const [activeTab, setActiveTab] = useState('surat-jalan');
   const [confirmDialog, setConfirmDialog] = useState({ show: false, message: '', onConfirm: null });
   const {
@@ -609,7 +632,7 @@ const SuratJalanMonitor = () => {
   // Data loading: source of truth dari Firestore (lihat useEffect subscription di bawah)
 
 // History Log Helper
-  const addHistoryLog = async (action, suratJalanId, suratJalanNo, details = {}) => {
+  const addHistoryLog = useCallback(async (action, suratJalanId, suratJalanNo, details = {}) => {
     const newLog = {
       id: 'LOG-' + Date.now(),
       action, // 'mark_gagal', 'restore_from_gagal', 'mark_terkirim', 'create_invoice', etc
@@ -621,23 +644,18 @@ const SuratJalanMonitor = () => {
       userRole: currentUser?.role || 'unknown'
     };
 
-    const newHistoryLog = [...historyLog, newLog];
-    setHistoryLog(newHistoryLog);
+    setHistoryLog(prev => [...prev, newLog]);
     try {
       await upsertItemToFirestore(db, "history_log", { ...newLog, isActive: true });
     } catch (err) {
       console.error('[addHistoryLog] Firestore error:', err);
     }
-  };
-
-
-
-
+  }, [currentUser]);
 
 
   // ===== Auto Transaksi Uang Jalan (derived from Surat Jalan) =====
   // Deterministic ID -> idempotent (tidak dobel meskipun sync dijalankan berkali-kali)
-  const buildUangJalanTransaksiId = (sjId) => `TX-UJ-${String(sjId)}`;
+  const buildUangJalanTransaksiId = useCallback((sjId) => `TX-UJ-${String(sjId)}`, []);
 
   const upsertUangJalanTransaksiForSJ = async (sj, opts = {}) => {
     if (!sj) return;
@@ -664,7 +682,7 @@ const SuratJalanMonitor = () => {
       isActive: true,
     });
   };
-  const addTransaksi = async (data) => {
+  const addTransaksi = useCallback(async (data) => {
     // data bisa datang dari modal (tanpa id) atau dari auto-uang-jalan (dengan id deterministik)
     const nowIso = new Date().toISOString();
     const who = currentUser?.name || "system";
@@ -707,7 +725,7 @@ const SuratJalanMonitor = () => {
       console.error("addTransaksi -> Firestore failed", e);
       setAlertMessage("⚠️ Gagal menyimpan transaksi ke Firebase. Perubahan tersimpan di cache lokal.");
     }
-  };
+  }, [currentUser]);
 
 
   const deleteTransaksi = async (id) => {
@@ -1939,7 +1957,7 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
     
   };
 
-  const updateSuratJalan = async (id, updates) => {
+  const updateSuratJalan = useCallback(async (id, updates) => {
     const sj = suratJalanList.find((x) => String(x.id) === String(id));
     const nowIso = new Date().toISOString();
     const who = currentUser?.name || 'system';
@@ -1970,10 +1988,9 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
       patch.uangJalan = 0;
     }
 
-    const updatedSJList = suratJalanList.map((x) =>
-      String(x.id) === String(id) ? { ...x, ...patch } : x
+    setSuratJalanList((prev) =>
+      prev.map((x) => String(x.id) === String(id) ? { ...x, ...patch } : x)
     );
-    setSuratJalanList(updatedSJList);
 
     // Persist ke Firestore
     await updateDoc(doc(db, 'surat_jalan', String(id)), sanitizeForFirestore(patch));
@@ -1990,12 +2007,12 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
         console.warn('Soft delete transaksi uang jalan gagal:', e);
       }
     }
-  };
+  }, [suratJalanList, transaksiList, currentUser, buildUangJalanTransaksiId]);
 
-  const markAsGagal = async (id) => {
+  const markAsGagal = useCallback(async (id) => {
     const sj = suratJalanList.find(s => s.id === id);
     const uangJalanTransaksi = transaksiList.find(t => t.suratJalanId === id);
-    
+
     setConfirmDialog({
       show: true,
       message: 'Yakin ingin menandai Surat Jalan ini sebagai GAGAL?\n\n⚠️ Uang Jalan untuk SJ ini akan otomatis dihapus dari Laporan Keuangan.\n\n✅ Super Admin dapat restore SJ ini kembali nanti.',
@@ -2007,35 +2024,34 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
           tanggal: uangJalanTransaksi.tanggal,
           id: uangJalanTransaksi.id
         } : null;
-        
+
         // Update status SJ dengan menyimpan info Uang Jalan yang dihapus
-        await updateSuratJalan(id, { 
+        await updateSuratJalan(id, {
           status: 'gagal',
           statusLabel: 'gagal',
           deletedUangJalan // Simpan untuk restore
         });
-        
+
         // Hapus transaksi Uang Jalan yang terkait (Firestore + state)
 if (uangJalanTransaksi?.id) {
   await softDeleteItemInFirestore(db, "transaksi", uangJalanTransaksi.id, currentUser?.name || "system").catch(() => {});
 }
-const updatedTransaksiList = transaksiList.filter(t => t.suratJalanId !== id);
-setTransaksiList(updatedTransaksiList);
+setTransaksiList(prev => prev.filter(t => t.suratJalanId !== id));
 // Add to history log
         await addHistoryLog('mark_gagal', id, sj?.nomorSJ, {
           previousStatus: sj?.status,
           uangJalanDeleted: deletedUangJalan
         });
-        
+
         setConfirmDialog({ show: false, message: '', onConfirm: null });
         setAlertMessage('✅ Surat Jalan ditandai GAGAL.\n💰 Uang Jalan telah dihapus dari keuangan.');
       }
     });
-  };
+  }, [suratJalanList, transaksiList, currentUser, updateSuratJalan, addHistoryLog]);
 
-  const restoreFromGagal = async (id) => {
+  const restoreFromGagal = useCallback(async (id) => {
     const sj = suratJalanList.find(s => s.id === id);
-    
+
     setConfirmDialog({
       show: true,
       message: 'Restore Surat Jalan ini dari status GAGAL?\n\n✅ Status akan kembali ke PENDING.\n💰 Uang Jalan akan dibuat ulang di Laporan Keuangan.',
@@ -2088,18 +2104,17 @@ setTransaksiList(updatedTransaksiList);
           });
         }
 
-        
         // Add to history log
         await addHistoryLog('restore_from_gagal', id, sj?.nomorSJ, {
           restoredTo: 'pending',
           uangJalanRestored: sj?.deletedUangJalan
         });
-        
+
         setConfirmDialog({ show: false, message: '', onConfirm: null });
         setAlertMessage('✅ Surat Jalan di-restore!\n💰 Uang Jalan telah dibuat ulang.');
       }
     });
-  };
+  }, [suratJalanList, canWriteTransaksi, currentUser, updateSuratJalan, addTransaksi, buildUangJalanTransaksiId, addHistoryLog]);
 
   const deleteSuratJalan = async (id) => {
     setConfirmDialog({
@@ -2147,46 +2162,71 @@ setTransaksiList(updatedTransaksiList);
     await upsertItemToFirestore(db, "biaya", { ...newBiaya, isActive: true });
   };
 
-  const deleteBiaya = async (id) => {
+  const deleteBiaya = useCallback(async (id) => {
     setConfirmDialog({
       show: true,
       message: 'Yakin ingin menghapus biaya ini?',
       onConfirm: async () => {
   await softDeleteItemInFirestore(db, "biaya", id, currentUser?.name || "system").catch(() => {});
-  const newList = biayaList.filter(b => b.id !== id);
-        setBiayaList(newList);
+        setBiayaList(prev => prev.filter(b => b.id !== id));
         setConfirmDialog({ show: false, message: '', onConfirm: null });
       }
     });
-  };
+  }, [currentUser]);
 
-  const getTotalBiaya = (suratJalanId) => {
+  const getTotalBiaya = useCallback((suratJalanId) => {
     return biayaList
       .filter(b => b.suratJalanId === suratJalanId)
       .reduce((sum, b) => sum + parseFloat(b.nominal || 0), 0);
-  };
+  }, [biayaList]);
 
-  const getStatusColor = (status) => {
+  const getStatusColor = useCallback((status) => {
     const colors = {
       pending: 'bg-yellow-100 text-yellow-800',
       terkirim: 'bg-green-100 text-green-800',
       gagal: 'bg-red-100 text-red-800'
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
-  };
+  }, []);
 
-  const getStatusIcon = (status) => {
+  const getStatusIcon = useCallback((status) => {
     const icons = {
       pending: <Clock className="w-4 h-4" />,
       terkirim: <CheckCircle className="w-4 h-4" />,
       gagal: <XCircle className="w-4 h-4" />
     };
     return icons[status] || <FileText className="w-4 h-4" />;
-  };
+  }, []);
 
-  const filteredSuratJalan = suratJalanList.filter(sj => 
-    filter === 'all' || sj.status === filter
+  const handleSJCardUpdate = useCallback((sj) => {
+    setSelectedItem(sj);
+    setModalType('markTerkirim');
+    setShowModal(true);
+  }, []);
+
+  const handleSJCardEditTerkirim = useCallback((sj) => {
+    setSelectedItem(sj);
+    setModalType('editTerkirim');
+    setShowModal(true);
+  }, []);
+
+  const filteredSuratJalan = useMemo(
+    () => suratJalanList.filter(sj => filter === 'all' || sj.status === filter),
+    [suratJalanList, filter]
   );
+
+  const sjVirtualizer = useVirtualizer({
+    count: filteredSuratJalan.length,
+    getScrollElement: () => sjListParentRef.current,
+    estimateSize: () => 130,
+    overscan: 5,
+  });
+
+  const sjStatusCounts = useMemo(() => ({
+    pending: suratJalanList.filter(s => s.status === 'pending').length,
+    terkirim: suratJalanList.filter(s => s.status === 'terkirim').length,
+    gagal: suratJalanList.filter(s => s.status === 'gagal').length,
+  }), [suratJalanList]);
 
 
 // Cleanup on unmount
@@ -2199,6 +2239,8 @@ setTransaksiList(updatedTransaksiList);
     if (!authReady || !firebaseUser || !currentUser) {
       return;
     }
+
+const qStartISO = getQueryStartISO();
 
 // DATA OPERASIONAL: source of truth dari Firestore
 let sjDocs = [];
@@ -2221,12 +2263,16 @@ const applySJ = () => {
   didFirstLoadRef.current = true;
 };
 
-const unsubSuratJalan = onSnapshot(collection(db, "surat_jalan"), (snap) => {
+const unsubSuratJalan = onSnapshot(
+  query(collection(db, "surat_jalan"), where("tanggalSJ", ">=", qStartISO)),
+  (snap) => {
   sjDocs = snap.docs.map((d) => normalizeSJ(d.data() || {}, d.id));
   applySJ();
 });
 
-const unsubBiaya = onSnapshot(collection(db, "biaya"), (snap) => {
+const unsubBiaya = onSnapshot(
+  query(collection(db, "biaya"), where("tanggal", ">=", qStartISO)),
+  (snap) => {
   const data = snap.docs
     .map((d) => {
       const row = d.data() || {};
@@ -2272,17 +2318,23 @@ const applyInv = () => {
   setInvoiceList(normalized);
 };
 
-const unsubInvoice = onSnapshot(collection(db, "invoice"), (snap) => {
+const unsubInvoice = onSnapshot(
+  query(collection(db, "invoice"), where("tglInvoice", ">=", qStartISO)),
+  (snap) => {
   invPrimary = snap.docs.map((d) => normalizeInv(d.data() || {}, d.id));
   applyInv();
 });
 
-const unsubInvoiceLegacy = onSnapshot(collection(db, "invoices"), (snap) => {
+const unsubInvoiceLegacy = onSnapshot(
+  query(collection(db, "invoices"), where("tglInvoice", ">=", qStartISO)),
+  (snap) => {
   invLegacy = snap.docs.map((d) => normalizeInv(d.data() || {}, d.id));
   applyInv();
 });
 
-const unsubUangMuka = onSnapshot(collection(db, "uang_muka"), (snap) => {
+const unsubUangMuka = onSnapshot(
+  query(collection(db, "uang_muka"), where("tanggal", ">=", qStartISO)),
+  (snap) => {
   const data = snap.docs
     .map((d) => {
       const row = d.data() || {};
@@ -2296,22 +2348,10 @@ const unsubUangMuka = onSnapshot(collection(db, "uang_muka"), (snap) => {
   setUangMukaList([]);
 });
 
-const unsubHistory = onSnapshot(collection(db, "history_log"), (snap) => {
-  const data = snap.docs
-    .map((d) => {
-      const row = d.data() || {};
-      const id = row.id || d.id;
-      return { ...row, id };
-    })
-    .filter((x) => !x?.deletedAt && x?.isActive !== false);
-  data.sort((a, b) => (new Date(b?.timestamp).getTime() || 0) - (new Date(a?.timestamp).getTime() || 0));
-  setHistoryLog(data);
-}, (err) => {
-  console.warn('[subscription] history_log tidak dapat diakses (role tidak cukup):', err.code);
-  setHistoryLog([]);
-});
 
-const unsubTransaksi = onSnapshot(collection(db, "transaksi"), (snap) => {
+const unsubTransaksi = onSnapshot(
+  query(collection(db, "transaksi"), where("tanggal", ">=", qStartISO)),
+  (snap) => {
   const data = snap.docs
     .map((d) => {
       const row = d.data() || {};
@@ -2334,7 +2374,6 @@ try { unsubBiaya(); } catch {}
 try { unsubInvoice(); } catch {}
 try { unsubInvoiceLegacy(); } catch {}
 try { unsubUangMuka(); } catch {}
-try { unsubHistory(); } catch {}
 try { unsubTransaksi(); } catch {}
   };
 // IMPORTANT: depend on authReady, firebaseUser, currentUser?.id so subscriptions
@@ -2526,20 +2565,26 @@ try { unsubTransaksi(); } catch {}
             onDeleteTransaksi={deleteTransaksi}
           />
         ) : activeTab === 'laporan-kas' ? (
-          <LaporanKasPage
-            suratJalanList={suratJalanList}
-            transaksiList={transaksiList}
-          />
+          <Suspense fallback={<div className="flex items-center justify-center h-32 text-slate-400 text-sm">Memuat...</div>}>
+            <LaporanKasPage
+              suratJalanList={suratJalanList}
+              transaksiList={transaksiList}
+            />
+          </Suspense>
         ) : activeTab === 'laporan-truk' ? (
-          <LaporanTrukPage
-            suratJalanList={suratJalanList}
-            truckList={truckList}
-            currentUser={currentUser}
-          />
+          <Suspense fallback={<div className="flex items-center justify-center h-32 text-slate-400 text-sm">Memuat...</div>}>
+            <LaporanTrukPage
+              suratJalanList={suratJalanList}
+              truckList={truckList}
+              currentUser={currentUser}
+            />
+          </Suspense>
         ) : activeTab === 'payslip' ? (
-          <PayslipReport
-            currentUser={currentUser}
-          />
+          <Suspense fallback={<div className="flex items-center justify-center h-32 text-slate-400 text-sm">Memuat...</div>}>
+            <PayslipReport
+              currentUser={currentUser}
+            />
+          </Suspense>
         ) : activeTab === 'uang-muka' ? (
           <UangMukaManagement
             uangMukaList={uangMukaList}
@@ -2578,19 +2623,19 @@ try { unsubTransaksi(); } catch {}
           />
           <StatCard
             title="Pending"
-            value={suratJalanList.filter(s => s.status === 'pending').length}
+            value={sjStatusCounts.pending}
             icon={<Clock className="w-6 h-6" />}
             color="bg-yellow-500"
           />
           <StatCard
             title="Terkirim"
-            value={suratJalanList.filter(s => s.status === 'terkirim').length}
+            value={sjStatusCounts.terkirim}
             icon={<CheckCircle className="w-6 h-6" />}
             color="bg-green-500"
           />
           <StatCard
             title="Gagal"
-            value={suratJalanList.filter(s => s.status === 'gagal').length}
+            value={sjStatusCounts.gagal}
             icon={<XCircle className="w-6 h-6" />}
             color="bg-red-500"
           />
@@ -2639,7 +2684,7 @@ try { unsubTransaksi(); } catch {}
                   </label>
 
                   <button
-                    onClick={() => downloadSJRecapToExcel(suratJalanList, { startDate: sjRecapStartDate, endDate: sjRecapEndDate, dateField: sjRecapDateField })}
+                    onClick={async () => { await downloadSJRecapToExcel(suratJalanList, { startDate: sjRecapStartDate, endDate: sjRecapEndDate, dateField: sjRecapDateField }); }}
                     className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base transition"
                   >
                     <FileText className="w-4 h-4" />
@@ -2712,7 +2757,7 @@ try { unsubTransaksi(); } catch {}
             </div>
             <div>
               <button
-                onClick={() => downloadSJRecapToExcel(suratJalanList, { startDate: sjRecapStartDate, endDate: sjRecapEndDate, dateField: sjRecapDateField })}
+                onClick={async () => { await downloadSJRecapToExcel(suratJalanList, { startDate: sjRecapStartDate, endDate: sjRecapEndDate, dateField: sjRecapDateField }); }}
                 className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition"
               >
                 <FileText className="w-4 h-4" />
@@ -2750,32 +2795,44 @@ try { unsubTransaksi(); } catch {}
               )}
             </div>
           ) : (
-            <div className="divide-y divide-slate-50">
-              {filteredSuratJalan.map(sj => (
-                <SuratJalanCard
-                  key={sj.id}
-                  suratJalan={sj}
-                  biayaList={biayaList.filter(b => b.suratJalanId === sj.id)}
-                  totalBiaya={getTotalBiaya(sj.id)}
-                  currentUser={currentUser}
-                  onUpdate={(sj) => {
-                    setSelectedItem(sj);
-                    setModalType('markTerkirim');
-                    setShowModal(true);
-                  }}
-                  onEditTerkirim={(sj) => {
-                    setSelectedItem(sj);
-                    setModalType('editTerkirim');
-                    setShowModal(true);
-                  }}
-                  onMarkGagal={markAsGagal}
-                  onRestore={restoreFromGagal}
-                  onDeleteBiaya={deleteBiaya}
-                  formatCurrency={formatCurrency}
-                  getStatusColor={getStatusColor}
-                  getStatusIcon={getStatusIcon}
-                />
-              ))}
+            <div
+              ref={sjListParentRef}
+              style={{ height: '70vh', overflowY: 'auto' }}
+            >
+              <div style={{ height: `${sjVirtualizer.getTotalSize()}px`, position: 'relative' }}>
+                {sjVirtualizer.getVirtualItems().map((virtualItem) => {
+                  const sj = filteredSuratJalan[virtualItem.index];
+                  return (
+                    <div
+                      key={virtualItem.key}
+                      data-index={virtualItem.index}
+                      ref={sjVirtualizer.measureElement}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        transform: `translateY(${virtualItem.start}px)`,
+                      }}
+                    >
+                      <SuratJalanCard
+                        suratJalan={sj}
+                        biayaList={biayaList.filter(b => b.suratJalanId === sj.id)}
+                        totalBiaya={getTotalBiaya(sj.id)}
+                        currentUser={currentUser}
+                        onUpdate={handleSJCardUpdate}
+                        onEditTerkirim={handleSJCardEditTerkirim}
+                        onMarkGagal={markAsGagal}
+                        onRestore={restoreFromGagal}
+                        onDeleteBiaya={deleteBiaya}
+                        formatCurrency={formatCurrency}
+                        getStatusColor={getStatusColor}
+                        getStatusIcon={getStatusIcon}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
@@ -2923,13 +2980,15 @@ try { unsubTransaksi(); } catch {}
                   ×
                 </button>
               </div>
-              <RitasiBulkUpload
-                ruteList={ruteList}
-                onSuccess={() => {
-                  setShowRitasiBulkUpload(false);
-                  loadRuteData();
-                }}
-              />
+              <Suspense fallback={<div className="flex items-center justify-center h-32 text-slate-400 text-sm">Memuat...</div>}>
+                <RitasiBulkUpload
+                  ruteList={ruteList}
+                  onSuccess={() => {
+                    setShowRitasiBulkUpload(false);
+                    loadRuteData();
+                  }}
+                />
+              </Suspense>
             </div>
           </div>
         </div>
@@ -3809,27 +3868,42 @@ const KeuanganManagement = ({ transaksiList, currentUser, onAddTransaksi, onDele
   const [filter, setFilter] = useState('all');
   const [filterPT, setFilterPT] = useState('');
   
-  const activeTransaksiList = (Array.isArray(transaksiList) ? transaksiList : []).filter(
-    (t) => t?.isActive !== false && !t?.deletedAt
+  const activeTransaksiList = useMemo(
+    () => (Array.isArray(transaksiList) ? transaksiList : []).filter(
+      (t) => t?.isActive !== false && !t?.deletedAt
+    ),
+    [transaksiList]
   );
 
   // Get unique PT list
-  const ptList = [...new Set(activeTransaksiList.map(t => t.pt).filter(Boolean))].sort();
-  
-  const filteredTransaksi = activeTransaksiList.filter(t => {
-    if (filter !== 'all' && t.tipe !== filter) return false;
-    if (filterPT && t.pt !== filterPT) return false;
-    return true;
-  });
+  const ptList = useMemo(
+    () => [...new Set(activeTransaksiList.map(t => t.pt).filter(Boolean))].sort(),
+    [activeTransaksiList]
+  );
 
-  const totalPemasukan = activeTransaksiList
-    .filter(t => t.tipe === 'pemasukan' && (!filterPT || t.pt === filterPT))
-    .reduce((sum, t) => sum + parseFloat(t.nominal || 0), 0);
-  
-  const totalPengeluaran = activeTransaksiList
-    .filter(t => t.tipe === 'pengeluaran' && (!filterPT || t.pt === filterPT))
-    .reduce((sum, t) => sum + parseFloat(t.nominal || 0), 0);
-  
+  const filteredTransaksi = useMemo(
+    () => activeTransaksiList.filter(t => {
+      if (filter !== 'all' && t.tipe !== filter) return false;
+      if (filterPT && t.pt !== filterPT) return false;
+      return true;
+    }),
+    [activeTransaksiList, filter, filterPT]
+  );
+
+  const totalPemasukan = useMemo(
+    () => activeTransaksiList
+      .filter(t => t.tipe === 'pemasukan' && (!filterPT || t.pt === filterPT))
+      .reduce((sum, t) => sum + parseFloat(t.nominal || 0), 0),
+    [activeTransaksiList, filterPT]
+  );
+
+  const totalPengeluaran = useMemo(
+    () => activeTransaksiList
+      .filter(t => t.tipe === 'pengeluaran' && (!filterPT || t.pt === filterPT))
+      .reduce((sum, t) => sum + parseFloat(t.nominal || 0), 0),
+    [activeTransaksiList, filterPT]
+  );
+
   const saldoKas = totalPemasukan - totalPengeluaran;
 
   const canAddTransaksi = effectiveRole === 'superadmin' || effectiveRole === 'admin_keuangan';

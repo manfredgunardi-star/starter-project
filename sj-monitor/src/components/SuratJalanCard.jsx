@@ -1,5 +1,5 @@
 // src/components/SuratJalanCard.jsx
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { CheckCircle, XCircle, Edit, Trash2, Eye, RefreshCw } from 'lucide-react';
 
 const SuratJalanCard = ({
@@ -179,4 +179,11 @@ const SuratJalanCard = ({
   );
 };
 
-export default SuratJalanCard;
+export default React.memo(SuratJalanCard, (prev, next) => {
+  return (
+    prev.suratJalan?.id === next.suratJalan?.id &&
+    prev.suratJalan?.updatedAt === next.suratJalan?.updatedAt &&
+    prev.suratJalan?.status === next.suratJalan?.status &&
+    prev.totalBiaya === next.totalBiaya
+  );
+});
