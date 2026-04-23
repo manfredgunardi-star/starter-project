@@ -2009,10 +2009,10 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
     }
   };
 
-  const markAsGagal = async (id) => {
+  const markAsGagal = useCallback(async (id) => {
     const sj = suratJalanList.find(s => s.id === id);
     const uangJalanTransaksi = transaksiList.find(t => t.suratJalanId === id);
-    
+
     setConfirmDialog({
       show: true,
       message: 'Yakin ingin menandai Surat Jalan ini sebagai GAGAL?\n\n⚠️ Uang Jalan untuk SJ ini akan otomatis dihapus dari Laporan Keuangan.\n\n✅ Super Admin dapat restore SJ ini kembali nanti.',
@@ -2024,14 +2024,14 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
           tanggal: uangJalanTransaksi.tanggal,
           id: uangJalanTransaksi.id
         } : null;
-        
+
         // Update status SJ dengan menyimpan info Uang Jalan yang dihapus
-        await updateSuratJalan(id, { 
+        await updateSuratJalan(id, {
           status: 'gagal',
           statusLabel: 'gagal',
           deletedUangJalan // Simpan untuk restore
         });
-        
+
         // Hapus transaksi Uang Jalan yang terkait (Firestore + state)
 if (uangJalanTransaksi?.id) {
   await softDeleteItemInFirestore(db, "transaksi", uangJalanTransaksi.id, currentUser?.name || "system").catch(() => {});
@@ -2043,16 +2043,16 @@ setTransaksiList(updatedTransaksiList);
           previousStatus: sj?.status,
           uangJalanDeleted: deletedUangJalan
         });
-        
+
         setConfirmDialog({ show: false, message: '', onConfirm: null });
         setAlertMessage('✅ Surat Jalan ditandai GAGAL.\n💰 Uang Jalan telah dihapus dari keuangan.');
       }
     });
-  };
+  }, [suratJalanList, transaksiList, currentUser, updateSuratJalan, addHistoryLog]);
 
-  const restoreFromGagal = async (id) => {
+  const restoreFromGagal = useCallback(async (id) => {
     const sj = suratJalanList.find(s => s.id === id);
-    
+
     setConfirmDialog({
       show: true,
       message: 'Restore Surat Jalan ini dari status GAGAL?\n\n✅ Status akan kembali ke PENDING.\n💰 Uang Jalan akan dibuat ulang di Laporan Keuangan.',
@@ -2105,18 +2105,17 @@ setTransaksiList(updatedTransaksiList);
           });
         }
 
-        
         // Add to history log
         await addHistoryLog('restore_from_gagal', id, sj?.nomorSJ, {
           restoredTo: 'pending',
           uangJalanRestored: sj?.deletedUangJalan
         });
-        
+
         setConfirmDialog({ show: false, message: '', onConfirm: null });
         setAlertMessage('✅ Surat Jalan di-restore!\n💰 Uang Jalan telah dibuat ulang.');
       }
     });
-  };
+  }, [suratJalanList, canWriteTransaksi, currentUser, updateSuratJalan, addTransaksi, buildUangJalanTransaksiId, addHistoryLog]);
 
   const deleteSuratJalan = async (id) => {
     setConfirmDialog({
@@ -2164,7 +2163,7 @@ setTransaksiList(updatedTransaksiList);
     await upsertItemToFirestore(db, "biaya", { ...newBiaya, isActive: true });
   };
 
-  const deleteBiaya = async (id) => {
+  const deleteBiaya = useCallback(async (id) => {
     setConfirmDialog({
       show: true,
       message: 'Yakin ingin menghapus biaya ini?',
@@ -2175,31 +2174,43 @@ setTransaksiList(updatedTransaksiList);
         setConfirmDialog({ show: false, message: '', onConfirm: null });
       }
     });
-  };
+  }, [biayaList, currentUser]);
 
-  const getTotalBiaya = (suratJalanId) => {
+  const getTotalBiaya = useCallback((suratJalanId) => {
     return biayaList
       .filter(b => b.suratJalanId === suratJalanId)
       .reduce((sum, b) => sum + parseFloat(b.nominal || 0), 0);
-  };
+  }, [biayaList]);
 
-  const getStatusColor = (status) => {
+  const getStatusColor = useCallback((status) => {
     const colors = {
       pending: 'bg-yellow-100 text-yellow-800',
       terkirim: 'bg-green-100 text-green-800',
       gagal: 'bg-red-100 text-red-800'
     };
     return colors[status] || 'bg-gray-100 text-gray-800';
-  };
+  }, []);
 
-  const getStatusIcon = (status) => {
+  const getStatusIcon = useCallback((status) => {
     const icons = {
       pending: <Clock className="w-4 h-4" />,
       terkirim: <CheckCircle className="w-4 h-4" />,
       gagal: <XCircle className="w-4 h-4" />
     };
     return icons[status] || <FileText className="w-4 h-4" />;
-  };
+  }, []);
+
+  const handleSJCardUpdate = useCallback((sj) => {
+    setSelectedItem(sj);
+    setModalType('markTerkirim');
+    setShowModal(true);
+  }, []);
+
+  const handleSJCardEditTerkirim = useCallback((sj) => {
+    setSelectedItem(sj);
+    setModalType('editTerkirim');
+    setShowModal(true);
+  }, []);
 
   const filteredSuratJalan = useMemo(
     () => suratJalanList.filter(sj => filter === 'all' || sj.status === filter),
@@ -2787,16 +2798,8 @@ try { unsubTransaksi(); } catch {}
                   biayaList={biayaList.filter(b => b.suratJalanId === sj.id)}
                   totalBiaya={getTotalBiaya(sj.id)}
                   currentUser={currentUser}
-                  onUpdate={(sj) => {
-                    setSelectedItem(sj);
-                    setModalType('markTerkirim');
-                    setShowModal(true);
-                  }}
-                  onEditTerkirim={(sj) => {
-                    setSelectedItem(sj);
-                    setModalType('editTerkirim');
-                    setShowModal(true);
-                  }}
+                  onUpdate={handleSJCardUpdate}
+                  onEditTerkirim={handleSJCardEditTerkirim}
                   onMarkGagal={markAsGagal}
                   onRestore={restoreFromGagal}
                   onDeleteBiaya={deleteBiaya}
