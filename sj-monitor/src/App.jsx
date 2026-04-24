@@ -20,6 +20,8 @@ const LaporanKasPage   = React.lazy(() => import('./pages/LaporanKasPage.jsx'));
 const LaporanTrukPage  = React.lazy(() => import('./pages/LaporanTrukPage.jsx'));
 const PayslipReport    = React.lazy(() => import('./components/PayslipReport.jsx'));
 const RitasiBulkUpload = React.lazy(() => import('./components/RitasiBulkUpload.jsx'));
+const TarifRuteBulkUpload = React.lazy(() => import('./components/TarifRuteBulkUpload.jsx'));
+const TarifRuteHistoryModal = React.lazy(() => import('./components/TarifRuteHistoryModal.jsx'));
 import {
   sanitizeForFirestore,
   upsertItemToFirestore,
@@ -664,11 +666,13 @@ const SuratJalanMonitor = () => {
   const [historyLog, setHistoryLog] = useState([]);
   const [invoiceList, setInvoiceList] = useState([]);
   const [uangMukaList, setUangMukaList] = useState([]);
-  const { truckList, setTruckList, supirList, setSupirList, ruteList, setRuteList, materialList, setMaterialList } = useMasterData();
+  const { truckList, setTruckList, supirList, setSupirList, ruteList, setRuteList, materialList, setMaterialList, tarifRuteList } = useMasterData();
   const { usersList, setUsersList, addUser, updateUser, deleteUser: deleteUserFn, toggleUserActive } = useUsers({ currentUser, setAlertMessage });
   const deleteUser = (id) => deleteUserFn(id, setConfirmDialog);
   const [showModal, setShowModal] = useState(false);
   const [showRitasiBulkUpload, setShowRitasiBulkUpload] = useState(false);
+  const [showTarifBulkUpload, setShowTarifBulkUpload] = useState(false);
+  const [tarifHistoryRute, setTarifHistoryRute] = useState(null);
   const [modalType, setModalType] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
   const [filter, setFilter] = useState('all');
@@ -2637,6 +2641,10 @@ try { unsubTransaksi(); } catch {}
             onImportData={importData}
             showRitasiBulkUpload={showRitasiBulkUpload}
             setShowRitasiBulkUpload={setShowRitasiBulkUpload}
+            showTarifBulkUpload={showTarifBulkUpload}
+            setShowTarifBulkUpload={setShowTarifBulkUpload}
+            tarifRuteList={tarifRuteList}
+            onOpenTarifHistory={setTarifHistoryRute}
           />
         ) : activeTab === 'keuangan' ? (
           <KeuanganManagement
@@ -3082,6 +3090,43 @@ try { unsubTransaksi(); } catch {}
         </div>
       )}
 
+      {/* Tarif Uang Jalan Bulk Upload Modal */}
+      {showTarifBulkUpload && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-2xl font-bold">Bulk Update Tarif Uang Jalan</h2>
+                <button
+                  onClick={() => setShowTarifBulkUpload(false)}
+                  className="text-gray-500 hover:text-gray-700 text-2xl"
+                >
+                  ×
+                </button>
+              </div>
+              <Suspense fallback={<div className="flex items-center justify-center h-32 text-slate-400 text-sm">Memuat...</div>}>
+                <TarifRuteBulkUpload
+                  ruteList={ruteList}
+                  currentUser={currentUser}
+                  onSuccess={() => {}}
+                />
+              </Suspense>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tarif History Modal */}
+      {tarifHistoryRute && (
+        <Suspense fallback={null}>
+          <TarifRuteHistoryModal
+            rute={tarifHistoryRute}
+            tarifRuteList={tarifRuteList}
+            onClose={() => setTarifHistoryRute(null)}
+          />
+        </Suspense>
+      )}
+
       {/* Liquid Glass Dock */}
       {effectiveRole && (
         <DockNav
@@ -3101,7 +3146,10 @@ const MasterDataManagement = ({
   onAddRute, onEditRute, onDeleteRute,
   onAddMaterial, onEditMaterial, onDeleteMaterial,
   onDownloadTemplate, onImportData,
-  showRitasiBulkUpload, setShowRitasiBulkUpload
+  showRitasiBulkUpload, setShowRitasiBulkUpload,
+  showTarifBulkUpload, setShowTarifBulkUpload,
+  tarifRuteList,
+  onOpenTarifHistory,
 }) => {
   const [masterTab, setMasterTab] = useState('truck');
   const [alertMessage, setAlertMessage] = useState('');
@@ -3376,6 +3424,15 @@ const MasterDataManagement = ({
                     <span>📊 Bulk Upload Ritasi</span>
                   </button>
                 )}
+                {currentUser?.role?.toLowerCase() === 'superadmin' && (
+                  <button
+                    onClick={() => setShowTarifBulkUpload(true)}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center space-x-2 transition"
+                  >
+                    <FileText className="w-4 h-4" />
+                    <span>📊 Bulk Tarif Uang Jalan</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -3417,6 +3474,14 @@ const MasterDataManagement = ({
                       )}
                     </div>
                     <div className="flex space-x-2 ml-4">
+                      <button
+                        onClick={() => onOpenTarifHistory(rute)}
+                        className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
+                        title="Riwayat perubahan tarif"
+                      >
+                        <FileText className="w-4 h-4" />
+                        <span>Riwayat</span>
+                      </button>
                       <button
                         onClick={() => onEditRute(rute)}
                         className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"

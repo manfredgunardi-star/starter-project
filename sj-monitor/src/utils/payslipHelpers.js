@@ -46,8 +46,13 @@ export function calculateDriverPayslip(deliveries, ruteData) {
       successfulDeliveries++;
       const rute = ruteData[sj.ruteId] || ruteData[sj.rute];
 
-      // Add uang jalan
-      totalUangJalan += rute?.uangJalan || 0;
+      // Add uang jalan — prefer snapshot on SJ (set at creation time / backfilled by tarif feature)
+      // Fall back to live rute master for legacy SJ that pre-date the snapshot feature.
+      const sjUangJalan = sj?.uangJalan;
+      const resolvedUangJalan =
+        (typeof sjUangJalan === 'number' ? sjUangJalan : null) ??
+        (rute?.uangJalan || 0);
+      totalUangJalan += resolvedUangJalan;
 
       // Add ritasi
       totalRitasi += rute?.ritasi || 0;
