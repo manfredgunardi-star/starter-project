@@ -86,6 +86,22 @@ service cloud.firestore {
       // Only superadmin can edit ritasi field
       allow write: if isSuperAdmin();
     }
+
+    // --- TARIF UANG JALAN PER RUTE (time-versioned) ---
+    // Append-only history. Current value tetap di /rute/{id}.uangJalan.
+    match /tarif_rute/{id} {
+      allow read: if signedIn();
+      allow create: if isSuperAdmin()
+        && request.resource.data.keys().hasAll(['id','ruteId','uangJalan','effectiveDate','createdAt','createdBy','isActive'])
+        && request.resource.data.uangJalan is int
+        && request.resource.data.uangJalan >= 0
+        && request.resource.data.isActive == true;
+      // Hanya boleh update untuk soft-delete (set isActive: false) oleh superadmin
+      allow update: if isSuperAdmin()
+        && request.resource.data.diff(resource.data).changedKeys().hasOnly(['isActive','deletedAt','deletedBy']);
+      allow delete: if false;
+    }
+
     match /material/{id} {
       allow read: if signedIn();
       allow write: if isSuperAdmin() || isAdminSJ();
