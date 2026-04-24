@@ -15,6 +15,7 @@ export const useAuth = () => {
   const isMountedRef = useRef(true);
 
   useEffect(() => {
+    isMountedRef.current = true;
     return () => { isMountedRef.current = false; };
   }, []);
 
@@ -63,35 +64,53 @@ export const useAuth = () => {
           activeSessionUA: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
         }, { merge: true });
 
-        unsubUser = onSnapshot(doc(db, 'users', user.uid), (d) => {
-          if (!isMountedRef.current) return;
-          const data = d.data() || {};
+        let sawOurSessionOnce = false;
+        unsubUser = onSnapshot(
+          doc(db, 'users', user.uid),
+          (d) => {
+            if (!isMountedRef.current) return;
+            const data = d.data() || {};
 
-          const activeId = data.activeSessionId;
-          if (activeId && activeSessionIdRef.current && activeId !== activeSessionIdRef.current) {
-            if (isMountedRef.current) setAlertMessage('Sesi Anda berakhir karena akun ini login di perangkat lain.');
-            activeSessionIdRef.current = null;
-            signOut(auth).catch(() => {});
-            return;
-          }
+            const activeId = data.activeSessionId;
 
-          if (data.isActive === false) {
-            if (isMountedRef.current) setAlertMessage('Akun Anda dinonaktifkan. Hubungi administrator.');
-            signOut(auth).catch(() => {});
-            return;
-          }
+            // Mark once server/cache has reflected the sessionId we just wrote.
+            // Only after that do we trust session-mismatch as "another device took over" — otherwise
+            // the initial snapshot may carry stale cached data from a previous session and cause a self-signout.
+            if (activeId && activeId === activeSessionIdRef.current) {
+              sawOurSessionOnce = true;
+            }
 
-          if (isMountedRef.current) {
-            setCurrentUser({
-              id: user.uid,
-              username: data.username || (user.email ? user.email.split('@')[0] : ''),
-              name: data.name || user.displayName || data.username || 'User',
-              role: data.role || 'reader',
-              email: user.email || data.email || '',
-              isActive: data.isActive !== false,
-            });
+            if (sawOurSessionOnce && activeId && activeSessionIdRef.current && activeId !== activeSessionIdRef.current) {
+              if (isMountedRef.current) setAlertMessage('Sesi Anda berakhir karena akun ini login di perangkat lain.');
+              activeSessionIdRef.current = null;
+              signOut(auth).catch(() => {});
+              return;
+            }
+
+            if (data.isActive === false) {
+              if (isMountedRef.current) setAlertMessage('Akun Anda dinonaktifkan. Hubungi administrator.');
+              signOut(auth).catch(() => {});
+              return;
+            }
+
+            if (isMountedRef.current) {
+              setCurrentUser({
+                id: user.uid,
+                username: data.username || (user.email ? user.email.split('@')[0] : ''),
+                name: data.name || user.displayName || data.username || 'User',
+                role: data.role || 'reader',
+                email: user.email || data.email || '',
+                isActive: data.isActive !== false,
+              });
+            }
+          },
+          (err) => {
+            console.error('[useAuth] user doc subscription error:', err);
+            if (isMountedRef.current) {
+              setAlertMessage(`Gagal memuat data user: ${err?.message || err?.code || 'Unknown error'}`);
+            }
           }
-        });
+        );
 
         if (isMountedRef.current) {
           setAlertMessage('');

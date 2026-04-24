@@ -20,18 +20,18 @@ export default function TopBar({ activeTab, currentUser, onLogout }) {
 
   const springTransition = prefersReducedMotion
     ? { duration: 0 }
-    : { type: 'spring', stiffness: 150, damping: 20 };
+    : { type: 'spring', stiffness: 220, damping: 20, mass: 0.8 };
 
   const tapSpring = prefersReducedMotion
     ? { duration: 0 }
-    : { type: 'spring', stiffness: 300, damping: 20 };
+    : { type: 'spring', stiffness: 600, damping: 28, mass: 0.5 };
 
   const pageTitle = PAGE_TITLES[activeTab] ?? 'Monitoring SJ';
   const initials = (currentUser?.name ?? 'U').charAt(0).toUpperCase();
 
   return (
     <motion.header
-      initial={{ opacity: 0, y: -8 }}
+      initial={{ opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={springTransition}
       style={{
@@ -116,7 +116,7 @@ export default function TopBar({ activeTab, currentUser, onLogout }) {
             type="button"
             onClick={onLogout}
             title="Keluar"
-            whileTap={{ scale: 0.92 }}
+            whileTap={{ scale: 0.88 }}
             transition={tapSpring}
             style={{
               width: 32,

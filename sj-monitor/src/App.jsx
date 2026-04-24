@@ -2,10 +2,11 @@ import { collection, doc, writeBatch, onSnapshot, getDoc, setDoc, updateDoc, get
 import { db, auth, ensureAuthed, createUserWithRoleFn } from "./config/firebase-config";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import React, { useState, useEffect, useRef, useCallback, useMemo, Suspense } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { formatCurrency, formatTanggalID } from './utils/currency.js';
 import { isSJTerinvoice, isSJBelumInvoice, mergeById } from './utils/sjHelpers.js';
 import { calculateSJPenalty } from './utils/payslipHelpers.js';
-import { downloadSJRecapToExcel } from './utils/excel.js';
+import { downloadSJRecapToExcel, exportLabaKotorToExcel } from './utils/excel.js';
 import { useAuth } from './hooks/useAuth.js';
 import { useMasterData } from './hooks/useMasterData.js';
 import { useUsers } from './hooks/useUsers.js';
@@ -32,6 +33,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { AlertCircle, Package, Truck, FileText, DollarSign, Users, Settings, Database, LogOut, Plus, Edit, Trash2, Eye, CheckCircle, XCircle, Clock, Search, RefreshCw } from 'lucide-react';
 import TopBar from './components/TopBar.jsx';
 import DockNav from './components/DockNav.jsx';
+import SectionBanner from './components/SectionBanner.jsx';
 
 
 // Returns ISO date string for the 1st of the month, 12 months ago
@@ -59,15 +61,34 @@ const StatusBadge = ({ status }) => (
 
 // Invoice Management Component
 const InvoiceManagement = ({
-  invoiceList, 
-  suratJalanList, 
+  invoiceList,
+  suratJalanList,
   currentUser,
+  uangMukaList,
   onAddInvoice,
   onDeleteInvoice,
-  formatCurrency 
+  formatCurrency
 }) => {
   const [activeFilter, setActiveFilter] = useState('belum-terinvoice');
+  const [labaKotorBulan, setLabaKotorBulan] = useState(new Date().getMonth() + 1);
+  const [labaKotorTahun, setLabaKotorTahun] = useState(new Date().getFullYear());
+  const [labaKotorFilterField, setLabaKotorFilterField] = useState('tglInvoice');
   const effectiveRole = (currentUser?.role === 'owner' ? 'reader' : currentUser?.role) || 'reader';
+
+  const handleExportLabaKotor = async () => {
+    await exportLabaKotorToExcel(invoiceList, uangMukaList, {
+      bulan: labaKotorBulan,
+      tahun: labaKotorTahun,
+      filterField: labaKotorFilterField,
+    });
+  };
+
+  const tahunOptions = [...new Set(
+    (Array.isArray(invoiceList) ? invoiceList : [])
+      .map(inv => { try { return new Date(inv?.tglInvoice).getFullYear(); } catch { return null; } })
+      .filter(Boolean)
+  )].sort((a, b) => b - a);
+  if (!tahunOptions.includes(new Date().getFullYear())) tahunOptions.unshift(new Date().getFullYear());
 
   
   const canManageInvoice = () => {
@@ -219,7 +240,51 @@ const InvoiceManagement = ({
           </div>
         </div>
       </div>
-      
+
+      {currentUser?.role === 'superadmin' && (
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 150, damping: 20 }}
+          className="rounded-2xl backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl p-4 flex flex-wrap gap-3 items-center"
+        >
+          <span className="text-sm font-semibold text-white/80 mr-1">Export Laba Kotor:</span>
+          <select
+            value={labaKotorBulan}
+            onChange={e => setLabaKotorBulan(Number(e.target.value))}
+            className="rounded-xl bg-white/15 border border-white/20 text-white text-sm px-3 py-1.5 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-white/30"
+          >
+            {['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'].map((bln, i) => (
+              <option key={i + 1} value={i + 1} className="text-slate-800">{bln}</option>
+            ))}
+          </select>
+          <select
+            value={labaKotorTahun}
+            onChange={e => setLabaKotorTahun(Number(e.target.value))}
+            className="rounded-xl bg-white/15 border border-white/20 text-white text-sm px-3 py-1.5 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-white/30"
+          >
+            {tahunOptions.map(y => (
+              <option key={y} value={y} className="text-slate-800">{y}</option>
+            ))}
+          </select>
+          <select
+            value={labaKotorFilterField}
+            onChange={e => setLabaKotorFilterField(e.target.value)}
+            className="rounded-xl bg-white/15 border border-white/20 text-white text-sm px-3 py-1.5 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-white/30"
+          >
+            <option value="tglInvoice" className="text-slate-800">Filter: Tgl Invoice</option>
+            <option value="tanggalSJ" className="text-slate-800">Filter: Tgl SJ</option>
+          </select>
+          <button
+            onClick={handleExportLabaKotor}
+            className="rounded-full bg-emerald-500/80 hover:bg-emerald-500 border border-emerald-300/40 text-white text-sm font-semibold px-5 py-1.5 shadow-lg transition-all flex items-center gap-2"
+          >
+            <FileText className="w-4 h-4" />
+            Export Laba Kotor
+          </button>
+        </motion.div>
+      )}
+
       {activeFilter === 'belum-terinvoice' ? (
         <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
           <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
@@ -614,6 +679,14 @@ const SuratJalanMonitor = () => {
   const isMountedRef = useRef(true);
   const sjListParentRef = useRef(null);
   const [activeTab, setActiveTab] = useState('surat-jalan');
+
+  const handleTabChange = (tab) => {
+    if (tab === activeTab) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      setActiveTab(tab);
+    }
+  };
   const [confirmDialog, setConfirmDialog] = useState({ show: false, message: '', onConfirm: null });
   const {
     appSettings, setAppSettings, forceLogoutConfig, forceLogoutBanner,
@@ -2458,13 +2531,16 @@ try { unsubTransaksi(); } catch {}
 
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)' }}>
-      {/* Liquid Glass Top Bar */}
+      {/* Liquid Glass Top Bar + Section Banner */}
       {effectiveRole && (
-        <TopBar
-          activeTab={activeTab}
-          currentUser={currentUser}
-          onLogout={handleLogout}
-        />
+        <>
+          <TopBar
+            activeTab={activeTab}
+            currentUser={currentUser}
+            onLogout={handleLogout}
+          />
+          <SectionBanner activeTab={activeTab} />
+        </>
       )}
 
       {/* Force Logout Warning Banner */}
@@ -2472,6 +2548,15 @@ try { unsubTransaksi(); } catch {}
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-3 pb-24 sm:px-6 sm:pb-28">
+        <AnimatePresence mode="sync" initial={false}>
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -6 }}
+          transition={{ type: 'spring', stiffness: 320, damping: 28, mass: 0.6 }}
+          style={{ willChange: 'opacity, transform' }}
+        >
         {activeTab === 'settings' && effectiveRole === 'superadmin' ? (
           <SettingsManagement
             currentUser={currentUser}
@@ -2603,6 +2688,7 @@ try { unsubTransaksi(); } catch {}
             invoiceList={invoiceList}
             suratJalanList={suratJalanList}
             currentUser={currentUser}
+            uangMukaList={uangMukaList}
             onAddInvoice={() => {
               setModalType('addInvoice');
               setSelectedItem(null);
@@ -2838,6 +2924,8 @@ try { unsubTransaksi(); } catch {}
         </div>
         </>
         )}
+        </motion.div>
+        </AnimatePresence>
       </div>
 
       {/* Modal */}
@@ -2999,7 +3087,7 @@ try { unsubTransaksi(); } catch {}
         <DockNav
           items={DOCK_ITEMS}
           activeTab={activeTab}
-          onTabChange={setActiveTab}
+          onTabChange={handleTabChange}
         />
       )}
     </div>
