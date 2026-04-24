@@ -1,5 +1,5 @@
 // src/services/tarifRuteBulkService.js
-import { db } from '../config/firebase-config';
+import { db, ensureAuthed } from '../config/firebase-config';
 import { collection, getDocs, writeBatch, doc, query, where } from 'firebase/firestore';
 import { sanitizeForFirestore } from '../firestoreService.js';
 
@@ -78,6 +78,8 @@ export async function commitBulkTarifUpdate({ updates, effectiveDate, username }
     return { success: false, message: 'Tidak ada perubahan untuk di-apply', summary: null };
   }
 
+  await ensureAuthed();
+
   const batchId = `BULK-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const nowIso = new Date().toISOString();
   const user = username || 'system';
@@ -91,7 +93,7 @@ export async function commitBulkTarifUpdate({ updates, effectiveDate, username }
 
   // 2a: tarif_rute inserts (append-only)
   updates.forEach((u) => {
-    const docId = `TARIF-${String(u.ruteId)}-${effectiveDate.replace(/-/g, '')}-${Math.random().toString(36).slice(2, 6)}`;
+    const docId = `TARIF-${String(u.ruteId)}-${effectiveDate.replace(/-/g, '')}`;
     ops.push({
       type: 'set',
       ref: doc(db, 'tarif_rute', docId),
@@ -128,7 +130,6 @@ export async function commitBulkTarifUpdate({ updates, effectiveDate, username }
     const u = updatesByRuteId.get(String(sj.ruteId));
     if (!u) return;
     const newVal = Number(u.tarifBaru);
-    if (Number(sj.uangJalan || 0) === newVal) return; // no-op
     ops.push({
       type: 'update',
       ref: doc(db, 'surat_jalan', sj.id),
@@ -218,14 +219,22 @@ export async function commitBulkTarifUpdate({ updates, effectiveDate, username }
 
   // --- Phase 3: flush ops in batches of MAX_OPS_PER_BATCH ---
   let committed = 0;
-  for (const opBatch of chunk(ops, MAX_OPS_PER_BATCH)) {
-    const batch = writeBatch(db);
-    for (const op of opBatch) {
-      if (op.type === 'set') batch.set(op.ref, op.data, { merge: true });
-      else batch.update(op.ref, op.data);
+  try {
+    for (const opBatch of chunk(ops, MAX_OPS_PER_BATCH)) {
+      const batch = writeBatch(db);
+      for (const op of opBatch) {
+        if (op.type === 'set') batch.set(op.ref, op.data, { merge: true });
+        else batch.update(op.ref, op.data);
+      }
+      await batch.commit();
+      committed += opBatch.length;
     }
-    await batch.commit();
-    committed += opBatch.length;
+  } catch (err) {
+    return {
+      success: false,
+      message: `Gagal pada operasi batch (${committed}/${ops.length} ops selesai): ${err.message}`,
+      summary: { opsCommitted: committed, totalOps: ops.length, batchId },
+    };
   }
 
   return {
