@@ -8,6 +8,7 @@ export const useMasterData = () => {
   const [supirList, setSupirList] = useState([]);
   const [ruteList, setRuteList] = useState([]);
   const [materialList, setMaterialList] = useState([]);
+  const [tarifRuteList, setTarifRuteList] = useState([]);
 
   useEffect(() => {
     const normalizeItem = (d) => {
@@ -30,14 +31,24 @@ export const useMasterData = () => {
     const unsubMaterial = onSnapshot(collection(db, 'material'), (snap) => {
       setMaterialList(snap.docs.map(normalizeItem).filter(activeOnly));
     }, noop);
+    const unsubTarif = onSnapshot(collection(db, 'tarif_rute'), (snap) => {
+      setTarifRuteList(snap.docs.map(normalizeItem).filter(activeOnly));
+    }, noop);
 
     return () => {
       try { unsubTrucks(); } catch {}
       try { unsubSupir(); } catch {}
       try { unsubRute(); } catch {}
       try { unsubMaterial(); } catch {}
+      try { unsubTarif(); } catch {}
     };
   }, []);
 
-  return { truckList, setTruckList, supirList, setSupirList, ruteList, setRuteList, materialList, setMaterialList };
+  return {
+    truckList, setTruckList,
+    supirList, setSupirList,
+    ruteList, setRuteList,
+    materialList, setMaterialList,
+    tarifRuteList, setTarifRuteList,
+  };
 };
