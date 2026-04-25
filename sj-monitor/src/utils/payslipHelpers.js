@@ -40,22 +40,35 @@ export function calculateDriverPayslip(deliveries, ruteData) {
   let totalRitasi = 0;
   let totalPenalty = 0;
   let successfulDeliveries = 0;
+  // Collect non-fatal warnings so the UI / caller can flag suspicious zero-pay
+  // entries without breaking the calculation.
+  const warnings = [];
 
   deliveries.forEach((sj) => {
     if (sj.status?.toLowerCase() === "terkirim") {
       successfulDeliveries++;
-      const rute = ruteData[sj.ruteId] || ruteData[sj.rute];
+      const rute = ruteData?.[sj.ruteId] || ruteData?.[sj.rute];
+      if (!rute) {
+        const msg = `[payslip] rute tidak ditemukan untuk SJ ${sj.id || sj.nomorSJ || '?'} (ruteId=${sj.ruteId ?? sj.rute ?? '?'})`;
+        console.warn(msg);
+        warnings.push(msg);
+      }
 
       // Add uang jalan — prefer snapshot on SJ (set at creation time / backfilled by tarif feature)
       // Fall back to live rute master for legacy SJ that pre-date the snapshot feature.
       const sjUangJalan = sj?.uangJalan;
       const resolvedUangJalan =
         (typeof sjUangJalan === 'number' ? sjUangJalan : null) ??
-        (rute?.uangJalan || 0);
+        (typeof rute?.uangJalan === 'number' ? rute.uangJalan : 0);
+      if (resolvedUangJalan === 0) {
+        const msg = `[payslip] uangJalan=0 untuk SJ ${sj.id || sj.nomorSJ || '?'}`;
+        console.warn(msg);
+        warnings.push(msg);
+      }
       totalUangJalan += resolvedUangJalan;
 
       // Add ritasi
-      totalRitasi += rute?.ritasi || 0;
+      totalRitasi += typeof rute?.ritasi === 'number' ? rute.ritasi : 0;
 
       // Calculate penalty if not abolished: each full 1 M3/ton lost = 500,000
       if (!sj.abolishPenalty && sj.quantityLoss && sj.quantityLoss >= 1) {
@@ -75,6 +88,7 @@ export function calculateDriverPayslip(deliveries, ruteData) {
     grossSalary,
     bonusAdjustments: 0,
     netSalary: grossSalary,
+    warnings,
   };
 }
 

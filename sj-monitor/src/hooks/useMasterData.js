@@ -18,22 +18,23 @@ export const useMasterData = () => {
     };
     const activeOnly = (x) => x?.isActive !== false && !x?.deletedAt;
 
-    const noop = () => {};
+    const onErr = (label) => (err) =>
+      console.warn(`[useMasterData] ${label} subscription error:`, err);
     const unsubTrucks = onSnapshot(collection(db, 'trucks'), (snap) => {
       setTruckList(snap.docs.map(normalizeItem).filter(activeOnly));
-    }, noop);
+    }, onErr('trucks'));
     const unsubSupir = onSnapshot(collection(db, 'supir'), (snap) => {
       setSupirList(snap.docs.map(normalizeItem).filter(activeOnly));
-    }, noop);
+    }, onErr('supir'));
     const unsubRute = onSnapshot(collection(db, 'rute'), (snap) => {
       setRuteList(snap.docs.map(normalizeItem).filter(activeOnly));
-    }, noop);
+    }, onErr('rute'));
     const unsubMaterial = onSnapshot(collection(db, 'material'), (snap) => {
       setMaterialList(snap.docs.map(normalizeItem).filter(activeOnly));
-    }, noop);
+    }, onErr('material'));
     const unsubTarif = onSnapshot(collection(db, 'tarif_rute'), (snap) => {
       setTarifRuteList(snap.docs.map(normalizeItem).filter(activeOnly));
-    }, noop);
+    }, onErr('tarif_rute'));
 
     return () => {
       try { unsubTrucks(); } catch {}

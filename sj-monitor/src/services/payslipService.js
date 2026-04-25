@@ -1,8 +1,6 @@
 import { db } from "../config/firebase-config";
 import {
   collection,
-  query,
-  where,
   getDocs,
   writeBatch,
   doc,
@@ -30,7 +28,9 @@ export async function fetchAllRute() {
   const snapshot = await getDocs(collection(db, "rute"));
   const ruteData = {};
   snapshot.docs.forEach((doc) => {
-    const data = doc.data();
+    const data = doc.data() || {};
+    // Skip soft-deleted rute (consistent with fetchAllDrivers/fetchAllSJ)
+    if (data.isActive === false || data.deletedAt) return;
     // Index by both doc.id and data.id to handle both cases
     ruteData[doc.id] = data;
     if (data.id && data.id !== doc.id) {
@@ -42,15 +42,17 @@ export async function fetchAllRute() {
 
 export async function fetchAllSJ() {
   const snapshot = await getDocs(collection(db, "surat_jalan"));
-  return snapshot.docs.map((doc) => {
-    const data = doc.data();
-    const sj = { id: doc.id, ...data };
-    // Compute quantityLoss on-the-fly for imported SJ records that don't have it
-    if ((sj.quantityLoss === undefined || sj.quantityLoss === null) && sj.qtyIsi && sj.qtyBongkar) {
-      sj.quantityLoss = Math.max(0, sj.qtyIsi - sj.qtyBongkar);
-    }
-    return sj;
-  });
+  return snapshot.docs
+    .map((doc) => {
+      const data = doc.data() || {};
+      const sj = { id: doc.id, ...data };
+      // Compute quantityLoss on-the-fly for imported SJ records that don't have it
+      if ((sj.quantityLoss === undefined || sj.quantityLoss === null) && sj.qtyIsi && sj.qtyBongkar) {
+        sj.quantityLoss = Math.max(0, sj.qtyIsi - sj.qtyBongkar);
+      }
+      return sj;
+    })
+    .filter((sj) => sj?.isActive !== false && !sj?.deletedAt);
 }
 
 export async function getPayslipData(startDateOrCurrentDate = new Date(), explicitEndDate = null) {

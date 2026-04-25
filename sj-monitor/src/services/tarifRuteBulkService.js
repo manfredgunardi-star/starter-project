@@ -78,6 +78,27 @@ export async function commitBulkTarifUpdate({ updates, effectiveDate, username }
     return { success: false, message: 'Tidak ada perubahan untuk di-apply', summary: null };
   }
 
+  // Defense-in-depth: validate at the service boundary, not just the UI.
+  // Catches malformed callers (scripts, future call sites) before any write.
+  const invalidTarif = updates.find((u) => {
+    const n = Number(u?.tarifBaru);
+    return !Number.isFinite(n) || n < 0;
+  });
+  if (invalidTarif) {
+    return {
+      success: false,
+      message: `Tarif baru tidak valid untuk rute ${invalidTarif?.ruteId ?? '?'} (harus angka ≥ 0)`,
+      summary: null,
+    };
+  }
+  if (!effectiveDate || isNaN(new Date(effectiveDate).getTime())) {
+    return {
+      success: false,
+      message: `Tanggal efektif tidak valid: ${effectiveDate ?? '(kosong)'}`,
+      summary: null,
+    };
+  }
+
   await ensureAuthed();
 
   const batchId = `BULK-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
