@@ -28,7 +28,9 @@ export async function fetchAllRute() {
   const snapshot = await getDocs(collection(db, "rute"));
   const ruteData = {};
   snapshot.docs.forEach((doc) => {
-    const data = doc.data();
+    const data = doc.data() || {};
+    // Skip soft-deleted rute (consistent with fetchAllDrivers/fetchAllSJ)
+    if (data.isActive === false || data.deletedAt) return;
     // Index by both doc.id and data.id to handle both cases
     ruteData[doc.id] = data;
     if (data.id && data.id !== doc.id) {
