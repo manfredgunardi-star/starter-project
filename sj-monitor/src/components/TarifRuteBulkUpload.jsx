@@ -24,6 +24,8 @@ export default function TarifRuteBulkUpload({ ruteList = [], currentUser, onSucc
     setStep('menu');
     setPreviewData(null);
     setLoading(false);
+    setMessage(null);
+    setMessageType(null);
   };
 
   const handleDownloadTemplate = () => {
@@ -273,7 +275,13 @@ export default function TarifRuteBulkUpload({ ruteList = [], currentUser, onSucc
       {step === 'done' && (
         <div className="text-center py-8">
           <p className="text-lg text-green-600 font-semibold">✓ Selesai</p>
-          <p className="text-sm text-gray-500 mt-2">Anda bisa menutup modal ini.</p>
+          <p className="text-sm text-gray-500 mt-2">Anda bisa menutup modal ini atau upload file lain.</p>
+          <button
+            onClick={reset}
+            className="mt-4 px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+          >
+            Upload Lagi
+          </button>
         </div>
       )}
     </div>
