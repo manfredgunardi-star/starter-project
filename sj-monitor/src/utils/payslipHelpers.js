@@ -41,7 +41,10 @@ export function calculateDriverPayslip(deliveries, ruteData) {
   let totalPenalty = 0;
   let successfulDeliveries = 0;
   // Collect non-fatal warnings so the UI / caller can flag suspicious zero-pay
-  // entries without breaking the calculation.
+  // entries without breaking the calculation. We do NOT console.warn here:
+  // legitimate datasets routinely contain non-paid SJs, so logging per-SJ
+  // would flood the console (hundreds of lines) with no actionable signal.
+  // Callers that care can read the `warnings` array on the result.
   const warnings = [];
 
   deliveries.forEach((sj) => {
@@ -49,9 +52,7 @@ export function calculateDriverPayslip(deliveries, ruteData) {
       successfulDeliveries++;
       const rute = ruteData?.[sj.ruteId] || ruteData?.[sj.rute];
       if (!rute) {
-        const msg = `[payslip] rute tidak ditemukan untuk SJ ${sj.id || sj.nomorSJ || '?'} (ruteId=${sj.ruteId ?? sj.rute ?? '?'})`;
-        console.warn(msg);
-        warnings.push(msg);
+        warnings.push(`rute tidak ditemukan untuk SJ ${sj.id || sj.nomorSJ || '?'} (ruteId=${sj.ruteId ?? sj.rute ?? '?'})`);
       }
 
       // Add uang jalan — prefer snapshot on SJ (set at creation time / backfilled by tarif feature)
@@ -61,9 +62,7 @@ export function calculateDriverPayslip(deliveries, ruteData) {
         (typeof sjUangJalan === 'number' ? sjUangJalan : null) ??
         (typeof rute?.uangJalan === 'number' ? rute.uangJalan : 0);
       if (resolvedUangJalan === 0) {
-        const msg = `[payslip] uangJalan=0 untuk SJ ${sj.id || sj.nomorSJ || '?'}`;
-        console.warn(msg);
-        warnings.push(msg);
+        warnings.push(`uangJalan=0 untuk SJ ${sj.id || sj.nomorSJ || '?'}`);
       }
       totalUangJalan += resolvedUangJalan;
 
