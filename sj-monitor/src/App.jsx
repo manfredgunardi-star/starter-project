@@ -2075,23 +2075,37 @@ if (newItems.length > 0) {
       patch.uangJalan = 0;
     }
 
+    // Snapshot the previous SJ list so we can roll back the optimistic update
+    // if the Firestore write fails.
+    const previousSJList = suratJalanList;
     setSuratJalanList((prev) =>
       prev.map((x) => String(x.id) === String(id) ? { ...x, ...patch } : x)
     );
 
-    // Persist ke Firestore
-    await updateDoc(doc(db, 'surat_jalan', String(id)), sanitizeForFirestore(patch));
+    // Persist SJ patch ke Firestore — rollback optimistic state on failure so
+    // local state never reflects a phantom write.
+    try {
+      await updateDoc(doc(db, 'surat_jalan', String(id)), sanitizeForFirestore(patch));
+    } catch (err) {
+      setSuratJalanList(previousSJList);
+      console.error('[updateSuratJalan] gagal update Firestore:', err);
+      throw err;
+    }
 
-    // Jika jadi GAGAL dan ada transaksi uang jalan terkait, soft delete transaksinya
+    // Jika jadi GAGAL dan ada transaksi uang jalan terkait, soft delete
+    // transaksinya. Hanya update state lokal SETELAH Firestore commit sukses
+    // — mencegah subscription re-emit menimpa (atau divergen dari) optimistic
+    // state, dan mencegah inkonsistensi saat soft-delete gagal.
     if (patch.status === 'gagal') {
-      try {
-        const trans = transaksiList.find((t) => String(t.suratJalanId) === String(id));
-        if (trans?.id) {
+      const trans = transaksiList.find((t) => String(t.suratJalanId) === String(id));
+      if (trans?.id) {
+        try {
           await softDeleteItemInFirestore(db, 'transaksi', trans.id, who);
           setTransaksiList((prev) => prev.map((t) => (t.id === trans.id ? { ...t, isActive: false } : t)));
+        } catch (e) {
+          console.error('[updateSuratJalan] soft delete transaksi gagal:', e);
+          setAlertMessage('⚠️ SJ ditandai gagal, tapi transaksi uang jalan terkait gagal dihapus. Refresh halaman atau hapus manual.');
         }
-      } catch (e) {
-        console.warn('Soft delete transaksi uang jalan gagal:', e);
       }
     }
   }, [suratJalanList, transaksiList, currentUser, buildUangJalanTransaksiId]);
