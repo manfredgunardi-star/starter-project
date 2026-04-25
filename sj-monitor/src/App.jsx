@@ -2119,11 +2119,20 @@ if (newItems.length > 0) {
           deletedUangJalan // Simpan untuk restore
         });
 
-        // Hapus transaksi Uang Jalan yang terkait (Firestore + state)
-if (uangJalanTransaksi?.id) {
-  await softDeleteItemInFirestore(db, "transaksi", uangJalanTransaksi.id, currentUser?.name || "system").catch(() => {});
-}
-setTransaksiList(prev => prev.filter(t => t.suratJalanId !== id));
+        // Hapus transaksi Uang Jalan yang terkait (Firestore + state).
+        // Surface Firestore failures instead of swallowing them with .catch(() => {}):
+        // a silent failure left local state out of sync with the database.
+        if (uangJalanTransaksi?.id) {
+          try {
+            await softDeleteItemInFirestore(db, "transaksi", uangJalanTransaksi.id, currentUser?.name || "system");
+          } catch (err) {
+            console.error('[markAsGagal] gagal soft-delete transaksi terkait:', err);
+            setConfirmDialog({ show: false, message: '', onConfirm: null });
+            setAlertMessage('⚠️ SJ sudah ditandai gagal, tapi transaksi Uang Jalan gagal dihapus. Coba refresh atau hapus manual.');
+            return;
+          }
+        }
+        setTransaksiList(prev => prev.filter(t => t.suratJalanId !== id));
 // Add to history log
         await addHistoryLog('mark_gagal', id, sj?.nomorSJ, {
           previousStatus: sj?.status,
