@@ -2961,66 +2961,77 @@ try { unsubTransaksi(); } catch {}
           uangMukaList={uangMukaList}
           onClose={() => setShowModal(false)}
           onSubmit={async (data) => {
-            if (modalType === 'addSJ') {
-              await addSuratJalan(data);
-              setShowModal(false);
-            } else if (modalType === 'markTerkirim' || modalType === 'editTerkirim') {
-              const qtyBongkar = parseFloat(data.qtyBongkar);
-              const qtyIsi = parseFloat(selectedItem.qtyIsi);
-              const quantityLoss = qtyIsi - qtyBongkar;
+            // Wrap the entire dispatch in try/catch so that any failed Firestore
+            // write keeps the modal open with an alert, instead of silently
+            // closing and leaving the user without feedback. addSuratJalan and
+            // similar actions now rethrow on error (Task 15) so this catch will
+            // see the failure.
+            try {
+              if (modalType === 'addSJ') {
+                await addSuratJalan(data);
+                setShowModal(false);
+              } else if (modalType === 'markTerkirim' || modalType === 'editTerkirim') {
+                const qtyBongkar = parseFloat(data.qtyBongkar);
+                const qtyIsi = parseFloat(selectedItem.qtyIsi);
+                const quantityLoss = qtyIsi - qtyBongkar;
 
-              await updateSuratJalan(selectedItem.id, {
-                status: 'terkirim',
-                tglTerkirim: data.tglTerkirim,
-                qtyBongkar: qtyBongkar,
-                quantityLoss: Math.max(0, quantityLoss),
-                abolishPenalty: data.abolishPenalty || false
-              });
-              setShowModal(false);
-            } else if (modalType === 'addTransaksi') {
-              await addTransaksi(data);
-              setShowModal(false);
-            } else if (modalType === 'addUser') {
-              const success = await addUser(data);
-              if (success) {
+                await updateSuratJalan(selectedItem.id, {
+                  status: 'terkirim',
+                  tglTerkirim: data.tglTerkirim,
+                  qtyBongkar: qtyBongkar,
+                  quantityLoss: Math.max(0, quantityLoss),
+                  abolishPenalty: data.abolishPenalty || false
+                });
+                setShowModal(false);
+              } else if (modalType === 'addTransaksi') {
+                await addTransaksi(data);
+                setShowModal(false);
+              } else if (modalType === 'addUser') {
+                const success = await addUser(data);
+                if (success) {
+                  setShowModal(false);
+                }
+              } else if (modalType === 'editUser') {
+                await updateUser(selectedItem.id, data);
+                setShowModal(false);
+              } else if (modalType === 'addTruck') {
+                await addTruck(data);
+                setShowModal(false);
+              } else if (modalType === 'editTruck') {
+                await updateTruck(selectedItem.id, data);
+                setShowModal(false);
+              } else if (modalType === 'addSupir') {
+                await addSupir(data);
+                setShowModal(false);
+              } else if (modalType === 'editSupir') {
+                await updateSupir(selectedItem.id, data);
+                setShowModal(false);
+              } else if (modalType === 'addRute') {
+                await addRute(data);
+                setShowModal(false);
+              } else if (modalType === 'editRute') {
+                await updateRute(selectedItem.id, data);
+                setShowModal(false);
+              } else if (modalType === 'addMaterial') {
+                await addMaterial(data);
+                setShowModal(false);
+              } else if (modalType === 'editMaterial') {
+                await updateMaterial(selectedItem.id, data);
+                setShowModal(false);
+              } else if (modalType === 'addInvoice') {
+                await addInvoice(data);
+                setShowModal(false);
+              } else if (modalType === 'editInvoice') {
+                await editInvoice(selectedItem.id, data);
+                setShowModal(false);
+              } else if (modalType === 'addUangMuka') {
+                await addUangMuka(data);
                 setShowModal(false);
               }
-            } else if (modalType === 'editUser') {
-              await updateUser(selectedItem.id, data);
-              setShowModal(false);
-            } else if (modalType === 'addTruck') {
-              await addTruck(data);
-              setShowModal(false);
-            } else if (modalType === 'editTruck') {
-              await updateTruck(selectedItem.id, data);
-              setShowModal(false);
-            } else if (modalType === 'addSupir') {
-              await addSupir(data);
-              setShowModal(false);
-            } else if (modalType === 'editSupir') {
-              await updateSupir(selectedItem.id, data);
-              setShowModal(false);
-            } else if (modalType === 'addRute') {
-              await addRute(data);
-              setShowModal(false);
-            } else if (modalType === 'editRute') {
-              await updateRute(selectedItem.id, data);
-              setShowModal(false);
-            } else if (modalType === 'addMaterial') {
-              await addMaterial(data);
-              setShowModal(false);
-            } else if (modalType === 'editMaterial') {
-              await updateMaterial(selectedItem.id, data);
-              setShowModal(false);
-            } else if (modalType === 'addInvoice') {
-              await addInvoice(data);
-              setShowModal(false);
-            } else if (modalType === 'editInvoice') {
-              await editInvoice(selectedItem.id, data);
-              setShowModal(false);
-            } else if (modalType === 'addUangMuka') {
-              await addUangMuka(data);
-              setShowModal(false);
+            } catch (err) {
+              console.error('[modal onSubmit] gagal menyimpan:', err);
+              setAlertMessage(`⚠️ Gagal menyimpan: ${err?.message || 'Coba lagi.'}`);
+              // modal stays open intentionally so user can retry
             }
           }}
         />
