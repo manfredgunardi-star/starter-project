@@ -1,8 +1,6 @@
 import { db } from "../config/firebase-config";
 import {
   collection,
-  query,
-  where,
   getDocs,
   writeBatch,
   doc,
@@ -41,12 +39,10 @@ export async function fetchAllRute() {
 }
 
 export async function fetchAllSJ() {
-  const snapshot = await getDocs(
-    query(collection(db, "surat_jalan"), where("isActive", "!=", false))
-  );
+  const snapshot = await getDocs(collection(db, "surat_jalan"));
   return snapshot.docs
     .map((doc) => {
-      const data = doc.data();
+      const data = doc.data() || {};
       const sj = { id: doc.id, ...data };
       // Compute quantityLoss on-the-fly for imported SJ records that don't have it
       if ((sj.quantityLoss === undefined || sj.quantityLoss === null) && sj.qtyIsi && sj.qtyBongkar) {
@@ -54,7 +50,7 @@ export async function fetchAllSJ() {
       }
       return sj;
     })
-    .filter((sj) => !sj.deletedAt);
+    .filter((sj) => sj?.isActive !== false && !sj?.deletedAt);
 }
 
 export async function getPayslipData(startDateOrCurrentDate = new Date(), explicitEndDate = null) {
