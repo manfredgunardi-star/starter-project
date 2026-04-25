@@ -41,16 +41,20 @@ export async function fetchAllRute() {
 }
 
 export async function fetchAllSJ() {
-  const snapshot = await getDocs(collection(db, "surat_jalan"));
-  return snapshot.docs.map((doc) => {
-    const data = doc.data();
-    const sj = { id: doc.id, ...data };
-    // Compute quantityLoss on-the-fly for imported SJ records that don't have it
-    if ((sj.quantityLoss === undefined || sj.quantityLoss === null) && sj.qtyIsi && sj.qtyBongkar) {
-      sj.quantityLoss = Math.max(0, sj.qtyIsi - sj.qtyBongkar);
-    }
-    return sj;
-  });
+  const snapshot = await getDocs(
+    query(collection(db, "surat_jalan"), where("isActive", "!=", false))
+  );
+  return snapshot.docs
+    .map((doc) => {
+      const data = doc.data();
+      const sj = { id: doc.id, ...data };
+      // Compute quantityLoss on-the-fly for imported SJ records that don't have it
+      if ((sj.quantityLoss === undefined || sj.quantityLoss === null) && sj.qtyIsi && sj.qtyBongkar) {
+        sj.quantityLoss = Math.max(0, sj.qtyIsi - sj.qtyBongkar);
+      }
+      return sj;
+    })
+    .filter((sj) => !sj.deletedAt);
 }
 
 export async function getPayslipData(startDateOrCurrentDate = new Date(), explicitEndDate = null) {
