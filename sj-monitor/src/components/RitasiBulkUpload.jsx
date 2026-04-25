@@ -1,6 +1,6 @@
 // src/components/RitasiBulkUpload.jsx
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import * as XLSX from "xlsx";
 import { generateRitasiTemplate, validateRitasiTemplate, parseRitasiUpdates } from "../utils/ritasiTemplateHelpers";
 import { fetchAllRutes, bulkUpdateRitasi } from "../services/ritasiBulkService";
@@ -10,6 +10,7 @@ export default function RitasiBulkUpload({ ruteList = [], onSuccess }) {
   const [message, setMessage] = useState(null);
   const [messageType, setMessageType] = useState(null); // 'success' or 'error'
   const [step, setStep] = useState("menu"); // menu, downloading, uploading, processing
+  const fileInputRef = useRef(null);
 
   const handleDownloadTemplate = async () => {
     try {
@@ -72,91 +73,79 @@ export default function RitasiBulkUpload({ ruteList = [], onSuccess }) {
   };
 
   const handleFileUpload = async (event) => {
-    const file = event.target.files[0];
+    const file = event.target.files?.[0];
     if (!file) return;
 
+    setLoading(true);
+    setStep("uploading");
+    setMessage("Membaca file...");
+
     try {
-      setLoading(true);
-      setStep("uploading");
-      setMessage("Membaca file...");
+      // Use file.arrayBuffer() so we can keep the parsing flow inside a single
+      // try/finally — avoids the race where event.target.value reset ran before
+      // the FileReader callback and could clobber a queued upload.
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: "array" });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 0, defval: "" });
 
-      // Read Excel file
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          const data = e.target.result;
-          const workbook = XLSX.read(data, { type: "binary" });
-          const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 0, defval: "" });
+      // Convert to array format (headers + rows)
+      const headers = Object.keys(jsonData[0] || {});
+      const arrayData = [
+        headers,
+        ...jsonData.map(row => headers.map(h => row[h] || "")),
+      ];
 
-          // Convert to array format (headers + rows)
-          const headers = Object.keys(jsonData[0] || {});
-          const arrayData = [
-            headers,
-            ...jsonData.map(row => headers.map(h => row[h] || "")),
-          ];
+      // Validate template
+      setMessage("Validasi data...");
+      const validation = validateRitasiTemplate(arrayData);
 
-          // Validate template
-          setMessage("Validasi data...");
-          const validation = validateRitasiTemplate(arrayData);
+      if (!validation.isValid) {
+        const errorList = validation.errors.join("\n");
+        setMessage(`✗ Error validasi:\n${errorList}`);
+        setMessageType("error");
+        setStep("menu");
+        return;
+      }
 
-          if (!validation.isValid) {
-            const errorList = validation.errors.join("\n");
-            setMessage(`✗ Error validasi:\n${errorList}`);
-            setMessageType("error");
-            setStep("menu");
-            setLoading(false);
-            return;
-          }
+      // Parse updates
+      const updates = parseRitasiUpdates(arrayData);
+      const updateCount = Object.keys(updates).length;
 
-          // Parse updates
-          const updates = parseRitasiUpdates(arrayData);
-          const updateCount = Object.keys(updates).length;
+      if (updateCount === 0) {
+        setMessage("✗ Tidak ada data untuk di-update");
+        setMessageType("error");
+        setStep("menu");
+        return;
+      }
 
-          if (updateCount === 0) {
-            setMessage("✗ Tidak ada data untuk di-update");
-            setMessageType("error");
-            setStep("menu");
-            setLoading(false);
-            return;
-          }
+      // Confirm before update
+      setStep("processing");
+      setMessage(`Siap update ${updateCount} rute. Memproses...`);
 
-          // Confirm before update
-          setStep("processing");
-          setMessage(`Siap update ${updateCount} rute. Memproses...`);
+      const result = await bulkUpdateRitasi(updates);
 
-          const result = await bulkUpdateRitasi(updates);
+      if (result.success) {
+        setMessage(`✓ ${result.message}`);
+        setMessageType("success");
+        if (onSuccess) onSuccess();
+      } else {
+        setMessage(`✗ ${result.message}`);
+        setMessageType("error");
+      }
 
-          if (result.success) {
-            setMessage(`✓ ${result.message}`);
-            setMessageType("success");
-            if (onSuccess) onSuccess();
-          } else {
-            setMessage(`✗ ${result.message}`);
-            setMessageType("error");
-          }
-
-          setStep("menu");
-          setTimeout(() => setMessage(null), 3000);
-        } catch (error) {
-          setMessage(`✗ Error: ${error.message}`);
-          setMessageType("error");
-          setStep("menu");
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      reader.readAsBinaryString(file);
+      setStep("menu");
+      setTimeout(() => setMessage(null), 3000);
     } catch (error) {
       setMessage(`✗ Error: ${error.message}`);
       setMessageType("error");
       setStep("menu");
+    } finally {
       setLoading(false);
+      // Reset file input AFTER all async work completes so re-uploading the
+      // same filename still triggers onChange.
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
-
-    // Reset file input
-    event.target.value = "";
   };
 
   return (
@@ -197,6 +186,7 @@ export default function RitasiBulkUpload({ ruteList = [], onSuccess }) {
 
         <div className="relative">
           <input
+            ref={fileInputRef}
             type="file"
             accept=".xlsx,.xls"
             onChange={handleFileUpload}
