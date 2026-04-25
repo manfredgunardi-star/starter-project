@@ -22,6 +22,10 @@ export function generateRitasiTemplate(ruteList) {
  * Checks: required columns, data types, values are non-negative
  * Returns: { isValid: boolean, errors: string[] }
  */
+// Normalize a cell value: coerce to string, strip BOM, trim whitespace.
+// Tolerates null/undefined and Windows Excel BOM-prefixed first-column cells.
+const normCell = (s) => String(s ?? '').replace(/^﻿/, '').trim();
+
 export function validateRitasiTemplate(data) {
   const errors = [];
 
@@ -30,11 +34,15 @@ export function validateRitasiTemplate(data) {
     return { isValid: false, errors };
   }
 
-  const headers = data[0];
+  const rawHeaders = data[0] || [];
+  const headers = rawHeaders.map(normCell);
   const expectedHeaders = ['ID Rute', 'Nama Rute', 'Asal', 'Tujuan', 'Uang Jalan', 'Ritasi Saat Ini', 'Ritasi Baru'];
 
-  // Check headers
-  if (JSON.stringify(headers) !== JSON.stringify(expectedHeaders)) {
+  // Check headers — tolerate trailing whitespace / BOM from copy-paste
+  const headerOk =
+    headers.length >= expectedHeaders.length &&
+    expectedHeaders.every((h, i) => headers[i] === h);
+  if (!headerOk) {
     errors.push('Header kolom tidak sesuai. Pastikan menggunakan template yang benar.');
     return { isValid: false, errors };
   }
@@ -74,8 +82,10 @@ export function parseRitasiUpdates(data) {
 
   // Skip header row (index 0)
   data.slice(1).forEach(row => {
-    const ruteId = row[0].toString().trim();
-    const ritasiValue = parseInt(row[6]) || 0;
+    if (!row) return;
+    const ruteId = normCell(row[0]);
+    const ritasiRaw = parseInt(normCell(row[6]), 10);
+    const ritasiValue = Number.isFinite(ritasiRaw) ? ritasiRaw : 0;
 
     if (ruteId) {
       updates[ruteId] = ritasiValue;
