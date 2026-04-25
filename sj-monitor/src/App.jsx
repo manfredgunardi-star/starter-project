@@ -984,10 +984,12 @@ setConfirmDialog({ show: false, message: '', onConfirm: null });
   const loadRuteData = async () => {
     try {
       const snapshot = await getDocs(collection(db, "rute"));
-      const routes = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      const routes = snapshot.docs
+        .map(doc => {
+          const data = doc.data() || {};
+          return { id: doc.id, ...data };
+        })
+        .filter((r) => r?.isActive !== false && !r?.deletedAt);
       setRuteList(routes);
     } catch (error) {
       console.error("Error loading rute data:", error);
