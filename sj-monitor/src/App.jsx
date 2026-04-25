@@ -2014,26 +2014,34 @@ if (newItems.length > 0) {
       createdBy: currentUser.name
     };
     
-    const newList = [...suratJalanList, newSJ];
-    setSuratJalanList(newList);
-    
-    // Auto-create transaksi keuangan
-    await upsertItemToFirestore(db, "surat_jalan", { ...newSJ, isActive: true });
+    // Snapshot the previous list so we can roll back if Firestore write fails.
+    // Without this, an optimistic update leaves a phantom SJ in local state
+    // even when persistence fails — and the modal handler would happily close.
+    const previousList = suratJalanList;
+    setSuratJalanList([...previousList, newSJ]);
 
-    // Auto-create transaksi keuangan untuk Uang Jalan (persist ke Firestore via addTransaksi)
-if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0) {
-  await addTransaksi({
-    id: buildUangJalanTransaksiId(newSJ.id),
-    tipe: "pengeluaran",
-    nominal: Number(selectedRute.uangJalan || 0),
-    keterangan: `Uang Jalan - ${newSJ.nomorSJ} (${selectedRute.rute})`,
-    tanggal: data.tanggalSJ,
-    suratJalanId: newSJ.id,
-    pt: newSJ.pt,
-  });
-}
+    try {
+      await upsertItemToFirestore(db, "surat_jalan", { ...newSJ, isActive: true });
 
-    
+      // Auto-create transaksi keuangan untuk Uang Jalan (persist ke Firestore via addTransaksi)
+      if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0) {
+        await addTransaksi({
+          id: buildUangJalanTransaksiId(newSJ.id),
+          tipe: "pengeluaran",
+          nominal: Number(selectedRute.uangJalan || 0),
+          keterangan: `Uang Jalan - ${newSJ.nomorSJ} (${selectedRute.rute})`,
+          tanggal: data.tanggalSJ,
+          suratJalanId: newSJ.id,
+          pt: newSJ.pt,
+        });
+      }
+    } catch (err) {
+      // Roll back optimistic state and rethrow so the caller (e.g. modal submit
+      // handler) can keep the modal open and surface the error to the user.
+      setSuratJalanList(previousList);
+      console.error('[addSuratJalan] gagal menyimpan SJ:', err);
+      throw err;
+    }
   };
 
   const updateSuratJalan = useCallback(async (id, updates) => {
