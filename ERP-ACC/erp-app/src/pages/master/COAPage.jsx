@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react'
-import { Space, Flex, Row, Col, Typography, Tag } from 'antd'
+import { Space, Flex, Row, Col, Typography, Tag, Alert } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useCOA } from '../../hooks/useMasterData'
@@ -76,7 +76,7 @@ function buildTreeList(accounts) {
 export default function COAPage() {
   const { canWrite } = useAuth()
   const toast = useToast()
-  const { coa, loading, refetch } = useCOA()
+  const { coa, loading, error, refetch } = useCOA()
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
@@ -199,6 +199,14 @@ export default function COAPage() {
 
   return (
     <Space direction="vertical" style={{ width: '100%' }} size={24}>
+      {error && (
+        <Alert
+          type="error"
+          message={`Gagal memuat Chart of Accounts: ${error}`}
+          action={<Button size="small" onClick={refetch}>Coba Lagi</Button>}
+          showIcon
+        />
+      )}
       <Flex justify="space-between" align="center">
         <Typography.Title level={3} style={{ margin: 0 }}>Chart of Accounts</Typography.Title>
         {canWrite && (

@@ -14,7 +14,7 @@ function useFetchList(fetcher) {
       setData(result || [])
     } catch (err) {
       setError(err.message)
-      setData([])
+      // Data lama tetap tampil — jangan clear saat refetch gagal
     } finally {
       setLoading(false)
     }

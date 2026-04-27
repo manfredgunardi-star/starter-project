@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Space, Flex, Row, Col, Typography, Card } from 'antd'
+import { Space, Flex, Row, Col, Typography, Card, Alert } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useProducts, useUnits } from '../../hooks/useMasterData'
@@ -28,7 +28,7 @@ const emptyForm = {
 export default function ProductsPage() {
   const { canWrite } = useAuth()
   const toast = useToast()
-  const { products, loading, refetch } = useProducts()
+  const { products, loading, error, refetch } = useProducts()
   const { units } = useUnits()
 
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -218,6 +218,14 @@ export default function ProductsPage() {
 
   return (
     <Space direction="vertical" style={{ width: '100%' }} size={24}>
+      {error && (
+        <Alert
+          type="error"
+          message={`Gagal memuat data produk: ${error}`}
+          action={<Button size="small" onClick={refetch}>Coba Lagi</Button>}
+          showIcon
+        />
+      )}
       <Flex justify="space-between" align="center">
         <Typography.Title level={3} style={{ margin: 0 }}>Produk</Typography.Title>
         {canWrite && (
