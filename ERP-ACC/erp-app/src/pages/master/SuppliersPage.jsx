@@ -23,7 +23,7 @@ const emptyForm = {
 export default function SuppliersPage() {
   const { canWrite } = useAuth()
   const toast = useToast()
-  const { suppliers, loading, refetch } = useSuppliers()
+  const { suppliers, loading, error, refetch } = useSuppliers()
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
@@ -132,6 +132,14 @@ export default function SuppliersPage() {
 
   return (
     <Space direction="vertical" style={{ width: '100%' }} size={24}>
+      {error && (
+        <Alert
+          type="error"
+          message={`Gagal memuat data supplier: ${error}`}
+          action={<Button size="small" onClick={refetch}>Coba Lagi</Button>}
+          showIcon
+        />
+      )}
       <Flex justify="space-between" align="center">
         <Typography.Title level={3} style={{ margin: 0 }}>Supplier</Typography.Title>
         {canWrite && (

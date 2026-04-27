@@ -15,7 +15,7 @@ import { Plus, Edit2, Trash2 } from 'lucide-react'
 export default function UnitsPage() {
   const { canWrite } = useAuth()
   const toast = useToast()
-  const { units, loading, refetch } = useUnits()
+  const { units, loading, error, refetch } = useUnits()
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
@@ -119,6 +119,14 @@ export default function UnitsPage() {
 
   return (
     <Space direction="vertical" style={{ width: '100%' }} size={24}>
+      {error && (
+        <Alert
+          type="error"
+          message={`Gagal memuat data satuan: ${error}`}
+          action={<Button size="small" onClick={refetch}>Coba Lagi</Button>}
+          showIcon
+        />
+      )}
       <Flex justify="space-between" align="center">
         <Typography.Title level={3} style={{ margin: 0 }}>Satuan</Typography.Title>
         {canWrite && (
