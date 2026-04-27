@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Space, Flex, Typography, Alert } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
@@ -10,7 +11,7 @@ import DataTable from '../../components/ui/DataTable'
 import Modal from '../../components/ui/Modal'
 import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
-import { Plus, Edit2, Trash2 } from 'lucide-react'
+import { Plus, Edit2, Trash2, Upload } from 'lucide-react'
 
 const emptyForm = {
   name: '',
@@ -21,6 +22,7 @@ const emptyForm = {
 }
 
 export default function SuppliersPage() {
+  const navigate = useNavigate()
   const { canWrite } = useAuth()
   const toast = useToast()
   const { suppliers, loading, error, refetch } = useSuppliers()
@@ -142,12 +144,19 @@ export default function SuppliersPage() {
       )}
       <Flex justify="space-between" align="center">
         <Typography.Title level={3} style={{ margin: 0 }}>Supplier</Typography.Title>
-        {canWrite && (
-          <Button variant="primary" onClick={openAdd}>
-            <Plus size={20} />
-            Tambah Supplier
-          </Button>
-        )}
+        <Space>
+          {canWrite && (
+            <Button onClick={() => navigate('/master/suppliers/import')}>
+              <Upload size={16} /> Import Excel
+            </Button>
+          )}
+          {canWrite && (
+            <Button variant="primary" onClick={openAdd}>
+              <Plus size={20} />
+              Tambah Supplier
+            </Button>
+          )}
+        </Space>
       </Flex>
 
       <DataTable columns={columns} data={suppliers} emptyMessage="Belum ada data supplier" />

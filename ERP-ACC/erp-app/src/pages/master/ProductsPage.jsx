@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Space, Flex, Row, Col, Typography, Card, Alert } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
@@ -12,7 +13,7 @@ import DataTable from '../../components/ui/DataTable'
 import Modal from '../../components/ui/Modal'
 import ConfirmDialog from '../../components/ui/ConfirmDialog'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
-import { Plus, Edit2, Trash2, PlusCircle, X } from 'lucide-react'
+import { Plus, Edit2, Trash2, PlusCircle, X, Upload } from 'lucide-react'
 
 const emptyForm = {
   sku: '',
@@ -26,6 +27,7 @@ const emptyForm = {
 }
 
 export default function ProductsPage() {
+  const navigate = useNavigate()
   const { canWrite } = useAuth()
   const toast = useToast()
   const { products, loading, error, refetch } = useProducts()
@@ -228,12 +230,19 @@ export default function ProductsPage() {
       )}
       <Flex justify="space-between" align="center">
         <Typography.Title level={3} style={{ margin: 0 }}>Produk</Typography.Title>
-        {canWrite && (
-          <Button variant="primary" onClick={openAdd}>
-            <Plus size={20} />
-            Tambah Produk
-          </Button>
-        )}
+        <Space>
+          {canWrite && (
+            <Button onClick={() => navigate('/master/products/import')}>
+              <Upload size={16} /> Import Excel
+            </Button>
+          )}
+          {canWrite && (
+            <Button variant="primary" onClick={openAdd}>
+              <Plus size={20} />
+              Tambah Produk
+            </Button>
+          )}
+        </Space>
       </Flex>
 
       <DataTable columns={columns} data={products} emptyMessage="Belum ada data produk" />

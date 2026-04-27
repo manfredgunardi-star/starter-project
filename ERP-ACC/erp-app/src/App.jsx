@@ -14,6 +14,9 @@ import ProductsPage from './pages/master/ProductsPage'
 import CustomersPage from './pages/master/CustomersPage'
 import SuppliersPage from './pages/master/SuppliersPage'
 import COAPage from './pages/master/COAPage'
+import ProductsBulkImportPage from './pages/master/ProductsBulkImportPage'
+import CustomersBulkImportPage from './pages/master/CustomersBulkImportPage'
+import SuppliersBulkImportPage from './pages/master/SuppliersBulkImportPage'
 
 // Inventory
 import StockPage from './pages/inventory/StockPage'
@@ -108,8 +111,11 @@ function AppContent() {
           {/* Master Data */}
           <Route path="master/units" element={<UnitsPage />} />
           <Route path="master/products" element={<ProductsPage />} />
+          <Route path="master/products/import" element={<RoleGuard require="canWrite"><ProductsBulkImportPage /></RoleGuard>} />
           <Route path="master/customers" element={<CustomersPage />} />
+          <Route path="master/customers/import" element={<RoleGuard require="canWrite"><CustomersBulkImportPage /></RoleGuard>} />
           <Route path="master/suppliers" element={<SuppliersPage />} />
+          <Route path="master/suppliers/import" element={<RoleGuard require="canWrite"><SuppliersBulkImportPage /></RoleGuard>} />
           <Route path="master/coa" element={<COAPage />} />
 
           {/* Inventory */}
