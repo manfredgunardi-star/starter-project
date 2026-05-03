@@ -57,7 +57,7 @@ function parseRows(jsonRows, unitMap) {
         buy_price: buyPrice,
         sell_price: sellPrice,
         is_taxable: isTaxable,
-        tax_rate: isTaxable ? 11 : 11,
+        tax_rate: isTaxable ? 11 : 0,
       },
     }
   })
