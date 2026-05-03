@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import * as XLSX from 'xlsx'
 import { ArrowLeft, Download, Upload, CheckCircle, XCircle } from 'lucide-react'
 import { createCustomer } from '../../services/masterDataService'
+import { supabase } from '../../lib/supabase'
 import { Space, Row, Col, Card, Flex, Typography, Alert } from 'antd'
 
 function downloadTemplate() {
@@ -71,18 +72,34 @@ export default function CustomersBulkImportPage() {
     setImporting(true)
     setSummary(null)
     setProgress(0)
+
+    // Prefetch nama customer yang sudah ada untuk dedup
+    const namesToCheck = validRows.map(r => r.data.name)
+    const { data: existing } = await supabase
+      .from('customers')
+      .select('name')
+      .in('name', namesToCheck)
+    const existingNames = new Set((existing || []).map(c => c.name))
+
     let success = 0
+    let skipped = 0
     const errors = []
+
     for (let i = 0; i < validRows.length; i++) {
-      try {
-        await createCustomer(validRows[i].data)
-        success++
-      } catch (err) {
-        errors.push(`Baris ${validRows[i].rowNum} (${validRows[i].data.name}): ${err.message}`)
+      const row = validRows[i]
+      if (existingNames.has(row.data.name)) {
+        skipped++
+      } else {
+        try {
+          await createCustomer(row.data)
+          success++
+        } catch (err) {
+          errors.push(`Baris ${row.rowNum} (${row.data.name}): ${err.message}`)
+        }
       }
       setProgress(Math.round(((i + 1) / validRows.length) * 100))
     }
-    setSummary({ success, failed: errors.length, errors })
+    setSummary({ success, skipped, failed: errors.length, errors })
     setImporting(false)
   }
 
@@ -215,16 +232,25 @@ export default function CustomersBulkImportPage() {
       {summary && (
         <Card title={<Typography.Text strong>Hasil Import</Typography.Text>}>
           <Row gutter={16}>
-            <Col span={12}>
+            <Col span={8}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 16, backgroundColor: '#dcfce7', borderRadius: 8 }}>
                 <CheckCircle style={{ color: '#16a34a', flexShrink: 0 }} size={28} />
                 <div>
                   <div style={{ fontSize: 24, fontWeight: 700, color: '#15803d' }}>{summary.success}</div>
-                  <div style={{ fontSize: 14, color: '#16a34a' }}>Customer berhasil diimpor</div>
+                  <div style={{ fontSize: 14, color: '#16a34a' }}>Berhasil diimpor</div>
                 </div>
               </div>
             </Col>
-            <Col span={12}>
+            <Col span={8}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 16, backgroundColor: '#fef9c3', borderRadius: 8 }}>
+                <XCircle style={{ color: '#ca8a04', flexShrink: 0 }} size={28} />
+                <div>
+                  <div style={{ fontSize: 24, fontWeight: 700, color: '#92400e' }}>{summary.skipped}</div>
+                  <div style={{ fontSize: 14, color: '#ca8a04' }}>Dilewati (duplikat nama)</div>
+                </div>
+              </div>
+            </Col>
+            <Col span={8}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: 16, backgroundColor: '#fee2e2', borderRadius: 8 }}>
                 <XCircle style={{ color: '#ef4444', flexShrink: 0 }} size={28} />
                 <div>
