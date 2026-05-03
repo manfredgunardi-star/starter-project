@@ -100,8 +100,8 @@ export default function PurchaseOrderFormPage() {
     if (!validate()) return
     setSubmitting(true)
     try {
-      await savePurchaseOrder(po, items)
-      await confirmPurchaseOrder(po.id || (await getPurchaseOrder(po.id)).id)
+      const savedId = await savePurchaseOrder(po, items)
+      await confirmPurchaseOrder(savedId)
       toast.success('PO berhasil dikonfirmasi')
       navigate('/purchase/orders')
     } catch (err) {
