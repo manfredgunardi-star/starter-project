@@ -1,6 +1,4 @@
 import { supabase } from '../lib/supabase'
-import { getClosedPeriods } from './companySettingsService'
-import { isPeriodClosed } from '../utils/periodUtils'
 
 // ---- GOODS RECEIPTS ----
 
@@ -33,63 +31,29 @@ export async function getGoodsReceipt(id) {
 }
 
 export async function saveGoodsReceipt(gr, items) {
-  const { data: { user } } = await supabase.auth.getUser()
-
-  let grNumber = gr.gr_number
-  if (!gr.id) {
-    const { data: num, error: numErr } = await supabase.rpc('generate_number', { p_prefix: 'GR' })
-    if (numErr) throw numErr
-    grNumber = num
-  }
-
-  const grPayload = {
-    gr_number: grNumber,
-    date: gr.date,
-    supplier_id: gr.supplier_id,
-    purchase_order_id: gr.purchase_order_id || null,
-    status: gr.status || 'draft',
-    notes: gr.notes || null,
-    created_by: user?.id ?? null,
-  }
-
-  let grId = gr.id
-  if (grId) {
-    const { error } = await supabase.from('goods_receipts').update(grPayload).eq('id', grId)
-    if (error) throw error
-    await supabase.from('goods_receipt_items').delete().eq('goods_receipt_id', grId)
-  } else {
-    const { data, error } = await supabase.from('goods_receipts').insert(grPayload).select('id').single()
-    if (error) throw error
-    grId = data.id
-  }
-
-  if (items.length > 0) {
-    const itemRows = items.map(i => ({
-      goods_receipt_id: grId,
-      product_id: i.product_id,
-      unit_id: i.unit_id,
-      quantity: Number(i.quantity),
+  const { data, error } = await supabase.rpc('save_goods_receipt', {
+    p_gr: {
+      id:                gr.id                || null,
+      date:              gr.date,
+      supplier_id:       gr.supplier_id,
+      purchase_order_id: gr.purchase_order_id || null,
+      status:            gr.status            || 'draft',
+      notes:             gr.notes             || null,
+    },
+    p_items: items.map(i => ({
+      product_id:    i.product_id,
+      unit_id:       i.unit_id,
+      quantity:      Number(i.quantity),
       quantity_base: Number(i.quantity_base) || Number(i.quantity),
-      unit_price: Number(i.unit_price) || 0,
-    }))
-    const { error } = await supabase.from('goods_receipt_items').insert(itemRows)
-    if (error) throw error
-  }
-
-  return grId
+      unit_price:    Number(i.unit_price)    || 0,
+    })),
+  })
+  if (error) throw error
+  return data
 }
 
 export async function postGoodsReceipt(id) {
-  const { data: gr, error: fetchErr } = await supabase
-    .from('goods_receipts')
-    .select('date')
-    .eq('id', id)
-    .single()
-  if (fetchErr) throw fetchErr
-  const { closedPeriods } = await getClosedPeriods()
-  if (isPeriodClosed(gr.date, closedPeriods)) {
-    throw new Error(`Periode ${gr.date.slice(0, 7)} sudah ditutup. Tidak dapat memposting penerimaan barang.`)
-  }
+  // Period check enforced server-side (migration 016)
   const { error } = await supabase.rpc('post_goods_receipt', { p_gr_id: id })
   if (error) throw error
 }
@@ -126,80 +90,32 @@ export async function getPurchaseInvoice(id) {
 }
 
 export async function savePurchaseInvoice(invoice, items) {
-  const { data: { user } } = await supabase.auth.getUser()
-
-  const { closedPeriods } = await getClosedPeriods()
-  if (isPeriodClosed(invoice.date, closedPeriods)) {
-    throw new Error(`Periode ${invoice.date.slice(0, 7)} sudah ditutup. Tidak dapat menyimpan invoice pembelian.`)
-  }
-
-  let invNumber = invoice.invoice_number
-  if (!invoice.id) {
-    const { data: num, error: numErr } = await supabase.rpc('generate_number', { p_prefix: 'PINV' })
-    if (numErr) throw numErr
-    invNumber = num
-  }
-
-  const subtotal = items.reduce((s, i) => s + (Number(i.quantity) || 0) * (Number(i.unit_price) || 0), 0)
-  const taxAmount = items.reduce((s, i) => s + (Number(i.tax_amount) || 0), 0)
-  const total = subtotal + taxAmount
-
-  const invPayload = {
-    invoice_number: invNumber,
-    date: invoice.date,
-    due_date: invoice.due_date || null,
-    type: 'purchase',
-    supplier_id: invoice.supplier_id,
-    purchase_order_id: invoice.purchase_order_id || null,
-    status: invoice.status || 'draft',
-    subtotal,
-    tax_amount: taxAmount,
-    total,
-    notes: invoice.notes || null,
-    created_by: user?.id ?? null,
-  }
-
-  let invId = invoice.id
-  if (invId) {
-    const { error } = await supabase.from('invoices').update(invPayload).eq('id', invId)
-    if (error) throw error
-    await supabase.from('invoice_items').delete().eq('invoice_id', invId)
-  } else {
-    const { data, error } = await supabase.from('invoices').insert(invPayload).select('id').single()
-    if (error) throw error
-    invId = data.id
-  }
-
-  if (items.length > 0) {
-    const itemRows = items.map(i => ({
-      invoice_id: invId,
-      product_id: i.product_id,
-      unit_id: i.unit_id,
-      quantity: Number(i.quantity),
+  const { data, error } = await supabase.rpc('save_purchase_invoice', {
+    p_invoice: {
+      id:                invoice.id                || null,
+      date:              invoice.date,
+      due_date:          invoice.due_date          || null,
+      supplier_id:       invoice.supplier_id,
+      purchase_order_id: invoice.purchase_order_id || null,
+      status:            invoice.status            || 'draft',
+      notes:             invoice.notes             || null,
+    },
+    p_items: items.map(i => ({
+      product_id:    i.product_id,
+      unit_id:       i.unit_id,
+      quantity:      Number(i.quantity),
       quantity_base: Number(i.quantity_base) || Number(i.quantity),
-      unit_price: Number(i.unit_price) || 0,
-      tax_amount: Number(i.tax_amount) || 0,
-      total: Number(i.total) || 0,
-    }))
-    const { error } = await supabase.from('invoice_items').insert(itemRows)
-    if (error) throw error
-  }
-
-  return invId
+      unit_price:    Number(i.unit_price)    || 0,
+      tax_amount:    Number(i.tax_amount)    || 0,
+      total:         Number(i.total)         || 0,
+    })),
+  })
+  if (error) throw error
+  return data
 }
 
 export async function postPurchaseInvoice(id) {
-  const { data: inv, error: fetchErr } = await supabase
-    .from('invoices')
-    .select('date')
-    .eq('id', id)
-    .single()
-  if (fetchErr) throw fetchErr
-  const { closedPeriods } = await getClosedPeriods()
-  if (isPeriodClosed(inv.date, closedPeriods)) {
-    throw new Error(`Periode ${inv.date.slice(0, 7)} sudah ditutup. Tidak dapat memposting invoice pembelian.`)
-  }
-
+  // Period check enforced server-side (migration 016)
   const { error } = await supabase.rpc('post_purchase_invoice', { p_invoice_id: id })
   if (error) throw error
 }
@@ -249,72 +165,26 @@ export async function getPurchaseOrder(id) {
 }
 
 export async function savePurchaseOrder(po, items) {
-  const { data: { user } } = await supabase.auth.getUser()
-
-  const { data: num, error: numErr } = await supabase.rpc('generate_number', { p_prefix: 'PO' })
-  if (numErr) throw numErr
-
-  // Calculate totals
-  const subtotal = items.reduce((sum, item) => sum + (Number(item.unit_price) * Number(item.quantity_base)), 0)
-  const tax_amount = items.reduce((sum, item) => sum + (item.tax_amount || 0), 0)
-  const total = subtotal + tax_amount
-
-  const poPayload = {
-    po_number: num,
-    date: po.date,
-    supplier_id: po.supplier_id,
-    status: po.status || 'draft',
-    subtotal,
-    tax_amount,
-    total,
-    notes: po.notes || null,
-    created_by: user?.id ?? null,
-  }
-
-  // Upsert PO
-  const { data: poData, error: poError } = po.id
-    ? await supabase
-        .from('purchase_orders')
-        .update(poPayload)
-        .eq('id', po.id)
-        .select('id')
-        .single()
-    : await supabase
-        .from('purchase_orders')
-        .insert(poPayload)
-        .select('id')
-        .single()
-
-  if (poError) throw poError
-  const poId = poData.id
-
-  // Delete old items if updating
-  if (po.id) {
-    const { error: delError } = await supabase
-      .from('purchase_order_items')
-      .delete()
-      .eq('purchase_order_id', poId)
-    if (delError) throw delError
-  }
-
-  // Insert items
-  const itemsPayload = items.map(item => ({
-    purchase_order_id: poId,
-    product_id: item.product_id,
-    unit_id: item.unit_id,
-    quantity: Number(item.quantity),
-    quantity_base: Number(item.quantity_base),
-    unit_price: Number(item.unit_price),
-    tax_amount: Number(item.tax_amount || 0),
-    total: Number(item.total || 0),
-  }))
-
-  const { error: itemsError } = await supabase
-    .from('purchase_order_items')
-    .insert(itemsPayload)
-  if (itemsError) throw itemsError
-
-  return poId
+  const { data, error } = await supabase.rpc('save_purchase_order', {
+    p_po: {
+      id:          po.id          || null,
+      date:        po.date,
+      supplier_id: po.supplier_id,
+      status:      po.status      || 'draft',
+      notes:       po.notes       || null,
+    },
+    p_items: items.map(i => ({
+      product_id:    i.product_id,
+      unit_id:       i.unit_id,
+      quantity:      Number(i.quantity),
+      quantity_base: Number(i.quantity_base) || Number(i.quantity),
+      unit_price:    Number(i.unit_price)    || 0,
+      tax_amount:    Number(i.tax_amount)    || 0,
+      total:         Number(i.total)         || 0,
+    })),
+  })
+  if (error) throw error
+  return data
 }
 
 export async function confirmPurchaseOrder(id) {
