@@ -6,7 +6,9 @@ function monthStart() {
 }
 
 function today() {
-  return new Date().toISOString().slice(0, 10)
+  // Gunakan waktu lokal, bukan UTC — mencegah off-by-one di timezone WIB (UTC+7)
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 function lastMonthStart() {
@@ -18,8 +20,8 @@ function lastMonthStart() {
 
 function lastMonthEnd() {
   const d = new Date()
-  d.setDate(0)
-  return d.toISOString().slice(0, 10)
+  d.setDate(0) // hari terakhir bulan lalu
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 export async function getDashboardMetrics() {
