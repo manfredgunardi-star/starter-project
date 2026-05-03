@@ -1,6 +1,4 @@
 import { supabase } from '../lib/supabase'
-import { getClosedPeriods } from './companySettingsService'
-import { isPeriodClosed } from '../utils/periodUtils'
 
 export async function getPayments(type) {
   const query = supabase
@@ -20,37 +18,22 @@ export async function getPayments(type) {
 }
 
 export async function savePayment(payment) {
-  const { data: { user } } = await supabase.auth.getUser()
-
-  const { closedPeriods } = await getClosedPeriods()
-  if (isPeriodClosed(payment.date, closedPeriods)) {
-    throw new Error(`Periode ${payment.date.slice(0, 7)} sudah ditutup. Tidak dapat menyimpan pembayaran.`)
-  }
-
-  const { data: num, error: numErr } = await supabase.rpc('generate_number', { p_prefix: 'PAY' })
-  if (numErr) throw numErr
-
-  const payload = {
-    payment_number: num,
-    date: payment.date,
-    type: payment.type,
-    invoice_id: payment.invoice_id || null,
-    customer_id: payment.customer_id || null,
-    supplier_id: payment.supplier_id || null,
-    account_id: payment.account_id,
-    amount: Number(payment.amount),
-    notes: payment.notes || null,
-    created_by: user?.id ?? null,
-  }
-
-  const { data, error } = await supabase.from('payments').insert(payload).select('id').single()
+  // Atomic: INSERT payment + post journal in a single RPC transaction.
+  // Period check and role check are enforced server-side (migration 017).
+  const { data, error } = await supabase.rpc('save_and_post_payment', {
+    p_payment: {
+      date:        payment.date,
+      type:        payment.type,
+      invoice_id:  payment.invoice_id  || null,
+      customer_id: payment.customer_id || null,
+      supplier_id: payment.supplier_id || null,
+      account_id:  payment.account_id,
+      amount:      Number(payment.amount),
+      notes:       payment.notes || null,
+    },
+  })
   if (error) throw error
-
-  // Auto-post: creates journal, updates invoice balance, updates account balance
-  const { error: postErr } = await supabase.rpc('post_payment', { p_payment_id: data.id })
-  if (postErr) throw postErr
-
-  return data.id
+  return data
 }
 
 export async function getAccounts() {
