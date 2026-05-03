@@ -6,7 +6,7 @@ import { LogIn } from 'lucide-react'
 const { Title } = Typography
 
 export default function LoginPage() {
-  const { signIn } = useAuth()
+  const { signIn, authError } = useAuth()
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -22,11 +22,13 @@ export default function LoginPage() {
     }
   }
 
+  const displayError = authError || error
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f9fafb' }}>
       <Card style={{ width: 360 }}>
         <Title level={3} style={{ textAlign: 'center', marginBottom: 24 }}>ERP Pembukuan</Title>
-        {error && <Alert type="error" message={error} showIcon style={{ marginBottom: 16 }} />}
+        {displayError && <Alert type="error" message={displayError} showIcon style={{ marginBottom: 16 }} />}
         <Form layout="vertical" onFinish={handleSubmit} autoComplete="off">
           <Form.Item
             label="Email"

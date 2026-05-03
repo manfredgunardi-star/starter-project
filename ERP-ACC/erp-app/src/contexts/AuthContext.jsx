@@ -7,6 +7,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [authError, setAuthError] = useState(null)
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -18,7 +19,7 @@ export function AuthProvider({ children }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
       if (session?.user) fetchProfile(session.user.id)
-      else { setProfile(null); setLoading(false) }
+      else { setProfile(null); setAuthError(null); setLoading(false) }
     })
 
     return () => subscription.unsubscribe()
@@ -28,10 +29,18 @@ export function AuthProvider({ children }) {
     try {
       const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single()
       if (error) throw error
+      if (!data || data.is_active === false) {
+        throw new Error('Akun tidak aktif atau dihapus. Hubungi admin.')
+      }
       setProfile(data)
+      setAuthError(null)
     } catch (err) {
       console.error('[AuthContext] Gagal memuat profil pengguna:', err.message)
       setProfile(null)
+      setAuthError(err.message || 'Gagal memuat profil pengguna.')
+      // Force logout agar tidak ada sesi tanpa profil valid
+      await supabase.auth.signOut()
+      setUser(null)
     } finally {
       setLoading(false)
     }
@@ -46,6 +55,7 @@ export function AuthProvider({ children }) {
     await supabase.auth.signOut()
     setUser(null)
     setProfile(null)
+    setAuthError(null)
   }
 
   const isAdmin = profile?.role === 'admin'
@@ -54,7 +64,7 @@ export function AuthProvider({ children }) {
   const canPost = isAdmin
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signIn, signOut, isAdmin, isStaff, canWrite, canPost }}>
+    <AuthContext.Provider value={{ user, profile, loading, authError, signIn, signOut, isAdmin, isStaff, canWrite, canPost }}>
       {children}
     </AuthContext.Provider>
   )
