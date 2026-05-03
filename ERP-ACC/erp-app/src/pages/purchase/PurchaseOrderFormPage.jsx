@@ -127,14 +127,14 @@ export default function PurchaseOrderFormPage() {
           <DocumentHeader
             docNumber={po.po_number}
             date={po.date}
-            onDateChange={e => setPO({ ...po, date: e.target.value })}
+            onDateChange={d => setPO({ ...po, date: d })}
             status={po.status}
             partyLabel="Supplier"
             partyId={po.supplier_id}
-            onPartyChange={e => setPO({ ...po, supplier_id: e.target.value })}
+            onPartyChange={v => setPO({ ...po, supplier_id: v })}
             partyOptions={supplierOptions}
             notes={po.notes}
-            onNotesChange={e => setPO({ ...po, notes: e.target.value })}
+            onNotesChange={v => setPO({ ...po, notes: v })}
             readOnly={po.status !== 'draft'}
           />
 
