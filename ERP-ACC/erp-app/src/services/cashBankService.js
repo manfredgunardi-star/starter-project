@@ -61,24 +61,14 @@ export async function saveTransfer({ from_account_id, to_account_id, amount, dat
 }
 
 export async function saveReconciliation({ account_id, date, statement_balance }) {
-  const { data: account, error: accErr } = await supabase
-    .from('accounts')
-    .select('balance')
-    .eq('id', account_id)
-    .single()
-  if (accErr) throw accErr
-
-  const { data, error } = await supabase
-    .from('bank_reconciliations')
-    .insert({
-      account_id,
-      date,
-      statement_balance: Number(statement_balance),
-      system_balance: account.balance,
-      is_reconciled: Math.abs(Number(statement_balance) - account.balance) < 0.01,
-    })
-    .select('id, statement_balance, system_balance, is_reconciled')
-    .single()
+  // Atomic: SELECT balance FOR UPDATE + INSERT reconciliation in a single RPC transaction.
+  // Prevents lost-update race when two requests read the same account balance concurrently.
+  // See migration 022_account_balance_lock.sql.
+  const { data, error } = await supabase.rpc('save_reconciliation', {
+    p_account_id:       account_id,
+    p_date:             date,
+    p_statement_balance: Number(statement_balance),
+  })
   if (error) throw error
   return data
 }
