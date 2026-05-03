@@ -71,10 +71,14 @@ export default function ManualJournalFormPage() {
     }))
   }
 
+  const round2 = n => Math.round(Number(n || 0) * 100) / 100
+
   const handleSave = async () => {
     if (!header.date) { toast.error('Tanggal wajib diisi'); return }
     if (!header.description) { toast.error('Deskripsi wajib diisi'); return }
-    const validItems = items.filter(i => i.coa_id && (Number(i.debit) > 0 || Number(i.credit) > 0))
+    const validItems = items
+      .filter(i => i.coa_id && (Number(i.debit) > 0 || Number(i.credit) > 0))
+      .map(i => ({ ...i, debit: round2(i.debit), credit: round2(i.credit) }))
     if (validItems.length < 2) { toast.error('Minimal 2 baris jurnal'); return }
 
     setSubmitting(true)
