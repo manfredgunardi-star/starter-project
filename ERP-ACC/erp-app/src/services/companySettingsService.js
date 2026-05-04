@@ -20,6 +20,11 @@ export async function updateCompanySettings(settings) {
       email: settings.email || null,
       npwp: settings.npwp || null,
       logo_url: settings.logo_url || null,
+      bank_name: settings.bank_name || null,
+      bank_account_number: settings.bank_account_number || null,
+      bank_account_name: settings.bank_account_name || null,
+      signer_name: settings.signer_name || null,
+      signer_title: settings.signer_title || null,
       updated_at: new Date().toISOString(),
     })
     .eq('id', settings.id)
