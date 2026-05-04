@@ -4,14 +4,15 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useCOA } from '../../hooks/useMasterData'
 import { saveManualJournal, postManualJournal, getJournal } from '../../services/journalService'
+import { createRecurringTemplate } from '../../services/recurringService'
 import { formatCurrency } from '../../utils/currency'
 import { today } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
 import DateInput from '../../components/ui/DateInput'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
-import { ArrowLeft, Save, Send, Plus, Trash2 } from 'lucide-react'
-import { Space, Flex, Card, Row, Col, Alert, Typography } from 'antd'
+import { ArrowLeft, Save, Send, Plus, Trash2, Repeat } from 'lucide-react'
+import { Space, Flex, Card, Row, Col, Alert, Typography, Switch, Select as AntdSelect } from 'antd'
 
 const emptyRow = () => ({ _key: Date.now() + Math.random(), coa_id: '', description: '', debit: '', credit: '' })
 
@@ -27,6 +28,12 @@ export default function ManualJournalFormPage() {
   const [submitting, setSubmitting] = useState(false)
   const [header, setHeader] = useState({ date: today(), description: '', status: 'draft' })
   const [items, setItems] = useState([emptyRow(), emptyRow()])
+
+  // ----- Recurring template state (only relevant for new journals) -----
+  const [makeRecurring, setMakeRecurring] = useState(false)
+  const [recurInterval, setRecurInterval] = useState('monthly')
+  const [recurDay,      setRecurDay]      = useState(1)
+  const [recurStart,    setRecurStart]    = useState('')
 
   useEffect(() => {
     if (!isNew) {
@@ -80,10 +87,39 @@ export default function ManualJournalFormPage() {
       .filter(i => i.coa_id && (Number(i.debit) > 0 || Number(i.credit) > 0))
       .map(i => ({ ...i, debit: round2(i.debit), credit: round2(i.credit) }))
     if (validItems.length < 2) { toast.error('Minimal 2 baris jurnal'); return }
+    if (makeRecurring && !recurStart) {
+      toast.error('Tanggal mulai untuk template berulang wajib diisi')
+      return
+    }
 
     setSubmitting(true)
     try {
       const journalId = await saveManualJournal(header, validItems)
+
+      if (makeRecurring && isNew) {
+        try {
+          await createRecurringTemplate({
+            name:          `Jurnal Berulang – ${header.description ?? 'Jurnal'}`,
+            type:          'journal',
+            interval_type: recurInterval,
+            day_of_month:  recurInterval === 'monthly' ? recurDay : null,
+            start_date:    recurStart,
+            template_data: {
+              description: header.description ?? '',
+              items: validItems.map(it => ({
+                coa_id:      it.coa_id,
+                description: it.description ?? '',
+                debit:       Number(it.debit)  || 0,
+                credit:      Number(it.credit) || 0,
+              })),
+            },
+          })
+          toast.success('Template berulang dibuat')
+        } catch (err) {
+          toast.error('Jurnal tersimpan, tapi gagal membuat template berulang: ' + err.message)
+        }
+      }
+
       toast.success('Jurnal berhasil disimpan')
       navigate(`/accounting/journals/${journalId}`)
     } catch (err) {
@@ -298,6 +334,67 @@ export default function ManualJournalFormPage() {
           message="Jurnal telah diposting dan tidak dapat diubah."
           showIcon
         />
+      )}
+
+      {/* Recurring template toggle (only for new journals) */}
+      {isNew && !readOnly && canPost && (
+        <Card>
+          <Flex align="center" gap={12}>
+            <Switch
+              checked={makeRecurring}
+              onChange={setMakeRecurring}
+              id="recurring-toggle-journal"
+            />
+            <label htmlFor="recurring-toggle-journal" style={{ cursor: 'pointer', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Repeat size={16} /> Jadikan Berulang
+            </label>
+            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+              Buat template untuk auto-create jurnal di masa depan.
+            </Typography.Text>
+          </Flex>
+
+          {makeRecurring && (
+            <Row gutter={16} style={{ marginTop: 16 }}>
+              <Col xs={24} md={8}>
+                <div style={{ marginBottom: 4, fontSize: 14, fontWeight: 500 }}>Interval</div>
+                <AntdSelect
+                  value={recurInterval}
+                  onChange={setRecurInterval}
+                  options={[
+                    { value: 'daily',   label: 'Harian' },
+                    { value: 'weekly',  label: 'Mingguan' },
+                    { value: 'monthly', label: 'Bulanan' },
+                    { value: 'yearly',  label: 'Tahunan' },
+                  ]}
+                  style={{ width: '100%' }}
+                />
+              </Col>
+              {recurInterval === 'monthly' && (
+                <Col xs={24} md={8}>
+                  <div style={{ marginBottom: 4, fontSize: 14, fontWeight: 500 }}>Tanggal ke-</div>
+                  <AntdSelect
+                    value={recurDay}
+                    onChange={setRecurDay}
+                    options={[
+                      { value: -1, label: 'Hari terakhir bulan' },
+                      ...Array.from({ length: 28 }, (_, i) => ({
+                        value: i + 1, label: `${i + 1}`,
+                      })),
+                    ]}
+                    style={{ width: '100%' }}
+                  />
+                </Col>
+              )}
+              <Col xs={24} md={8}>
+                <DateInput
+                  label="Mulai Tanggal *"
+                  value={recurStart}
+                  onChange={e => setRecurStart(e.target.value)}
+                />
+              </Col>
+            </Row>
+          )}
+        </Card>
       )}
     </Space>
   )
