@@ -34,7 +34,7 @@ export default function SalesInvoiceFormPage() {
     date: today(),
     due_date: '',
     customer_id: '',
-    sales_order_id: searchParams.get('so') || '',
+    sales_order_id: searchParams.get('so') || '', // overridden by ?from_gd= if present
     goods_delivery_id: '',
     status: 'draft',
     notes: '',

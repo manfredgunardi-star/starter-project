@@ -31,7 +31,7 @@ export default function PurchaseInvoiceFormPage() {
     date: today(),
     due_date: '',
     supplier_id: '',
-    purchase_order_id: searchParams.get('po') || '',
+    purchase_order_id: searchParams.get('po') || '', // overridden by ?from_gr= if present
     goods_receipt_id: '',
     status: 'draft',
     notes: '',
