@@ -4,7 +4,7 @@ import { Space, Flex, Typography, Row, Col, Card } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useProducts, useSuppliers } from '../../hooks/useMasterData'
-import { getPurchaseInvoice, savePurchaseInvoice, postPurchaseInvoice } from '../../services/purchaseService'
+import { getPurchaseInvoice, savePurchaseInvoice, postPurchaseInvoice, getGoodsReceipt } from '../../services/purchaseService'
 import { today } from '../../utils/date'
 import { formatCurrency } from '../../utils/currency'
 import Button from '../../components/ui/Button'
@@ -32,6 +32,7 @@ export default function PurchaseInvoiceFormPage() {
     due_date: '',
     supplier_id: '',
     purchase_order_id: searchParams.get('po') || '',
+    goods_receipt_id: '',
     status: 'draft',
     notes: '',
   })
@@ -48,6 +49,7 @@ export default function PurchaseInvoiceFormPage() {
             due_date: inv.due_date || '',
             supplier_id: inv.supplier_id,
             purchase_order_id: inv.purchase_order_id || '',
+            goods_receipt_id: inv.goods_receipt_id || '',
             status: inv.status,
             notes: inv.notes || '',
             amount_paid: inv.amount_paid,
@@ -68,6 +70,33 @@ export default function PurchaseInvoiceFormPage() {
         .finally(() => setLoading(false))
     }
   }, [id, isNew])
+
+  useEffect(() => {
+    const fromGrId = searchParams.get('from_gr')
+    if (!fromGrId || !isNew) return
+    getGoodsReceipt(fromGrId)
+      .then(gr => {
+        setHeader(h => ({
+          ...h,
+          supplier_id: gr.supplier_id,
+          purchase_order_id: gr.purchase_order_id || '',
+          goods_receipt_id: gr.id,
+        }))
+        setItems(
+          (gr.items || []).map(i => ({
+            _key: i.id,
+            product_id: i.product_id,
+            unit_id: i.unit_id,
+            quantity: i.quantity,
+            quantity_base: i.quantity_base,
+            unit_price: i.unit_price,
+            tax_amount: 0,
+            total: 0,
+          }))
+        )
+      })
+      .catch(err => toast.error('Gagal load GR: ' + err.message))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const readOnly = !isNew && header.status !== 'draft'
 
