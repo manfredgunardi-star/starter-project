@@ -25,6 +25,11 @@ export default function CompanySettingsPage() {
         phone: company.phone || '',
         email: company.email || '',
         npwp: company.npwp || '',
+        bank_name: company.bank_name || '',
+        bank_account_number: company.bank_account_number || '',
+        bank_account_name: company.bank_account_name || '',
+        signer_name: company.signer_name || '',
+        signer_title: company.signer_title || '',
       })
     }
   }, [company, form])
@@ -140,6 +145,30 @@ export default function CompanySettingsPage() {
                 Format: PNG, JPG. Maks 2MB.
               </Typography.Text>
             </Space>
+          </Form.Item>
+        </Form>
+      </Card>
+
+      <Card title="Informasi Invoice">
+        <Form form={form} layout="vertical">
+          <Form.Item label="Nama Bank" name="bank_name">
+            <Input placeholder="Contoh: BCA, BRI, Mandiri" disabled={saving} />
+          </Form.Item>
+
+          <Form.Item label="Nomor Rekening" name="bank_account_number">
+            <Input placeholder="Contoh: 1234567890" disabled={saving} />
+          </Form.Item>
+
+          <Form.Item label="Nama Pemilik Rekening" name="bank_account_name">
+            <Input placeholder="Contoh: PT Nama Perusahaan" disabled={saving} />
+          </Form.Item>
+
+          <Form.Item label="Nama Penanda Tangan Invoice" name="signer_name">
+            <Input placeholder="Contoh: Aldo Liong" disabled={saving} />
+          </Form.Item>
+
+          <Form.Item label="Jabatan Penanda Tangan" name="signer_title">
+            <Input placeholder="Contoh: Direktur" disabled={saving} />
           </Form.Item>
         </Form>
       </Card>
