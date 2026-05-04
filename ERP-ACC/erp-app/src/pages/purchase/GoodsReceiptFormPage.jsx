@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Space, Flex, Typography, Alert } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useProducts, useSuppliers } from '../../hooks/useMasterData'
-import { getGoodsReceipt, saveGoodsReceipt, postGoodsReceipt } from '../../services/purchaseService'
+import { getGoodsReceipt, saveGoodsReceipt, postGoodsReceipt, getPurchaseOrder } from '../../services/purchaseService'
 import { today } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import DocumentHeader from '../../components/shared/DocumentHeader'
@@ -17,6 +17,7 @@ export default function GoodsReceiptFormPage() {
   const { canWrite, canPost } = useAuth()
   const toast = useToast()
   const isNew = !id || id === 'new'
+  const [searchParams] = useSearchParams()
 
   const { products } = useProducts()
   const { suppliers } = useSuppliers()
@@ -61,6 +62,32 @@ export default function GoodsReceiptFormPage() {
         .finally(() => setLoading(false))
     }
   }, [id, isNew])
+
+  useEffect(() => {
+    const fromPoId = searchParams.get('from_po')
+    if (!fromPoId || !isNew) return
+    getPurchaseOrder(fromPoId)
+      .then(po => {
+        setHeader(h => ({
+          ...h,
+          supplier_id: po.supplier_id,
+          purchase_order_id: po.id,
+        }))
+        setItems(
+          (po.purchase_order_items || []).map(i => ({
+            _key: i.id,
+            product_id: i.product_id,
+            product_name: i.product?.name,
+            unit_id: i.unit_id,
+            unit_name: i.unit?.name,
+            quantity: i.quantity,
+            quantity_base: i.quantity_base,
+            unit_price: i.unit_price,
+          }))
+        )
+      })
+      .catch(err => toast.error('Gagal load PO: ' + err.message))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const readOnly = !isNew && header.status === 'posted'
 

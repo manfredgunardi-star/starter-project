@@ -13,7 +13,7 @@ import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import DocumentHeader from '../../components/shared/DocumentHeader'
 import LineItemsTable from '../../components/shared/LineItemsTable'
-import { ArrowLeft, Save, Check, Printer, FileDown } from 'lucide-react'
+import { ArrowLeft, Save, Check, Printer, FileDown, ClipboardList } from 'lucide-react'
 import { usePrintPO } from '../../hooks/usePrintPO'
 
 export default function PurchaseOrderFormPage() {
@@ -154,6 +154,11 @@ export default function PurchaseOrderFormPage() {
           />
 
           <Flex justify="flex-end" gap={12}>
+            {id && po?.status === 'confirmed' && canWrite && (
+              <Button variant="secondary" onClick={() => navigate(`/purchase/receipts/new?from_po=${id}`)}>
+                <ClipboardList size={18} /> Buat GR dari PO ini
+              </Button>
+            )}
             <Button variant="secondary" onClick={() => navigate('/purchase/orders')}>
               Batal
             </Button>
