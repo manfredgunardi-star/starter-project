@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Space, Flex, Typography, Alert } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useProducts, useCustomers } from '../../hooks/useMasterData'
-import { getGoodsDelivery, saveGoodsDelivery, postGoodsDelivery } from '../../services/salesService'
+import { getGoodsDelivery, saveGoodsDelivery, postGoodsDelivery, getSalesOrder } from '../../services/salesService'
 import { today } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import DocumentHeader from '../../components/shared/DocumentHeader'
@@ -14,6 +14,7 @@ import { ArrowLeft, Save, Send, Trash2, Plus } from 'lucide-react'
 export default function GoodsDeliveryFormPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { canPost, canWrite } = useAuth()
   const toast = useToast()
   const isNew = !id || id === 'new'
@@ -60,6 +61,31 @@ export default function GoodsDeliveryFormPage() {
         .finally(() => setLoading(false))
     }
   }, [id, isNew])
+
+  useEffect(() => {
+    const fromSoId = searchParams.get('from_so')
+    if (!fromSoId || !isNew) return
+    getSalesOrder(fromSoId)
+      .then(so => {
+        setHeader(h => ({
+          ...h,
+          customer_id: so.customer_id,
+          sales_order_id: so.id,
+        }))
+        setItems(
+          (so.items || []).map(i => ({
+            _key: i.id,
+            product_id: i.product_id,
+            product_name: i.product?.name,
+            unit_id: i.unit_id,
+            unit_name: i.unit?.name,
+            quantity: i.quantity,
+            quantity_base: i.quantity_base,
+          }))
+        )
+      })
+      .catch(err => toast.error('Gagal load SO: ' + err.message))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const readOnly = !isNew && header.status === 'posted'
 

@@ -10,7 +10,7 @@ import Button from '../../components/ui/Button'
 import DocumentHeader from '../../components/shared/DocumentHeader'
 import LineItemsTable from '../../components/shared/LineItemsTable'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
-import { ArrowLeft, Save, CheckCircle } from 'lucide-react'
+import { ArrowLeft, Save, CheckCircle, Truck } from 'lucide-react'
 
 export default function SalesOrderFormPage() {
   const { id } = useParams()
@@ -123,6 +123,11 @@ export default function SalesOrderFormPage() {
           {!isNew && header.status === 'draft' && canPost && (
             <Button variant="primary" onClick={handleConfirm} loading={submitting}>
               <CheckCircle size={18} /> Konfirmasi
+            </Button>
+          )}
+          {!isNew && header.status === 'confirmed' && canWrite && (
+            <Button variant="secondary" onClick={() => navigate(`/sales/deliveries/new?from_so=${id}`)}>
+              <Truck size={18} /> Buat GD dari SO ini
             </Button>
           )}
           {!isNew && header.status === 'confirmed' && canWrite && (
