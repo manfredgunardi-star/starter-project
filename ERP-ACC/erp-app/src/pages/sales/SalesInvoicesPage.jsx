@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Space, Flex, Typography, Spin } from 'antd'
+import { Space, Flex, Typography, Spin, Tag } from 'antd'
 import { useSalesInvoices } from '../../hooks/useSales'
 import { useAuth } from '../../contexts/AuthContext'
 import { formatCurrency } from '../../utils/currency'
@@ -93,7 +93,12 @@ export default function SalesInvoicesPage() {
                   onClick={() => navigate(`/sales/invoices/${inv.id}`)}
                   style={{ borderBottom: '1px solid #e5e7eb', cursor: 'pointer' }}
                 >
-                  <td style={{ padding: '12px 24px', fontSize: 14, fontFamily: 'monospace' }}>{inv.invoice_number}</td>
+                  <td style={{ padding: '12px 24px', fontSize: 14, fontFamily: 'monospace' }}>
+                    {inv.invoice_number}
+                    {!inv.goods_delivery_id && (
+                      <Tag color="warning" style={{ marginLeft: 8 }}>Tanpa GD</Tag>
+                    )}
+                  </td>
                   <td style={{ padding: '12px 24px', fontSize: 14 }}>{formatDate(inv.date)}</td>
                   <td style={{ padding: '12px 24px', fontSize: 14 }}>{inv.customer?.name || '—'}</td>
                   <td style={{ padding: '12px 24px', fontSize: 14 }}>{inv.due_date ? formatDate(inv.due_date) : '—'}</td>

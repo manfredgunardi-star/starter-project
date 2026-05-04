@@ -90,7 +90,10 @@ export default function GoodsReceiptsPage() {
                   <td style={{ padding: '12px 24px', fontSize: 14 }}>{formatDate(gr.date)}</td>
                   <td style={{ padding: '12px 24px', fontSize: 14 }}>{gr.supplier?.name || '—'}</td>
                   <td style={{ padding: '12px 24px', fontSize: 14, fontFamily: 'monospace' }}>
-                    {gr.purchase_order?.po_number || '—'}
+                    {gr.purchase_order_id
+                      ? gr.purchase_order?.po_number
+                      : <Tag color="warning">Tanpa PO</Tag>
+                    }
                   </td>
                   <td style={{ padding: '12px 24px', fontSize: 14 }}>
                     <Tag color={gr.status === 'draft' ? 'default' : 'success'}>

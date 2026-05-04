@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Space, Flex, Typography } from 'antd'
+import { Space, Flex, Typography, Tag } from 'antd'
 import { useGoodsDeliveries } from '../../hooks/useSales'
 import { useAuth } from '../../contexts/AuthContext'
 import { formatDate } from '../../utils/date'
@@ -88,7 +88,12 @@ export default function GoodsDeliveriesPage() {
                   <td style={{ padding: '12px 24px', fontSize: 14, fontFamily: 'monospace' }}>{d.gd_number}</td>
                   <td style={{ padding: '12px 24px', fontSize: 14 }}>{formatDate(d.date)}</td>
                   <td style={{ padding: '12px 24px', fontSize: 14 }}>{d.customer?.name || '—'}</td>
-                  <td style={{ padding: '12px 24px', fontSize: 14, fontFamily: 'monospace' }}>{d.sales_order?.so_number || '—'}</td>
+                  <td style={{ padding: '12px 24px', fontSize: 14, fontFamily: 'monospace' }}>
+                    {d.sales_order_id
+                      ? d.sales_order?.so_number
+                      : <Tag color="warning">Tanpa SO</Tag>
+                    }
+                  </td>
                   <td style={{ padding: '12px 24px', fontSize: 14 }}><StatusBadge status={d.status} /></td>
                 </tr>
               ))

@@ -98,7 +98,12 @@ export default function PurchaseInvoicesPage() {
                   style={{ borderBottom: '1px solid #e5e7eb', cursor: 'pointer' }}
                   onClick={() => navigate(`/purchase/invoices/${inv.id}`)}
                 >
-                  <td style={{ padding: '12px 24px', fontSize: 14, fontFamily: 'monospace' }}>{inv.invoice_number}</td>
+                  <td style={{ padding: '12px 24px', fontSize: 14, fontFamily: 'monospace' }}>
+                    {inv.invoice_number}
+                    {!inv.goods_receipt_id && (
+                      <Tag color="warning" style={{ marginLeft: 8 }}>Tanpa GR</Tag>
+                    )}
+                  </td>
                   <td style={{ padding: '12px 24px', fontSize: 14 }}>{formatDate(inv.date)}</td>
                   <td style={{ padding: '12px 24px', fontSize: 14 }}>{inv.supplier?.name || '—'}</td>
                   <td style={{ padding: '12px 24px', fontSize: 14 }}>{inv.due_date ? formatDate(inv.due_date) : '—'}</td>
