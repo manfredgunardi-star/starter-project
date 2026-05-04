@@ -9,7 +9,7 @@ import { today } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import DocumentHeader from '../../components/shared/DocumentHeader'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
-import { ArrowLeft, Save, Send, Trash2, Plus } from 'lucide-react'
+import { ArrowLeft, Save, Send, Trash2, Plus, FileText } from 'lucide-react'
 
 export default function GoodsDeliveryFormPage() {
   const { id } = useParams()
@@ -175,6 +175,11 @@ export default function GoodsDeliveryFormPage() {
           {!isNew && header.status === 'draft' && canPost && (
             <Button variant="primary" onClick={handlePost} loading={submitting}>
               <Send size={18} /> Post (Kirim)
+            </Button>
+          )}
+          {!isNew && header.status === 'posted' && canWrite && (
+            <Button variant="secondary" onClick={() => navigate(`/sales/invoices/new?from_gd=${id}`)}>
+              <FileText size={18} /> Buat SI dari GD ini
             </Button>
           )}
         </Space>

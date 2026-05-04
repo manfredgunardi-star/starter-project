@@ -4,7 +4,7 @@ import { Space, Flex, Typography, Row, Col, Card } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useProducts, useCustomers } from '../../hooks/useMasterData'
-import { getSalesInvoice, saveSalesInvoice, postSalesInvoice } from '../../services/salesService'
+import { getSalesInvoice, saveSalesInvoice, postSalesInvoice, getGoodsDelivery } from '../../services/salesService'
 import { today } from '../../utils/date'
 import { formatCurrency } from '../../utils/currency'
 import Button from '../../components/ui/Button'
@@ -35,6 +35,7 @@ export default function SalesInvoiceFormPage() {
     due_date: '',
     customer_id: '',
     sales_order_id: searchParams.get('so') || '',
+    goods_delivery_id: '',
     status: 'draft',
     notes: '',
   })
@@ -51,6 +52,7 @@ export default function SalesInvoiceFormPage() {
             due_date: inv.due_date || '',
             customer_id: inv.customer_id,
             sales_order_id: inv.sales_order_id || '',
+            goods_delivery_id: inv.goods_delivery_id || '',
             status: inv.status,
             notes: inv.notes || '',
             amount_paid: inv.amount_paid,
@@ -71,6 +73,34 @@ export default function SalesInvoiceFormPage() {
         .finally(() => setLoading(false))
     }
   }, [id, isNew])
+
+  useEffect(() => {
+    const fromGdId = searchParams.get('from_gd')
+    if (!fromGdId || !isNew) return
+    getGoodsDelivery(fromGdId)
+      .then(gd => {
+        setHeader(h => ({
+          ...h,
+          customer_id: gd.customer_id,
+          sales_order_id: gd.sales_order_id || '',
+          goods_delivery_id: gd.id,
+        }))
+        // GD has no unit_price — LineItemsTable will auto-fill from product.sell_price
+        setItems(
+          (gd.items || []).map(i => ({
+            _key: i.id,
+            product_id: i.product_id,
+            unit_id: i.unit_id,
+            quantity: i.quantity,
+            quantity_base: i.quantity_base,
+            unit_price: '',
+            tax_amount: 0,
+            total: 0,
+          }))
+        )
+      })
+      .catch(err => toast.error('Gagal load GD: ' + err.message))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const readOnly = !isNew && header.status !== 'draft'
 
