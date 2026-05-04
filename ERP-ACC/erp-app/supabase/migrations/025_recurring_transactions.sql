@@ -281,19 +281,33 @@ GRANT EXECUTE ON FUNCTION process_recurring_templates(uuid) TO authenticated;
 
 -- ============================================================
 -- pg_cron: run daily at 18:00 UTC = 01:00 WIB
--- Requires pg_cron extension (enabled in Supabase by default)
--- Uses unschedule+schedule pattern so re-running this migration is idempotent.
+-- pg_cron is not enabled by default on every Supabase project. Enable the
+-- extension if available, otherwise skip the schedule step entirely so this
+-- migration still applies — the "Run Now" button still works without cron.
+-- To enable manually: Supabase Dashboard → Database → Extensions → pg_cron.
 -- ============================================================
 DO $$
 BEGIN
-  PERFORM cron.unschedule('process-recurring-daily');
+  CREATE EXTENSION IF NOT EXISTS pg_cron;
 EXCEPTION WHEN OTHERS THEN
-  -- Job did not exist yet; ignore.
-  NULL;
+  RAISE NOTICE 'pg_cron extension not available; skipping schedule. Enable it from the Supabase Dashboard then re-run the cron block.';
 END $$;
 
-SELECT cron.schedule(
-  'process-recurring-daily',
-  '0 18 * * *',
-  'SELECT process_recurring_templates()'
-);
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = 'cron') THEN
+    BEGIN
+      PERFORM cron.unschedule('process-recurring-daily');
+    EXCEPTION WHEN OTHERS THEN
+      NULL;
+    END;
+
+    PERFORM cron.schedule(
+      'process-recurring-daily',
+      '0 18 * * *',
+      'SELECT process_recurring_templates()'
+    );
+  ELSE
+    RAISE NOTICE 'cron schema missing — recurring templates will only run via the "Run Now" UI until pg_cron is enabled.';
+  END IF;
+END $$;
