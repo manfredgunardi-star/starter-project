@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { Space, Flex, Typography, Row, Col, Card } from 'antd'
+import { Space, Flex, Typography, Row, Col, Card, Switch, Divider, Select as AntdSelect } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useProducts, useCustomers } from '../../hooks/useMasterData'
 import { getSalesInvoice, saveSalesInvoice, postSalesInvoice, getGoodsDelivery } from '../../services/salesService'
+import { createRecurringTemplate } from '../../services/recurringService'
 import { today } from '../../utils/date'
 import { formatCurrency } from '../../utils/currency'
 import Button from '../../components/ui/Button'
+import DateInput from '../../components/ui/DateInput'
 import DocumentHeader from '../../components/shared/DocumentHeader'
 import LineItemsTable from '../../components/shared/LineItemsTable'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { usePrintInvoice } from '../../hooks/usePrintInvoice'
-import { ArrowLeft, Save, Send, Printer, FileDown } from 'lucide-react'
+import { ArrowLeft, Save, Send, Printer, FileDown, Repeat } from 'lucide-react'
 
 export default function SalesInvoiceFormPage() {
   const { id } = useParams()
@@ -40,6 +42,12 @@ export default function SalesInvoiceFormPage() {
     notes: '',
   })
   const [items, setItems] = useState([LineItemsTable.emptyRow()])
+
+  // ----- Recurring template state (only relevant for new invoices) -----
+  const [makeRecurring, setMakeRecurring] = useState(false)
+  const [recurInterval, setRecurInterval] = useState('monthly')
+  const [recurDay,      setRecurDay]      = useState(1)
+  const [recurStart,    setRecurStart]    = useState('')
 
   useEffect(() => {
     if (!isNew) {
@@ -109,10 +117,55 @@ export default function SalesInvoiceFormPage() {
     if (!header.date) { toast.error('Tanggal wajib diisi'); return }
     const validItems = items.filter(i => i.product_id && Number(i.quantity) > 0)
     if (validItems.length === 0) { toast.error('Minimal satu item'); return }
+    if (makeRecurring && !recurStart) {
+      toast.error('Tanggal mulai untuk template berulang wajib diisi')
+      return
+    }
 
     setSubmitting(true)
     try {
       const invId = await saveSalesInvoice({ id: isNew ? null : id, ...header }, validItems)
+
+      if (makeRecurring && isNew) {
+        try {
+          const dueDays = header.due_date && header.date
+            ? Math.max(0, Math.round((new Date(header.due_date) - new Date(header.date)) / 86400000))
+            : 30
+          const customer = customers.find(c => c.id === header.customer_id)
+          const subtotal = validItems.reduce((s, i) => s + (Number(i.unit_price) * Number(i.quantity) || 0), 0)
+          const taxAmount = validItems.reduce((s, i) => s + (Number(i.tax_amount) || 0), 0)
+
+          await createRecurringTemplate({
+            name:          `Invoice Berulang – ${customer?.name ?? 'Customer'}`,
+            type:          'invoice',
+            interval_type: recurInterval,
+            day_of_month:  recurInterval === 'monthly' ? recurDay : null,
+            start_date:    recurStart,
+            template_data: {
+              customer_id: header.customer_id,
+              due_days:    dueDays,
+              notes:       header.notes ?? '',
+              subtotal,
+              tax_amount:  taxAmount,
+              total:       subtotal + taxAmount,
+              items: validItems.map(it => ({
+                product_id:    it.product_id,
+                unit_id:       it.unit_id,
+                quantity:      Number(it.quantity) || 0,
+                quantity_base: Number(it.quantity_base) || Number(it.quantity) || 0,
+                unit_price:    Number(it.unit_price) || 0,
+                tax_amount:    Number(it.tax_amount) || 0,
+                total:         Number(it.total) || 0,
+              })),
+            },
+          })
+          toast.success('Template berulang dibuat')
+        } catch (err) {
+          // Template creation failure should not block invoice save
+          toast.error('Invoice tersimpan, tapi gagal membuat template berulang: ' + err.message)
+        }
+      }
+
       toast.success('Invoice berhasil disimpan')
       navigate(`/sales/invoices/${invId}`)
     } catch (err) {
@@ -207,6 +260,67 @@ export default function SalesInvoiceFormPage() {
           showTax
         />
       </Space>
+
+      {/* Recurring template toggle (only for new invoices) */}
+      {isNew && !readOnly && canWrite && (
+        <Card>
+          <Flex align="center" gap={12}>
+            <Switch
+              checked={makeRecurring}
+              onChange={setMakeRecurring}
+              id="recurring-toggle"
+            />
+            <label htmlFor="recurring-toggle" style={{ cursor: 'pointer', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Repeat size={16} /> Jadikan Berulang
+            </label>
+            <Typography.Text type="secondary" style={{ fontSize: 12 }}>
+              Buat template untuk auto-create invoice di masa depan.
+            </Typography.Text>
+          </Flex>
+
+          {makeRecurring && (
+            <Row gutter={16} style={{ marginTop: 16 }}>
+              <Col xs={24} md={8}>
+                <div style={{ marginBottom: 4, fontSize: 14, fontWeight: 500 }}>Interval</div>
+                <AntdSelect
+                  value={recurInterval}
+                  onChange={setRecurInterval}
+                  options={[
+                    { value: 'daily',   label: 'Harian' },
+                    { value: 'weekly',  label: 'Mingguan' },
+                    { value: 'monthly', label: 'Bulanan' },
+                    { value: 'yearly',  label: 'Tahunan' },
+                  ]}
+                  style={{ width: '100%' }}
+                />
+              </Col>
+              {recurInterval === 'monthly' && (
+                <Col xs={24} md={8}>
+                  <div style={{ marginBottom: 4, fontSize: 14, fontWeight: 500 }}>Tanggal ke-</div>
+                  <AntdSelect
+                    value={recurDay}
+                    onChange={setRecurDay}
+                    options={[
+                      { value: -1, label: 'Hari terakhir bulan' },
+                      ...Array.from({ length: 28 }, (_, i) => ({
+                        value: i + 1, label: `${i + 1}`,
+                      })),
+                    ]}
+                    style={{ width: '100%' }}
+                  />
+                </Col>
+              )}
+              <Col xs={24} md={8}>
+                <DateInput
+                  label="Mulai Tanggal *"
+                  value={recurStart}
+                  onChange={e => setRecurStart(e.target.value)}
+                />
+              </Col>
+            </Row>
+          )}
+        </Card>
+      )}
 
       {/* Payment summary for posted invoices */}
       {!isNew && header.status !== 'draft' && (
