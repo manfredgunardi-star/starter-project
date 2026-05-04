@@ -49,6 +49,8 @@ import ReconciliationPage from './pages/cash/ReconciliationPage'
 import JournalsPage from './pages/accounting/JournalsPage'
 import ManualJournalFormPage from './pages/accounting/ManualJournalFormPage'
 import LedgerPage from './pages/accounting/LedgerPage'
+import RecurringPage from './pages/accounting/RecurringPage'
+import RecurringFormPage from './pages/accounting/RecurringFormPage'
 
 // Reports
 import BalanceSheetPage from './pages/reports/BalanceSheetPage'
@@ -156,6 +158,9 @@ function AppContent() {
           <Route path="accounting/journals/new" element={<RoleGuard require="canPost"><ManualJournalFormPage /></RoleGuard>} />
           <Route path="accounting/journals/:id" element={<ManualJournalFormPage />} />
           <Route path="accounting/ledger" element={<LedgerPage />} />
+          <Route path="accounting/recurring" element={<RecurringPage />} />
+          <Route path="accounting/recurring/new" element={<RoleGuard require="canWrite"><RecurringFormPage /></RoleGuard>} />
+          <Route path="accounting/recurring/:id" element={<RoleGuard require="canWrite"><RecurringFormPage /></RoleGuard>} />
 
           {/* Reports */}
           <Route path="reports/balance-sheet" element={<BalanceSheetPage />} />

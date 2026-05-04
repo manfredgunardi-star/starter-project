@@ -80,7 +80,8 @@ const menuGroups = [
     key: 'pembukuan',
     items: [
       { label: 'Jurnal', path: '/accounting/journals' },
-      { label: 'Buku Besar', path: '/accounting/ledger' }
+      { label: 'Buku Besar', path: '/accounting/ledger' },
+      { label: 'Transaksi Berulang', path: '/accounting/recurring' }
     ]
   },
   {
