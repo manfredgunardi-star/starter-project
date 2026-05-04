@@ -117,7 +117,7 @@ Redesign `InvoicePrintTemplate.jsx` menjadi tampilan profesional yang:
 SQL migration baru (migration 024, setelah `023_document_linkage.sql`):
 
 ```sql
-ALTER TABLE companies
+ALTER TABLE company_settings
   ADD COLUMN IF NOT EXISTS bank_name text,
   ADD COLUMN IF NOT EXISTS bank_account_number text,
   ADD COLUMN IF NOT EXISTS bank_account_name text,
