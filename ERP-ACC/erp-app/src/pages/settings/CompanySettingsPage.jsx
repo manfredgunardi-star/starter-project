@@ -87,8 +87,8 @@ export default function CompanySettingsPage() {
         </Button>
       </Flex>
 
+      <Form form={form} layout="vertical">
       <Card>
-        <Form form={form} layout="vertical">
           <Form.Item
             label="Nama Perusahaan"
             name="name"
@@ -146,11 +146,9 @@ export default function CompanySettingsPage() {
               </Typography.Text>
             </Space>
           </Form.Item>
-        </Form>
       </Card>
 
       <Card title="Informasi Invoice">
-        <Form form={form} layout="vertical">
           <Form.Item label="Nama Bank" name="bank_name">
             <Input placeholder="Contoh: BCA, BRI, Mandiri" disabled={saving} />
           </Form.Item>
@@ -170,8 +168,8 @@ export default function CompanySettingsPage() {
           <Form.Item label="Jabatan Penanda Tangan" name="signer_title">
             <Input placeholder="Contoh: Direktur" disabled={saving} />
           </Form.Item>
-        </Form>
       </Card>
+      </Form>
     </Space>
   )
 }
