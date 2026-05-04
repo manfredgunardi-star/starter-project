@@ -1,7 +1,11 @@
+/* =====================================================
+   Invoice Print Template — 6 Zona
+   Accent: #1D4ED8 (blue-700)
+   Table header: #1E293B (slate-900)
+   ===================================================== */
+
 @media print {
-  body > * {
-    display: none !important;
-  }
+  body > * { display: none !important; }
   #invoice-print-root {
     display: block !important;
     position: static !important;
@@ -9,116 +13,255 @@
     left: auto !important;
     width: auto !important;
   }
-  @page {
-    size: A4 portrait;
-    margin: 20mm;
-  }
+  @page { size: A4 portrait; margin: 20mm; }
 }
 
-.invoice-template {
+/* === Base === */
+.inv-template {
   font-family: Arial, Helvetica, sans-serif;
   font-size: 12px;
-  color: #000;
+  color: #111827;
   width: 100%;
   box-sizing: border-box;
+  padding: 24px;
 }
 
-.invoice-header {
+/* === Zone 1: Header === */
+.inv-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 24px;
   padding-bottom: 16px;
-  border-bottom: 2px solid #1a1a1a;
 }
 
-.invoice-company-info { flex: 1; }
-.invoice-company-name { font-size: 18px; font-weight: bold; margin: 0 0 4px 0; }
-.invoice-company-detail { margin: 2px 0; color: #444; font-size: 11px; }
-
-.invoice-logo {
-  max-height: 70px;
-  max-width: 160px;
-  object-fit: contain;
-  margin-left: 24px;
-}
-
-.invoice-meta {
+.inv-header-left {
   display: flex;
-  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  flex: 1;
+}
+
+.inv-logo {
+  max-height: 70px;
+  max-width: 120px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.inv-company-name {
+  font-size: 16px;
+  font-weight: bold;
+  margin: 0 0 4px 0;
+  color: #111827;
+}
+
+.inv-company-detail {
+  margin: 2px 0;
+  color: #6B7280;
+  font-size: 11px;
+}
+
+.inv-header-right {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.inv-title {
+  font-size: 20px;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: #111827;
+  margin: 0 0 8px 0;
+  letter-spacing: 0.5px;
+}
+
+.inv-number {
+  font-size: 13px;
+  font-weight: bold;
+  margin: 0 0 2px 0;
+}
+
+.inv-meta-row {
+  margin: 2px 0;
+  color: #374151;
+  font-size: 11px;
+}
+
+.inv-divider {
+  height: 2px;
+  background: #1D4ED8;
   margin-bottom: 20px;
 }
 
-.invoice-title { font-size: 16px; font-weight: bold; text-transform: uppercase; }
-.invoice-meta-left p { margin: 3px 0; }
-.invoice-meta-right { text-align: right; }
-.invoice-meta-right p { margin: 3px 0; }
-.invoice-number { font-size: 14px; font-weight: bold; }
-
-.invoice-to {
-  margin-bottom: 16px;
-  padding: 10px 12px;
-  background: #f8f8f8;
-  border-left: 3px solid #333;
+/* === Zone 2: Bill To === */
+.inv-bill-to-section {
+  margin-bottom: 20px;
 }
-.invoice-to-label { font-size: 10px; color: #666; text-transform: uppercase; margin: 0 0 2px 0; }
-.invoice-to-name { font-weight: bold; font-size: 13px; margin: 0; }
 
-.invoice-table {
+.inv-bill-to-box {
+  display: inline-block;
+  min-width: 280px;
+  border: 1px solid #D1D5DB;
+  border-radius: 4px;
+  padding: 12px 16px;
+}
+
+.inv-section-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #1D4ED8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0 0 4px 0;
+}
+
+.inv-customer-name {
+  font-size: 13px;
+  font-weight: bold;
+  margin: 0;
+  color: #111827;
+}
+
+/* === Zone 3: Table === */
+.inv-table {
   width: 100%;
   border-collapse: collapse;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
-.invoice-table th {
-  background: #f0f0f0;
-  border: 1px solid #ccc;
-  padding: 7px 8px;
+
+.inv-table thead tr {
+  background: #1E293B;
+  color: #FFFFFF;
+}
+
+.inv-table th {
+  padding: 8px;
   text-align: left;
   font-size: 11px;
   font-weight: 600;
+  border: 1px solid #1E293B;
 }
-.invoice-table td {
-  border: 1px solid #ccc;
+
+.inv-table td {
+  border: 1px solid #E5E7EB;
   padding: 6px 8px;
   font-size: 11px;
   vertical-align: top;
 }
-.invoice-table td.right { text-align: right; }
-.invoice-table td.center { text-align: center; }
 
-.invoice-totals {
+.inv-table tbody tr:nth-child(even) td {
+  background: #F9FAFB;
+}
+
+.inv-text-right  { text-align: right; }
+.inv-text-center { text-align: center; }
+
+/* === Zone 4: Totals === */
+.inv-totals {
   display: flex;
   justify-content: flex-end;
-  margin-top: 8px;
-}
-.invoice-totals-table { width: 260px; }
-.invoice-totals-table tr td { border: none; padding: 3px 8px; font-size: 12px; }
-.invoice-totals-table tr td:first-child { text-align: left; color: #555; }
-.invoice-totals-table tr td:last-child { text-align: right; font-weight: 500; }
-.invoice-totals-table .grand-total td {
-  font-size: 13px;
-  font-weight: bold;
-  border-top: 2px solid #333;
-  padding-top: 6px;
-  color: #000;
+  margin: 16px 0;
 }
 
-.invoice-footer {
+.inv-totals-table {
+  width: 280px;
+  border-collapse: collapse;
+}
+
+.inv-totals-table td {
+  padding: 4px 10px;
+  font-size: 12px;
+  border: none;
+}
+
+.inv-totals-table td:first-child { text-align: left;  color: #6B7280; }
+.inv-totals-table td:last-child  { text-align: right; font-weight: 500; }
+
+.inv-grand-total td {
+  background: #1D4ED8;
+  color: #FFFFFF !important;
+  font-weight: bold;
+  font-size: 13px;
+  padding: 8px 10px;
+}
+
+/* === Zone 5: Terbilang === */
+.inv-terbilang-box {
+  border: 1px solid #D1D5DB;
+  border-radius: 4px;
+  padding: 12px 16px;
+  margin-bottom: 24px;
+}
+
+.inv-terbilang-text {
+  font-size: 12px;
+  font-weight: bold;
+  color: #111827;
+  margin: 4px 0 0 0;
+}
+
+/* === Zone 6: Footer === */
+.inv-footer {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-top: 24px;
-  padding-top: 12px;
-  border-top: 1px solid #e0e0e0;
-  font-size: 11px;
-  color: #555;
+  padding-top: 16px;
+  border-top: 1px solid #E5E7EB;
 }
-.invoice-notes { flex: 1; max-width: 60%; }
-.invoice-notes-label { font-weight: 600; color: #333; margin-bottom: 4px; }
-.invoice-status-badge {
-  padding: 4px 12px;
-  border-radius: 4px;
+
+.inv-footer-left {
+  flex: 1;
+  max-width: 55%;
+}
+
+.inv-notes-label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 11px;
+  margin: 0 0 4px 0;
+}
+
+.inv-notes-text {
+  font-size: 11px;
+  color: #6B7280;
+  margin: 0 0 12px 0;
+  white-space: pre-line;
+}
+
+.inv-bank-label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 11px;
+  margin: 0 0 2px 0;
+}
+
+.inv-bank-detail {
+  font-size: 11px;
+  color: #374151;
+  margin: 1px 0;
+}
+
+.inv-signature {
+  text-align: center;
+  min-width: 160px;
+}
+
+.inv-signature > p:first-child {
+  font-size: 11px;
+  color: #374151;
+  margin: 0 0 60px 0;
+}
+
+.inv-signer-name {
   font-weight: bold;
   font-size: 12px;
-  text-transform: uppercase;
+  margin: 0;
+  border-top: 1px solid #374151;
+  padding-top: 4px;
+}
+
+.inv-signer-title {
+  font-size: 11px;
+  color: #6B7280;
+  margin: 2px 0 0 0;
 }
