@@ -121,7 +121,7 @@ export async function postGoodsDelivery(id) {
 export async function getSalesInvoices() {
   const { data, error } = await supabase
     .from('invoices')
-    .select('*, customer:customers(name), sales_order:sales_orders(so_number)')
+    .select('*, customer:customers(name), sales_order:sales_orders(so_number), goods_delivery_id')
     .eq('type', 'sales')
     .order('date', { ascending: false })
   if (error) throw error
@@ -150,13 +150,14 @@ export async function getSalesInvoice(id) {
 export async function saveSalesInvoice(invoice, items) {
   const { data, error } = await supabase.rpc('save_sales_invoice', {
     p_invoice: {
-      id:             invoice.id             || null,
-      date:           invoice.date,
-      due_date:       invoice.due_date       || null,
-      customer_id:    invoice.customer_id,
-      sales_order_id: invoice.sales_order_id || null,
-      status:         invoice.status         || 'draft',
-      notes:          invoice.notes          || null,
+      id:               invoice.id               || null,
+      date:             invoice.date,
+      due_date:         invoice.due_date         || null,
+      customer_id:      invoice.customer_id,
+      sales_order_id:   invoice.sales_order_id   || null,
+      goods_delivery_id: invoice.goods_delivery_id || null,
+      status:           invoice.status           || 'draft',
+      notes:            invoice.notes            || null,
     },
     p_items: items.map(i => ({
       product_id:    i.product_id,

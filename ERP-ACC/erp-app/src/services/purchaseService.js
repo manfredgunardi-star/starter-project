@@ -63,7 +63,7 @@ export async function postGoodsReceipt(id) {
 export async function getPurchaseInvoices() {
   const { data, error } = await supabase
     .from('invoices')
-    .select('*, supplier:suppliers(name), purchase_order:purchase_orders(po_number)')
+    .select('*, supplier:suppliers(name), purchase_order:purchase_orders(po_number), goods_receipt_id')
     .eq('type', 'purchase')
     .order('date', { ascending: false })
   if (error) throw error
@@ -97,6 +97,7 @@ export async function savePurchaseInvoice(invoice, items) {
       due_date:          invoice.due_date          || null,
       supplier_id:       invoice.supplier_id,
       purchase_order_id: invoice.purchase_order_id || null,
+      goods_receipt_id:  invoice.goods_receipt_id  || null,
       status:            invoice.status            || 'draft',
       notes:             invoice.notes             || null,
     },
