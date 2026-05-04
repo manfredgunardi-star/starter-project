@@ -6,7 +6,7 @@ import { createAsset } from '../../services/assetService'
 import { listCategories } from '../../services/assetCategoryService'
 import { supabase } from '../../lib/supabase'
 import { formatCurrency } from '../../utils/currency'
-import { Space, Row, Col, Card, Flex, Typography, Alert } from 'antd'
+import { Space, Row, Col, Card, Flex, Typography, Alert, message } from 'antd'
 
 // ---- Template ----
 function downloadTemplate() {
@@ -110,7 +110,7 @@ export default function AssetBulkImportPage() {
 
   async function handleImport() {
     if (!paymentAccountId) {
-      alert('Pilih akun kas/bank terlebih dahulu.')
+      message.warning('Pilih akun kas/bank terlebih dahulu.')
       return
     }
     setImporting(true)
