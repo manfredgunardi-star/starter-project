@@ -1,20 +1,7 @@
 import './InvoicePrintTemplate.css'
 import { formatCurrency } from '../../utils/currency'
 import { formatDate } from '../../utils/date'
-
-const STATUS_LABELS = {
-  draft: 'Draft',
-  posted: 'Posted',
-  partial: 'Sebagian Dibayar',
-  paid: 'Lunas',
-}
-
-const STATUS_COLORS = {
-  draft: { background: '#f3f4f6', color: '#374151' },
-  posted: { background: '#dbeafe', color: '#1d4ed8' },
-  partial: { background: '#fef9c3', color: '#854d0e' },
-  paid: { background: '#dcfce7', color: '#166534' },
-}
+import { terbilang } from '../../utils/terbilang'
 
 export default function InvoicePrintTemplate({ invoice, company }) {
   const subtotal = invoice.items.reduce(
@@ -24,79 +11,79 @@ export default function InvoicePrintTemplate({ invoice, company }) {
     (acc, item) => acc + (item.tax_amount || 0), 0
   )
   const grandTotal = invoice.total || 0
-  const statusStyle = STATUS_COLORS[invoice.status] || STATUS_COLORS.draft
 
   return (
-    <div className="invoice-template" style={{ padding: '24px' }}>
+    <div className="inv-template">
 
-      {/* Header: company info + logo */}
-      <div className="invoice-header">
-        <div className="invoice-company-info">
-          <p className="invoice-company-name">{company?.name || 'Nama Perusahaan'}</p>
-          {company?.address && <p className="invoice-company-detail">{company.address}</p>}
-          {company?.phone && <p className="invoice-company-detail">Telp: {company.phone}</p>}
-          {company?.email && <p className="invoice-company-detail">Email: {company.email}</p>}
-          {company?.npwp && <p className="invoice-company-detail">NPWP: {company.npwp}</p>}
+      {/* Zone 1: Header */}
+      <div className="inv-header">
+        <div className="inv-header-left">
+          {company?.logo_url && (
+            <img
+              src={company.logo_url}
+              alt="Logo"
+              className="inv-logo"
+              onError={e => { e.target.style.display = 'none' }}
+            />
+          )}
+          <div>
+            <p className="inv-company-name">{company?.name || 'Nama Perusahaan'}</p>
+            {company?.address && <p className="inv-company-detail">{company.address}</p>}
+            {company?.phone && <p className="inv-company-detail">Telp: {company.phone}</p>}
+            {company?.email && <p className="inv-company-detail">Email: {company.email}</p>}
+            {company?.npwp && <p className="inv-company-detail">NPWP: {company.npwp}</p>}
+          </div>
         </div>
-        {company?.logo_url && (
-          <img
-            src={company.logo_url}
-            alt="Logo"
-            className="invoice-logo"
-            onError={e => { e.target.style.display = 'none' }}
-          />
-        )}
-      </div>
-
-      {/* Invoice meta: judul + nomor + tanggal */}
-      <div className="invoice-meta">
-        <div className="invoice-meta-left">
-          <p className="invoice-title">Invoice Penjualan</p>
-        </div>
-        <div className="invoice-meta-right">
-          <p className="invoice-number">{invoice.invoice_number}</p>
-          <p>Tanggal: {formatDate(invoice.date)}</p>
-          {invoice.due_date && <p>Jatuh Tempo: {formatDate(invoice.due_date)}</p>}
+        <div className="inv-header-right">
+          <p className="inv-title">Invoice Penjualan</p>
+          <p className="inv-number">{invoice.invoice_number}</p>
+          <p className="inv-meta-row">Tanggal: {formatDate(invoice.date)}</p>
+          {invoice.due_date && (
+            <p className="inv-meta-row">Jatuh Tempo: {formatDate(invoice.due_date)}</p>
+          )}
         </div>
       </div>
+      <div className="inv-divider" />
 
-      {/* Customer */}
-      <div className="invoice-to">
-        <p className="invoice-to-label">Kepada</p>
-        <p className="invoice-to-name">{invoice.customer?.name || '—'}</p>
+      {/* Zone 2: Bill To */}
+      <div className="inv-bill-to-section">
+        <div className="inv-bill-to-box">
+          <p className="inv-section-label">Ditagihkan Kepada</p>
+          <p className="inv-customer-name">{invoice.customer?.name || '—'}</p>
+        </div>
       </div>
 
-      {/* Tabel item */}
-      <table className="invoice-table">
+      {/* Zone 3: Table */}
+      <table className="inv-table">
         <thead>
           <tr>
             <th style={{ width: 32, textAlign: 'center' }}>No</th>
-            <th>Produk</th>
+            <th>Deskripsi</th>
             <th style={{ width: 60, textAlign: 'center' }}>Qty</th>
             <th style={{ width: 70, textAlign: 'center' }}>Satuan</th>
-            <th style={{ width: 110, textAlign: 'right' }}>Harga Satuan</th>
-            <th style={{ width: 90, textAlign: 'right' }}>Pajak</th>
-            <th style={{ width: 120, textAlign: 'right' }}>Total</th>
+            <th style={{ width: 120, textAlign: 'right' }}>Harga Satuan</th>
+            <th style={{ width: 130, textAlign: 'right' }}>Jumlah</th>
           </tr>
         </thead>
         <tbody>
           {invoice.items.map((item, idx) => (
             <tr key={item.id || idx}>
-              <td className="center">{idx + 1}</td>
+              <td className="inv-text-center">{idx + 1}</td>
               <td>{item.product?.name || '—'}</td>
-              <td className="center">{item.quantity}</td>
-              <td className="center">{item.unit?.name || '—'}</td>
-              <td className="right">{formatCurrency(item.unit_price)}</td>
-              <td className="right">{formatCurrency(item.tax_amount || 0)}</td>
-              <td className="right">{formatCurrency(item.total)}</td>
+              <td className="inv-text-center">{item.quantity}</td>
+              <td className="inv-text-center">{item.unit?.name || '—'}</td>
+              <td className="inv-text-right">{formatCurrency(item.unit_price)}</td>
+              <td className="inv-text-right">
+                {formatCurrency(item.total - (item.tax_amount || 0))}
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      {/* Totals */}
-      <div className="invoice-totals">
-        <table className="invoice-totals-table">
+      {/* Zone 4: Totals */}
+      <div className="inv-totals">
+        <table className="inv-totals-table">
           <tbody>
             <tr>
               <td>Subtotal</td>
@@ -108,30 +95,51 @@ export default function InvoicePrintTemplate({ invoice, company }) {
                 <td>{formatCurrency(taxTotal)}</td>
               </tr>
             )}
-            <tr className="grand-total">
-              <td>TOTAL</td>
+            <tr className="inv-grand-total">
+              <td>Grand Total</td>
               <td>{formatCurrency(grandTotal)}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      {/* Footer: catatan + status */}
-      <div className="invoice-footer">
-        <div className="invoice-notes">
+      {/* Zone 5: Terbilang */}
+      <div className="inv-terbilang-box">
+        <p className="inv-section-label">Terbilang</p>
+        <p className="inv-terbilang-text">{terbilang(Math.round(grandTotal))}</p>
+      </div>
+
+      {/* Zone 6: Footer */}
+      <div className="inv-footer">
+        <div className="inv-footer-left">
           {invoice.notes && (
-            <>
-              <p className="invoice-notes-label">Catatan:</p>
-              <p style={{ margin: 0 }}>{invoice.notes}</p>
-            </>
+            <div>
+              <p className="inv-notes-label">Catatan Pembayaran</p>
+              <p className="inv-notes-text">{invoice.notes}</p>
+            </div>
+          )}
+          {company?.bank_name && (
+            <div style={{ marginTop: invoice.notes ? 12 : 0 }}>
+              <p className="inv-bank-label">Transfer ke:</p>
+              <p className="inv-bank-detail">
+                {company.bank_name}
+                {company.bank_account_number ? ` – ${company.bank_account_number}` : ''}
+              </p>
+              {company.bank_account_name && (
+                <p className="inv-bank-detail">a.n. {company.bank_account_name}</p>
+              )}
+            </div>
           )}
         </div>
-        <span
-          className="invoice-status-badge"
-          style={statusStyle}
-        >
-          {STATUS_LABELS[invoice.status] || invoice.status}
-        </span>
+        {company?.signer_name && (
+          <div className="inv-signature">
+            <p>Hormat kami,</p>
+            <p className="inv-signer-name">{company.signer_name}</p>
+            {company.signer_title && (
+              <p className="inv-signer-title">{company.signer_title}</p>
+            )}
+          </div>
+        )}
       </div>
 
     </div>
