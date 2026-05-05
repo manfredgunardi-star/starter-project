@@ -73,6 +73,11 @@ export async function reactivateUser(id) {
 }
 
 export async function createUser({ email, password, full_name, role }) {
+  const { data: { session } } = await supabase.auth.getSession()
+  if (!session) {
+    throw new Error('Sesi tidak aktif. Silakan login ulang.')
+  }
+
   const TIMEOUT_MS = 15_000
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS)
@@ -81,6 +86,7 @@ export async function createUser({ email, password, full_name, role }) {
   try {
     const result = await supabase.functions.invoke('create-user', {
       body: { email, password, full_name, role },
+      headers: { Authorization: `Bearer ${session.access_token}` },
       signal: controller.signal,
     })
     data = result.data
@@ -94,16 +100,16 @@ export async function createUser({ email, password, full_name, role }) {
     clearTimeout(timeoutId)
   }
 
-  // Two error paths:
-  // 1. Network / invocation error → `error` is set
-  // 2. Edge function returned 4xx/5xx → `data` contains `{ error: "..." }`
   if (error) {
     let message = error.message
     try {
-      const ctx = await error.context?.json?.()
-      if (ctx?.error) message = ctx.error
+      if (error.context) {
+        const body = await error.context.json()
+        if (body?.error) message = body.error
+        else if (body?.message) message = body.message
+      }
     } catch {
-      // ignore, fall back to generic message
+      // fallback ke generic message
     }
     throw new Error(message)
   }
