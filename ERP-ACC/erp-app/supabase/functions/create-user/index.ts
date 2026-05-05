@@ -19,6 +19,26 @@ function jsonResponse(body: unknown, status: number) {
   })
 }
 
+// Decode JWT payload and return the user's UUID (sub).
+// Returns null for anon key, service role key, or malformed tokens.
+// Safe to call without re-verification when verify_jwt:true handles the signature check.
+function extractUserId(authHeader: string): string | null {
+  try {
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader
+    const parts = token.split('.')
+    if (parts.length !== 3) return null
+    const b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+    const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4)
+    const payload = JSON.parse(atob(padded))
+    // User session tokens have role:'authenticated' and a UUID sub.
+    // Anon key tokens have role:'anon'; service role tokens have role:'service_role'.
+    if (!payload.sub || payload.role !== 'authenticated') return null
+    return payload.sub as string
+  } catch {
+    return null
+  }
+}
+
 Deno.serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -30,14 +50,17 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // 1. Extract JWT from Authorization header
+    // 1. Extract and decode JWT — gateway (verify_jwt:true) already verified the signature
     const authHeader = req.headers.get('Authorization')
     if (!authHeader) {
       return jsonResponse({ error: 'Missing authorization header' }, 401)
     }
-    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : authHeader
+    const callerId = extractUserId(authHeader)
+    if (!callerId) {
+      return jsonResponse({ error: 'Autentikasi gagal: diperlukan user session yang aktif' }, 401)
+    }
 
-    // 2. Create admin client using service role key
+    // 2. Create admin client for privileged operations
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
     const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     if (!supabaseUrl || !serviceRoleKey) {
@@ -45,18 +68,11 @@ Deno.serve(async (req) => {
     }
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
 
-    // 3. Verify caller's JWT and get their user record
-    const { data: callerData, error: callerErr } = await supabaseAdmin.auth.getUser(token)
-    if (callerErr || !callerData?.user) {
-      return jsonResponse({ error: 'Invalid or expired session' }, 401)
-    }
-    const caller = callerData.user
-
-    // 4. Check caller is an active admin
+    // 3. Check caller is an active admin
     const { data: callerProfile, error: profileErr } = await supabaseAdmin
       .from('profiles')
       .select('role, is_active')
-      .eq('id', caller.id)
+      .eq('id', callerId)
       .single()
 
     if (profileErr || !callerProfile) {
@@ -66,7 +82,7 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Forbidden: admin role required' }, 403)
     }
 
-    // 5. Parse and validate request body
+    // 4. Parse and validate request body
     let body: { email?: string; password?: string; full_name?: string; role?: string }
     try {
       body = await req.json()
@@ -91,7 +107,7 @@ Deno.serve(async (req) => {
       return jsonResponse({ error: 'Role harus admin, staff, atau viewer' }, 400)
     }
 
-    // 6. Create auth user (email_confirm: true → skip email verification)
+    // 5. Create auth user (email_confirm: true → skip email verification)
     const { data: createdData, error: createErr } =
       await supabaseAdmin.auth.admin.createUser({
         email,
@@ -108,7 +124,7 @@ Deno.serve(async (req) => {
     }
     const newUserId = createdData.user.id
 
-    // 7. Update profile with the requested role
+    // 6. Update profile with the requested role
     //    (handle_new_user trigger already created the row with default role 'viewer')
     const { error: updateErr } = await supabaseAdmin
       .from('profiles')
@@ -126,7 +142,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    // 8. Success
+    // 7. Success
     return jsonResponse(
       {
         success: true,
