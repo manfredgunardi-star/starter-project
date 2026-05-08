@@ -2,11 +2,36 @@ import { useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { flushSync } from 'react-dom'
 import { createElement } from 'react'
-import { jsPDF } from 'jspdf'
 import { useToast } from '../components/ui/ToastContext'
 import InvoicePrintTemplate from '../components/shared/InvoicePrintTemplate'
-import { getSalesInvoice } from '../services/salesService'
+import { getSalesInvoice, getSalesOrder, getGoodsDelivery } from '../services/salesService'
 import { getCompanySettings } from '../services/companySettingsService'
+import { renderInvoicePdf } from '../utils/pdfRenderers/invoiceRenderer'
+
+async function fetchInvoiceWithRefs(invoiceId) {
+  const invoice = await getSalesInvoice(invoiceId)
+
+  const [soResult, gdResult] = await Promise.allSettled([
+    invoice.sales_order_id
+      ? getSalesOrder(invoice.sales_order_id)
+      : Promise.resolve(null),
+    invoice.goods_delivery_id
+      ? getGoodsDelivery(invoice.goods_delivery_id)
+      : Promise.resolve(null),
+  ])
+
+  return {
+    ...invoice,
+    sales_order_number:
+      soResult.status === 'fulfilled' && soResult.value
+        ? soResult.value.so_number
+        : null,
+    goods_delivery_number:
+      gdResult.status === 'fulfilled' && gdResult.value
+        ? (gdResult.value.gd_number ?? gdResult.value.delivery_number ?? null)
+        : null,
+  }
+}
 
 // Module-level variable untuk track root React yang di-render ke print container
 let _printRoot = null
@@ -19,10 +44,6 @@ function cleanupPrintContainer() {
   const container = document.getElementById('invoice-print-root')
   if (container) {
     container.style.display = 'none'
-    container.style.position = ''
-    container.style.top = ''
-    container.style.left = ''
-    container.style.width = ''
   }
 }
 
@@ -50,7 +71,7 @@ export function usePrintInvoice() {
     setLoading(invoiceId, true)
     try {
       const [invoice, company] = await Promise.all([
-        getSalesInvoice(invoiceId),
+        fetchInvoiceWithRefs(invoiceId),
         getCompanySettings(),
       ])
       renderToContainer(invoice, company)
@@ -74,41 +95,14 @@ export function usePrintInvoice() {
     setLoading(invoiceId, true)
     try {
       const [invoice, company] = await Promise.all([
-        getSalesInvoice(invoiceId),
+        fetchInvoiceWithRefs(invoiceId),
         getCompanySettings(),
       ])
-      const container = renderToContainer(invoice, company)
-
-      // Tampilkan container off-screen agar html2canvas bisa mengukurnya
-      container.style.display = 'block'
-      container.style.position = 'fixed'
-      container.style.top = '-9999px'
-      container.style.left = '0'
-      container.style.width = '794px'
-
-      const doc = new jsPDF({ unit: 'pt', format: 'a4' })
-      await new Promise((resolve, reject) => {
-        doc.html(container, {
-          x: 15,
-          y: 15,
-          width: 565,
-          windowWidth: 794,
-          html2canvas: { scale: 1, useCORS: true },
-          callback: (d) => {
-            try {
-              const filename = `invoice-${invoice.invoice_number}-${invoice.date}.pdf`
-              d.save(filename)
-              resolve()
-            } catch (e) {
-              reject(e)
-            }
-          }
-        })
-      })
+      const doc = await renderInvoicePdf(invoice, company)
+      doc.save(`invoice-${invoice.invoice_number}-${invoice.date}.pdf`)
     } catch (err) {
       toast.error(`Gagal mengunduh PDF: ${err.message}`)
     } finally {
-      cleanupPrintContainer()
       setLoading(invoiceId, false)
     }
   }
