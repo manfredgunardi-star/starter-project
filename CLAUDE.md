@@ -17,11 +17,10 @@ C:\Project/
 │   ├── sj-monitor/       # Surat Jalan Monitor — delivery note tracking, invoicing, payments
 │   ├── bul-monitor/      # BUL Monitor — delivery note tracking (variant of sj-monitor)
 │   ├── bul-accounting/   # Pembukuan Truck — full accounting (COA, jurnal, kas/bank, penjualan)
-│   └── erp-acc/          # ERP ACC — full ERP system (separate Firebase project)
+│   └── erp-acc/          # ERP ACC — full ERP system (Supabase + Ant Design)
 ├── shared/
 │   └── bul-bridge/       # Data exchange contract docs: bul-monitor ↔ bul-accounting
-├── sj-monitor/           # (legacy path — will be moved to apps/ in a future refactor)
-└── ERP-ACC/              # (legacy path — will be moved to apps/ in a future refactor)
+└── scripts/              # Dev tooling (bug-hunter.sh autonomous pipeline)
 ```
 
 Each sub-project is a **separate company** with its own Firestore database and deployment. `bul-monitor` and `bul-accounting` have a data exchange relationship (see `shared/bul-bridge/`).
@@ -41,21 +40,23 @@ Each sub-project is a **separate company** with its own Firestore database and d
 Each sub-project has its own `package.json`. Always `cd` into the correct project first:
 
 ```bash
-cd sj-monitor && npm run dev      # Local dev server
-cd sj-monitor && npm run build    # Production build (validate before claiming done)
-cd sj-monitor && npm test         # Run Vitest (exit 0 = ok)
-cd sj-monitor && npm run lint     # ESLint on src/utils/ + src/services/
+cd apps/sj-monitor && npm run dev      # Local dev server
+cd apps/sj-monitor && npm run build    # Production build (validate before claiming done)
+cd apps/sj-monitor && npm test         # Run Vitest (exit 0 = ok)
+cd apps/sj-monitor && npm run lint     # ESLint on src/utils/ + src/services/
 cd apps/bul-accounting && npm run dev
 cd apps/bul-accounting && npm run build
 cd apps/bul-monitor && npm run dev
 cd apps/bul-monitor && npm run build
+cd apps/erp-acc/erp-app && npm run dev
+cd apps/erp-acc/erp-app && npm run build
 ```
 
 **Deployment**: Claude may deploy to dev/staging only. Never deploy to production. Use `firebase deploy --only hosting` from the project directory.
 
 ## Module Boundaries
 
-### sj-monitor
+### sj-monitor (`apps/sj-monitor/`)
 | Module | Key files | Purpose |
 |---|---|---|
 | Surat Jalan (SJ) | App.jsx | Create, edit, track delivery notes |
