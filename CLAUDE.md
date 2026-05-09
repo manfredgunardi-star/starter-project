@@ -9,17 +9,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Multi-company ERP for sand/stone logistics businesses. Three independent React SPAs share one git repo, each with its own Firebase project:
+Multi-company ERP for sand/stone logistics businesses. Four independent React SPAs share one git repo, each with its own Firebase project:
 
 ```
 C:\Project/
-├── sj-monitor/       # Surat Jalan Monitor — delivery note tracking, invoicing, payments
-├── BUL-accounting/   # Pembukuan Truck — full accounting (COA, jurnal, kas/bank, penjualan)
-├── BUL-monitor/      # BUL Monitor — delivery note tracking (variant of sj-monitor)
-└── ERP-ACC/          # Git worktree for isolated development
+├── apps/
+│   ├── sj-monitor/       # Surat Jalan Monitor — delivery note tracking, invoicing, payments
+│   ├── bul-monitor/      # BUL Monitor — delivery note tracking (variant of sj-monitor)
+│   ├── bul-accounting/   # Pembukuan Truck — full accounting (COA, jurnal, kas/bank, penjualan)
+│   └── erp-acc/          # ERP ACC — full ERP system (Supabase + Ant Design)
+├── shared/
+│   └── bul-bridge/       # Data exchange contract docs: bul-monitor ↔ bul-accounting
+└── scripts/              # Dev tooling (bug-hunter.sh autonomous pipeline)
 ```
 
-Each sub-project is a **separate company** with its own Firestore database and deployment.
+Each sub-project is a **separate company** with its own Firestore database and deployment. `bul-monitor` and `bul-accounting` have a data exchange relationship (see `shared/bul-bridge/`).
 
 ## Tech Stack
 
@@ -28,26 +32,31 @@ Each sub-project is a **separate company** with its own Firestore database and d
 - **Hosting**: Firebase Hosting (SPA rewrite to index.html)
 - **Exports**: jsPDF + jspdf-autotable (PDF), xlsx (Excel)
 - **Charts**: Recharts (BUL-accounting only)
-- **No test framework, no linter/formatter configured**
+- **Testing**: Vitest 4 + Testing Library (sj-monitor only, pilot)
+- **Linting**: ESLint 9 flat config (sj-monitor: `src/utils/`, `src/services/`)
 
 ## Commands
 
 Each sub-project has its own `package.json`. Always `cd` into the correct project first:
 
 ```bash
-cd sj-monitor && npm run dev      # Local dev server
-cd sj-monitor && npm run build    # Production build (validate before claiming done)
-cd BUL-accounting && npm run dev
-cd BUL-accounting && npm run build
-cd BUL-monitor && npm run dev
-cd BUL-monitor && npm run build
+cd apps/sj-monitor && npm run dev      # Local dev server
+cd apps/sj-monitor && npm run build    # Production build (validate before claiming done)
+cd apps/sj-monitor && npm test         # Run Vitest (exit 0 = ok)
+cd apps/sj-monitor && npm run lint     # ESLint on src/utils/ + src/services/
+cd apps/bul-accounting && npm run dev
+cd apps/bul-accounting && npm run build
+cd apps/bul-monitor && npm run dev
+cd apps/bul-monitor && npm run build
+cd apps/erp-acc/erp-app && npm run dev
+cd apps/erp-acc/erp-app && npm run build
 ```
 
 **Deployment**: Claude may deploy to dev/staging only. Never deploy to production. Use `firebase deploy --only hosting` from the project directory.
 
 ## Module Boundaries
 
-### sj-monitor
+### sj-monitor (`apps/sj-monitor/`)
 | Module | Key files | Purpose |
 |---|---|---|
 | Surat Jalan (SJ) | App.jsx | Create, edit, track delivery notes |
@@ -59,7 +68,7 @@ cd BUL-monitor && npm run build
 | Ritasi | RitasiBulkUpload.jsx | Bulk trip data import |
 | Master Data | firestoreService.js, App.jsx | Rute, Material, Armada, Supir |
 
-### BUL-accounting
+### bul-accounting (`apps/bul-accounting/`)
 | Module | Key files | Purpose |
 |---|---|---|
 | COA | COAPage.jsx | Chart of Accounts management |
@@ -72,8 +81,8 @@ cd BUL-monitor && npm run build
 | Pelanggan/Supplier | PelangganPage.jsx, SupplierPage.jsx | Customer/vendor master data |
 | Armada | ArmadaPage.jsx | Fleet management |
 
-### BUL-monitor
-Variant of sj-monitor for a different company. Main logic in App.jsx (7,249 lines).
+### bul-monitor (`apps/bul-monitor/`)
+Variant of sj-monitor for a different company. Main logic in App.jsx (7,249 lines). Mengirim data ke bul-accounting via Firestore (lihat `shared/bul-bridge/`).
 
 ## Data Safety Rules
 
@@ -127,7 +136,32 @@ Variant of sj-monitor for a different company. Main logic in App.jsx (7,249 line
 ## Validation
 
 - Run `npm run build` in the affected project — **must pass with no errors** before claiming work is done.
-- No test framework exists yet. Describe manual test steps if the change affects user-facing behavior.
+- For sj-monitor `src/utils/` or `src/services/` changes: run `npm test && npm run lint` first.
+- Test files live at `sj-monitor/src/utils/__tests__/` and `sj-monitor/src/services/__tests__/`.
+
+## Autonomous Bug-Fix Pipeline
+
+A `claude --print` headless pipeline auto-fixes issues labeled `bug` + `ai-fixable`.
+
+### How It Works
+1. GitHub Actions runs nightly (02:00 WIB) or on manual dispatch via Actions > Bug-Hunter
+2. Runner creates a git worktree at `.worktrees/fix-<issue>` for isolation
+3. Claude follows the `bug-hunter` skill: RED → GREEN → VALIDATE → COMMIT → OUTPUT
+4. PR dibuka untuk human review — **no auto-merge, no auto-deploy**
+
+### Safety Boundaries untuk Pipeline
+- NEVER `firebase deploy` (semua variant)
+- NEVER push ke `main` langsung
+- NEVER ubah `firestore.rules`, firebase-config, atau auth files
+- NEVER ubah financial logic (fungsi dengan `hargaPerRute`, `uangMuka`, `pajak`, `ppn`, `pph`, `debit`, `kredit`)
+
+### Labeling Issues untuk Pipeline
+Label issue dengan `ai-fixable` HANYA jika:
+- Bug ada di `src/utils/` atau `src/services/` pure functions, ATAU
+- Bug ada di presentational UI component tanpa financial logic
+- Fix yang diharapkan adalah behavioral correction, bukan architectural change
+
+**Jangan pernah** label `ai-fixable` jika bug menyentuh financial calculations, Firestore rules, atau auth.
 
 ## Known Architecture Notes
 

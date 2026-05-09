@@ -1,0 +1,19 @@
+- generic [ref=e15]:
+  - heading "ERP Pembukuan" [level=3] [ref=e16]
+  - alert [ref=e51]:
+    - img "close-circle" [ref=e53]:
+      - img [ref=e54]
+    - generic [ref=e57]: Invalid login credentials
+  - generic [ref=e17]:
+    - generic [ref=e19]:
+      - generic "Email" [ref=e21]: "* Email"
+      - textbox "* Email" [ref=e25]: manfred.gunardi@gmail.com
+    - generic [ref=e27]:
+      - generic "Password" [ref=e29]: "* Password"
+      - generic [ref=e33]:
+        - textbox "* Password" [ref=e34]: admin123
+        - img "eye-invisible" [ref=e36] [cursor=pointer]:
+          - img [ref=e37]
+    - button "Masuk" [active] [ref=e45] [cursor=pointer]:
+      - img [ref=e59]
+      - generic [ref=e50]: Masuk
