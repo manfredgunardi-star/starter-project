@@ -6,3 +6,6 @@ dist/
 env.txt
 build.log
 rules terupdate.txt
+.worktrees/
+.claude/worktrees/
+Token GitHub.txt

@@ -1,0 +1,215 @@
+<style>
+  .preview-wrap { display: flex; flex-direction: column; gap: 32px; margin-top: 8px; }
+
+  /* Shared app chrome mock */
+  .app-shell {
+    border-radius: 20px;
+    overflow: hidden;
+    background: linear-gradient(160deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+    border: 1px solid rgba(255,255,255,0.1);
+    font-family: 'SF Pro Display', Inter, sans-serif;
+    position: relative;
+    min-height: 260px;
+  }
+  .mock-topbar {
+    background: rgba(15,23,42,0.75);
+    backdrop-filter: blur(24px);
+    border-bottom: 0.5px solid rgba(255,255,255,0.12);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .mock-topbar-left { display: flex; flex-direction: column; gap: 2px; }
+  .mock-topbar-eyebrow { font-size: 9px; color: rgba(56,189,248,0.8); font-weight: 600; letter-spacing: 0.07em; text-transform: uppercase; }
+  .mock-topbar-title { font-size: 16px; font-weight: 700; color: white; letter-spacing: -0.025em; }
+  .mock-avatar { width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg,#38bdf8,#6366f1); display:flex;align-items:center;justify-content:center; font-size:10px;color:white;font-weight:700; }
+  .mock-content { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .mock-card { background: rgba(255,255,255,0.06); border: 0.5px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 10px 12px; }
+  .mock-card-title { font-size: 11px; color: rgba(255,255,255,0.9); font-weight: 600; }
+  .mock-card-sub { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+  .mock-dock { position: absolute; bottom: 10px; left: 50%; transform: translateX(-50%); background: rgba(15,23,42,0.8); backdrop-filter: blur(20px); border: 0.5px solid rgba(255,255,255,0.15); border-radius: 9999px; padding: 6px 14px; display:flex;gap:10px;align-items:center; }
+  .mock-dock-item { width: 18px; height: 18px; border-radius: 50%; background: rgba(255,255,255,0.2); }
+  .mock-dock-item.active { background: rgba(56,189,248,0.4); border: 0.5px solid rgba(56,189,248,0.5); }
+
+  /* Option A: Section Banner */
+  .section-banner {
+    background: rgba(15,23,42,0.6);
+    backdrop-filter: blur(20px);
+    border-bottom: 0.5px solid rgba(255,255,255,0.1);
+    padding: 8px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .section-banner-left { display:flex;align-items:center;gap:8px; }
+  .section-banner-icon { width: 28px; height: 28px; border-radius: 8px; background: rgba(56,189,248,0.15); border: 0.5px solid rgba(56,189,248,0.3); display:flex;align-items:center;justify-content:center; font-size: 14px; }
+  .section-banner-text h4 { font-size: 12px; font-weight: 700; color: white; margin: 0; }
+  .section-banner-text p { font-size: 10px; color: rgba(255,255,255,0.5); margin: 0; }
+  .section-banner-stats { display:flex;gap:10px; }
+  .stat-chip { background: rgba(255,255,255,0.07); border: 0.5px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 3px 8px; font-size: 10px; color: rgba(255,255,255,0.6); }
+  .stat-chip span { color: #38bdf8; font-weight: 700; }
+
+  /* Option B: Floating Pill */
+  .floating-pill-wrap { padding: 10px 12px 6px; }
+  .floating-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(56,189,248,0.1);
+    backdrop-filter: blur(16px);
+    border: 0.5px solid rgba(56,189,248,0.3);
+    border-radius: 9999px;
+    padding: 5px 12px 5px 6px;
+    margin-bottom: 8px;
+  }
+  .floating-pill-icon { width: 22px; height: 22px; border-radius: 50%; background: rgba(56,189,248,0.2); display:flex;align-items:center;justify-content:center;font-size:11px; }
+  .floating-pill-text { font-size: 11px; font-weight: 700; color: #bae6fd; }
+  .floating-pill-count { font-size: 10px; color: rgba(186,230,253,0.6); }
+
+  /* Option C: Glass Page Header Card */
+  .glass-header-card {
+    margin: 10px 12px 6px;
+    background: linear-gradient(135deg, rgba(56,189,248,0.08), rgba(99,102,241,0.05));
+    backdrop-filter: blur(20px);
+    border: 0.5px solid rgba(56,189,248,0.2);
+    border-radius: 16px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .glass-header-left { display:flex;align-items:center;gap:10px; }
+  .glass-header-icon-wrap { width: 36px; height: 36px; border-radius: 10px; background: rgba(56,189,248,0.15); border: 0.5px solid rgba(56,189,248,0.3); display:flex;align-items:center;justify-content:center;font-size:18px; flex-shrink:0; }
+  .glass-header-title { font-size: 14px; font-weight: 700; color: white; margin: 0; letter-spacing:-0.02em; }
+  .glass-header-sub { font-size: 10px; color: rgba(255,255,255,0.5); margin: 2px 0 0; }
+  .glass-header-stats { display:flex;gap:16px; }
+  .glass-stat { text-align: right; }
+  .glass-stat-num { font-size: 16px; font-weight: 700; color: #38bdf8; line-height: 1; }
+  .glass-stat-label { font-size: 9px; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.05em; }
+</style>
+
+<h2>Floating Header — 3 Pendekatan</h2>
+<p class="subtitle">Masing-masing menampilkan konteks menu yang berbeda. Pilih yang paling cocok dengan feel app.</p>
+
+<div class="preview-wrap">
+
+  <!-- OPTION A -->
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Section Banner — Sticky di bawah TopBar</h3>
+      <p>Bar tipis glass yang menempel di bawah TopBar, berisi nama seksi + ringkasan data (jumlah, status). Tidak mengambil banyak ruang vertikal.</p>
+      <div class="app-shell" style="margin-top:10px;">
+        <div class="mock-topbar">
+          <div class="mock-topbar-left">
+            <span class="mock-topbar-eyebrow">sj-monitor</span>
+            <span class="mock-topbar-title">Surat Jalan</span>
+          </div>
+          <div class="mock-avatar">M</div>
+        </div>
+        <div class="section-banner">
+          <div class="section-banner-left">
+            <div class="section-banner-icon">📦</div>
+            <div class="section-banner-text">
+              <h4>Daftar Surat Jalan</h4>
+              <p>Semua status • April 2026</p>
+            </div>
+          </div>
+          <div class="section-banner-stats">
+            <div class="stat-chip"><span>852</span> total</div>
+            <div class="stat-chip"><span>0</span> pending</div>
+          </div>
+        </div>
+        <div class="mock-content">
+          <div class="mock-card"><div class="mock-card-title">SJ #11237 — Mad Holil / RAM</div><div class="mock-card-sub">19/4/2026 • SGM-Adhimix • ✅ Terkirim</div></div>
+          <div class="mock-card"><div class="mock-card-title">SJ #11236 — Budi / Truk B</div><div class="mock-card-sub">19/4/2026 • Rute A • ✅ Terkirim</div></div>
+        </div>
+        <div class="mock-dock">
+          <div class="mock-dock-item active"></div>
+          <div class="mock-dock-item"></div><div class="mock-dock-item"></div>
+          <div class="mock-dock-item"></div><div class="mock-dock-item"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION B -->
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Floating Pill — Label konteks mengambang</h3>
+      <p>Pill kecil bergaya glass muncul di atas konten, showing nama seksi + jumlah item. Ringan, tidak mengganggu, dan sesuai bahasa desain DockNav.</p>
+      <div class="app-shell" style="margin-top:10px;">
+        <div class="mock-topbar">
+          <div class="mock-topbar-left">
+            <span class="mock-topbar-eyebrow">sj-monitor</span>
+            <span class="mock-topbar-title">Surat Jalan</span>
+          </div>
+          <div class="mock-avatar">M</div>
+        </div>
+        <div class="floating-pill-wrap">
+          <div class="floating-pill">
+            <div class="floating-pill-icon">📦</div>
+            <span class="floating-pill-text">Surat Jalan</span>
+            <span class="floating-pill-count">852 data</span>
+          </div>
+          <div class="mock-card"><div class="mock-card-title">SJ #11237 — Mad Holil / RAM</div><div class="mock-card-sub">19/4/2026 • SGM-Adhimix • ✅ Terkirim</div></div>
+          <div class="mock-card"><div class="mock-card-title">SJ #11236 — Budi / Truk B</div><div class="mock-card-sub">19/4/2026 • Rute A • ✅ Terkirim</div></div>
+        </div>
+        <div class="mock-dock">
+          <div class="mock-dock-item active"></div>
+          <div class="mock-dock-item"></div><div class="mock-dock-item"></div>
+          <div class="mock-dock-item"></div><div class="mock-dock-item"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- OPTION C -->
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Glass Header Card — Panel konteks di atas konten</h3>
+      <p>Kartu glass penuh-lebar di awal setiap seksi, berisi ikon, nama, deskripsi singkat, dan ringkasan statistik. Paling informatif dan cocok untuk tab dengan data kompleks.</p>
+      <div class="app-shell" style="margin-top:10px;">
+        <div class="mock-topbar">
+          <div class="mock-topbar-left">
+            <span class="mock-topbar-eyebrow">sj-monitor</span>
+            <span class="mock-topbar-title">Surat Jalan</span>
+          </div>
+          <div class="mock-avatar">M</div>
+        </div>
+        <div class="glass-header-card">
+          <div class="glass-header-left">
+            <div class="glass-header-icon-wrap">📦</div>
+            <div>
+              <p class="glass-header-title">Daftar Surat Jalan</p>
+              <p class="glass-header-sub">Monitoring pengiriman material • PT. TMP</p>
+            </div>
+          </div>
+          <div class="glass-header-stats">
+            <div class="glass-stat">
+              <div class="glass-stat-num">852</div>
+              <div class="glass-stat-label">Total SJ</div>
+            </div>
+            <div class="glass-stat">
+              <div class="glass-stat-num" style="color:#4ade80;">852</div>
+              <div class="glass-stat-label">Terkirim</div>
+            </div>
+          </div>
+        </div>
+        <div class="mock-content" style="padding-top:4px;">
+          <div class="mock-card"><div class="mock-card-title">SJ #11237 — Mad Holil / RAM</div><div class="mock-card-sub">19/4/2026 • SGM-Adhimix • ✅ Terkirim</div></div>
+          <div class="mock-card"><div class="mock-card-title">SJ #11236 — Budi / Truk B</div><div class="mock-card-sub">19/4/2026 • Rute A • ✅ Terkirim</div></div>
+        </div>
+        <div class="mock-dock">
+          <div class="mock-dock-item active"></div>
+          <div class="mock-dock-item"></div><div class="mock-dock-item"></div>
+          <div class="mock-dock-item"></div><div class="mock-dock-item"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

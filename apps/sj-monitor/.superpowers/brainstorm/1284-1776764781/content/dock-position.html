@@ -1,0 +1,67 @@
+<h2>Di mana posisi Liquid Glass Dock?</h2>
+<p class="subtitle">Dock saat ini berada di bawah tengah. Pilih posisi untuk versi barunya.</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="bottom-center" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f0f1a;border-radius:12px;min-height:160px;position:relative;overflow:hidden;display:flex;align-items:flex-end;justify-content:center;padding-bottom:14px;">
+      <!-- screen content mockup -->
+      <div style="position:absolute;top:12px;left:12px;right:12px;height:20px;background:rgba(255,255,255,0.08);border-radius:6px;"></div>
+      <div style="position:absolute;top:44px;left:12px;right:12px;bottom:40px;background:rgba(255,255,255,0.04);border-radius:8px;"></div>
+      <!-- dock -->
+      <div style="display:flex;gap:6px;background:rgba(255,255,255,0.12);backdrop-filter:blur(20px);border:0.5px solid rgba(255,255,255,0.25);border-radius:32px;padding:8px 14px;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+        <div style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,0.3);"></div>
+        <div style="width:22px;height:22px;border-radius:50%;background:rgba(99,102,241,0.7);"></div>
+        <div style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,0.3);"></div>
+        <div style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,0.3);"></div>
+        <div style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,0.3);"></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Bottom Center Pill</h3>
+      <p>Posisi default saat ini — floating di bawah tengah. Nyaman untuk thumb pada mobile, ikonik seperti macOS dock.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="top-center" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f0f1a;border-radius:12px;min-height:160px;position:relative;overflow:hidden;display:flex;align-items:flex-start;justify-content:center;padding-top:14px;">
+      <!-- dock -->
+      <div style="display:flex;gap:6px;background:rgba(255,255,255,0.12);backdrop-filter:blur(20px);border:0.5px solid rgba(255,255,255,0.25);border-radius:32px;padding:8px 14px;box-shadow:0 8px 32px rgba(0,0,0,0.4);z-index:2;">
+        <div style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,0.3);"></div>
+        <div style="width:22px;height:22px;border-radius:50%;background:rgba(99,102,241,0.7);"></div>
+        <div style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,0.3);"></div>
+        <div style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,0.3);"></div>
+        <div style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,0.3);"></div>
+      </div>
+      <!-- screen content mockup -->
+      <div style="position:absolute;top:54px;left:12px;right:12px;bottom:12px;background:rgba(255,255,255,0.04);border-radius:8px;"></div>
+    </div>
+    <div class="card-body">
+      <h3>Top Center Pill</h3>
+      <p>Floating di atas tengah, mirip visi-bar di macOS Sonoma. Lebih cocok untuk desktop/tablet.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="bottom-left" onclick="toggleSelect(this)">
+    <div class="card-image" style="background:#0f0f1a;border-radius:12px;min-height:160px;position:relative;overflow:hidden;display:flex;align-items:flex-end;justify-content:flex-start;padding-bottom:14px;padding-left:14px;">
+      <!-- screen content mockup -->
+      <div style="position:absolute;top:12px;left:12px;right:12px;height:20px;background:rgba(255,255,255,0.08);border-radius:6px;"></div>
+      <div style="position:absolute;top:44px;left:12px;right:12px;bottom:40px;background:rgba(255,255,255,0.04);border-radius:8px;"></div>
+      <!-- dock -->
+      <div style="display:flex;gap:6px;background:rgba(255,255,255,0.12);backdrop-filter:blur(20px);border:0.5px solid rgba(255,255,255,0.25);border-radius:32px;padding:8px 14px;box-shadow:0 8px 32px rgba(0,0,0,0.4);">
+        <div style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,0.3);"></div>
+        <div style="width:22px;height:22px;border-radius:50%;background:rgba(99,102,241,0.7);"></div>
+        <div style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,0.3);"></div>
+        <div style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,0.3);"></div>
+        <div style="width:22px;height:22px;border-radius:50%;background:rgba(255,255,255,0.3);"></div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Bottom Left Pill</h3>
+      <p>Floating di sudut kiri bawah — lebih subtle, tidak memblokir konten di tengah layar.</p>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:24px">Klik kartu untuk memilih, lalu balas di terminal.</p>
