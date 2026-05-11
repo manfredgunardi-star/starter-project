@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="#0f172a"/>
+
+  <!-- Badan truk (box) -->
+  <rect x="60" y="168" width="256" height="200" rx="16" fill="#38bdf8"/>
+
+  <!-- Kabin truk -->
+  <path d="M316 200 L316 368 L432 368 L432 296 L380 200 Z" fill="#7dd3fc"/>
+
+  <!-- Jendela kabin -->
+  <path d="M324 216 L360 216 L392 280 L324 280 Z" fill="#0f172a" opacity="0.6"/>
+
+  <!-- Roda kiri -->
+  <circle cx="136" cy="376" r="44" fill="#1e293b" stroke="#38bdf8" stroke-width="14"/>
+  <circle cx="136" cy="376" r="16" fill="#38bdf8"/>
+
+  <!-- Roda kanan -->
+  <circle cx="368" cy="376" r="44" fill="#1e293b" stroke="#38bdf8" stroke-width="14"/>
+  <circle cx="368" cy="376" r="16" fill="#38bdf8"/>
+
+  <!-- Garis dokumen di badan truk -->
+  <rect x="100" y="220" width="140" height="12" rx="6" fill="#0f172a" opacity="0.4"/>
+  <rect x="100" y="248" width="100" height="12" rx="6" fill="#0f172a" opacity="0.4"/>
+  <rect x="100" y="276" width="120" height="12" rx="6" fill="#0f172a" opacity="0.4"/>
+</svg>
