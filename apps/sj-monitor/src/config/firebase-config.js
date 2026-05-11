@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
-import { initializeFirestore } from 'firebase/firestore';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 
 // Firebase config dibaca dari environment variables (.env)
@@ -33,6 +33,7 @@ setPersistence(auth, browserLocalPersistence).catch((err) => {
 export const db = initializeFirestore(app, {
   experimentalAutoDetectLongPolling: true,
   useFetchStreams: false,
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
 });
 
 /**
