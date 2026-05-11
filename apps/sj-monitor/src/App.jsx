@@ -34,6 +34,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 
 import { AlertCircle, Package, Truck, FileText, DollarSign, Users, Settings, Database, LogOut, Plus, Edit, Trash2, Eye, CheckCircle, XCircle, Clock, Search, RefreshCw } from 'lucide-react';
 import TopBar from './components/TopBar.jsx';
+import OfflineIndicator from './components/OfflineIndicator.jsx';
 import DockNav from './components/DockNav.jsx';
 import SectionBanner from './components/SectionBanner.jsx';
 
@@ -2535,6 +2536,8 @@ try { unsubTransaksi(); } catch {}
 
   return (
     <div className="min-h-screen" style={{ background: 'linear-gradient(160deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)' }}>
+      <OfflineIndicator />
+
       {/* Liquid Glass Top Bar + Section Banner */}
       {effectiveRole && (
         <>
