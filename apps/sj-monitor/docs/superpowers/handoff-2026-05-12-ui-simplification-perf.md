@@ -95,3 +95,24 @@ These were not touched as part of the implementation.
    - Mobile DockNav hide/reveal behavior.
    - Desktop DockNav remains visible.
 4. If manual verification passes, decide whether to push branch or open PR.
+
+## Resume Notes: 2026-05-12
+
+Validation re-run from `C:\Project\apps\sj-monitor`:
+
+- `npm run build` passed.
+- `npm test` passed: 3 test files, 14 tests.
+- `npm run lint` exited 0 with the same existing warnings listed above.
+- `git diff --check -- apps/sj-monitor` passed.
+
+Browser smoke:
+
+- Dev server started at `http://127.0.0.1:5173/`.
+- Browser loaded the app and reached the authenticated dashboard using the existing local browser session.
+- Console showed repeated React warnings: `Maximum update depth exceeded` in `SuratJalanMonitor`.
+- The warning points around existing `useSettings`/dashboard state flow and not to the extracted lazy pages directly. The implementation branch did not change `useSettings`, Firestore rules, auth, Firebase config, or the uang jalan reconcile logic. Treat this as a separate runtime investigation unless the next session decides to include it.
+
+Next practical decision:
+
+- If this warning is acceptable as pre-existing baseline, continue with authenticated tab QA and then push/open PR.
+- If zero console warnings are required, investigate the `SuratJalanMonitor` update-depth warning before push/PR. Be careful: likely candidates are force-logout/settings or uang jalan reconcile behavior, so ask before changing money-related reconciliation logic.
