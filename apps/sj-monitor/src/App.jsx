@@ -4,7 +4,7 @@ import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebas
 import React, { useState, useEffect, useRef, useCallback, useMemo, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatCurrency } from './utils/currency.js';
-import { isSJTerinvoice, isSJBelumInvoice, mergeById } from './utils/sjHelpers.js';
+import { isSJBelumInvoice, mergeById } from './utils/sjHelpers.js';
 import { calculateSJPenalty } from './utils/payslipHelpers.js';
 import { downloadSJRecapToExcel } from './utils/excel.js';
 import { useAuth } from './hooks/useAuth.js';
@@ -42,6 +42,21 @@ import OfflineIndicator from './components/OfflineIndicator.jsx';
 import DockNav from './components/DockNav.jsx';
 import SectionBanner from './components/SectionBanner.jsx';
 
+const PageLoader = () => (
+  <div className="flex items-center justify-center h-48 text-slate-400 text-sm">
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+      <div style={{
+        width: 32,
+        height: 32,
+        borderRadius: '50%',
+        border: '2px solid rgba(56,189,248,0.3)',
+        borderTopColor: '#38bdf8',
+        animation: 'spin 0.8s linear infinite',
+      }} />
+      <span>Memuat...</span>
+    </div>
+  </div>
+);
 
 // Returns ISO date string for the 1st of the month, 12 months ago
 const getQueryStartISO = () => {
@@ -1987,7 +2002,7 @@ try { unsubTransaksi(); } catch {}
             onToggleActive={toggleUserActive}
           />
         ) : activeTab === 'master-data' && effectiveRole === 'superadmin' ? (
-          <Suspense fallback={<div className="flex items-center justify-center h-32 text-slate-400 text-sm">Memuat...</div>}>
+          <Suspense fallback={<PageLoader />}>
           <MasterDataManagement
             truckList={truckList}
             supirList={supirList}
@@ -2049,7 +2064,7 @@ try { unsubTransaksi(); } catch {}
           />
           </Suspense>
         ) : activeTab === 'keuangan' ? (
-          <Suspense fallback={<div className="flex items-center justify-center h-32 text-slate-400 text-sm">Memuat...</div>}>
+          <Suspense fallback={<PageLoader />}>
             <KeuanganManagement
               transaksiList={transaksiList}
               currentUser={currentUser}
@@ -2062,14 +2077,14 @@ try { unsubTransaksi(); } catch {}
             />
           </Suspense>
         ) : activeTab === 'laporan-kas' ? (
-          <Suspense fallback={<div className="flex items-center justify-center h-32 text-slate-400 text-sm">Memuat...</div>}>
+          <Suspense fallback={<PageLoader />}>
             <LaporanKasPage
               suratJalanList={suratJalanList}
               transaksiList={transaksiList}
             />
           </Suspense>
         ) : activeTab === 'laporan-truk' ? (
-          <Suspense fallback={<div className="flex items-center justify-center h-32 text-slate-400 text-sm">Memuat...</div>}>
+          <Suspense fallback={<PageLoader />}>
             <LaporanTrukPage
               suratJalanList={suratJalanList}
               truckList={truckList}
@@ -2077,13 +2092,13 @@ try { unsubTransaksi(); } catch {}
             />
           </Suspense>
         ) : activeTab === 'payslip' ? (
-          <Suspense fallback={<div className="flex items-center justify-center h-32 text-slate-400 text-sm">Memuat...</div>}>
+          <Suspense fallback={<PageLoader />}>
             <PayslipReport
               currentUser={currentUser}
             />
           </Suspense>
         ) : activeTab === 'uang-muka' ? (
-          <Suspense fallback={<div className="flex items-center justify-center h-32 text-slate-400 text-sm">Memuat...</div>}>
+          <Suspense fallback={<PageLoader />}>
             <UangMukaManagement
               uangMukaList={uangMukaList}
               suratJalanList={suratJalanList}
@@ -2098,7 +2113,7 @@ try { unsubTransaksi(); } catch {}
             />
           </Suspense>
         ) : activeTab === 'invoicing' ? (
-          <Suspense fallback={<div className="flex items-center justify-center h-32 text-slate-400 text-sm">Memuat...</div>}>
+          <Suspense fallback={<PageLoader />}>
             <InvoiceManagement
               invoiceList={invoiceList}
               suratJalanList={suratJalanList}
@@ -2467,7 +2482,7 @@ try { unsubTransaksi(); } catch {}
                   ×
                 </button>
               </div>
-              <Suspense fallback={<div className="flex items-center justify-center h-32 text-slate-400 text-sm">Memuat...</div>}>
+              <Suspense fallback={<PageLoader />}>
                 <RitasiBulkUpload
                   ruteList={ruteList}
                   onSuccess={() => {
@@ -2495,7 +2510,7 @@ try { unsubTransaksi(); } catch {}
                   ×
                 </button>
               </div>
-              <Suspense fallback={<div className="flex items-center justify-center h-32 text-slate-400 text-sm">Memuat...</div>}>
+              <Suspense fallback={<PageLoader />}>
                 <TarifRuteBulkUpload
                   ruteList={ruteList}
                   currentUser={currentUser}
@@ -4206,3 +4221,4 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
 };
 
 export default SuratJalanMonitor;
+
