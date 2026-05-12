@@ -466,7 +466,7 @@ setConfirmDialog({ show: false, message: '', onConfirm: null });
 
   // Invoice Functions
   // Persist invoice + update SJ terkait dengan fallback nama koleksi ("invoice" vs "invoices")
-  
+
   // Saat admin_invoice update surat_jalan, Firestore Rules hanya mengizinkan perubahan field invoice tertentu.
   const pickSJInvoicePatch = (sj) => {
     const nowIso = new Date().toISOString();
@@ -614,10 +614,10 @@ const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist }) => {
 
     const oldSJIds = invoice.suratJalanIds;
     const newSJIds = data.selectedSJIds;
-    
+
     // SJ yang dihapus dari invoice (ada di old, tidak ada di new)
     const removedSJIds = oldSJIds.filter(id => !newSJIds.includes(id));
-    
+
     // SJ yang ditambah ke invoice (ada di new, tidak ada di old)
     const addedSJIds = newSJIds.filter(id => !oldSJIds.includes(id));
 
@@ -634,7 +634,7 @@ const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist }) => {
           updatedBy: currentUser.name
         };
       }
-      
+
       // Add invoice status ke SJ yang ditambah
       if (addedSJIds.includes(sj.id)) {
         return {
@@ -646,7 +646,7 @@ const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist }) => {
           updatedBy: currentUser.name
         };
       }
-      
+
       return sj;
     });
 
@@ -697,7 +697,7 @@ const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist }) => {
       updatedBy: currentUser.name
     };
 
-    const updatedInvoiceList = invoiceList.map(inv => 
+    const updatedInvoiceList = invoiceList.map(inv =>
       inv.id === invoiceId ? updatedInvoice : inv
     );
 
@@ -723,7 +723,7 @@ try {
 }
   };
 
-  
+
   const deleteInvoice = async (id) => {
     setConfirmDialog({
       show: true,
@@ -892,7 +892,7 @@ try {
 
   const importData = async (type, file) => {
     const reader = new FileReader();
-    
+
     reader.onload = async (e) => {
       if (!isMountedRef.current) return;
       try {
@@ -903,26 +903,26 @@ try {
         const semicolonCount = (firstLine.match(/;/g) || []).length;
         const commaCount     = (firstLine.match(/,/g) || []).length;
         const delimiter = semicolonCount >= commaCount ? ';' : ',';
-        
+
         const rows = text.split('\n')
           .map(row => row.trim())
           .filter(row => row && row.length > 0);
-        
+
         if (rows.length < 2) {
           setAlertMessage('File CSV kosong atau tidak valid!');
           return;
         }
 
         const headers = rows[0].split(delimiter).map(h => h.trim());
-        
+
         // Validasi header berdasarkan tipe master data
         const headersLower = headers.map(h => h.toLowerCase());
         let isValidHeader = false;
         let expectedHeader = '';
-        
+
         if (type === 'suratjalan') {
           expectedHeader = 'Nomor SJ;Tanggal SJ (DD/MM/YYYY);Nomor Polisi;Nama Supir;Rute;Material;Qty Isi;Status;Tgl Terkirim (DD/MM/YYYY);Qty Bongkar';
-          isValidHeader = headers.length >= 8 && 
+          isValidHeader = headers.length >= 8 &&
                          headersLower[0].includes('nomor') && headersLower[0].includes('sj') &&
                          headersLower[1].includes('tanggal') && headersLower[1].includes('sj') &&
                          headersLower[2].includes('nomor') && headersLower[2].includes('polisi') &&
@@ -932,12 +932,12 @@ try {
                          headersLower[6].includes('qty') && headersLower[6].includes('isi');
         } else if (type === 'truck') {
           expectedHeader = 'Nomor Polisi;Aktif (Ya/Tidak)';
-          isValidHeader = headers.length === 2 && 
+          isValidHeader = headers.length === 2 &&
                          headersLower[0].includes('nomor') && headersLower[0].includes('polisi') &&
                          headersLower[1].includes('aktif');
         } else if (type === 'supir') {
           expectedHeader = 'Nama Supir;PT;Aktif (Ya/Tidak)';
-          isValidHeader = headers.length === 3 && 
+          isValidHeader = headers.length === 3 &&
                          headersLower[0].includes('nama') && headersLower[0].includes('supir') &&
                          headersLower[1] === 'pt' &&
                          headersLower[2].includes('aktif');
@@ -948,18 +948,18 @@ try {
                          (headersLower[1].includes('uang') && headersLower[1].includes('jalan'));
         } else if (type === 'material') {
           expectedHeader = 'Material;Satuan';
-          isValidHeader = headers.length === 2 && 
+          isValidHeader = headers.length === 2 &&
                          headersLower[0] === 'material' &&
                          headersLower[1] === 'satuan';
         }
-        
+
         if (!isValidHeader) {
           setAlertMessage(`Format header CSV tidak sesuai!\n\nFormat yang benar untuk ${type.toUpperCase()}:\n${expectedHeader}\n\nHeader yang ditemukan:\n${rows[0]}\n\nSilakan download template yang benar.`);
           return;
         }
-        
+
         const dataRows = rows.slice(1);
-        
+
         let successCount = 0;
         let errorCount = 0;
         let errorDetails = [];
@@ -1186,11 +1186,11 @@ try {
             const values = dataRows[i].split(delimiter).map(v => v.trim());
             if (values.length >= 2 && values[0]) {
               try {
-                const isActive = values[1].toLowerCase() === 'ya' || 
-                                values[1].toLowerCase() === 'yes' || 
-                                values[1].toLowerCase() === 'true' || 
+                const isActive = values[1].toLowerCase() === 'ya' ||
+                                values[1].toLowerCase() === 'yes' ||
+                                values[1].toLowerCase() === 'true' ||
                                 values[1] === '1';
-                
+
                 const newTruck = {
                   id: 'TRK-' + Date.now() + '-' + i + '-' + Math.random().toString(36).substr(2, 9),
                   nomorPolisi: values[0],
@@ -1209,7 +1209,7 @@ try {
               errorDetails.push(`Baris ${i + 2}: Data tidak lengkap`);
             }
           }
-          
+
 // Simpan ke Firestore (collection: trucks)
 if (newItems.length > 0) {
   try {
@@ -1236,11 +1236,11 @@ if (newItems.length > 0) {
             const values = dataRows[i].split(delimiter).map(v => v.trim());
             if (values.length >= 3 && values[0] && values[1]) {
               try {
-                const isActive = values[2].toLowerCase() === 'ya' || 
-                                values[2].toLowerCase() === 'yes' || 
-                                values[2].toLowerCase() === 'true' || 
+                const isActive = values[2].toLowerCase() === 'ya' ||
+                                values[2].toLowerCase() === 'yes' ||
+                                values[2].toLowerCase() === 'true' ||
                                 values[2] === '1';
-                
+
                 const newSupir = {
                   id: 'SPR-' + Date.now() + '-' + i + '-' + Math.random().toString(36).substr(2, 9),
                   namaSupir: values[0],
@@ -1260,7 +1260,7 @@ if (newItems.length > 0) {
               errorDetails.push(`Baris ${i + 2}: Data tidak lengkap`);
             }
           }
-          
+
           // Simpan ke Firestore (collection: supir)
           if (newItems.length > 0) {
             try {
@@ -1316,7 +1316,7 @@ if (newItems.length > 0) {
               errorDetails.push(`Baris ${i + 2}: Data tidak lengkap (harus ada Rute dan Uang Jalan)`);
             }
           }
-          
+
           // Simpan ke Firestore (collection: rute)
           if (newItems.length > 0) {
             try {
@@ -1342,7 +1342,7 @@ if (newItems.length > 0) {
                 if (!isNaN(angkaTest) && /^\d+$/.test(values[1].replace(/\./g, '').replace(/,/g, ''))) {
                   throw new Error('Satuan tidak boleh berupa angka. Gunakan format template Material yang benar (contoh: Ton, Kg, m³, Pcs)');
                 }
-                
+
                 const newMaterial = {
                   id: 'MTR-' + Date.now() + '-' + i + '-' + Math.random().toString(36).substr(2, 9),
                   material: values[0],
@@ -1362,7 +1362,7 @@ if (newItems.length > 0) {
               errorDetails.push(`Baris ${i + 2}: Data tidak lengkap (harus ada Material dan Satuan)`);
             }
           }
-          
+
           // Simpan ke Firestore (collection: material)
           if (newItems.length > 0) {
             try {
@@ -1403,7 +1403,7 @@ if (newItems.length > 0) {
     const selectedSupir = supirList.find(s => s.id === data.supirId);
     const selectedRute = ruteList.find(r => r.id === data.ruteId);
     const selectedMaterial = materialList.find(m => m.id === data.materialId);
-    
+
     const newSJ = {
       id: 'SJ-' + Date.now(),
       nomorSJ: data.nomorSJ,
@@ -1428,10 +1428,10 @@ if (newItems.length > 0) {
       createdAt: new Date().toISOString(),
       createdBy: currentUser.name
     };
-    
+
     const newList = [...suratJalanList, newSJ];
     setSuratJalanList(newList);
-    
+
     // Auto-create transaksi keuangan
     await upsertItemToFirestore(db, "surat_jalan", { ...newSJ, isActive: true });
 
@@ -1448,7 +1448,7 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
   });
 }
 
-    
+
   };
 
   const updateSuratJalan = useCallback(async (id, updates) => {
@@ -2175,7 +2175,7 @@ try { unsubTransaksi(); } catch {}
                     <Plus className="w-4 h-4" />
                     <span>Tambah Surat Jalan</span>
                   </button>
-                  
+
                   <button
                     onClick={() => downloadTemplate('suratjalan')}
                     className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base transition"
@@ -2183,7 +2183,7 @@ try { unsubTransaksi(); } catch {}
                     <FileText className="w-4 h-4" />
                     <span className="hidden sm:inline">Download Template</span><span className="sm:hidden">Template</span>
                   </button>
-                  
+
                   <label className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base transition cursor-pointer">
                     <Package className="w-4 h-4" />
                     <span className="hidden sm:inline">Import Data</span><span className="sm:hidden">Import</span>
@@ -2594,7 +2594,7 @@ const SettingsManagement = ({ currentUser, appSettings, onUpdateSettings, forceL
         alert('Ukuran file maksimal 2MB!');
         return;
       }
-      
+
       if (!file.type.startsWith('image/')) {
         alert('File harus berupa gambar (PNG, JPG, SVG)!');
         return;
@@ -2722,9 +2722,9 @@ const SettingsManagement = ({ currentUser, appSettings, onUpdateSettings, forceL
                   </label>
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 flex items-center justify-center bg-white" style={{ minHeight: '150px' }}>
                     {logoPreview ? (
-                      <img 
-                        src={logoPreview} 
-                        alt="Logo Preview" 
+                      <img
+                        src={logoPreview}
+                        alt="Logo Preview"
                         className="max-h-32 max-w-full object-contain"
                       />
                     ) : (
@@ -2778,7 +2778,7 @@ const SettingsManagement = ({ currentUser, appSettings, onUpdateSettings, forceL
                     <div className="text-4xl mb-2">🚚</div>
                   </div>
                 )}
-                
+
                 {/* Company Name */}
                 <h1 className="text-2xl font-bold text-center text-gray-800 mb-2">
                   {settings.companyName || 'Nama Perusahaan'}
@@ -2786,29 +2786,29 @@ const SettingsManagement = ({ currentUser, appSettings, onUpdateSettings, forceL
                 <h2 className="text-xl font-semibold text-center text-gray-700 mb-6">
                   Surat Jalan Monitor
                 </h2>
-                
+
                 {/* Login Form Preview */}
                 <div className="space-y-3 mb-4">
-                  <input 
-                    type="text" 
-                    placeholder="Username" 
+                  <input
+                    type="text"
+                    placeholder="Username"
                     disabled
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
                   />
-                  <input 
-                    type="password" 
-                    placeholder="Password" 
+                  <input
+                    type="password"
+                    placeholder="Password"
                     disabled
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
                   />
-                  <button 
+                  <button
                     disabled
                     className="w-full bg-blue-600 text-white py-2 rounded-lg opacity-75"
                   >
                     LOGIN
                   </button>
                 </div>
-                
+
                 {/* Footer Text */}
                 <p className="text-sm text-gray-600 text-center mt-4">
                   {settings.loginFooterText}
@@ -3035,15 +3035,15 @@ const UsersManagement = ({ usersList, currentUser, onAddUser, onEditUser, onDele
                   </p>
                 )}
               </div>
-              
+
               <div className="flex flex-col space-y-2 ml-4">
                 {user.role !== 'superadmin' && (
                   <>
                     <button
                       onClick={() => onToggleActive(user.id)}
                       className={`px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1 whitespace-nowrap ${
-                        user.isActive 
-                          ? 'bg-orange-600 hover:bg-orange-700 text-white' 
+                        user.isActive
+                          ? 'bg-orange-600 hover:bg-orange-700 text-white'
                           : 'bg-green-600 hover:bg-green-700 text-white'
                       }`}
                     >
@@ -3149,7 +3149,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
       }));
       initializedRef.current = true;
     }
-    
+
     // Reset ref saat modal dibuka untuk type lain
     if (type !== 'editInvoice') {
       initializedRef.current = false;
@@ -3159,17 +3159,17 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
   const handleSubmit = () => {
     if (type === 'addSJ') {
       // Validasi semua 9 field wajib diisi
-      if (!formData.nomorSJ || !formData.tanggalSJ || !formData.truckId || 
+      if (!formData.nomorSJ || !formData.tanggalSJ || !formData.truckId ||
           !formData.supirId || !formData.ruteId || !formData.materialId || !formData.qtyIsi) {
         setAlertMessage('Semua field wajib diisi!\n\nPastikan Anda sudah mengisi:\n1. Nomor SJ\n2. Tanggal SJ\n3. Nomor Polisi (Truck)\n4. Nama Supir\n5. Rute\n6. Material\n7. Qty Isi');
         return;
       }
-      
+
       if (parseFloat(formData.qtyIsi) <= 0) {
         setAlertMessage('Qty Isi harus lebih besar dari 0!');
         return;
       }
-      
+
       onSubmit(formData);
     } else if (type === 'markTerkirim' || type === 'editTerkirim') {
       // Validasi field wajib
@@ -3177,7 +3177,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
         setAlertMessage('Tgl Terkirim dan Qty Bongkar wajib diisi!');
         return;
       }
-      
+
       // Validasi Tgl Terkirim tidak boleh lebih awal dari Tgl SJ
       const tglSJ = new Date(selectedItem.tanggalSJ);
       const tglTerkirim = new Date(formData.tglTerkirim);
@@ -3185,7 +3185,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
         setAlertMessage('Tgl Terkirim tidak boleh lebih awal dari Tgl SJ!\n\nTgl SJ: ' + new Date(selectedItem.tanggalSJ).toLocaleDateString('id-ID'));
         return;
       }
-      
+
       // Validasi Qty Bongkar tidak boleh lebih besar dari Qty Isi
       const qtyBongkar = parseFloat(formData.qtyBongkar);
       const qtyIsi = parseFloat(selectedItem.qtyIsi);
@@ -3193,12 +3193,12 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
         setAlertMessage('Qty Bongkar tidak boleh lebih besar dari Qty Isi!\n\nQty Isi: ' + qtyIsi + ' ' + selectedItem.satuan);
         return;
       }
-      
+
       if (qtyBongkar <= 0) {
         setAlertMessage('Qty Bongkar harus lebih besar dari 0!');
         return;
       }
-      
+
       onSubmit(formData);
     } else if (type === 'addInvoice' || type === 'editInvoice') {
       if (!formData.noInvoice || !formData.tglInvoice) {
@@ -3251,17 +3251,17 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
         setAlertMessage('Password harus diisi!');
         return;
       }
-      
+
       const userData = {
         username: formData.username,
         name: formData.name,
         role: formData.role
       };
-      
+
       if (formData.password) {
         userData.password = formData.password;
       }
-      
+
       onSubmit(userData);
     } else if (type === 'addTruck' || type === 'editTruck') {
       if (!formData.nomorPolisi) {
@@ -3336,7 +3336,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
         <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">
           {getModalTitle()}
         </h2>
-        
+
         <div className="space-y-4">
           {type === 'addSJ' ? (
             <>
@@ -3351,7 +3351,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                     placeholder="Contoh: SJ/2024/001"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">2. Tanggal SJ *</label>
                   <input
@@ -3362,7 +3362,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                   />
                 </div>
               </div>
-              
+
               <SearchableSelect
                 options={truckList.filter(t => t.isActive)}
                 value={formData.truckId}
@@ -3372,7 +3372,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                 displayKey="nomorPolisi"
                 valueKey="id"
               />
-              
+
               <SearchableSelect
                 options={supirList.filter(s => s.isActive)}
                 value={formData.supirId}
@@ -3382,7 +3382,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                 displayKey="namaSupir"
                 valueKey="id"
               />
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">5. PT (Auto-fill)</label>
                 <input
@@ -3392,7 +3392,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-700"
                 />
               </div>
-              
+
               <SearchableSelect
                 options={ruteList.map(r => ({
                   ...r,
@@ -3405,7 +3405,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                 displayKey="displayName"
                 valueKey="id"
               />
-              
+
               <SearchableSelect
                 options={materialList}
                 value={formData.materialId}
@@ -3415,7 +3415,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                 displayKey="material"
                 valueKey="id"
               />
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">8. Satuan (Auto-fill)</label>
@@ -3426,7 +3426,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-700"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">9. Qty Isi *</label>
                   <input
@@ -3440,7 +3440,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                   />
                 </div>
               </div>
-              
+
               <div className="bg-blue-50 p-4 rounded-lg mt-2">
                 <p className="text-sm text-blue-800 font-semibold mb-2">📝 Informasi:</p>
                 <ul className="text-xs text-blue-700 space-y-1">
@@ -3599,7 +3599,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                     disabled={type === 'editInvoice'}
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Tgl Invoice *</label>
                   <input
@@ -3619,7 +3619,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                     {type === 'editInvoice' ? '(tambah atau hapus SJ dari invoice)' : '(yang sudah terkirim)'}
                   </span>
                 </label>
-                
+
                 {/* Search Bar */}
                 <div className="mb-3">
                   <div className="relative">
@@ -3641,7 +3641,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                     )}
                   </div>
                 </div>
-                
+
                 <div className="border border-gray-300 rounded-lg p-4 max-h-80 overflow-y-auto bg-gray-50">
                   {suratJalanList
                     .filter(sj => {
@@ -3693,8 +3693,8 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                           );
                         })
                         .map(sj => (
-                          <label 
-                            key={sj.id} 
+                          <label
+                            key={sj.id}
                             className={`flex items-start space-x-3 p-3 rounded-lg cursor-pointer border-2 transition ${
                               formData.selectedSJIds.includes(sj.id)
                                 ? 'bg-blue-50 border-blue-500'

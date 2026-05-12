@@ -8,7 +8,7 @@ export default function KeuanganManagement({ transaksiList, currentUser, onAddTr
 
   const [filter, setFilter] = useState('all');
   const [filterPT, setFilterPT] = useState('');
-  
+
   const activeTransaksiList = useMemo(
     () => (Array.isArray(transaksiList) ? transaksiList : []).filter(
       (t) => t?.isActive !== false && !t?.deletedAt
@@ -128,7 +128,7 @@ export default function KeuanganManagement({ transaksiList, currentUser, onAddTr
             </button>
           )}
         </div>
-        
+
         {/* Filter PT */}
         {ptList.length > 0 && (
           <div className="flex items-center gap-2">
@@ -162,8 +162,8 @@ export default function KeuanganManagement({ transaksiList, currentUser, onAddTr
                   <div className="flex items-center space-x-3 mb-2">
                     <h3 className="text-lg font-bold text-gray-800">{transaksi.keterangan}</h3>
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      transaksi.tipe === 'pemasukan' 
-                        ? 'bg-green-100 text-green-800' 
+                      transaksi.tipe === 'pemasukan'
+                        ? 'bg-green-100 text-green-800'
                         : 'bg-red-100 text-red-800'
                     }`}>
                       {transaksi.tipe === 'pemasukan' ? 'Pemasukan' : 'Pengeluaran'}
@@ -195,7 +195,7 @@ export default function KeuanganManagement({ transaksiList, currentUser, onAddTr
                     Dibuat oleh: {transaksi.createdBy} pada {new Date(transaksi.createdAt).toLocaleString('id-ID')}
                   </p>
                 </div>
-                
+
                 {canAddTransaksi && (
                   <button
                     onClick={() => onDeleteTransaksi(transaksi.id)}

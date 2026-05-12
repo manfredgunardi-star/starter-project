@@ -49,11 +49,11 @@ export default function InvoiceManagement({
   )].sort((a, b) => b - a);
   if (!tahunOptions.includes(new Date().getFullYear())) tahunOptions.unshift(new Date().getFullYear());
 
-  
+
   const canManageInvoice = () => {
     return effectiveRole === 'superadmin' || effectiveRole === 'admin_invoice';
   };
-  
+
   const sjBelumTerinvoice = useMemo(
     () => suratJalanList.filter((sj) => isSJBelumInvoice(sj)),
     [suratJalanList]
@@ -72,7 +72,7 @@ export default function InvoiceManagement({
   useEffect(() => { setInvPage(1); setInvoicePage(1); }, [activeFilter]);
   const pagedSJ = filteredSJ.slice((invPage - 1) * PAGE_SIZE, invPage * PAGE_SIZE);
   const pagedInvoices = invoiceList.slice((invoicePage - 1) * PAGE_SIZE, invoicePage * PAGE_SIZE);
-  
+
   // Escape CSV cell values untuk mencegah CSV Injection (formula injection di Excel/Sheets)
   const escapeCsvValue = (val) => {
     const str = val == null ? '' : String(val);
@@ -112,7 +112,7 @@ export default function InvoiceManagement({
     csvContent += `\nTOTAL;;;;;${invoice.totalQty.toFixed(2)};;${escapeCsvValue(formatCurrency(totalHarga))};;`;
     csvContent += `\nUang Muka;;;;;;;;${escapeCsvValue('- ' + formatCurrency(totalUM))};`;
     csvContent += `\nNett (setelah UM);;;;;;;;${escapeCsvValue(formatCurrency(totalHargaAfterUM))};`;
-    
+
     const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
@@ -123,7 +123,7 @@ export default function InvoiceManagement({
     link.click();
     document.body.removeChild(link);
   };
-  
+
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
@@ -142,7 +142,7 @@ export default function InvoiceManagement({
             </button>
           )}
         </div>
-        
+
         <div className="flex gap-2">
           <button
             onClick={() => setActiveFilter('belum-terinvoice')}
@@ -174,7 +174,7 @@ export default function InvoiceManagement({
           </button>
         </div>
       </div>
-      
+
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-md p-3 sm:p-6 text-white">
           <div className="flex items-center justify-between">
@@ -369,7 +369,7 @@ export default function InvoiceManagement({
                     )}
                   </div>
                 </div>
-                
+
                 <div className="border-t pt-4 mt-4">
                   <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
                     <FileText className="w-4 h-4" />
@@ -426,7 +426,7 @@ export default function InvoiceManagement({
                     </div>
                   )}
                 </div>
-                
+
                 <div className="mt-4 text-xs text-gray-500 border-t pt-3">
                   <p>Dibuat oleh: <strong>{invoice.createdBy}</strong> pada {new Date(invoice.createdAt).toLocaleString('id-ID')}</p>
                 </div>
