@@ -1,14 +1,16 @@
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { useReducedMotion } from '../hooks/useReducedMotion.js';
+import { useScrollDirection } from '../hooks/useScrollDirection.js';
 
 export default function DockNav({ items, activeTab, onTabChange }) {
   const prefersReducedMotion = useReducedMotion();
+  const hidden = useScrollDirection();
 
   const noMotion = { duration: 0 };
-  const entrySpring  = prefersReducedMotion ? noMotion : { type: 'spring', stiffness: 220, damping: 20, mass: 0.8 };
-  const layoutSpring = prefersReducedMotion ? noMotion : { type: 'spring', stiffness: 380, damping: 26, mass: 0.7 };
-  const labelSpring  = prefersReducedMotion ? noMotion : { type: 'spring', stiffness: 320, damping: 22, mass: 0.6 };
-  const tapSpring    = prefersReducedMotion ? noMotion : { type: 'spring', stiffness: 600, damping: 28, mass: 0.5 };
+  const spring    = prefersReducedMotion ? noMotion : { type: 'spring', stiffness: 280, damping: 26, mass: 0.8 };
+  const layoutSpr = prefersReducedMotion ? noMotion : { type: 'spring', stiffness: 380, damping: 26, mass: 0.7 };
+  const labelSpr  = prefersReducedMotion ? noMotion : { type: 'spring', stiffness: 320, damping: 22, mass: 0.6 };
+  const tapSpr    = prefersReducedMotion ? noMotion : { type: 'spring', stiffness: 600, damping: 28, mass: 0.5 };
 
   return (
     <div style={{
@@ -24,8 +26,12 @@ export default function DockNav({ items, activeTab, onTabChange }) {
       <motion.nav
         className="scrollbar-hide"
         initial={{ opacity: 0, y: 32, scale: 0.92 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ ...entrySpring, delay: 0.08 }}
+        animate={{
+          opacity: hidden ? 0 : 1,
+          y: hidden ? 40 : 0,
+          scale: hidden ? 0.88 : 1,
+        }}
+        transition={spring}
         style={{
           display: 'flex',
           alignItems: 'center',
@@ -39,7 +45,7 @@ export default function DockNav({ items, activeTab, onTabChange }) {
           boxShadow: '0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)',
           overflowX: 'auto',
           maxWidth: '100%',
-          pointerEvents: 'auto',
+          pointerEvents: hidden ? 'none' : 'auto',
         }}
       >
         <LayoutGroup>
@@ -53,9 +59,9 @@ export default function DockNav({ items, activeTab, onTabChange }) {
               type="button"
               onClick={() => onTabChange(item.tab)}
               layout
-              transition={layoutSpring}
+              transition={layoutSpr}
               title={item.label}
-              whileTap={{ scale: 0.85, transition: tapSpring }}
+              whileTap={{ scale: 0.85, transition: tapSpr }}
               style={{
                 flexShrink: 0,
                 display: 'flex',
@@ -76,7 +82,7 @@ export default function DockNav({ items, activeTab, onTabChange }) {
                   scale: isActive ? 1 : 1,
                   color: isActive ? '#38bdf8' : 'rgba(255,255,255,0.35)',
                 }}
-                transition={layoutSpring}
+                transition={layoutSpr}
               >
                 <Icon
                   size={isActive ? 15 : 20}
@@ -91,7 +97,7 @@ export default function DockNav({ items, activeTab, onTabChange }) {
                     initial={{ width: 0, opacity: 0, x: -4 }}
                     animate={{ width: 'auto', opacity: 1, x: 0 }}
                     exit={{ width: 0, opacity: 0, x: -4 }}
-                    transition={labelSpring}
+                    transition={labelSpr}
                     style={{
                       fontSize: 11,
                       fontWeight: 700,

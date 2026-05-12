@@ -3,10 +3,10 @@ import { db, auth, ensureAuthed, createUserWithRoleFn } from "./config/firebase-
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "firebase/auth";
 import React, { useState, useEffect, useRef, useCallback, useMemo, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { formatCurrency, formatTanggalID } from './utils/currency.js';
-import { isSJTerinvoice, isSJBelumInvoice, mergeById } from './utils/sjHelpers.js';
+import { formatCurrency } from './utils/currency.js';
+import { isSJBelumInvoice, mergeById } from './utils/sjHelpers.js';
 import { calculateSJPenalty } from './utils/payslipHelpers.js';
-import { downloadSJRecapToExcel, exportLabaKotorToExcel } from './utils/excel.js';
+import { downloadSJRecapToExcel } from './utils/excel.js';
 import { useAuth } from './hooks/useAuth.js';
 import { useMasterData } from './hooks/useMasterData.js';
 import { useUsers } from './hooks/useUsers.js';
@@ -15,9 +15,14 @@ import SearchableSelect from './components/SearchableSelect.jsx';
 import StatCard from './components/StatCard.jsx';
 import AlertBanner from './components/AlertBanner.jsx';
 import SuratJalanCard from './components/SuratJalanCard.jsx';
+import Pagination, { PAGE_SIZE, clampPage } from './components/Pagination.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 const LaporanKasPage   = React.lazy(() => import('./pages/LaporanKasPage.jsx'));
 const LaporanTrukPage  = React.lazy(() => import('./pages/LaporanTrukPage.jsx'));
+const KeuanganManagement = React.lazy(() => import('./pages/KeuanganPage.jsx'));
+const InvoiceManagement = React.lazy(() => import('./pages/InvoicePage.jsx'));
+const UangMukaManagement = React.lazy(() => import('./pages/UangMukaPage.jsx'));
+const MasterDataManagement = React.lazy(() => import('./pages/MasterDataPage.jsx'));
 const PayslipReport    = React.lazy(() => import('./components/PayslipReport.jsx'));
 const RitasiBulkUpload = React.lazy(() => import('./components/RitasiBulkUpload.jsx'));
 const TarifRuteBulkUpload = React.lazy(() => import('./components/TarifRuteBulkUpload.jsx'));
@@ -28,7 +33,6 @@ import {
   softDeleteItemInFirestore,
   resolveSuratJalanDocRef,
 } from './firestoreService.js';
-import { useVirtualizer } from '@tanstack/react-virtual';
 
 
 
@@ -38,6 +42,21 @@ import OfflineIndicator from './components/OfflineIndicator.jsx';
 import DockNav from './components/DockNav.jsx';
 import SectionBanner from './components/SectionBanner.jsx';
 
+const PageLoader = () => (
+  <div className="flex items-center justify-center h-48 text-slate-400 text-sm">
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+      <div style={{
+        width: 32,
+        height: 32,
+        borderRadius: '50%',
+        border: '2px solid rgba(56,189,248,0.3)',
+        borderTopColor: '#38bdf8',
+        animation: 'spin 0.8s linear infinite',
+      }} />
+      <span>Memuat...</span>
+    </div>
+  </div>
+);
 
 // Returns ISO date string for the 1st of the month, 12 months ago
 const getQueryStartISO = () => {
@@ -49,609 +68,7 @@ const getQueryStartISO = () => {
 };
 
 // Compact status badge for table rows
-const STATUS_BADGE_STYLES = {
-  'dalam perjalanan': 'bg-orange-50 text-orange-600',
-  'terkirim':         'bg-green-50 text-green-600',
-  'gagal':            'bg-red-50 text-red-600',
-  'pending':          'bg-slate-100 text-slate-500',
-};
-
-const StatusBadge = ({ status }) => (
-  <span className={`inline-block rounded-lg px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap ${STATUS_BADGE_STYLES[status?.toLowerCase()] ?? 'bg-slate-100 text-slate-500'}`}>
-    {status ?? '—'}
-  </span>
-);
-
-// Invoice Management Component
-const InvoiceManagement = ({
-  invoiceList,
-  suratJalanList,
-  currentUser,
-  uangMukaList,
-  onAddInvoice,
-  onDeleteInvoice,
-  formatCurrency
-}) => {
-  const [activeFilter, setActiveFilter] = useState('belum-terinvoice');
-  const [labaKotorBulan, setLabaKotorBulan] = useState(new Date().getMonth() + 1);
-  const [labaKotorTahun, setLabaKotorTahun] = useState(new Date().getFullYear());
-  const [labaKotorFilterField, setLabaKotorFilterField] = useState('tglInvoice');
-  const effectiveRole = (currentUser?.role === 'owner' ? 'reader' : currentUser?.role) || 'reader';
-
-  const handleExportLabaKotor = async () => {
-    await exportLabaKotorToExcel(invoiceList, uangMukaList, {
-      bulan: labaKotorBulan,
-      tahun: labaKotorTahun,
-      filterField: labaKotorFilterField,
-    });
-  };
-
-  const tahunOptions = [...new Set(
-    (Array.isArray(invoiceList) ? invoiceList : [])
-      .map(inv => { try { return new Date(inv?.tglInvoice).getFullYear(); } catch { return null; } })
-      .filter(Boolean)
-  )].sort((a, b) => b - a);
-  if (!tahunOptions.includes(new Date().getFullYear())) tahunOptions.unshift(new Date().getFullYear());
-
-  
-  const canManageInvoice = () => {
-    return effectiveRole === 'superadmin' || effectiveRole === 'admin_invoice';
-  };
-  
-  const sjBelumTerinvoice = useMemo(
-    () => suratJalanList.filter((sj) => isSJBelumInvoice(sj)),
-    [suratJalanList]
-  );
-
-  const sjTerinvoice = useMemo(
-    () => suratJalanList.filter((sj) =>
-      String(sj?.status || '').toLowerCase() === 'terkirim' && isSJTerinvoice(sj)
-    ),
-    [suratJalanList]
-  );
-
-  const filteredSJ = activeFilter === 'belum-terinvoice' ? sjBelumTerinvoice : sjTerinvoice;
-  
-  // Escape CSV cell values untuk mencegah CSV Injection (formula injection di Excel/Sheets)
-  const escapeCsvValue = (val) => {
-    const str = val == null ? '' : String(val);
-    if (/^[=+\-@\t\r]/.test(str)) return `'${str}`;
-    if (str.includes(';') || str.includes('\n') || str.includes('"')) return `"${str.replace(/"/g, '""')}"`;
-    return str;
-  };
-
-  // Export to Excel function
-  const exportInvoiceToExcel = (invoice) => {
-    const headers = ['No SJ', 'Tgl SJ', 'No. Polisi', 'Nama Supir', 'Rute', 'Material', 'Qty Bongkar', 'Harga/Qty', 'Subtotal', 'Satuan'];
-    const rows = invoice.suratJalanList.map(sj => {
-      const hargaPerQty = Number(invoice.ruteHarga?.[sj.rute] || 0);
-      const subtotal = Number(sj.qtyBongkar || 0) * hargaPerQty;
-      return [
-        sj.nomorSJ,
-        new Date(sj.tanggalSJ).toLocaleDateString('id-ID'),
-        sj.nomorPolisi,
-        sj.namaSupir,
-        sj.rute,
-        sj.material,
-        sj.qtyBongkar,
-        formatCurrency(hargaPerQty),
-        formatCurrency(subtotal),
-        sj.satuan
-      ];
-    });
-
-    const totalHarga = invoice.totalHarga || 0;
-    const totalUM = invoice.totalUM || 0;
-    const totalHargaAfterUM = invoice.totalHargaAfterUM ?? (totalHarga - totalUM);
-
-    let csvContent = headers.join(';') + '\n';
-    rows.forEach(row => {
-      csvContent += row.map(escapeCsvValue).join(';') + '\n';
-    });
-    csvContent += `\nTOTAL;;;;;${invoice.totalQty.toFixed(2)};;${escapeCsvValue(formatCurrency(totalHarga))};;`;
-    csvContent += `\nUang Muka;;;;;;;;${escapeCsvValue('- ' + formatCurrency(totalUM))};`;
-    csvContent += `\nNett (setelah UM);;;;;;;;${escapeCsvValue(formatCurrency(totalHargaAfterUM))};`;
-    
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `Invoice_${invoice.noInvoice.replace(/\//g, '-')}_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-  
-  return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800">📄 Invoice Management</h2>
-            <p className="text-gray-600 mt-1">Kelola Invoice untuk Surat Jalan Terkirim</p>
-          </div>
-          {canManageInvoice() && sjBelumTerinvoice.length > 0 && (
-            <button
-              onClick={onAddInvoice}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Buat Invoice Baru</span>
-            </button>
-          )}
-        </div>
-        
-        <div className="flex gap-2">
-          <button
-            onClick={() => setActiveFilter('belum-terinvoice')}
-            className={`flex-1 px-4 py-2 rounded-lg transition flex items-center justify-center gap-2 ${
-              activeFilter === 'belum-terinvoice'
-                ? 'bg-orange-600 text-white'
-                : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-            }`}
-          >
-            <Clock className="w-4 h-4" />
-            <span className="font-semibold">Belum Terinvoice</span>
-            <span className="px-2 py-1 bg-white bg-opacity-30 rounded-full text-sm">
-              {sjBelumTerinvoice.length}
-            </span>
-          </button>
-          <button
-            onClick={() => setActiveFilter('terinvoice')}
-            className={`flex-1 px-4 py-2 rounded-lg transition flex items-center justify-center gap-2 ${
-              activeFilter === 'terinvoice'
-                ? 'bg-green-600 text-white'
-                : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-            }`}
-          >
-            <CheckCircle className="w-4 h-4" />
-            <span className="font-semibold">Sudah Terinvoice</span>
-            <span className="px-2 py-1 bg-white bg-opacity-30 rounded-full text-sm">
-              {invoiceList.length}
-            </span>
-          </button>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-md p-3 sm:p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-blue-100 text-sm mb-1">Total Invoice</p>
-              <p className="text-3xl font-bold">{invoiceList.length}</p>
-            </div>
-            <FileText className="w-12 h-12 text-blue-200" />
-          </div>
-        </div>
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-md p-3 sm:p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-orange-100 text-sm mb-1">Belum Terinvoice</p>
-              <p className="text-3xl font-bold">{sjBelumTerinvoice.length}</p>
-            </div>
-            <Package className="w-12 h-12 text-orange-200" />
-          </div>
-        </div>
-        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-md p-3 sm:p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-green-100 text-sm mb-1">Sudah Terinvoice</p>
-              <p className="text-3xl font-bold">{sjTerinvoice.length}</p>
-            </div>
-            <CheckCircle className="w-12 h-12 text-green-200" />
-          </div>
-        </div>
-      </div>
-
-      {currentUser?.role === 'superadmin' && (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ type: 'spring', stiffness: 150, damping: 20 }}
-          className="rounded-2xl backdrop-blur-xl bg-white/10 border border-white/20 shadow-2xl p-4 flex flex-wrap gap-3 items-center"
-        >
-          <span className="text-sm font-semibold text-white/80 mr-1">Export Laba Kotor:</span>
-          <select
-            value={labaKotorBulan}
-            onChange={e => setLabaKotorBulan(Number(e.target.value))}
-            className="rounded-xl bg-white/15 border border-white/20 text-white text-sm px-3 py-1.5 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-white/30"
-          >
-            {['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'].map((bln, i) => (
-              <option key={i + 1} value={i + 1} className="text-slate-800">{bln}</option>
-            ))}
-          </select>
-          <select
-            value={labaKotorTahun}
-            onChange={e => setLabaKotorTahun(Number(e.target.value))}
-            className="rounded-xl bg-white/15 border border-white/20 text-white text-sm px-3 py-1.5 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-white/30"
-          >
-            {tahunOptions.map(y => (
-              <option key={y} value={y} className="text-slate-800">{y}</option>
-            ))}
-          </select>
-          <select
-            value={labaKotorFilterField}
-            onChange={e => setLabaKotorFilterField(e.target.value)}
-            className="rounded-xl bg-white/15 border border-white/20 text-white text-sm px-3 py-1.5 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-white/30"
-          >
-            <option value="tglInvoice" className="text-slate-800">Filter: Tgl Invoice</option>
-            <option value="tanggalSJ" className="text-slate-800">Filter: Tgl SJ</option>
-          </select>
-          <button
-            onClick={handleExportLabaKotor}
-            className="rounded-full bg-emerald-500/80 hover:bg-emerald-500 border border-emerald-300/40 text-white text-sm font-semibold px-5 py-1.5 shadow-lg transition-all flex items-center gap-2"
-          >
-            <FileText className="w-4 h-4" />
-            Export Laba Kotor
-          </button>
-        </motion.div>
-      )}
-
-      {activeFilter === 'belum-terinvoice' ? (
-        <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
-          <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <Package className="w-5 h-5 text-orange-600" />
-            Surat Jalan Terkirim - Belum Terinvoice
-          </h3>
-          {filteredSJ.length === 0 ? (
-            <div className="text-center py-12">
-              <CheckCircle className="w-16 h-16 mx-auto text-green-400 mb-4" />
-              <p className="text-lg font-semibold text-gray-600 mb-2">Semua Surat Jalan Sudah Terinvoice! 🎉</p>
-              <p className="text-sm text-gray-500">Tidak ada Surat Jalan yang perlu di-invoice</p>
-            </div>
-          ) : (
-            <>
-              <div className="mb-4 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
-                <p className="text-sm text-blue-800">
-                  <strong>📋 Info:</strong> Pilih surat jalan di bawah untuk membuat invoice. Klik tombol "Buat Invoice Baru" di atas untuk memulai.
-                </p>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase">Nomor SJ</th>
-                      <th className="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase">Tgl SJ</th>
-                      <th className="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase">Tgl Terkirim</th>
-                      <th className="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase">Nomor Polisi</th>
-                      <th className="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase">Rute</th>
-                      <th className="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase">Material</th>
-                      <th className="px-2 py-2 sm:px-6 sm:py-3 text-right text-xs font-medium text-gray-500 uppercase">Qty Bongkar</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredSJ.map(sj => (
-                      <tr key={sj.id} className="hover:bg-orange-50 transition">
-                        <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-medium text-blue-600">{sj.nomorSJ}</td>
-                        <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
-                          {new Date(sj.tanggalSJ).toLocaleDateString('id-ID')}
-                        </td>
-                        <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-green-700 font-semibold">
-                          {sj.tglTerkirim ? new Date(sj.tglTerkirim).toLocaleDateString('id-ID') : '-'}
-                        </td>
-                        <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">{sj.nomorPolisi}</td>
-                        <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">{sj.rute}</td>
-                        <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">{sj.material}</td>
-                        <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 text-right font-semibold">
-                          {sj.qtyBongkar || 0} {sj.satuan}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {invoiceList.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-md p-12 text-center">
-              <FileText className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-              <p className="text-lg font-semibold text-gray-600 mb-2">Belum Ada Invoice</p>
-              <p className="text-sm text-gray-500 mb-4">Buat invoice pertama untuk Surat Jalan yang sudah terkirim</p>
-              {canManageInvoice() && sjBelumTerinvoice.length > 0 && (
-                <button
-                  onClick={onAddInvoice}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg inline-flex items-center space-x-2 transition"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Buat Invoice Pertama</span>
-                </button>
-              )}
-            </div>
-          ) : (
-            invoiceList.map(invoice => (
-              <div key={invoice.id} className="bg-white rounded-lg shadow-md p-3 sm:p-6 hover:shadow-lg transition">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <div className="flex items-center space-x-3 mb-2">
-                      <h3 className="text-xl font-bold text-gray-800">{invoice.noInvoice}</h3>
-                      <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-semibold flex items-center gap-1">
-                        <CheckCircle className="w-4 h-4" />
-                        Terinvoice
-                      </span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <p className="text-gray-600">Tanggal Invoice:</p>
-                        <p className="font-semibold text-gray-800">
-                          {new Date(invoice.tglInvoice).toLocaleDateString('id-ID')}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-gray-600">Jumlah SJ:</p>
-                        <p className="font-semibold text-gray-800">
-                          {invoice.suratJalanIds.length} Surat Jalan
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <button
-                      onClick={() => exportInvoiceToExcel(invoice)}
-                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
-                    >
-                      <FileText className="w-4 h-4" />
-                      <span>Export Excel</span>
-                    </button>
-                    {canManageInvoice() && (
-                      <button
-                        onClick={() => onDeleteInvoice(invoice.id)}
-                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
-                      >
-                        <XCircle className="w-4 h-4" />
-                        <span>Hapus</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="border-t pt-4 mt-4">
-                  <h4 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
-                    <FileText className="w-4 h-4" />
-                    Detail Surat Jalan:
-                  </h4>
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-2 py-2 sm:px-4 text-left text-xs font-medium text-gray-500 uppercase">No</th>
-                          <th className="px-2 py-2 sm:px-4 text-left text-xs font-medium text-gray-500 uppercase">No SJ</th>
-                          <th className="px-2 py-2 sm:px-4 text-left text-xs font-medium text-gray-500 uppercase">Rute</th>
-                          <th className="px-2 py-2 sm:px-4 text-left text-xs font-medium text-gray-500 uppercase">Material</th>
-                          <th className="px-2 py-2 sm:px-4 text-right text-xs font-medium text-gray-500 uppercase">Qty Bongkar</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-gray-200">
-                        {invoice.suratJalanList.map((sj, idx) => (
-                          <tr key={sj.id} className="hover:bg-gray-50">
-                            <td className="px-2 py-2 sm:px-4 text-xs sm:text-sm text-gray-600">{idx + 1}</td>
-                            <td className="px-2 py-2 sm:px-4 text-xs sm:text-sm font-medium text-blue-600">{sj.nomorSJ}</td>
-                            <td className="px-2 py-2 sm:px-4 text-xs sm:text-sm text-gray-900">{sj.rute}</td>
-                            <td className="px-2 py-2 sm:px-4 text-xs sm:text-sm text-gray-900">{sj.material}</td>
-                            <td className="px-2 py-2 sm:px-4 text-xs sm:text-sm text-gray-900 text-right font-semibold">
-                              {sj.qtyBongkar} {sj.satuan}
-                            </td>
-                          </tr>
-                        ))}
-                        <tr className="bg-gray-100 font-bold">
-                          <td colSpan="4" className="px-2 py-2 sm:px-4 text-xs sm:text-sm text-gray-900 text-right">TOTAL:</td>
-                          <td className="px-2 py-2 sm:px-4 text-xs sm:text-sm text-gray-900 text-right">
-                            {invoice.totalQty.toFixed(2)}
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                  {invoice.totalHarga > 0 && (
-                    <div className="mt-2 pt-2 border-t border-gray-100 text-sm space-y-1">
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Total Harga:</span>
-                        <span className="font-semibold text-gray-800">{formatCurrency(invoice.totalHarga)}</span>
-                      </div>
-                      {invoice.totalUM > 0 && (
-                        <div className="flex justify-between">
-                          <span className="text-gray-600">Uang Muka:</span>
-                          <span className="font-semibold text-red-600">- {formatCurrency(invoice.totalUM)}</span>
-                        </div>
-                      )}
-                      <div className="flex justify-between border-t pt-1">
-                        <span className="font-bold text-gray-800">Nett:</span>
-                        <span className="font-bold text-green-700">{formatCurrency(invoice.totalHargaAfterUM ?? (invoice.totalHarga - (invoice.totalUM || 0)))}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                
-                <div className="mt-4 text-xs text-gray-500 border-t pt-3">
-                  <p>Dibuat oleh: <strong>{invoice.createdBy}</strong> pada {new Date(invoice.createdAt).toLocaleString('id-ID')}</p>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
-
 // Uang Muka Management Component
-const UangMukaManagement = ({
-  uangMukaList,
-  suratJalanList,
-  currentUser,
-  onAddUangMuka,
-  onDeleteUangMuka,
-  formatCurrency
-}) => {
-  const [searchUM, setSearchUM] = useState('');
-  const effectiveRole = (currentUser?.role === 'owner' ? 'reader' : currentUser?.role) || 'reader';
-
-  const canManageUM = () => {
-    return effectiveRole === 'superadmin' || effectiveRole === 'admin_invoice';
-  };
-
-  const umBySJ = useMemo(() => {
-    const map = {};
-    uangMukaList.forEach(um => {
-      if (!map[um.sjId]) map[um.sjId] = [];
-      map[um.sjId].push(um);
-    });
-    return map;
-  }, [uangMukaList]);
-
-  const filteredUM = useMemo(() =>
-    uangMukaList.filter(um => {
-      if (!searchUM) return true;
-      const search = searchUM.toLowerCase();
-      return (
-        (um.nomorSJ || '').toLowerCase().includes(search) ||
-        (um.keterangan || '').toLowerCase().includes(search)
-      );
-    }),
-    [uangMukaList, searchUM]
-  );
-
-  return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800">💰 Uang Muka</h2>
-            <p className="text-gray-600 mt-1">Kelola Uang Muka (Advance Payment) per Surat Jalan</p>
-          </div>
-          {canManageUM() && (
-            <button
-              onClick={onAddUangMuka}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Tambah Uang Muka</span>
-            </button>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-md p-3 sm:p-6 text-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-blue-100 text-sm mb-1">Total Entri</p>
-                <p className="text-3xl font-bold">{uangMukaList.length}</p>
-              </div>
-              <FileText className="w-12 h-12 text-blue-200" />
-            </div>
-          </div>
-          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-md p-3 sm:p-6 text-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-green-100 text-sm mb-1">Total Uang Muka</p>
-                <p className="text-2xl font-bold">{formatCurrency(uangMukaList.reduce((sum, um) => sum + (um.jumlah || 0), 0))}</p>
-              </div>
-              <DollarSign className="w-12 h-12 text-green-200" />
-            </div>
-          </div>
-          <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-md p-3 sm:p-6 text-white">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-orange-100 text-sm mb-1">SJ Terkait</p>
-                <p className="text-3xl font-bold">{Object.keys(umBySJ).length}</p>
-              </div>
-              <Package className="w-12 h-12 text-orange-200" />
-            </div>
-          </div>
-        </div>
-
-        <div className="mb-4">
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Cari Nomor SJ atau Keterangan..."
-              value={searchUM}
-              onChange={(e) => setSearchUM(e.target.value)}
-              className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-            />
-            <Search className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" />
-            {searchUM && (
-              <button
-                onClick={() => setSearchUM('')}
-                className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
-              >
-                <XCircle className="w-5 h-5" />
-              </button>
-            )}
-          </div>
-        </div>
-
-        {filteredUM.length === 0 ? (
-          <div className="text-center py-12">
-            <DollarSign className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-            <p className="text-lg font-semibold text-gray-600 mb-2">
-              {searchUM ? 'Tidak ada data yang cocok' : 'Belum Ada Uang Muka'}
-            </p>
-            <p className="text-sm text-gray-500">
-              {searchUM ? 'Coba kata kunci lain' : 'Tambahkan uang muka untuk Surat Jalan'}
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-2 py-2 sm:px-4 text-left text-xs font-medium text-gray-500 uppercase">No SJ</th>
-                  <th className="px-2 py-2 sm:px-4 text-left text-xs font-medium text-gray-500 uppercase">Tanggal</th>
-                  <th className="px-2 py-2 sm:px-4 text-right text-xs font-medium text-gray-500 uppercase">Jumlah</th>
-                  <th className="px-2 py-2 sm:px-4 text-left text-xs font-medium text-gray-500 uppercase">Keterangan</th>
-                  <th className="px-2 py-2 sm:px-4 text-left text-xs font-medium text-gray-500 uppercase">Dibuat Oleh</th>
-                  {canManageUM() && (
-                    <th className="px-2 py-2 sm:px-4 text-center text-xs font-medium text-gray-500 uppercase">Aksi</th>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredUM.map((um) => (
-                  <tr key={um.id} className="hover:bg-gray-50">
-                    <td className="px-2 py-2 sm:px-4 text-xs sm:text-sm font-medium text-blue-600">{um.nomorSJ}</td>
-                    <td className="px-2 py-2 sm:px-4 text-xs sm:text-sm text-gray-900">
-                      {um.tanggal ? new Date(um.tanggal).toLocaleDateString('id-ID') : '-'}
-                    </td>
-                    <td className="px-2 py-2 sm:px-4 text-xs sm:text-sm text-gray-900 text-right font-semibold">
-                      {formatCurrency(um.jumlah)}
-                    </td>
-                    <td className="px-2 py-2 sm:px-4 text-xs sm:text-sm text-gray-600">{um.keterangan || '-'}</td>
-                    <td className="px-2 py-2 sm:px-4 text-xs sm:text-sm text-gray-600">{um.createdBy}</td>
-                    {canManageUM() && (
-                      <td className="px-2 py-2 sm:px-4 text-center">
-                        <button
-                          onClick={() => onDeleteUangMuka(um.id)}
-                          className="text-red-600 hover:text-red-800 transition"
-                          title="Hapus"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-              <tfoot>
-                <tr className="bg-gray-100 font-bold">
-                  <td colSpan="2" className="px-2 py-2 sm:px-4 text-xs sm:text-sm text-gray-900 text-right">TOTAL:</td>
-                  <td className="px-2 py-2 sm:px-4 text-xs sm:text-sm text-gray-900 text-right">
-                    {formatCurrency(filteredUM.reduce((sum, um) => sum + (um.jumlah || 0), 0))}
-                  </td>
-                  <td colSpan={canManageUM() ? 3 : 2}></td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
 const SuratJalanMonitor = () => {
   const {
     currentUser, firebaseUser, authReady, isLoading, alertMessage, setAlertMessage,
@@ -682,7 +99,6 @@ const SuratJalanMonitor = () => {
   const [sjRecapEndDate, setSjRecapEndDate] = useState('');
   const didFirstLoadRef = useRef(false);
   const isMountedRef = useRef(true);
-  const sjListParentRef = useRef(null);
   const [activeTab, setActiveTab] = useState('surat-jalan');
 
   const handleTabChange = (tab) => {
@@ -1050,7 +466,7 @@ setConfirmDialog({ show: false, message: '', onConfirm: null });
 
   // Invoice Functions
   // Persist invoice + update SJ terkait dengan fallback nama koleksi ("invoice" vs "invoices")
-  
+
   // Saat admin_invoice update surat_jalan, Firestore Rules hanya mengizinkan perubahan field invoice tertentu.
   const pickSJInvoicePatch = (sj) => {
     const nowIso = new Date().toISOString();
@@ -1198,10 +614,10 @@ const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist }) => {
 
     const oldSJIds = invoice.suratJalanIds;
     const newSJIds = data.selectedSJIds;
-    
+
     // SJ yang dihapus dari invoice (ada di old, tidak ada di new)
     const removedSJIds = oldSJIds.filter(id => !newSJIds.includes(id));
-    
+
     // SJ yang ditambah ke invoice (ada di new, tidak ada di old)
     const addedSJIds = newSJIds.filter(id => !oldSJIds.includes(id));
 
@@ -1218,7 +634,7 @@ const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist }) => {
           updatedBy: currentUser.name
         };
       }
-      
+
       // Add invoice status ke SJ yang ditambah
       if (addedSJIds.includes(sj.id)) {
         return {
@@ -1230,7 +646,7 @@ const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist }) => {
           updatedBy: currentUser.name
         };
       }
-      
+
       return sj;
     });
 
@@ -1281,7 +697,7 @@ const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist }) => {
       updatedBy: currentUser.name
     };
 
-    const updatedInvoiceList = invoiceList.map(inv => 
+    const updatedInvoiceList = invoiceList.map(inv =>
       inv.id === invoiceId ? updatedInvoice : inv
     );
 
@@ -1307,7 +723,7 @@ try {
 }
   };
 
-  
+
   const deleteInvoice = async (id) => {
     setConfirmDialog({
       show: true,
@@ -1476,7 +892,7 @@ try {
 
   const importData = async (type, file) => {
     const reader = new FileReader();
-    
+
     reader.onload = async (e) => {
       if (!isMountedRef.current) return;
       try {
@@ -1487,26 +903,26 @@ try {
         const semicolonCount = (firstLine.match(/;/g) || []).length;
         const commaCount     = (firstLine.match(/,/g) || []).length;
         const delimiter = semicolonCount >= commaCount ? ';' : ',';
-        
+
         const rows = text.split('\n')
           .map(row => row.trim())
           .filter(row => row && row.length > 0);
-        
+
         if (rows.length < 2) {
           setAlertMessage('File CSV kosong atau tidak valid!');
           return;
         }
 
         const headers = rows[0].split(delimiter).map(h => h.trim());
-        
+
         // Validasi header berdasarkan tipe master data
         const headersLower = headers.map(h => h.toLowerCase());
         let isValidHeader = false;
         let expectedHeader = '';
-        
+
         if (type === 'suratjalan') {
           expectedHeader = 'Nomor SJ;Tanggal SJ (DD/MM/YYYY);Nomor Polisi;Nama Supir;Rute;Material;Qty Isi;Status;Tgl Terkirim (DD/MM/YYYY);Qty Bongkar';
-          isValidHeader = headers.length >= 8 && 
+          isValidHeader = headers.length >= 8 &&
                          headersLower[0].includes('nomor') && headersLower[0].includes('sj') &&
                          headersLower[1].includes('tanggal') && headersLower[1].includes('sj') &&
                          headersLower[2].includes('nomor') && headersLower[2].includes('polisi') &&
@@ -1516,12 +932,12 @@ try {
                          headersLower[6].includes('qty') && headersLower[6].includes('isi');
         } else if (type === 'truck') {
           expectedHeader = 'Nomor Polisi;Aktif (Ya/Tidak)';
-          isValidHeader = headers.length === 2 && 
+          isValidHeader = headers.length === 2 &&
                          headersLower[0].includes('nomor') && headersLower[0].includes('polisi') &&
                          headersLower[1].includes('aktif');
         } else if (type === 'supir') {
           expectedHeader = 'Nama Supir;PT;Aktif (Ya/Tidak)';
-          isValidHeader = headers.length === 3 && 
+          isValidHeader = headers.length === 3 &&
                          headersLower[0].includes('nama') && headersLower[0].includes('supir') &&
                          headersLower[1] === 'pt' &&
                          headersLower[2].includes('aktif');
@@ -1532,18 +948,18 @@ try {
                          (headersLower[1].includes('uang') && headersLower[1].includes('jalan'));
         } else if (type === 'material') {
           expectedHeader = 'Material;Satuan';
-          isValidHeader = headers.length === 2 && 
+          isValidHeader = headers.length === 2 &&
                          headersLower[0] === 'material' &&
                          headersLower[1] === 'satuan';
         }
-        
+
         if (!isValidHeader) {
           setAlertMessage(`Format header CSV tidak sesuai!\n\nFormat yang benar untuk ${type.toUpperCase()}:\n${expectedHeader}\n\nHeader yang ditemukan:\n${rows[0]}\n\nSilakan download template yang benar.`);
           return;
         }
-        
+
         const dataRows = rows.slice(1);
-        
+
         let successCount = 0;
         let errorCount = 0;
         let errorDetails = [];
@@ -1770,11 +1186,11 @@ try {
             const values = dataRows[i].split(delimiter).map(v => v.trim());
             if (values.length >= 2 && values[0]) {
               try {
-                const isActive = values[1].toLowerCase() === 'ya' || 
-                                values[1].toLowerCase() === 'yes' || 
-                                values[1].toLowerCase() === 'true' || 
+                const isActive = values[1].toLowerCase() === 'ya' ||
+                                values[1].toLowerCase() === 'yes' ||
+                                values[1].toLowerCase() === 'true' ||
                                 values[1] === '1';
-                
+
                 const newTruck = {
                   id: 'TRK-' + Date.now() + '-' + i + '-' + Math.random().toString(36).substr(2, 9),
                   nomorPolisi: values[0],
@@ -1793,7 +1209,7 @@ try {
               errorDetails.push(`Baris ${i + 2}: Data tidak lengkap`);
             }
           }
-          
+
 // Simpan ke Firestore (collection: trucks)
 if (newItems.length > 0) {
   try {
@@ -1820,11 +1236,11 @@ if (newItems.length > 0) {
             const values = dataRows[i].split(delimiter).map(v => v.trim());
             if (values.length >= 3 && values[0] && values[1]) {
               try {
-                const isActive = values[2].toLowerCase() === 'ya' || 
-                                values[2].toLowerCase() === 'yes' || 
-                                values[2].toLowerCase() === 'true' || 
+                const isActive = values[2].toLowerCase() === 'ya' ||
+                                values[2].toLowerCase() === 'yes' ||
+                                values[2].toLowerCase() === 'true' ||
                                 values[2] === '1';
-                
+
                 const newSupir = {
                   id: 'SPR-' + Date.now() + '-' + i + '-' + Math.random().toString(36).substr(2, 9),
                   namaSupir: values[0],
@@ -1844,7 +1260,7 @@ if (newItems.length > 0) {
               errorDetails.push(`Baris ${i + 2}: Data tidak lengkap`);
             }
           }
-          
+
           // Simpan ke Firestore (collection: supir)
           if (newItems.length > 0) {
             try {
@@ -1900,7 +1316,7 @@ if (newItems.length > 0) {
               errorDetails.push(`Baris ${i + 2}: Data tidak lengkap (harus ada Rute dan Uang Jalan)`);
             }
           }
-          
+
           // Simpan ke Firestore (collection: rute)
           if (newItems.length > 0) {
             try {
@@ -1926,7 +1342,7 @@ if (newItems.length > 0) {
                 if (!isNaN(angkaTest) && /^\d+$/.test(values[1].replace(/\./g, '').replace(/,/g, ''))) {
                   throw new Error('Satuan tidak boleh berupa angka. Gunakan format template Material yang benar (contoh: Ton, Kg, m³, Pcs)');
                 }
-                
+
                 const newMaterial = {
                   id: 'MTR-' + Date.now() + '-' + i + '-' + Math.random().toString(36).substr(2, 9),
                   material: values[0],
@@ -1946,7 +1362,7 @@ if (newItems.length > 0) {
               errorDetails.push(`Baris ${i + 2}: Data tidak lengkap (harus ada Material dan Satuan)`);
             }
           }
-          
+
           // Simpan ke Firestore (collection: material)
           if (newItems.length > 0) {
             try {
@@ -1987,7 +1403,7 @@ if (newItems.length > 0) {
     const selectedSupir = supirList.find(s => s.id === data.supirId);
     const selectedRute = ruteList.find(r => r.id === data.ruteId);
     const selectedMaterial = materialList.find(m => m.id === data.materialId);
-    
+
     const newSJ = {
       id: 'SJ-' + Date.now(),
       nomorSJ: data.nomorSJ,
@@ -2012,10 +1428,10 @@ if (newItems.length > 0) {
       createdAt: new Date().toISOString(),
       createdBy: currentUser.name
     };
-    
+
     const newList = [...suratJalanList, newSJ];
     setSuratJalanList(newList);
-    
+
     // Auto-create transaksi keuangan
     await upsertItemToFirestore(db, "surat_jalan", { ...newSJ, isActive: true });
 
@@ -2032,7 +1448,7 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
   });
 }
 
-    
+
   };
 
   const updateSuratJalan = useCallback(async (id, updates) => {
@@ -2292,13 +1708,10 @@ setTransaksiList(prev => prev.filter(t => t.suratJalanId !== id));
     () => suratJalanList.filter(sj => filter === 'all' || sj.status === filter),
     [suratJalanList, filter]
   );
-
-  const sjVirtualizer = useVirtualizer({
-    count: filteredSuratJalan.length,
-    getScrollElement: () => sjListParentRef.current,
-    estimateSize: () => 130,
-    overscan: 5,
-  });
+  const [sjPage, setSJPage] = useState(1);
+  useEffect(() => { setSJPage(1); }, [filter]);
+  const safeSJPage = clampPage(sjPage, filteredSuratJalan.length);
+  const pagedSJ = filteredSuratJalan.slice((safeSJPage - 1) * PAGE_SIZE, safeSJPage * PAGE_SIZE);
 
   const sjStatusCounts = useMemo(() => ({
     pending: suratJalanList.filter(s => s.status === 'pending').length,
@@ -2590,6 +2003,7 @@ try { unsubTransaksi(); } catch {}
             onToggleActive={toggleUserActive}
           />
         ) : activeTab === 'master-data' && effectiveRole === 'superadmin' ? (
+          <Suspense fallback={<PageLoader />}>
           <MasterDataManagement
             truckList={truckList}
             supirList={supirList}
@@ -2649,26 +2063,29 @@ try { unsubTransaksi(); } catch {}
             tarifRuteList={tarifRuteList}
             onOpenTarifHistory={setTarifHistoryRute}
           />
+          </Suspense>
         ) : activeTab === 'keuangan' ? (
-          <KeuanganManagement
-            transaksiList={transaksiList}
-            currentUser={currentUser}
-            onAddTransaksi={() => {
-              setModalType('addTransaksi');
-              setSelectedItem(null);
-              setShowModal(true);
-            }}
-            onDeleteTransaksi={deleteTransaksi}
-          />
+          <Suspense fallback={<PageLoader />}>
+            <KeuanganManagement
+              transaksiList={transaksiList}
+              currentUser={currentUser}
+              onAddTransaksi={() => {
+                setModalType('addTransaksi');
+                setSelectedItem(null);
+                setShowModal(true);
+              }}
+              onDeleteTransaksi={deleteTransaksi}
+            />
+          </Suspense>
         ) : activeTab === 'laporan-kas' ? (
-          <Suspense fallback={<div className="flex items-center justify-center h-32 text-slate-400 text-sm">Memuat...</div>}>
+          <Suspense fallback={<PageLoader />}>
             <LaporanKasPage
               suratJalanList={suratJalanList}
               transaksiList={transaksiList}
             />
           </Suspense>
         ) : activeTab === 'laporan-truk' ? (
-          <Suspense fallback={<div className="flex items-center justify-center h-32 text-slate-400 text-sm">Memuat...</div>}>
+          <Suspense fallback={<PageLoader />}>
             <LaporanTrukPage
               suratJalanList={suratJalanList}
               truckList={truckList}
@@ -2676,38 +2093,42 @@ try { unsubTransaksi(); } catch {}
             />
           </Suspense>
         ) : activeTab === 'payslip' ? (
-          <Suspense fallback={<div className="flex items-center justify-center h-32 text-slate-400 text-sm">Memuat...</div>}>
+          <Suspense fallback={<PageLoader />}>
             <PayslipReport
               currentUser={currentUser}
             />
           </Suspense>
         ) : activeTab === 'uang-muka' ? (
-          <UangMukaManagement
-            uangMukaList={uangMukaList}
-            suratJalanList={suratJalanList}
-            currentUser={currentUser}
-            onAddUangMuka={() => {
-              setModalType('addUangMuka');
-              setSelectedItem(null);
-              setShowModal(true);
-            }}
-            onDeleteUangMuka={deleteUangMuka}
-            formatCurrency={formatCurrency}
-          />
+          <Suspense fallback={<PageLoader />}>
+            <UangMukaManagement
+              uangMukaList={uangMukaList}
+              suratJalanList={suratJalanList}
+              currentUser={currentUser}
+              onAddUangMuka={() => {
+                setModalType('addUangMuka');
+                setSelectedItem(null);
+                setShowModal(true);
+              }}
+              onDeleteUangMuka={deleteUangMuka}
+              formatCurrency={formatCurrency}
+            />
+          </Suspense>
         ) : activeTab === 'invoicing' ? (
-          <InvoiceManagement
-            invoiceList={invoiceList}
-            suratJalanList={suratJalanList}
-            currentUser={currentUser}
-            uangMukaList={uangMukaList}
-            onAddInvoice={() => {
-              setModalType('addInvoice');
-              setSelectedItem(null);
-              setShowModal(true);
-            }}
-            onDeleteInvoice={deleteInvoice}
-            formatCurrency={formatCurrency}
-          />
+          <Suspense fallback={<PageLoader />}>
+            <InvoiceManagement
+              invoiceList={invoiceList}
+              suratJalanList={suratJalanList}
+              currentUser={currentUser}
+              uangMukaList={uangMukaList}
+              onAddInvoice={() => {
+                setModalType('addInvoice');
+                setSelectedItem(null);
+                setShowModal(true);
+              }}
+              onDeleteInvoice={deleteInvoice}
+              formatCurrency={formatCurrency}
+            />
+          </Suspense>
         ) : (
           <>
         {/* Stats Cards */}
@@ -2755,7 +2176,7 @@ try { unsubTransaksi(); } catch {}
                     <Plus className="w-4 h-4" />
                     <span>Tambah Surat Jalan</span>
                   </button>
-                  
+
                   <button
                     onClick={() => downloadTemplate('suratjalan')}
                     className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base transition"
@@ -2763,7 +2184,7 @@ try { unsubTransaksi(); } catch {}
                     <FileText className="w-4 h-4" />
                     <span className="hidden sm:inline">Download Template</span><span className="sm:hidden">Template</span>
                   </button>
-                  
+
                   <label className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg flex items-center space-x-1 sm:space-x-2 text-sm sm:text-base transition cursor-pointer">
                     <Package className="w-4 h-4" />
                     <span className="hidden sm:inline">Import Data</span><span className="sm:hidden">Import</span>
@@ -2892,45 +2313,28 @@ try { unsubTransaksi(); } catch {}
               )}
             </div>
           ) : (
-            <div
-              ref={sjListParentRef}
-              style={{ height: '70vh', overflowY: 'auto' }}
-            >
-              <div style={{ height: `${sjVirtualizer.getTotalSize()}px`, position: 'relative' }}>
-                {sjVirtualizer.getVirtualItems().map((virtualItem) => {
-                  const sj = filteredSuratJalan[virtualItem.index];
-                  return (
-                    <div
-                      key={virtualItem.key}
-                      data-index={virtualItem.index}
-                      ref={sjVirtualizer.measureElement}
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        transform: `translateY(${virtualItem.start}px)`,
-                      }}
-                    >
-                      <SuratJalanCard
-                        suratJalan={sj}
-                        biayaList={biayaList.filter(b => b.suratJalanId === sj.id)}
-                        totalBiaya={getTotalBiaya(sj.id)}
-                        currentUser={currentUser}
-                        onUpdate={handleSJCardUpdate}
-                        onEditTerkirim={handleSJCardEditTerkirim}
-                        onMarkGagal={markAsGagal}
-                        onRestore={restoreFromGagal}
-                        onDeleteBiaya={deleteBiaya}
-                        formatCurrency={formatCurrency}
-                        getStatusColor={getStatusColor}
-                        getStatusIcon={getStatusIcon}
-                      />
-                    </div>
-                  );
-                })}
+            <>
+              <div className="space-y-3">
+                {pagedSJ.map((sj) => (
+                  <SuratJalanCard
+                    key={sj.id}
+                    suratJalan={sj}
+                    biayaList={biayaList.filter(b => b.suratJalanId === sj.id)}
+                    totalBiaya={getTotalBiaya(sj.id)}
+                    currentUser={currentUser}
+                    onUpdate={handleSJCardUpdate}
+                    onEditTerkirim={handleSJCardEditTerkirim}
+                    onMarkGagal={markAsGagal}
+                    onRestore={restoreFromGagal}
+                    onDeleteBiaya={deleteBiaya}
+                    formatCurrency={formatCurrency}
+                    getStatusColor={getStatusColor}
+                    getStatusIcon={getStatusIcon}
+                  />
+                ))}
               </div>
-            </div>
+              <Pagination total={filteredSuratJalan.length} page={safeSJPage} onChange={setSJPage} />
+            </>
           )}
         </div>
         </>
@@ -3079,7 +2483,7 @@ try { unsubTransaksi(); } catch {}
                   ×
                 </button>
               </div>
-              <Suspense fallback={<div className="flex items-center justify-center h-32 text-slate-400 text-sm">Memuat...</div>}>
+              <Suspense fallback={<PageLoader />}>
                 <RitasiBulkUpload
                   ruteList={ruteList}
                   onSuccess={() => {
@@ -3107,7 +2511,7 @@ try { unsubTransaksi(); } catch {}
                   ×
                 </button>
               </div>
-              <Suspense fallback={<div className="flex items-center justify-center h-32 text-slate-400 text-sm">Memuat...</div>}>
+              <Suspense fallback={<PageLoader />}>
                 <TarifRuteBulkUpload
                   ruteList={ruteList}
                   currentUser={currentUser}
@@ -3137,465 +2541,6 @@ try { unsubTransaksi(); } catch {}
           activeTab={activeTab}
           onTabChange={handleTabChange}
         />
-      )}
-    </div>
-  );
-};
-
-const MasterDataManagement = ({
-  truckList, supirList, ruteList, materialList, currentUser,
-  onAddTruck, onEditTruck, onDeleteTruck,
-  onAddSupir, onEditSupir, onDeleteSupir,
-  onAddRute, onEditRute, onDeleteRute,
-  onAddMaterial, onEditMaterial, onDeleteMaterial,
-  onDownloadTemplate, onImportData,
-  showRitasiBulkUpload, setShowRitasiBulkUpload,
-  showTarifBulkUpload, setShowTarifBulkUpload,
-  tarifRuteList,
-  onOpenTarifHistory,
-}) => {
-  const [masterTab, setMasterTab] = useState('truck');
-  const [alertMessage, setAlertMessage] = useState('');
-
-  const handleFileUpload = (e, type) => {
-    const file = e.target.files[0];
-    if (file) {
-      if (!file.name.endsWith('.csv')) {
-        setAlertMessage('Format file harus CSV!');
-        return;
-      }
-      onImportData(type, file);
-      e.target.value = ''; // Reset input
-    }
-  };
-
-  return (
-    <div>
-      {/* Sub Tab Navigation */}
-      <div className="bg-white rounded-lg shadow-md p-2 mb-6 flex gap-2">
-        <button
-          onClick={() => setMasterTab('truck')}
-          className={`flex-1 px-4 py-2 rounded-lg transition ${masterTab === 'truck' ? 'bg-blue-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
-        >
-          <span>🚛 Truck</span>
-        </button>
-        <button
-          onClick={() => setMasterTab('supir')}
-          className={`flex-1 px-4 py-2 rounded-lg transition ${masterTab === 'supir' ? 'bg-blue-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
-        >
-          <span>👨‍✈️ Supir</span>
-        </button>
-        <button
-          onClick={() => setMasterTab('rute')}
-          className={`flex-1 px-4 py-2 rounded-lg transition ${masterTab === 'rute' ? 'bg-blue-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
-        >
-          <span>🗺️ Rute</span>
-        </button>
-        <button
-          onClick={() => setMasterTab('material')}
-          className={`flex-1 px-4 py-2 rounded-lg transition ${masterTab === 'material' ? 'bg-blue-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
-        >
-          <span>📦 Material</span>
-        </button>
-      </div>
-
-      {/* Truck Master Data */}
-      {masterTab === 'truck' && (
-        <div>
-          <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-xl font-bold text-gray-800">Master Data Truck</h2>
-                <p className="text-sm text-gray-600">Total: {truckList.length} truck</p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => onDownloadTemplate('truck')}
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition"
-                >
-                  <FileText className="w-4 h-4" />
-                  <span>Download Template</span>
-                </button>
-                <label className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition cursor-pointer">
-                  <Plus className="w-4 h-4" />
-                  <span>Import CSV</span>
-                  <input
-                    type="file"
-                    accept=".csv"
-                    onChange={(e) => handleFileUpload(e, 'truck')}
-                    className="hidden"
-                  />
-                </label>
-                <button
-                  onClick={onAddTruck}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Tambah Truck</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {truckList.length === 0 ? (
-              <div className="bg-white rounded-lg shadow-md p-8 text-center">
-                <Truck className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-                <p className="text-gray-500">Belum ada data truck</p>
-              </div>
-            ) : (
-              truckList.map(truck => (
-                <div key={truck.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <h3 className="text-lg font-bold text-gray-800">{truck.nomorPolisi}</h3>
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          truck.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
-                          {truck.isActive ? 'Aktif' : 'Nonaktif'}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600">Truck ID: {truck.id}</p>
-                      {truck.createdBy && (
-                        <p className="text-xs text-gray-500 mt-2">
-                          Dibuat oleh: {truck.createdBy} pada {new Date(truck.createdAt).toLocaleString('id-ID')}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex space-x-2 ml-4">
-                      <button
-                        onClick={() => onEditTruck(truck)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
-                      >
-                        <Edit className="w-4 h-4" />
-                        <span>Edit</span>
-                      </button>
-                      <button
-                        onClick={() => onDeleteTruck(truck.id)}
-                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span>Hapus</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Supir Master Data */}
-      {masterTab === 'supir' && (
-        <div>
-          <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-xl font-bold text-gray-800">Master Data Supir</h2>
-                <p className="text-sm text-gray-600">Total: {supirList.length} supir</p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => onDownloadTemplate('supir')}
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition"
-                >
-                  <FileText className="w-4 h-4" />
-                  <span>Download Template</span>
-                </button>
-                <label className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition cursor-pointer">
-                  <Plus className="w-4 h-4" />
-                  <span>Import CSV</span>
-                  <input
-                    type="file"
-                    accept=".csv"
-                    onChange={(e) => handleFileUpload(e, 'supir')}
-                    className="hidden"
-                  />
-                </label>
-                <button
-                  onClick={onAddSupir}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Tambah Supir</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {supirList.length === 0 ? (
-              <div className="bg-white rounded-lg shadow-md p-8 text-center">
-                <Users className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-                <p className="text-gray-500">Belum ada data supir</p>
-              </div>
-            ) : (
-              supirList.map(supir => (
-                <div key={supir.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <h3 className="text-lg font-bold text-gray-800">{supir.namaSupir}</h3>
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          supir.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                        }`}>
-                          {supir.isActive ? 'Aktif' : 'Nonaktif'}
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4 text-sm mt-2">
-                        <div>
-                          <p className="text-gray-600">Supir ID:</p>
-                          <p className="font-semibold text-gray-800">{supir.id}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">PT:</p>
-                          <p className="font-semibold text-gray-800">{supir.pt}</p>
-                        </div>
-                      </div>
-                      {supir.createdBy && (
-                        <p className="text-xs text-gray-500 mt-2">
-                          Dibuat oleh: {supir.createdBy} pada {new Date(supir.createdAt).toLocaleString('id-ID')}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex space-x-2 ml-4">
-                      <button
-                        onClick={() => onEditSupir(supir)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
-                      >
-                        <Edit className="w-4 h-4" />
-                        <span>Edit</span>
-                      </button>
-                      <button
-                        onClick={() => onDeleteSupir(supir.id)}
-                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span>Hapus</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Rute Master Data */}
-      {masterTab === 'rute' && (
-        <div>
-          <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-xl font-bold text-gray-800">Master Data Rute</h2>
-                <p className="text-sm text-gray-600">Total: {ruteList.length} rute</p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => onDownloadTemplate('rute')}
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition"
-                >
-                  <FileText className="w-4 h-4" />
-                  <span>Download Template</span>
-                </button>
-                <label className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition cursor-pointer">
-                  <Plus className="w-4 h-4" />
-                  <span>Import CSV</span>
-                  <input
-                    type="file"
-                    accept=".csv"
-                    onChange={(e) => handleFileUpload(e, 'rute')}
-                    className="hidden"
-                  />
-                </label>
-                <button
-                  onClick={onAddRute}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Tambah Rute</span>
-                </button>
-                {currentUser?.role?.toLowerCase() === 'superadmin' && (
-                  <button
-                    onClick={() => setShowRitasiBulkUpload(true)}
-                    className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center space-x-2 transition"
-                  >
-                    <FileText className="w-4 h-4" />
-                    <span>📊 Bulk Upload Ritasi</span>
-                  </button>
-                )}
-                {currentUser?.role?.toLowerCase() === 'superadmin' && (
-                  <button
-                    onClick={() => setShowTarifBulkUpload(true)}
-                    className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 flex items-center space-x-2 transition"
-                  >
-                    <FileText className="w-4 h-4" />
-                    <span>📊 Bulk Tarif Uang Jalan</span>
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {ruteList.length === 0 ? (
-              <div className="bg-white rounded-lg shadow-md p-8 text-center">
-                <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-                <p className="text-gray-500">Belum ada data rute</p>
-              </div>
-            ) : (
-              ruteList.map(rute => (
-                <div key={rute.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-gray-800 mb-2">{rute.rute}</h3>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
-                        <div>
-                          <p className="text-gray-600">Rute ID:</p>
-                          <p className="font-semibold text-gray-800">{rute.id}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">Uang Jalan:</p>
-                          <p className="font-semibold text-blue-600">{formatCurrency(rute.uangJalan)}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">Ritasi:</p>
-                          <p className="font-semibold text-green-600">{formatCurrency(rute.ritasi || 0)}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">Uang Muka:</p>
-                          <p className="font-semibold text-orange-600">{formatCurrency(rute.uangMuka || 0)}</p>
-                        </div>
-                      </div>
-                      {rute.createdBy && (
-                        <p className="text-xs text-gray-500 mt-2">
-                          Dibuat oleh: {rute.createdBy} pada {new Date(rute.createdAt).toLocaleString('id-ID')}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex space-x-2 ml-4">
-                      <button
-                        onClick={() => onOpenTarifHistory(rute)}
-                        className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
-                        title="Riwayat perubahan tarif"
-                      >
-                        <FileText className="w-4 h-4" />
-                        <span>Riwayat</span>
-                      </button>
-                      <button
-                        onClick={() => onEditRute(rute)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
-                      >
-                        <Edit className="w-4 h-4" />
-                        <span>Edit</span>
-                      </button>
-                      <button
-                        onClick={() => onDeleteRute(rute.id)}
-                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span>Hapus</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Material Master Data */}
-      {masterTab === 'material' && (
-        <div>
-          <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-xl font-bold text-gray-800">Master Data Material</h2>
-                <p className="text-sm text-gray-600">Total: {materialList.length} material</p>
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => onDownloadTemplate('material')}
-                  className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition"
-                >
-                  <FileText className="w-4 h-4" />
-                  <span>Download Template</span>
-                </button>
-                <label className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition cursor-pointer">
-                  <Plus className="w-4 h-4" />
-                  <span>Import CSV</span>
-                  <input
-                    type="file"
-                    accept=".csv"
-                    onChange={(e) => handleFileUpload(e, 'material')}
-                    className="hidden"
-                  />
-                </label>
-                <button
-                  onClick={onAddMaterial}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Tambah Material</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {materialList.length === 0 ? (
-              <div className="bg-white rounded-lg shadow-md p-8 text-center">
-                <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-                <p className="text-gray-500">Belum ada data material</p>
-              </div>
-            ) : (
-              materialList.map(material => (
-                <div key={material.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-gray-800 mb-2">{material.material}</h3>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <p className="text-gray-600">Material ID:</p>
-                          <p className="font-semibold text-gray-800">{material.id}</p>
-                        </div>
-                        <div>
-                          <p className="text-gray-600">Satuan:</p>
-                          <p className="font-semibold text-gray-800">{material.satuan}</p>
-                        </div>
-                      </div>
-                      {material.createdBy && (
-                        <p className="text-xs text-gray-500 mt-2">
-                          Dibuat oleh: {material.createdBy} pada {new Date(material.createdAt).toLocaleString('id-ID')}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex space-x-2 ml-4">
-                      <button
-                        onClick={() => onEditMaterial(material)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
-                      >
-                        <Edit className="w-4 h-4" />
-                        <span>Edit</span>
-                      </button>
-                      <button
-                        onClick={() => onDeleteMaterial(material.id)}
-                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span>Hapus</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
       )}
     </div>
   );
@@ -3650,7 +2595,7 @@ const SettingsManagement = ({ currentUser, appSettings, onUpdateSettings, forceL
         alert('Ukuran file maksimal 2MB!');
         return;
       }
-      
+
       if (!file.type.startsWith('image/')) {
         alert('File harus berupa gambar (PNG, JPG, SVG)!');
         return;
@@ -3778,9 +2723,9 @@ const SettingsManagement = ({ currentUser, appSettings, onUpdateSettings, forceL
                   </label>
                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 flex items-center justify-center bg-white" style={{ minHeight: '150px' }}>
                     {logoPreview ? (
-                      <img 
-                        src={logoPreview} 
-                        alt="Logo Preview" 
+                      <img
+                        src={logoPreview}
+                        alt="Logo Preview"
                         className="max-h-32 max-w-full object-contain"
                       />
                     ) : (
@@ -3834,7 +2779,7 @@ const SettingsManagement = ({ currentUser, appSettings, onUpdateSettings, forceL
                     <div className="text-4xl mb-2">🚚</div>
                   </div>
                 )}
-                
+
                 {/* Company Name */}
                 <h1 className="text-2xl font-bold text-center text-gray-800 mb-2">
                   {settings.companyName || 'Nama Perusahaan'}
@@ -3842,29 +2787,29 @@ const SettingsManagement = ({ currentUser, appSettings, onUpdateSettings, forceL
                 <h2 className="text-xl font-semibold text-center text-gray-700 mb-6">
                   Surat Jalan Monitor
                 </h2>
-                
+
                 {/* Login Form Preview */}
                 <div className="space-y-3 mb-4">
-                  <input 
-                    type="text" 
-                    placeholder="Username" 
+                  <input
+                    type="text"
+                    placeholder="Username"
                     disabled
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
                   />
-                  <input 
-                    type="password" 
-                    placeholder="Password" 
+                  <input
+                    type="password"
+                    placeholder="Password"
                     disabled
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
                   />
-                  <button 
+                  <button
                     disabled
                     className="w-full bg-blue-600 text-white py-2 rounded-lg opacity-75"
                   >
                     LOGIN
                   </button>
                 </div>
-                
+
                 {/* Footer Text */}
                 <p className="text-sm text-gray-600 text-center mt-4">
                   {settings.loginFooterText}
@@ -4018,214 +2963,6 @@ const SettingsManagement = ({ currentUser, appSettings, onUpdateSettings, forceL
   );
 };
 
-const KeuanganManagement = ({ transaksiList, currentUser, onAddTransaksi, onDeleteTransaksi }) => {
-  const effectiveRole = currentUser?.role === 'owner' ? 'reader' : currentUser?.role;
-
-  const [filter, setFilter] = useState('all');
-  const [filterPT, setFilterPT] = useState('');
-  
-  const activeTransaksiList = useMemo(
-    () => (Array.isArray(transaksiList) ? transaksiList : []).filter(
-      (t) => t?.isActive !== false && !t?.deletedAt
-    ),
-    [transaksiList]
-  );
-
-  // Get unique PT list
-  const ptList = useMemo(
-    () => [...new Set(activeTransaksiList.map(t => t.pt).filter(Boolean))].sort(),
-    [activeTransaksiList]
-  );
-
-  const filteredTransaksi = useMemo(
-    () => activeTransaksiList.filter(t => {
-      if (filter !== 'all' && t.tipe !== filter) return false;
-      if (filterPT && t.pt !== filterPT) return false;
-      return true;
-    }),
-    [activeTransaksiList, filter, filterPT]
-  );
-
-  const totalPemasukan = useMemo(
-    () => activeTransaksiList
-      .filter(t => t.tipe === 'pemasukan' && (!filterPT || t.pt === filterPT))
-      .reduce((sum, t) => sum + parseFloat(t.nominal || 0), 0),
-    [activeTransaksiList, filterPT]
-  );
-
-  const totalPengeluaran = useMemo(
-    () => activeTransaksiList
-      .filter(t => t.tipe === 'pengeluaran' && (!filterPT || t.pt === filterPT))
-      .reduce((sum, t) => sum + parseFloat(t.nominal || 0), 0),
-    [activeTransaksiList, filterPT]
-  );
-
-  const saldoKas = totalPemasukan - totalPengeluaran;
-
-  const canAddTransaksi = effectiveRole === 'superadmin' || effectiveRole === 'admin_keuangan';
-
-  return (
-    <div>
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Total Pemasukan</p>
-              <p className="text-2xl font-bold text-green-600 mt-1">{formatCurrency(totalPemasukan)}</p>
-            </div>
-            <div className="bg-green-500 p-3 rounded-lg text-white">
-              <DollarSign className="w-6 h-6" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Total Pengeluaran</p>
-              <p className="text-2xl font-bold text-red-600 mt-1">{formatCurrency(totalPengeluaran)}</p>
-            </div>
-            <div className="bg-red-500 p-3 rounded-lg text-white">
-              <DollarSign className="w-6 h-6" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Saldo Kas</p>
-              <p className={`text-2xl font-bold mt-1 ${saldoKas >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                {formatCurrency(saldoKas)}
-              </p>
-            </div>
-            <div className="bg-blue-500 p-3 rounded-lg text-white">
-              <DollarSign className="w-6 h-6" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Actions & Filters */}
-      <div className="bg-white rounded-lg shadow-md p-4 mb-6">
-        <div className="flex flex-wrap gap-2 items-center mb-3">
-          <div className="flex gap-2 flex-wrap">
-            <button
-              onClick={() => setFilter('all')}
-              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm transition ${filter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
-            >
-              Semua
-            </button>
-            <button
-              onClick={() => setFilter('pemasukan')}
-              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm transition ${filter === 'pemasukan' ? 'bg-green-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
-            >
-              Pemasukan
-            </button>
-            <button
-              onClick={() => setFilter('pengeluaran')}
-              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg text-sm transition ${filter === 'pengeluaran' ? 'bg-red-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
-            >
-              Pengeluaran
-            </button>
-          </div>
-          {canAddTransaksi && (
-            <button
-              onClick={onAddTransaksi}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg flex items-center space-x-2 text-sm transition ml-auto"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Tambah Transaksi</span>
-            </button>
-          )}
-        </div>
-        
-        {/* Filter PT */}
-        {ptList.length > 0 && (
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium text-gray-700">Filter PT:</label>
-            <select
-              value={filterPT}
-              onChange={(e) => setFilterPT(e.target.value)}
-              className="px-3 py-1.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
-            >
-              <option value="">Semua PT</option>
-              {ptList.map(pt => (
-                <option key={pt} value={pt}>{pt}</option>
-              ))}
-            </select>
-          </div>
-        )}
-      </div>
-
-      {/* Transaksi List */}
-      <div className="space-y-3">
-        {filteredTransaksi.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-md p-8 text-center">
-            <DollarSign className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-            <p className="text-gray-500">Belum ada transaksi</p>
-          </div>
-        ) : (
-          filteredTransaksi.map(transaksi => (
-            <div key={transaksi.id} className="bg-white rounded-lg shadow-md p-3 sm:p-6 hover:shadow-lg transition">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <h3 className="text-lg font-bold text-gray-800">{transaksi.keterangan}</h3>
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      transaksi.tipe === 'pemasukan' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-red-100 text-red-800'
-                    }`}>
-                      {transaksi.tipe === 'pemasukan' ? 'Pemasukan' : 'Pengeluaran'}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-gray-600">Nominal:</p>
-                      <p className={`font-bold text-lg ${
-                        transaksi.tipe === 'pemasukan' ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {transaksi.tipe === 'pemasukan' ? '+' : '-'} {formatCurrency(transaksi.nominal)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600">Tanggal:</p>
-                      <p className="font-semibold text-gray-800">
-                        {new Date(transaksi.tanggal).toLocaleDateString('id-ID')}
-                      </p>
-                    </div>
-                    {transaksi.pt && (
-                      <div className="col-span-2">
-                        <p className="text-gray-600">PT:</p>
-                        <p className="font-bold text-blue-600">{transaksi.pt}</p>
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Dibuat oleh: {transaksi.createdBy} pada {new Date(transaksi.createdAt).toLocaleString('id-ID')}
-                  </p>
-                </div>
-                
-                {canAddTransaksi && (
-                  <button
-                    onClick={() => onDeleteTransaksi(transaksi.id)}
-                    className="ml-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    <span>Hapus</span>
-                  </button>
-                )}
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
-  );
-};
-
 const UsersManagement = ({ usersList, currentUser, onAddUser, onEditUser, onDeleteUser, onToggleActive }) => {
   const getRoleBadgeColor = (role) => {
     const colors = {
@@ -4299,15 +3036,15 @@ const UsersManagement = ({ usersList, currentUser, onAddUser, onEditUser, onDele
                   </p>
                 )}
               </div>
-              
+
               <div className="flex flex-col space-y-2 ml-4">
                 {user.role !== 'superadmin' && (
                   <>
                     <button
                       onClick={() => onToggleActive(user.id)}
                       className={`px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1 whitespace-nowrap ${
-                        user.isActive 
-                          ? 'bg-orange-600 hover:bg-orange-700 text-white' 
+                        user.isActive
+                          ? 'bg-orange-600 hover:bg-orange-700 text-white'
                           : 'bg-green-600 hover:bg-green-700 text-white'
                       }`}
                     >
@@ -4413,7 +3150,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
       }));
       initializedRef.current = true;
     }
-    
+
     // Reset ref saat modal dibuka untuk type lain
     if (type !== 'editInvoice') {
       initializedRef.current = false;
@@ -4423,17 +3160,17 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
   const handleSubmit = () => {
     if (type === 'addSJ') {
       // Validasi semua 9 field wajib diisi
-      if (!formData.nomorSJ || !formData.tanggalSJ || !formData.truckId || 
+      if (!formData.nomorSJ || !formData.tanggalSJ || !formData.truckId ||
           !formData.supirId || !formData.ruteId || !formData.materialId || !formData.qtyIsi) {
         setAlertMessage('Semua field wajib diisi!\n\nPastikan Anda sudah mengisi:\n1. Nomor SJ\n2. Tanggal SJ\n3. Nomor Polisi (Truck)\n4. Nama Supir\n5. Rute\n6. Material\n7. Qty Isi');
         return;
       }
-      
+
       if (parseFloat(formData.qtyIsi) <= 0) {
         setAlertMessage('Qty Isi harus lebih besar dari 0!');
         return;
       }
-      
+
       onSubmit(formData);
     } else if (type === 'markTerkirim' || type === 'editTerkirim') {
       // Validasi field wajib
@@ -4441,7 +3178,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
         setAlertMessage('Tgl Terkirim dan Qty Bongkar wajib diisi!');
         return;
       }
-      
+
       // Validasi Tgl Terkirim tidak boleh lebih awal dari Tgl SJ
       const tglSJ = new Date(selectedItem.tanggalSJ);
       const tglTerkirim = new Date(formData.tglTerkirim);
@@ -4449,7 +3186,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
         setAlertMessage('Tgl Terkirim tidak boleh lebih awal dari Tgl SJ!\n\nTgl SJ: ' + new Date(selectedItem.tanggalSJ).toLocaleDateString('id-ID'));
         return;
       }
-      
+
       // Validasi Qty Bongkar tidak boleh lebih besar dari Qty Isi
       const qtyBongkar = parseFloat(formData.qtyBongkar);
       const qtyIsi = parseFloat(selectedItem.qtyIsi);
@@ -4457,12 +3194,12 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
         setAlertMessage('Qty Bongkar tidak boleh lebih besar dari Qty Isi!\n\nQty Isi: ' + qtyIsi + ' ' + selectedItem.satuan);
         return;
       }
-      
+
       if (qtyBongkar <= 0) {
         setAlertMessage('Qty Bongkar harus lebih besar dari 0!');
         return;
       }
-      
+
       onSubmit(formData);
     } else if (type === 'addInvoice' || type === 'editInvoice') {
       if (!formData.noInvoice || !formData.tglInvoice) {
@@ -4515,17 +3252,17 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
         setAlertMessage('Password harus diisi!');
         return;
       }
-      
+
       const userData = {
         username: formData.username,
         name: formData.name,
         role: formData.role
       };
-      
+
       if (formData.password) {
         userData.password = formData.password;
       }
-      
+
       onSubmit(userData);
     } else if (type === 'addTruck' || type === 'editTruck') {
       if (!formData.nomorPolisi) {
@@ -4600,7 +3337,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
         <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-3 sm:mb-4">
           {getModalTitle()}
         </h2>
-        
+
         <div className="space-y-4">
           {type === 'addSJ' ? (
             <>
@@ -4615,7 +3352,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                     placeholder="Contoh: SJ/2024/001"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">2. Tanggal SJ *</label>
                   <input
@@ -4626,7 +3363,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                   />
                 </div>
               </div>
-              
+
               <SearchableSelect
                 options={truckList.filter(t => t.isActive)}
                 value={formData.truckId}
@@ -4636,7 +3373,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                 displayKey="nomorPolisi"
                 valueKey="id"
               />
-              
+
               <SearchableSelect
                 options={supirList.filter(s => s.isActive)}
                 value={formData.supirId}
@@ -4646,7 +3383,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                 displayKey="namaSupir"
                 valueKey="id"
               />
-              
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">5. PT (Auto-fill)</label>
                 <input
@@ -4656,7 +3393,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-700"
                 />
               </div>
-              
+
               <SearchableSelect
                 options={ruteList.map(r => ({
                   ...r,
@@ -4669,7 +3406,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                 displayKey="displayName"
                 valueKey="id"
               />
-              
+
               <SearchableSelect
                 options={materialList}
                 value={formData.materialId}
@@ -4679,7 +3416,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                 displayKey="material"
                 valueKey="id"
               />
-              
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">8. Satuan (Auto-fill)</label>
@@ -4690,7 +3427,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 text-gray-700"
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">9. Qty Isi *</label>
                   <input
@@ -4704,7 +3441,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                   />
                 </div>
               </div>
-              
+
               <div className="bg-blue-50 p-4 rounded-lg mt-2">
                 <p className="text-sm text-blue-800 font-semibold mb-2">📝 Informasi:</p>
                 <ul className="text-xs text-blue-700 space-y-1">
@@ -4863,7 +3600,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                     disabled={type === 'editInvoice'}
                   />
                 </div>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Tgl Invoice *</label>
                   <input
@@ -4883,7 +3620,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                     {type === 'editInvoice' ? '(tambah atau hapus SJ dari invoice)' : '(yang sudah terkirim)'}
                   </span>
                 </label>
-                
+
                 {/* Search Bar */}
                 <div className="mb-3">
                   <div className="relative">
@@ -4905,7 +3642,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                     )}
                   </div>
                 </div>
-                
+
                 <div className="border border-gray-300 rounded-lg p-4 max-h-80 overflow-y-auto bg-gray-50">
                   {suratJalanList
                     .filter(sj => {
@@ -4957,8 +3694,8 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                           );
                         })
                         .map(sj => (
-                          <label 
-                            key={sj.id} 
+                          <label
+                            key={sj.id}
                             className={`flex items-start space-x-3 p-3 rounded-lg cursor-pointer border-2 transition ${
                               formData.selectedSJIds.includes(sj.id)
                                 ? 'bg-blue-50 border-blue-500'
@@ -5485,3 +4222,4 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
 };
 
 export default SuratJalanMonitor;
+
