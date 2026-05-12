@@ -15,6 +15,7 @@ import SearchableSelect from './components/SearchableSelect.jsx';
 import StatCard from './components/StatCard.jsx';
 import AlertBanner from './components/AlertBanner.jsx';
 import SuratJalanCard from './components/SuratJalanCard.jsx';
+import Pagination, { PAGE_SIZE } from './components/Pagination.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 const LaporanKasPage   = React.lazy(() => import('./pages/LaporanKasPage.jsx'));
 const LaporanTrukPage  = React.lazy(() => import('./pages/LaporanTrukPage.jsx'));
@@ -32,7 +33,6 @@ import {
   softDeleteItemInFirestore,
   resolveSuratJalanDocRef,
 } from './firestoreService.js';
-import { useVirtualizer } from '@tanstack/react-virtual';
 
 
 
@@ -84,7 +84,6 @@ const SuratJalanMonitor = () => {
   const [sjRecapEndDate, setSjRecapEndDate] = useState('');
   const didFirstLoadRef = useRef(false);
   const isMountedRef = useRef(true);
-  const sjListParentRef = useRef(null);
   const [activeTab, setActiveTab] = useState('surat-jalan');
 
   const handleTabChange = (tab) => {
@@ -1694,13 +1693,9 @@ setTransaksiList(prev => prev.filter(t => t.suratJalanId !== id));
     () => suratJalanList.filter(sj => filter === 'all' || sj.status === filter),
     [suratJalanList, filter]
   );
-
-  const sjVirtualizer = useVirtualizer({
-    count: filteredSuratJalan.length,
-    getScrollElement: () => sjListParentRef.current,
-    estimateSize: () => 130,
-    overscan: 5,
-  });
+  const [sjPage, setSJPage] = useState(1);
+  useEffect(() => { setSJPage(1); }, [filter]);
+  const pagedSJ = filteredSuratJalan.slice((sjPage - 1) * PAGE_SIZE, sjPage * PAGE_SIZE);
 
   const sjStatusCounts = useMemo(() => ({
     pending: suratJalanList.filter(s => s.status === 'pending').length,
@@ -2302,45 +2297,28 @@ try { unsubTransaksi(); } catch {}
               )}
             </div>
           ) : (
-            <div
-              ref={sjListParentRef}
-              style={{ height: '70vh', overflowY: 'auto' }}
-            >
-              <div style={{ height: `${sjVirtualizer.getTotalSize()}px`, position: 'relative' }}>
-                {sjVirtualizer.getVirtualItems().map((virtualItem) => {
-                  const sj = filteredSuratJalan[virtualItem.index];
-                  return (
-                    <div
-                      key={virtualItem.key}
-                      data-index={virtualItem.index}
-                      ref={sjVirtualizer.measureElement}
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        transform: `translateY(${virtualItem.start}px)`,
-                      }}
-                    >
-                      <SuratJalanCard
-                        suratJalan={sj}
-                        biayaList={biayaList.filter(b => b.suratJalanId === sj.id)}
-                        totalBiaya={getTotalBiaya(sj.id)}
-                        currentUser={currentUser}
-                        onUpdate={handleSJCardUpdate}
-                        onEditTerkirim={handleSJCardEditTerkirim}
-                        onMarkGagal={markAsGagal}
-                        onRestore={restoreFromGagal}
-                        onDeleteBiaya={deleteBiaya}
-                        formatCurrency={formatCurrency}
-                        getStatusColor={getStatusColor}
-                        getStatusIcon={getStatusIcon}
-                      />
-                    </div>
-                  );
-                })}
+            <>
+              <div className="space-y-3">
+                {pagedSJ.map((sj) => (
+                  <SuratJalanCard
+                    key={sj.id}
+                    suratJalan={sj}
+                    biayaList={biayaList.filter(b => b.suratJalanId === sj.id)}
+                    totalBiaya={getTotalBiaya(sj.id)}
+                    currentUser={currentUser}
+                    onUpdate={handleSJCardUpdate}
+                    onEditTerkirim={handleSJCardEditTerkirim}
+                    onMarkGagal={markAsGagal}
+                    onRestore={restoreFromGagal}
+                    onDeleteBiaya={deleteBiaya}
+                    formatCurrency={formatCurrency}
+                    getStatusColor={getStatusColor}
+                    getStatusIcon={getStatusIcon}
+                  />
+                ))}
               </div>
-            </div>
+              <Pagination total={filteredSuratJalan.length} page={sjPage} onChange={setSJPage} />
+            </>
           )}
         </div>
         </>
