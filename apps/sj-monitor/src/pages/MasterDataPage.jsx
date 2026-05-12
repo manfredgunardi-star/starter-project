@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Edit, FileText, Package, Plus, Trash2, Truck, Users } from 'lucide-react';
 import { formatCurrency } from '../utils/currency.js';
-import Pagination, { PAGE_SIZE } from '../components/Pagination.jsx';
+import Pagination, { PAGE_SIZE, clampPage } from '../components/Pagination.jsx';
 
 export default function MasterDataManagement({
   truckList, supirList, ruteList, materialList, currentUser,
@@ -29,10 +29,14 @@ export default function MasterDataManagement({
     setMatPage(1);
   }, [masterTab]);
 
-  const pagedTruck = truckList.slice((truckPage - 1) * PAGE_SIZE, truckPage * PAGE_SIZE);
-  const pagedSupir = supirList.slice((supirPage - 1) * PAGE_SIZE, supirPage * PAGE_SIZE);
-  const pagedRute = ruteList.slice((rutePage - 1) * PAGE_SIZE, rutePage * PAGE_SIZE);
-  const pagedMat = materialList.slice((matPage - 1) * PAGE_SIZE, matPage * PAGE_SIZE);
+  const safeTruckPage = clampPage(truckPage, truckList.length);
+  const safeSupirPage = clampPage(supirPage, supirList.length);
+  const safeRutePage = clampPage(rutePage, ruteList.length);
+  const safeMatPage = clampPage(matPage, materialList.length);
+  const pagedTruck = truckList.slice((safeTruckPage - 1) * PAGE_SIZE, safeTruckPage * PAGE_SIZE);
+  const pagedSupir = supirList.slice((safeSupirPage - 1) * PAGE_SIZE, safeSupirPage * PAGE_SIZE);
+  const pagedRute = ruteList.slice((safeRutePage - 1) * PAGE_SIZE, safeRutePage * PAGE_SIZE);
+  const pagedMat = materialList.slice((safeMatPage - 1) * PAGE_SIZE, safeMatPage * PAGE_SIZE);
 
   const handleFileUpload = (e, type) => {
     const file = e.target.files[0];
@@ -161,7 +165,7 @@ export default function MasterDataManagement({
               ))
             )}
           </div>
-          <Pagination total={truckList.length} page={truckPage} onChange={setTruckPage} />
+          <Pagination total={truckList.length} page={safeTruckPage} onChange={setTruckPage} />
         </div>
       )}
 
@@ -259,7 +263,7 @@ export default function MasterDataManagement({
               ))
             )}
           </div>
-          <Pagination total={supirList.length} page={supirPage} onChange={setSupirPage} />
+          <Pagination total={supirList.length} page={safeSupirPage} onChange={setSupirPage} />
         </div>
       )}
 
@@ -384,7 +388,7 @@ export default function MasterDataManagement({
               ))
             )}
           </div>
-          <Pagination total={ruteList.length} page={rutePage} onChange={setRutePage} />
+          <Pagination total={ruteList.length} page={safeRutePage} onChange={setRutePage} />
         </div>
       )}
 
@@ -475,7 +479,7 @@ export default function MasterDataManagement({
               ))
             )}
           </div>
-          <Pagination total={materialList.length} page={matPage} onChange={setMatPage} />
+          <Pagination total={materialList.length} page={safeMatPage} onChange={setMatPage} />
         </div>
       )}
     </div>

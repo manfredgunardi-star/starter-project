@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { DollarSign, Plus, Trash2 } from 'lucide-react';
 import { formatCurrency } from '../utils/currency.js';
-import Pagination, { PAGE_SIZE } from '../components/Pagination.jsx';
+import Pagination, { PAGE_SIZE, clampPage } from '../components/Pagination.jsx';
 
 export default function KeuanganManagement({ transaksiList, currentUser, onAddTransaksi, onDeleteTransaksi }) {
   const effectiveRole = currentUser?.role === 'owner' ? 'reader' : currentUser?.role;
@@ -32,7 +32,8 @@ export default function KeuanganManagement({ transaksiList, currentUser, onAddTr
   );
   const [keuPage, setKeuPage] = useState(1);
   useEffect(() => { setKeuPage(1); }, [filter, filterPT]);
-  const pagedTransaksi = filteredTransaksi.slice((keuPage - 1) * PAGE_SIZE, keuPage * PAGE_SIZE);
+  const safeKeuPage = clampPage(keuPage, filteredTransaksi.length);
+  const pagedTransaksi = filteredTransaksi.slice((safeKeuPage - 1) * PAGE_SIZE, safeKeuPage * PAGE_SIZE);
 
   const totalPemasukan = useMemo(
     () => activeTransaksiList
@@ -210,7 +211,7 @@ export default function KeuanganManagement({ transaksiList, currentUser, onAddTr
           ))
         )}
       </div>
-      <Pagination total={filteredTransaksi.length} page={keuPage} onChange={setKeuPage} />
+      <Pagination total={filteredTransaksi.length} page={safeKeuPage} onChange={setKeuPage} />
     </div>
   );
 }

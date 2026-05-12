@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { CheckCircle, Clock, FileText, Package, Plus, XCircle } from 'lucide-react';
 import { exportLabaKotorToExcel } from '../utils/excel.js';
 import { isSJBelumInvoice, isSJTerinvoice } from '../utils/sjHelpers.js';
-import Pagination, { PAGE_SIZE } from '../components/Pagination.jsx';
+import Pagination, { PAGE_SIZE, clampPage } from '../components/Pagination.jsx';
 
 const STATUS_BADGE_STYLES = {
   'dalam perjalanan': 'bg-orange-50 text-orange-600',
@@ -70,8 +70,10 @@ export default function InvoiceManagement({
   const [invPage, setInvPage] = useState(1);
   const [invoicePage, setInvoicePage] = useState(1);
   useEffect(() => { setInvPage(1); setInvoicePage(1); }, [activeFilter]);
-  const pagedSJ = filteredSJ.slice((invPage - 1) * PAGE_SIZE, invPage * PAGE_SIZE);
-  const pagedInvoices = invoiceList.slice((invoicePage - 1) * PAGE_SIZE, invoicePage * PAGE_SIZE);
+  const safeInvPage = clampPage(invPage, filteredSJ.length);
+  const safeInvoicePage = clampPage(invoicePage, invoiceList.length);
+  const pagedSJ = filteredSJ.slice((safeInvPage - 1) * PAGE_SIZE, safeInvPage * PAGE_SIZE);
+  const pagedInvoices = invoiceList.slice((safeInvoicePage - 1) * PAGE_SIZE, safeInvoicePage * PAGE_SIZE);
 
   // Escape CSV cell values untuk mencegah CSV Injection (formula injection di Excel/Sheets)
   const escapeCsvValue = (val) => {
@@ -302,7 +304,7 @@ export default function InvoiceManagement({
                   </tbody>
                 </table>
               </div>
-              <Pagination total={filteredSJ.length} page={invPage} onChange={setInvPage} />
+              <Pagination total={filteredSJ.length} page={safeInvPage} onChange={setInvPage} />
             </>
           )}
         </div>
@@ -433,7 +435,7 @@ export default function InvoiceManagement({
               </div>
             ))
           )}
-          <Pagination total={invoiceList.length} page={invoicePage} onChange={setInvoicePage} />
+          <Pagination total={invoiceList.length} page={safeInvoicePage} onChange={setInvoicePage} />
         </div>
       )}
     </div>

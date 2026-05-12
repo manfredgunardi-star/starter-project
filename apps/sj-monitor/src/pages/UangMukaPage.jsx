@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { DollarSign, FileText, Package, Plus, Search, Trash2, XCircle } from 'lucide-react';
-import Pagination, { PAGE_SIZE } from '../components/Pagination.jsx';
+import Pagination, { PAGE_SIZE, clampPage } from '../components/Pagination.jsx';
 
 export default function UangMukaManagement({
   uangMukaList,
@@ -39,7 +39,8 @@ export default function UangMukaManagement({
   );
   const [umPage, setUmPage] = useState(1);
   useEffect(() => { setUmPage(1); }, [searchUM]);
-  const pagedUM = filteredUM.slice((umPage - 1) * PAGE_SIZE, umPage * PAGE_SIZE);
+  const safeUMPage = clampPage(umPage, filteredUM.length);
+  const pagedUM = filteredUM.slice((safeUMPage - 1) * PAGE_SIZE, safeUMPage * PAGE_SIZE);
 
   return (
     <div className="space-y-6">
@@ -172,7 +173,7 @@ export default function UangMukaManagement({
                 </tr>
               </tfoot>
             </table>
-            <Pagination total={filteredUM.length} page={umPage} onChange={setUmPage} />
+            <Pagination total={filteredUM.length} page={safeUMPage} onChange={setUmPage} />
           </div>
         )}
       </div>

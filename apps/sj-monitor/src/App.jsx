@@ -15,7 +15,7 @@ import SearchableSelect from './components/SearchableSelect.jsx';
 import StatCard from './components/StatCard.jsx';
 import AlertBanner from './components/AlertBanner.jsx';
 import SuratJalanCard from './components/SuratJalanCard.jsx';
-import Pagination, { PAGE_SIZE } from './components/Pagination.jsx';
+import Pagination, { PAGE_SIZE, clampPage } from './components/Pagination.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 const LaporanKasPage   = React.lazy(() => import('./pages/LaporanKasPage.jsx'));
 const LaporanTrukPage  = React.lazy(() => import('./pages/LaporanTrukPage.jsx'));
@@ -1710,7 +1710,8 @@ setTransaksiList(prev => prev.filter(t => t.suratJalanId !== id));
   );
   const [sjPage, setSJPage] = useState(1);
   useEffect(() => { setSJPage(1); }, [filter]);
-  const pagedSJ = filteredSuratJalan.slice((sjPage - 1) * PAGE_SIZE, sjPage * PAGE_SIZE);
+  const safeSJPage = clampPage(sjPage, filteredSuratJalan.length);
+  const pagedSJ = filteredSuratJalan.slice((safeSJPage - 1) * PAGE_SIZE, safeSJPage * PAGE_SIZE);
 
   const sjStatusCounts = useMemo(() => ({
     pending: suratJalanList.filter(s => s.status === 'pending').length,
@@ -2332,7 +2333,7 @@ try { unsubTransaksi(); } catch {}
                   />
                 ))}
               </div>
-              <Pagination total={filteredSuratJalan.length} page={sjPage} onChange={setSJPage} />
+              <Pagination total={filteredSuratJalan.length} page={safeSJPage} onChange={setSJPage} />
             </>
           )}
         </div>

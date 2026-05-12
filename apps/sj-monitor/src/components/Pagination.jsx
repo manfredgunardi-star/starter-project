@@ -2,8 +2,15 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 export const PAGE_SIZE = 10;
 
+export const getPageCount = (total, pageSize = PAGE_SIZE) => Math.max(1, Math.ceil(total / pageSize));
+
+export const clampPage = (page, total, pageSize = PAGE_SIZE) => (
+  Math.min(Math.max(Number(page) || 1, 1), getPageCount(total, pageSize))
+);
+
 export default function Pagination({ total, page, pageSize = PAGE_SIZE, onChange }) {
-  const totalPages = Math.ceil(total / pageSize);
+  const totalPages = getPageCount(total, pageSize);
+  const safePage = clampPage(page, total, pageSize);
   if (totalPages <= 1) return null;
 
   const btnStyle = (enabled) => ({
@@ -30,14 +37,14 @@ export default function Pagination({ total, page, pageSize = PAGE_SIZE, onChange
     }}>
       <button
         onClick={() => onChange(1)}
-        disabled={page <= 1}
-        style={btnStyle(page > 1)}
+        disabled={safePage <= 1}
+        style={btnStyle(safePage > 1)}
       >{'<<'}</button>
 
       <button
-        onClick={() => onChange(page - 1)}
-        disabled={page <= 1}
-        style={btnStyle(page > 1)}
+        onClick={() => onChange(safePage - 1)}
+        disabled={safePage <= 1}
+        style={btnStyle(safePage > 1)}
       >
         <ChevronLeft size={14} />
       </button>
@@ -49,24 +56,24 @@ export default function Pagination({ total, page, pageSize = PAGE_SIZE, onChange
         textAlign: 'center',
         fontFamily: "'SF Pro Text', Inter, sans-serif",
       }}>
-        {page} / {totalPages}
+        {safePage} / {totalPages}
         <span style={{ color: 'rgba(148,163,184,0.5)', fontSize: 11, marginLeft: 4 }}>
           ({total})
         </span>
       </span>
 
       <button
-        onClick={() => onChange(page + 1)}
-        disabled={page >= totalPages}
-        style={btnStyle(page < totalPages)}
+        onClick={() => onChange(safePage + 1)}
+        disabled={safePage >= totalPages}
+        style={btnStyle(safePage < totalPages)}
       >
         <ChevronRight size={14} />
       </button>
 
       <button
         onClick={() => onChange(totalPages)}
-        disabled={page >= totalPages}
-        style={btnStyle(page < totalPages)}
+        disabled={safePage >= totalPages}
+        style={btnStyle(safePage < totalPages)}
       >{'>>'}</button>
     </div>
   );
