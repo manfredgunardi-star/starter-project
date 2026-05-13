@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { MoreHorizontal, X } from 'lucide-react';
 import { useReducedMotion } from '../hooks/useReducedMotion.js';
@@ -6,6 +6,9 @@ import { useScrollDirection } from '../hooks/useScrollDirection.js';
 
 export default function DockNav({ items, activeTab, onTabChange, primaryCount = 4 }) {
   const [isMoreOpen, setIsMoreOpen] = useState(false);
+  const closeButtonRef = useRef(null);
+  const moreButtonRef = useRef(null);
+  const wasMoreOpenRef = useRef(false);
   const prefersReducedMotion = useReducedMotion();
   const hidden = useScrollDirection();
   const primaryItems = items.slice(0, primaryCount);
@@ -19,20 +22,74 @@ export default function DockNav({ items, activeTab, onTabChange, primaryCount = 
   const labelSpr  = prefersReducedMotion ? noMotion : { type: 'spring', stiffness: 320, damping: 22, mass: 0.6 };
   const tapSpr    = prefersReducedMotion ? noMotion : { type: 'spring', stiffness: 600, damping: 28, mass: 0.5 };
 
+  useEffect(() => {
+    if (!hasMoreItems) {
+      return undefined;
+    }
+
+    if (isMoreOpen) {
+      wasMoreOpenRef.current = true;
+      const focusTimer = window.requestAnimationFrame(() => {
+        closeButtonRef.current?.focus();
+      });
+
+      const handleKeyDown = (event) => {
+        if (event.key === 'Escape') {
+          setIsMoreOpen(false);
+        }
+      };
+
+      document.addEventListener('keydown', handleKeyDown);
+
+      return () => {
+        window.cancelAnimationFrame(focusTimer);
+        document.removeEventListener('keydown', handleKeyDown);
+      };
+    }
+
+    if (wasMoreOpenRef.current) {
+      wasMoreOpenRef.current = false;
+      const focusTimer = window.requestAnimationFrame(() => {
+        moreButtonRef.current?.focus();
+      });
+
+      return () => {
+        window.cancelAnimationFrame(focusTimer);
+      };
+    }
+
+    return undefined;
+  }, [hasMoreItems, isMoreOpen]);
+
+  const closeMoreMenu = () => {
+    setIsMoreOpen(false);
+  };
+
+  const toggleMoreMenu = () => {
+    setIsMoreOpen((current) => !current);
+  };
+
+  const handlePrimaryItemClick = (tab) => {
+    if (isMoreOpen) {
+      closeMoreMenu();
+    }
+    onTabChange(tab);
+  };
+
   const handleMoreItemClick = (tab) => {
     onTabChange(tab);
-    setIsMoreOpen(false);
+    closeMoreMenu();
   };
 
   return (
     <div style={{
       position: 'fixed',
-      bottom: 16,
+      bottom: 'calc(env(safe-area-inset-bottom, 0px) + 16px)',
       left: 16,
       right: 16,
       display: 'flex',
       justifyContent: 'center',
-      zIndex: 50,
+      zIndex: 45,
       pointerEvents: 'none',
     }}>
       <AnimatePresence>
@@ -46,31 +103,34 @@ export default function DockNav({ items, activeTab, onTabChange, primaryCount = 
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={spring}
-              onClick={() => setIsMoreOpen(false)}
+              onClick={closeMoreMenu}
               style={{
                 position: 'fixed',
                 inset: 0,
                 background: 'rgba(2,6,23,0.45)',
                 border: 0,
                 padding: 0,
+                zIndex: 0,
                 pointerEvents: 'auto',
                 cursor: 'pointer',
               }}
             />
             <motion.div
               key="dock-more-sheet"
-              initial={{ opacity: 0, y: 28, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 28, scale: 0.96 }}
+              initial={{ opacity: 0, x: '-50%', y: 28, scale: 0.96 }}
+              animate={{ opacity: 1, x: '-50%', y: 0, scale: 1 }}
+              exit={{ opacity: 0, x: '-50%', y: 28, scale: 0.96 }}
               transition={spring}
               role="dialog"
               aria-modal="true"
               aria-label="Menu lainnya"
               style={{
                 position: 'fixed',
-                left: 16,
-                right: 16,
-                bottom: 92,
+                left: '50%',
+                right: 'auto',
+                bottom: 'calc(env(safe-area-inset-bottom, 0px) + 92px)',
+                width: 'calc(100vw - 32px)',
+                maxWidth: 480,
                 maxHeight: '62vh',
                 overflowY: 'auto',
                 background: 'rgba(15,23,42,0.75)',
@@ -80,6 +140,8 @@ export default function DockNav({ items, activeTab, onTabChange, primaryCount = 
                 borderRadius: 28,
                 padding: 14,
                 boxShadow: '0 18px 60px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)',
+                transformOrigin: 'bottom center',
+                zIndex: 1,
                 pointerEvents: 'auto',
               }}
             >
@@ -100,10 +162,11 @@ export default function DockNav({ items, activeTab, onTabChange, primaryCount = 
                   Lainnya
                 </span>
                 <motion.button
+                  ref={closeButtonRef}
                   type="button"
                   aria-label="Tutup menu lainnya"
                   title="Tutup"
-                  onClick={() => setIsMoreOpen(false)}
+                  onClick={closeMoreMenu}
                   whileTap={{ scale: 0.85, transition: tapSpr }}
                   style={{
                     width: 34,
@@ -209,6 +272,8 @@ export default function DockNav({ items, activeTab, onTabChange, primaryCount = 
           boxShadow: '0 8px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)',
           overflowX: 'auto',
           maxWidth: '100%',
+          position: 'relative',
+          zIndex: 2,
           pointerEvents: hidden ? 'none' : 'auto',
         }}
       >
@@ -221,7 +286,7 @@ export default function DockNav({ items, activeTab, onTabChange, primaryCount = 
             <motion.button
               key={item.tab}
               type="button"
-              onClick={() => onTabChange(item.tab)}
+              onClick={() => handlePrimaryItemClick(item.tab)}
               layout
               transition={layoutSpr}
               title={item.label}
@@ -254,6 +319,7 @@ export default function DockNav({ items, activeTab, onTabChange, primaryCount = 
                   size={isActive ? 15 : 20}
                   color={isActive ? '#38bdf8' : 'rgba(255,255,255,0.35)'}
                   strokeWidth={isActive ? 2.5 : 2}
+                  aria-hidden="true"
                 />
               </motion.div>
               <AnimatePresence>
@@ -283,13 +349,14 @@ export default function DockNav({ items, activeTab, onTabChange, primaryCount = 
         })}
         {hasMoreItems && (
           <motion.button
+            ref={moreButtonRef}
             key="dock-more"
             type="button"
-            onClick={() => setIsMoreOpen((current) => !current)}
+            onClick={toggleMoreMenu}
             layout
             transition={layoutSpr}
-            title="Lainnya"
-            aria-label="Buka menu lainnya"
+            title={isMoreOpen ? 'Tutup' : 'Lainnya'}
+            aria-label={isMoreOpen ? 'Tutup menu lainnya' : 'Buka menu lainnya'}
             aria-expanded={isMoreOpen}
             aria-current={isMoreActive ? 'page' : undefined}
             whileTap={{ scale: 0.85, transition: tapSpr }}
