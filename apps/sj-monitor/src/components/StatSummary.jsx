@@ -1,7 +1,20 @@
 const FONT_STACK = "'SF Pro Text', 'SF Pro Display', Inter, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
 
 const StatSummary = ({ title, stats = [] }) => {
-  if (!Array.isArray(stats) || stats.length === 0) {
+  const visibleStats = Array.isArray(stats)
+    ? stats.filter((stat) => {
+        if (!stat || typeof stat !== 'object' || Array.isArray(stat)) {
+          return false;
+        }
+
+        const hasLabel = stat.label !== null && stat.label !== undefined && String(stat.label).trim() !== '';
+        const hasValue = stat.value !== null && stat.value !== undefined && String(stat.value).trim() !== '';
+
+        return hasLabel || hasValue;
+      })
+    : [];
+
+  if (visibleStats.length === 0) {
     return null;
   }
 
@@ -35,38 +48,40 @@ const StatSummary = ({ title, stats = [] }) => {
         </p>
       )}
 
-      <div
+      <dl
         style={{
           display: 'flex',
           alignItems: 'stretch',
           width: '100%',
+          margin: 0,
         }}
       >
-        {stats.map((stat, index) => (
+        {visibleStats.map((stat, index) => (
           <div
             key={`${stat.label}-${index}`}
             style={{
               flex: '1 1 0',
               minWidth: 0,
               paddingLeft: index === 0 ? 0 : 12,
-              paddingRight: index === stats.length - 1 ? 0 : 12,
+              paddingRight: index === visibleStats.length - 1 ? 0 : 12,
               borderLeft: index === 0 ? 'none' : '1px solid rgba(142, 142, 147, 0.22)',
             }}
           >
-            <div
+            <dd
               style={{
                 color: stat.color || '#1c1c1e',
                 fontSize: 'clamp(18px, 5vw, 24px)',
                 fontWeight: 800,
                 letterSpacing: 0,
                 lineHeight: 1.12,
+                margin: 0,
                 overflowWrap: 'anywhere',
                 wordBreak: 'break-word',
               }}
             >
-              {stat.value}
-            </div>
-            <div
+              {stat.value ?? '-'}
+            </dd>
+            <dt
               style={{
                 marginTop: 5,
                 color: '#6b7280',
@@ -78,10 +93,10 @@ const StatSummary = ({ title, stats = [] }) => {
               }}
             >
               {stat.label}
-            </div>
+            </dt>
           </div>
         ))}
-      </div>
+      </dl>
     </section>
   );
 };
