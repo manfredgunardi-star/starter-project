@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { DollarSign, Plus, Trash2 } from 'lucide-react';
 import { formatCurrency } from '../utils/currency.js';
 import Pagination, { PAGE_SIZE, clampPage } from '../components/Pagination.jsx';
+import StatSummary from '../components/StatSummary.jsx';
 
 export default function KeuanganManagement({ transaksiList, currentUser, onAddTransaksi, onDeleteTransaksi }) {
   const effectiveRole = currentUser?.role === 'owner' ? 'reader' : currentUser?.role;
@@ -55,46 +56,14 @@ export default function KeuanganManagement({ transaksiList, currentUser, onAddTr
 
   return (
     <div>
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Total Pemasukan</p>
-              <p className="text-2xl font-bold text-green-600 mt-1">{formatCurrency(totalPemasukan)}</p>
-            </div>
-            <div className="bg-green-500 p-3 rounded-lg text-white">
-              <DollarSign className="w-6 h-6" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Total Pengeluaran</p>
-              <p className="text-2xl font-bold text-red-600 mt-1">{formatCurrency(totalPengeluaran)}</p>
-            </div>
-            <div className="bg-red-500 p-3 rounded-lg text-white">
-              <DollarSign className="w-6 h-6" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow-md p-3 sm:p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-600 text-sm">Saldo Kas</p>
-              <p className={`text-2xl font-bold mt-1 ${saldoKas >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                {formatCurrency(saldoKas)}
-              </p>
-            </div>
-            <div className="bg-blue-500 p-3 rounded-lg text-white">
-              <DollarSign className="w-6 h-6" />
-            </div>
-          </div>
-        </div>
-      </div>
+      <StatSummary
+        title="Kas"
+        stats={[
+          { label: 'Pemasukan', value: formatCurrency(totalPemasukan), color: '#34c759' },
+          { label: 'Pengeluaran', value: formatCurrency(totalPengeluaran), color: '#ff3b30' },
+          { label: 'Saldo', value: formatCurrency(saldoKas), color: saldoKas >= 0 ? '#007aff' : '#ff3b30' },
+        ]}
+      />
 
       {/* Actions & Filters */}
       <div className="bg-white rounded-lg shadow-md p-4 mb-6">
