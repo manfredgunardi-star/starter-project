@@ -1,4 +1,4 @@
-import { useEffect, useId, useRef } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 const SPRING = { type: 'spring', stiffness: 320, damping: 30, mass: 0.8 };
@@ -8,7 +8,14 @@ export default function ActionSheet({ open, onClose, title, actions = [] }) {
   const sheetRef = useRef(null);
   const cancelButtonRef = useRef(null);
   const previouslyFocusedRef = useRef(null);
+  const pendingActionRef = useRef(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const activeActions = actions.filter((action) => action && typeof action.onClick === 'function');
+
+  const handleClose = useCallback(() => {
+    if (pendingActionRef.current) return;
+    onClose?.();
+  }, [onClose]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -38,7 +45,7 @@ export default function ActionSheet({ open, onClose, title, actions = [] }) {
       if (event.key !== 'Escape') return;
 
       event.preventDefault();
-      onClose?.();
+      handleClose();
     };
 
     document.addEventListener('keydown', handleKeyDown);
@@ -46,14 +53,21 @@ export default function ActionSheet({ open, onClose, title, actions = [] }) {
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [onClose, open]);
+  }, [handleClose, open]);
 
   const handleActionClick = async (action) => {
+    if (pendingActionRef.current) return;
+
+    pendingActionRef.current = true;
+    setIsSubmitting(true);
+
     try {
       await Promise.resolve(action.onClick());
     } catch (error) {
       console.error('ActionSheet action failed:', error);
     } finally {
+      pendingActionRef.current = false;
+      setIsSubmitting(false);
       onClose?.();
     }
   };
@@ -70,7 +84,8 @@ export default function ActionSheet({ open, onClose, title, actions = [] }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.18 }}
-            onClick={onClose}
+            disabled={isSubmitting}
+            onClick={handleClose}
           />
 
           <motion.div
@@ -105,9 +120,10 @@ export default function ActionSheet({ open, onClose, title, actions = [] }) {
                   <button
                     key={action.id || action.key || `${action.label}-${index}`}
                     type="button"
+                    disabled={isSubmitting}
                     className={`flex min-h-[56px] w-full items-center justify-center gap-3 border-b border-slate-200/80 px-5 text-center text-[17px] font-semibold transition active:bg-slate-200/75 last:border-b-0 ${
                       action.destructive ? 'text-rose-600' : 'text-sky-600'
-                    }`}
+                    } disabled:cursor-wait disabled:opacity-60 disabled:active:bg-transparent`}
                     onClick={() => handleActionClick(action)}
                   >
                     {action.icon && <span className="flex h-5 w-5 items-center justify-center">{action.icon}</span>}
@@ -119,8 +135,9 @@ export default function ActionSheet({ open, onClose, title, actions = [] }) {
               <button
                 ref={cancelButtonRef}
                 type="button"
-                className="mt-2 min-h-[56px] w-full rounded-2xl border border-white/30 bg-white/90 px-5 text-center text-[17px] font-bold text-sky-600 shadow-xl shadow-slate-950/15 backdrop-blur-2xl transition active:bg-slate-200/80"
-                onClick={onClose}
+                disabled={isSubmitting}
+                className="mt-2 min-h-[56px] w-full rounded-2xl border border-white/30 bg-white/90 px-5 text-center text-[17px] font-bold text-sky-600 shadow-xl shadow-slate-950/15 backdrop-blur-2xl transition active:bg-slate-200/80 disabled:cursor-wait disabled:opacity-60 disabled:active:bg-white/90"
+                onClick={handleClose}
               >
                 Batal
               </button>
