@@ -4,6 +4,7 @@ import { CheckCircle, Clock, FileText, Package, Plus, XCircle } from 'lucide-rea
 import { exportLabaKotorToExcel } from '../utils/excel.js';
 import { isSJBelumInvoice, isSJTerinvoice } from '../utils/sjHelpers.js';
 import Pagination, { PAGE_SIZE, clampPage } from '../components/Pagination.jsx';
+import StatSummary from '../components/StatSummary.jsx';
 
 const STATUS_BADGE_STYLES = {
   'dalam perjalanan': 'bg-orange-50 text-orange-600',
@@ -177,35 +178,14 @@ export default function InvoiceManagement({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-md p-3 sm:p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-blue-100 text-sm mb-1">Total Invoice</p>
-              <p className="text-3xl font-bold">{invoiceList.length}</p>
-            </div>
-            <FileText className="w-12 h-12 text-blue-200" />
-          </div>
-        </div>
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-md p-3 sm:p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-orange-100 text-sm mb-1">Belum Terinvoice</p>
-              <p className="text-3xl font-bold">{sjBelumTerinvoice.length}</p>
-            </div>
-            <Package className="w-12 h-12 text-orange-200" />
-          </div>
-        </div>
-        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-md p-3 sm:p-6 text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-green-100 text-sm mb-1">Sudah Terinvoice</p>
-              <p className="text-3xl font-bold">{sjTerinvoice.length}</p>
-            </div>
-            <CheckCircle className="w-12 h-12 text-green-200" />
-          </div>
-        </div>
-      </div>
+      <StatSummary
+        title="Invoice"
+        stats={[
+          { label: 'Total Invoice', value: invoiceList.length, color: '#007aff' },
+          { label: 'Belum Invoice', value: sjBelumTerinvoice.length, color: '#ff9500' },
+          { label: 'Sudah Invoice', value: sjTerinvoice.length, color: '#34c759' },
+        ]}
+      />
 
       {currentUser?.role === 'superadmin' && (
         <motion.div
