@@ -12,7 +12,7 @@ import { useMasterData } from './hooks/useMasterData.js';
 import { useUsers } from './hooks/useUsers.js';
 import { useSettings } from './hooks/useSettings.js';
 import SearchableSelect from './components/SearchableSelect.jsx';
-import StatCard from './components/StatCard.jsx';
+import StatSummary from './components/StatSummary.jsx';
 import AlertBanner from './components/AlertBanner.jsx';
 import SuratJalanCard from './components/SuratJalanCard.jsx';
 import Pagination, { PAGE_SIZE, clampPage } from './components/Pagination.jsx';
@@ -2131,31 +2131,15 @@ try { unsubTransaksi(); } catch {}
           </Suspense>
         ) : (
           <>
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
-          <StatCard
-            title="Total Surat Jalan"
-            value={suratJalanList.length}
-            icon={<FileText className="w-6 h-6" />}
-            color="bg-blue-500"
-          />
-          <StatCard
-            title="Pending"
-            value={sjStatusCounts.pending}
-            icon={<Clock className="w-6 h-6" />}
-            color="bg-yellow-500"
-          />
-          <StatCard
-            title="Terkirim"
-            value={sjStatusCounts.terkirim}
-            icon={<CheckCircle className="w-6 h-6" />}
-            color="bg-green-500"
-          />
-          <StatCard
-            title="Gagal"
-            value={sjStatusCounts.gagal}
-            icon={<XCircle className="w-6 h-6" />}
-            color="bg-red-500"
+        <div className="mb-4 sm:mb-6">
+          <StatSummary
+            title="Surat Jalan"
+            stats={[
+              { label: 'Total', value: suratJalanList.length, color: '#007aff' },
+              { label: 'Pending', value: sjStatusCounts.pending, color: '#ff9500' },
+              { label: 'Terkirim', value: sjStatusCounts.terkirim, color: '#34c759' },
+              { label: 'Gagal', value: sjStatusCounts.gagal, color: '#ff3b30' },
+            ]}
           />
         </div>
 
