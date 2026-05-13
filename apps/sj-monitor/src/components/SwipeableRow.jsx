@@ -2,10 +2,19 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 
 const ACTION_WIDTH = 72;
+const SWIPE_THRESHOLD = 10;
 const SPRING = { type: 'spring', stiffness: 180, damping: 24, mass: 0.7 };
+const INTERACTIVE_SELECTOR = 'button, a, input, select, textarea, [role="button"], [tabindex]:not([tabindex="-1"])';
 
 function clamp(value, min, max) {
   return Math.min(Math.max(value, min), max);
+}
+
+function isInteractiveTarget(target, container) {
+  if (!(target instanceof Element)) return false;
+
+  const interactiveElement = target.closest(INTERACTIVE_SELECTOR);
+  return Boolean(interactiveElement && interactiveElement !== container && container?.contains(interactiveElement));
 }
 
 export default function SwipeableRow({ children, actions = [], disabled = false }) {
@@ -31,6 +40,12 @@ export default function SwipeableRow({ children, actions = [], disabled = false 
     setTranslateX(0);
   }, []);
 
+  const resetDrag = useCallback(() => {
+    isDraggingRef.current = false;
+    hasMovedRef.current = false;
+    setIsDragging(false);
+  }, []);
+
   useEffect(() => {
     if (!isEnabled || !isOpen) return undefined;
 
@@ -49,8 +64,11 @@ export default function SwipeableRow({ children, actions = [], disabled = false 
   }, [close, isEnabled, isOpen]);
 
   useEffect(() => {
-    if (!isEnabled && translateX !== 0) close();
-  }, [close, isEnabled, translateX]);
+    if (isEnabled) return;
+
+    resetDrag();
+    if (translateX !== 0) close();
+  }, [close, isEnabled, resetDrag, translateX]);
 
   const handleTouchStart = (event) => {
     if (!isEnabled || event.touches.length !== 1) return;
@@ -70,8 +88,13 @@ export default function SwipeableRow({ children, actions = [], disabled = false 
     const touch = event.touches[0];
     const deltaX = touch.clientX - startXRef.current;
     const deltaY = touch.clientY - startYRef.current;
+    const absDeltaX = Math.abs(deltaX);
+    const absDeltaY = Math.abs(deltaY);
 
-    if (!hasMovedRef.current && Math.abs(deltaY) > Math.abs(deltaX)) return;
+    if (!hasMovedRef.current) {
+      if (absDeltaX < SWIPE_THRESHOLD) return;
+      if (absDeltaY > absDeltaX) return;
+    }
 
     hasMovedRef.current = true;
     event.preventDefault();
@@ -79,17 +102,37 @@ export default function SwipeableRow({ children, actions = [], disabled = false 
   };
 
   const handleTouchEnd = () => {
-    if (!isDraggingRef.current || !isEnabled) return;
+    const wasDragging = isDraggingRef.current;
+    const didMove = hasMovedRef.current;
 
-    isDraggingRef.current = false;
-    hasMovedRef.current = false;
-    setIsDragging(false);
+    resetDrag();
+
+    if (!wasDragging || !isEnabled || !didMove) return;
+
     setTranslateX((current) => (Math.abs(current) > maxReveal / 2 ? -maxReveal : 0));
   };
 
   const handleActionClick = (action) => {
-    action.onClick();
-    close();
+    try {
+      action.onClick();
+    } finally {
+      close();
+    }
+  };
+
+  const handleKeyDown = (event) => {
+    if (!isEnabled || isInteractiveTarget(event.target, containerRef.current)) return;
+
+    if (event.key === 'Enter' || event.key === ' ' || event.key === 'ArrowLeft') {
+      event.preventDefault();
+      setTranslateX(-maxReveal);
+      return;
+    }
+
+    if (event.key === 'Escape' || event.key === 'ArrowRight') {
+      event.preventDefault();
+      close();
+    }
   };
 
   if (!isEnabled) {
@@ -99,6 +142,10 @@ export default function SwipeableRow({ children, actions = [], disabled = false 
   return (
     <div
       ref={containerRef}
+      tabIndex={0}
+      role="group"
+      aria-expanded={isOpen}
+      onKeyDown={handleKeyDown}
       className="relative overflow-hidden rounded-[28px]"
       style={{ fontFamily: "'SF Pro Text', 'SF Pro Display', Inter, sans-serif" }}
     >
