@@ -1,15 +1,58 @@
-import { useId } from 'react';
+import { useEffect, useId, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 const SPRING = { type: 'spring', stiffness: 320, damping: 30, mass: 0.8 };
 
 export default function ActionSheet({ open, onClose, title, actions = [] }) {
   const titleId = useId();
+  const sheetRef = useRef(null);
+  const cancelButtonRef = useRef(null);
+  const previouslyFocusedRef = useRef(null);
   const activeActions = actions.filter((action) => action && typeof action.onClick === 'function');
 
-  const handleActionClick = (action) => {
+  useEffect(() => {
+    if (!open) return undefined;
+
+    previouslyFocusedRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+    const frameId = window.requestAnimationFrame(() => {
+      const focusTarget = cancelButtonRef.current || sheetRef.current;
+      focusTarget?.focus();
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+
+      const previouslyFocused = previouslyFocusedRef.current;
+      if (previouslyFocused && document.contains(previouslyFocused)) {
+        previouslyFocused.focus();
+      }
+      previouslyFocusedRef.current = null;
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+
+    const handleKeyDown = (event) => {
+      if (event.key !== 'Escape') return;
+
+      event.preventDefault();
+      onClose?.();
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose, open]);
+
+  const handleActionClick = async (action) => {
     try {
-      action.onClick();
+      await Promise.resolve(action.onClick());
+    } catch (error) {
+      console.error('ActionSheet action failed:', error);
     } finally {
       onClose?.();
     }
@@ -18,7 +61,7 @@ export default function ActionSheet({ open, onClose, title, actions = [] }) {
   return (
     <AnimatePresence>
       {open && (
-        <div className="fixed inset-0 z-[70]" aria-hidden={!open}>
+        <div className="fixed inset-0 z-[70]">
           <motion.button
             type="button"
             aria-label="Tutup menu aksi"
@@ -31,10 +74,12 @@ export default function ActionSheet({ open, onClose, title, actions = [] }) {
           />
 
           <motion.div
+            ref={sheetRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby={title ? titleId : undefined}
             aria-label={title ? undefined : 'Menu aksi'}
+            tabIndex={-1}
             className="fixed bottom-0 left-0 right-0 z-[71] px-3 pb-[calc(env(safe-area-inset-bottom)+12px)]"
             initial={{ y: '110%', opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -58,7 +103,7 @@ export default function ActionSheet({ open, onClose, title, actions = [] }) {
 
                 {activeActions.map((action, index) => (
                   <button
-                    key={`${action.label}-${index}`}
+                    key={action.id || action.key || `${action.label}-${index}`}
                     type="button"
                     className={`flex min-h-[56px] w-full items-center justify-center gap-3 border-b border-slate-200/80 px-5 text-center text-[17px] font-semibold transition active:bg-slate-200/75 last:border-b-0 ${
                       action.destructive ? 'text-rose-600' : 'text-sky-600'
@@ -72,6 +117,7 @@ export default function ActionSheet({ open, onClose, title, actions = [] }) {
               </div>
 
               <button
+                ref={cancelButtonRef}
                 type="button"
                 className="mt-2 min-h-[56px] w-full rounded-2xl border border-white/30 bg-white/90 px-5 text-center text-[17px] font-bold text-sky-600 shadow-xl shadow-slate-950/15 backdrop-blur-2xl transition active:bg-slate-200/80"
                 onClick={onClose}
