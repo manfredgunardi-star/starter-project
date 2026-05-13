@@ -78,12 +78,14 @@ const SuratJalanCard = ({
     setExpanded((current) => !current);
   };
 
+  const detailId = `surat-jalan-detail-${suratJalan.id}`;
+  const hasSwipeActions = swipeActions.length > 0;
+
   return (
     <SwipeableRow actions={swipeActions}>
       <div
         className="border-0 rounded-none bg-white px-3 py-3 transition sm:px-5 sm:py-4"
         onClick={toggleExpanded}
-        aria-expanded={expanded}
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
@@ -117,11 +119,24 @@ const SuratJalanCard = ({
                 <span>Terkirim</span>
               </button>
             )}
-            {expanded ? (
-              <ChevronUp className="h-4 w-4 text-gray-400" />
-            ) : (
-              <ChevronDown className="h-4 w-4 text-gray-400" />
-            )}
+            <button
+              type="button"
+              aria-label={expanded ? 'Tutup detail surat jalan' : 'Buka detail surat jalan'}
+              aria-expanded={expanded}
+              aria-controls={detailId}
+              onClick={(event) => {
+                event.stopPropagation();
+                toggleExpanded();
+              }}
+              className="flex min-h-[28px] items-center gap-1 rounded-full px-2 py-1 text-[11px] font-semibold tracking-normal text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
+            >
+              <span className="hidden sm:inline">{expanded ? 'Tutup' : 'Detail'}</span>
+              {expanded ? (
+                <ChevronUp className="h-4 w-4" />
+              ) : (
+                <ChevronDown className="h-4 w-4" />
+              )}
+            </button>
           </div>
         </div>
 
@@ -138,47 +153,51 @@ const SuratJalanCard = ({
           </div>
         </div>
 
+        {hasSwipeActions && (
+          <p className="mt-1 text-right text-[10px] font-medium tracking-normal text-gray-400">Geser kiri untuk aksi</p>
+        )}
+
         {suratJalan.status === 'terkirim' && (
           <div className="mt-2 grid grid-cols-2 gap-2 rounded-lg bg-green-50 px-3 py-2 text-xs">
             <div>
               <p className="text-green-700/70">Tgl Terkirim</p>
-              <p className="font-semibold text-green-800">{tanggalTerkirim || '-'}</p>
+              <p className="font-semibold text-green-800 break-words">{tanggalTerkirim || '-'}</p>
             </div>
-            <div>
+            <div className="min-w-0">
               <p className="text-green-700/70">Qty Bongkar</p>
-              <p className="font-semibold text-green-800">{suratJalan.qtyBongkar || 0} {suratJalan.satuan || ''}</p>
+              <p className="break-words font-semibold text-green-800">{suratJalan.qtyBongkar || 0} {suratJalan.satuan || ''}</p>
             </div>
           </div>
         )}
 
         {expanded && (
-          <div className="mt-4 border-t border-gray-200 pt-4">
+          <div id={detailId} className="mt-4 border-t border-gray-200 pt-4">
             <div className="grid grid-cols-2 gap-2 text-xs sm:gap-3 sm:text-sm">
-              <div>
+              <div className="min-w-0">
                 <p className="text-gray-600">Supir / PT:</p>
-                <p className="font-semibold text-gray-800">{suratJalan.namaSupir || '-'} / {suratJalan.pt || '-'}</p>
+                <p className="break-words font-semibold text-gray-800">{suratJalan.namaSupir || '-'} / {suratJalan.pt || '-'}</p>
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-gray-600">Rute:</p>
-                <p className="font-semibold text-gray-800">{suratJalan.rute || '-'}</p>
+                <p className="break-words font-semibold text-gray-800">{suratJalan.rute || '-'}</p>
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-gray-600">Material / Qty Isi:</p>
-                <p className="font-semibold text-gray-800">{suratJalan.material || '-'} ({suratJalan.qtyIsi || 0} {suratJalan.satuan || ''})</p>
+                <p className="break-words font-semibold text-gray-800">{suratJalan.material || '-'} ({suratJalan.qtyIsi || 0} {suratJalan.satuan || ''})</p>
               </div>
-              <div>
+              <div className="min-w-0">
                 <p className="text-gray-600">Nomor Polisi:</p>
-                <p className="font-semibold text-gray-800">{suratJalan.nomorPolisi || '-'}</p>
+                <p className="break-words font-semibold text-gray-800">{suratJalan.nomorPolisi || '-'}</p>
               </div>
               {suratJalan.status === 'terkirim' && (
                 <>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-gray-600">Tgl Terkirim:</p>
-                    <p className="font-semibold text-green-700">{suratJalan.tglTerkirim ? new Date(suratJalan.tglTerkirim).toLocaleDateString('id-ID') : '-'}</p>
+                    <p className="break-words font-semibold text-green-700">{suratJalan.tglTerkirim ? new Date(suratJalan.tglTerkirim).toLocaleDateString('id-ID') : '-'}</p>
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-gray-600">Qty Bongkar:</p>
-                    <p className="font-semibold text-green-700">{suratJalan.qtyBongkar || 0} {suratJalan.satuan || ''}</p>
+                    <p className="break-words font-semibold text-green-700">{suratJalan.qtyBongkar || 0} {suratJalan.satuan || ''}</p>
                   </div>
                 </>
               )}
@@ -187,23 +206,23 @@ const SuratJalanCard = ({
             <div className="mt-4">
               <h4 className="mb-2 font-semibold text-gray-800">Detail Lengkap:</h4>
               <div className="grid grid-cols-2 gap-2 text-xs sm:gap-3 sm:text-sm">
-                <div>
+                <div className="min-w-0">
                   <p className="text-gray-600">Dibuat oleh:</p>
-                  <p className="font-semibold text-gray-800">{suratJalan.createdBy}</p>
+                  <p className="break-words font-semibold text-gray-800">{suratJalan.createdBy}</p>
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-gray-600">Tanggal Dibuat:</p>
-                  <p className="font-semibold text-gray-800">{new Date(suratJalan.createdAt).toLocaleString('id-ID')}</p>
+                  <p className="break-words font-semibold text-gray-800">{new Date(suratJalan.createdAt).toLocaleString('id-ID')}</p>
                 </div>
                 {suratJalan.updatedAt && (
                   <>
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-gray-600">Diupdate oleh:</p>
-                      <p className="font-semibold text-gray-800">{suratJalan.updatedBy || '-'}</p>
+                      <p className="break-words font-semibold text-gray-800">{suratJalan.updatedBy || '-'}</p>
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-gray-600">Tanggal Update:</p>
-                      <p className="font-semibold text-gray-800">{new Date(suratJalan.updatedAt).toLocaleString('id-ID')}</p>
+                      <p className="break-words font-semibold text-gray-800">{new Date(suratJalan.updatedAt).toLocaleString('id-ID')}</p>
                     </div>
                   </>
                 )}
@@ -221,6 +240,7 @@ export default React.memo(SuratJalanCard, (prev, next) => {
     prev.suratJalan?.id === next.suratJalan?.id &&
     prev.suratJalan?.updatedAt === next.suratJalan?.updatedAt &&
     prev.suratJalan?.status === next.suratJalan?.status &&
+    prev.currentUser?.role === next.currentUser?.role &&
     prev.totalBiaya === next.totalBiaya
   );
 });
