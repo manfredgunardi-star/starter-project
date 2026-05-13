@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 
 const ACTION_WIDTH = 72;
-const MOBILE_QUERY = '(max-width: 767px)';
 const SPRING = { type: 'spring', stiffness: 180, damping: 24, mass: 0.7 };
 
 function clamp(value, min, max) {
@@ -17,7 +16,6 @@ export default function SwipeableRow({ children, actions = [], disabled = false 
   const isDraggingRef = useRef(false);
   const hasMovedRef = useRef(false);
 
-  const [isMobile, setIsMobile] = useState(false);
   const [translateX, setTranslateX] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -26,32 +24,12 @@ export default function SwipeableRow({ children, actions = [], disabled = false 
     [actions]
   );
   const maxReveal = activeActions.length * ACTION_WIDTH;
-  const isEnabled = isMobile && !disabled && activeActions.length > 0;
+  const isEnabled = !disabled && activeActions.length > 0;
   const isOpen = translateX < 0;
 
   const close = useCallback(() => {
     setTranslateX(0);
   }, []);
-
-  useEffect(() => {
-    if (typeof window === 'undefined' || !window.matchMedia) return undefined;
-
-    const mediaQuery = window.matchMedia(MOBILE_QUERY);
-    const handleChange = (event) => {
-      setIsMobile(event.matches);
-      if (!event.matches) close();
-    };
-
-    setIsMobile(mediaQuery.matches);
-
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener('change', handleChange);
-      return () => mediaQuery.removeEventListener('change', handleChange);
-    }
-
-    mediaQuery.addListener(handleChange);
-    return () => mediaQuery.removeListener(handleChange);
-  }, [close]);
 
   useEffect(() => {
     if (!isEnabled || !isOpen) return undefined;
