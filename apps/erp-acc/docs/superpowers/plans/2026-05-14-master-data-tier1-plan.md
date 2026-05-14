@@ -209,31 +209,54 @@ update goods_receipts
   set warehouse_id = (select id from warehouses where is_default = true limit 1)
   where warehouse_id is null;
 
--- 8) RLS POLICIES (read for authenticated, manage for admin/staff)
+-- 8) RLS POLICIES — split per-action; delete admin-only (project convention,
+--    cek migrations/009_rls_policies.sql:44-56). 4 policies × 4 tables = 16 policies.
+--    Penting: tax_codes & payment_terms berdampak ke financial logic, jadi
+--    hard-delete wajib admin-only (sesuai data safety rule "always soft delete").
 alter table product_categories enable row level security;
 alter table payment_terms      enable row level security;
 alter table tax_codes          enable row level security;
 alter table warehouses         enable row level security;
 
+-- product_categories
 create policy "Authenticated can read active product_categories"
   on product_categories for select to authenticated using (is_active = true);
-create policy "Admins and staff can manage product_categories"
-  on product_categories for all to authenticated using (is_admin_or_staff());
+create policy "Admins and staff can insert product_categories"
+  on product_categories for insert to authenticated with check (is_admin_or_staff());
+create policy "Admins and staff can update product_categories"
+  on product_categories for update to authenticated using (is_admin_or_staff());
+create policy "Only admins can delete product_categories"
+  on product_categories for delete to authenticated using (is_admin());
 
+-- payment_terms
 create policy "Authenticated can read active payment_terms"
   on payment_terms for select to authenticated using (is_active = true);
-create policy "Admins and staff can manage payment_terms"
-  on payment_terms for all to authenticated using (is_admin_or_staff());
+create policy "Admins and staff can insert payment_terms"
+  on payment_terms for insert to authenticated with check (is_admin_or_staff());
+create policy "Admins and staff can update payment_terms"
+  on payment_terms for update to authenticated using (is_admin_or_staff());
+create policy "Only admins can delete payment_terms"
+  on payment_terms for delete to authenticated using (is_admin());
 
+-- tax_codes
 create policy "Authenticated can read active tax_codes"
   on tax_codes for select to authenticated using (is_active = true);
-create policy "Admins and staff can manage tax_codes"
-  on tax_codes for all to authenticated using (is_admin_or_staff());
+create policy "Admins and staff can insert tax_codes"
+  on tax_codes for insert to authenticated with check (is_admin_or_staff());
+create policy "Admins and staff can update tax_codes"
+  on tax_codes for update to authenticated using (is_admin_or_staff());
+create policy "Only admins can delete tax_codes"
+  on tax_codes for delete to authenticated using (is_admin());
 
+-- warehouses
 create policy "Authenticated can read active warehouses"
   on warehouses for select to authenticated using (is_active = true);
-create policy "Admins and staff can manage warehouses"
-  on warehouses for all to authenticated using (is_admin_or_staff());
+create policy "Admins and staff can insert warehouses"
+  on warehouses for insert to authenticated with check (is_admin_or_staff());
+create policy "Admins and staff can update warehouses"
+  on warehouses for update to authenticated using (is_admin_or_staff());
+create policy "Only admins can delete warehouses"
+  on warehouses for delete to authenticated using (is_admin());
 
 -- 9) Trigger updated_at (reuse existing function update_updated_at)
 create trigger set_updated_at before update on product_categories
