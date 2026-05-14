@@ -12,7 +12,7 @@ import { useMasterData } from './hooks/useMasterData.js';
 import { useUsers } from './hooks/useUsers.js';
 import { useSettings } from './hooks/useSettings.js';
 import SearchableSelect from './components/SearchableSelect.jsx';
-import StatCard from './components/StatCard.jsx';
+import StatSummary from './components/StatSummary.jsx';
 import AlertBanner from './components/AlertBanner.jsx';
 import SuratJalanCard from './components/SuratJalanCard.jsx';
 import Pagination, { PAGE_SIZE, clampPage } from './components/Pagination.jsx';
@@ -66,6 +66,10 @@ const getQueryStartISO = () => {
   if (month < 0) { month += 12; year -= 1; }
   return `${year}-${String(month + 1).padStart(2, '0')}-01`;
 };
+
+// Auto backfill can generate thousands of Firestore writes on startup.
+// Keep it disabled unless it is run from a manual, previewed admin flow.
+const ENABLE_AUTO_UANG_JALAN_RECONCILE = false;
 
 // Compact status badge for table rows
 // Uang Muka Management Component
@@ -1877,6 +1881,7 @@ try { unsubTransaksi(); } catch {}
   const didReconcileUangJalanRef = useRef(false);
 
   useEffect(() => {
+    if (!ENABLE_AUTO_UANG_JALAN_RECONCILE) return;
     if (!canWriteTransaksi) return;
     if (didReconcileUangJalanRef.current) return;
 
@@ -2131,31 +2136,15 @@ try { unsubTransaksi(); } catch {}
           </Suspense>
         ) : (
           <>
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
-          <StatCard
-            title="Total Surat Jalan"
-            value={suratJalanList.length}
-            icon={<FileText className="w-6 h-6" />}
-            color="bg-blue-500"
-          />
-          <StatCard
-            title="Pending"
-            value={sjStatusCounts.pending}
-            icon={<Clock className="w-6 h-6" />}
-            color="bg-yellow-500"
-          />
-          <StatCard
-            title="Terkirim"
-            value={sjStatusCounts.terkirim}
-            icon={<CheckCircle className="w-6 h-6" />}
-            color="bg-green-500"
-          />
-          <StatCard
-            title="Gagal"
-            value={sjStatusCounts.gagal}
-            icon={<XCircle className="w-6 h-6" />}
-            color="bg-red-500"
+        <div className="mb-4 sm:mb-6">
+          <StatSummary
+            title="Surat Jalan"
+            stats={[
+              { label: 'Total', value: suratJalanList.length, color: '#007aff' },
+              { label: 'Pending', value: sjStatusCounts.pending, color: '#ff9500' },
+              { label: 'Terkirim', value: sjStatusCounts.terkirim, color: '#34c759' },
+              { label: 'Gagal', value: sjStatusCounts.gagal, color: '#ff3b30' },
+            ]}
           />
         </div>
 
