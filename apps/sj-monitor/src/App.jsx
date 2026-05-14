@@ -67,6 +67,10 @@ const getQueryStartISO = () => {
   return `${year}-${String(month + 1).padStart(2, '0')}-01`;
 };
 
+// Auto backfill can generate thousands of Firestore writes on startup.
+// Keep it disabled unless it is run from a manual, previewed admin flow.
+const ENABLE_AUTO_UANG_JALAN_RECONCILE = false;
+
 // Compact status badge for table rows
 // Uang Muka Management Component
 const SuratJalanMonitor = () => {
@@ -1877,6 +1881,7 @@ try { unsubTransaksi(); } catch {}
   const didReconcileUangJalanRef = useRef(false);
 
   useEffect(() => {
+    if (!ENABLE_AUTO_UANG_JALAN_RECONCILE) return;
     if (!canWriteTransaksi) return;
     if (didReconcileUangJalanRef.current) return;
 

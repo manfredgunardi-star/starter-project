@@ -1292,3 +1292,43 @@ After all 9 tasks, verify:
 - `MasterDataPage.jsx` user cards — separate sprint
 - `firestore.rules`, `useAuth.js`, `firebase-config.js` — never touch
 - Financial calculation logic in any file
+
+---
+
+## Codex Completion Update - 2026-05-14
+
+### Branch / PR
+- Branch: `codex/ios-mobile-overhaul`
+- Scope completed in `apps/sj-monitor`.
+
+### Implemented
+- Added `SwipeableRow`, `ActionSheet`, and `StatSummary` reusable components.
+- Refactored `DockNav` into 4 primary tabs plus `Lainnya` grid overlay.
+- Refactored `SuratJalanCard` to use swipe-to-reveal secondary actions while keeping `Tandai Terkirim` visible.
+- Replaced tall stat card/gradient blocks with `StatSummary` in:
+  - Surat Jalan tab (`src/App.jsx`)
+  - `InvoicePage.jsx`
+  - `UangMukaPage.jsx`
+  - `KeuanganPage.jsx`
+- Added a quota-safety patch in `src/App.jsx`: `ENABLE_AUTO_UANG_JALAN_RECONCILE = false`, so automatic uang jalan backfill no longer writes transactions on app startup. The reconcile code remains available for a future manual, previewed admin flow.
+
+### Validation
+- `npm run build` passed after the final patch.
+- Earlier final checks also passed:
+  - `npm test`: 3 files, 14 tests passed.
+  - `npm run lint`: 0 errors; existing warnings remain in `src/services/payslipService.js`, `src/utils/session.js`, and `src/utils/truckReportHelpers.js`.
+- Browser smoke on `http://127.0.0.1:5173/` loaded the app with 0 console errors; unauthenticated Firebase permission warnings were expected before login.
+
+### Guardrails Observed
+- No changes to `firestore.rules`.
+- No changes to `src/config/firebase-config.js`.
+- No changes to `src/hooks/useAuth.js`.
+- No changes to invoice pricing, uang muka allocation, or financial formulas.
+
+### Deploy Command
+Run from this project folder after the merged branch is available locally:
+
+```bash
+cd C:\Project\apps\sj-monitor
+firebase deploy --only hosting
+```
