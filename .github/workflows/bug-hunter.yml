@@ -1,9 +1,10 @@
 name: Bug-Hunter (Autonomous Bug Fix)
 
 on:
-  # Nightly jam 02:00 WIB = 19:00 UTC hari sebelumnya
-  schedule:
-    - cron: '0 19 * * *'
+  # PAUSED 2026-05-15 — investigasi Firestore write quota.
+  # Re-enable setelah root cause ditemukan & diperbaiki.
+  # schedule:
+  #   - cron: '0 19 * * *'
 
   # Manual trigger: isi issue number spesifik, atau kosongkan untuk semua
   workflow_dispatch:
