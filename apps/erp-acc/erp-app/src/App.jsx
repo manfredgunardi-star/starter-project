@@ -10,6 +10,10 @@ import RoleGuard from './components/layout/RoleGuard'
 
 // Master Data
 import UnitsPage from './pages/master/UnitsPage'
+import ProductCategoriesPage from './pages/master/ProductCategoriesPage'
+import PaymentTermsPage from './pages/master/PaymentTermsPage'
+import TaxCodesPage from './pages/master/TaxCodesPage'
+import WarehousesPage from './pages/master/WarehousesPage'
 import ProductsPage from './pages/master/ProductsPage'
 import CustomersPage from './pages/master/CustomersPage'
 import SuppliersPage from './pages/master/SuppliersPage'
@@ -112,6 +116,10 @@ function AppContent() {
         >
           {/* Master Data */}
           <Route path="master/units" element={<UnitsPage />} />
+          <Route path="master/categories" element={<ProductCategoriesPage />} />
+          <Route path="master/payment-terms" element={<PaymentTermsPage />} />
+          <Route path="master/tax-codes" element={<TaxCodesPage />} />
+          <Route path="master/warehouses" element={<WarehousesPage />} />
           <Route path="master/products" element={<ProductsPage />} />
           <Route path="master/products/import" element={<RoleGuard require="canWrite"><ProductsBulkImportPage /></RoleGuard>} />
           <Route path="master/customers" element={<CustomersPage />} />

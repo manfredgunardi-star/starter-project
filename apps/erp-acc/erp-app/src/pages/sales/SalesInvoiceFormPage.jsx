@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { Space, Flex, Typography, Row, Col, Card, Switch, Divider, Select as AntdSelect } from 'antd'
+import dayjs from 'dayjs'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useProducts, useCustomers } from '../../hooks/useMasterData'
 import { getSalesInvoice, saveSalesInvoice, postSalesInvoice, getGoodsDelivery } from '../../services/salesService'
 import { createRecurringTemplate } from '../../services/recurringService'
+import { getPaymentTerms } from '../../services/paymentTermService'
 import { today } from '../../utils/date'
 import { formatCurrency } from '../../utils/currency'
 import Button from '../../components/ui/Button'
@@ -31,17 +33,25 @@ export default function SalesInvoiceFormPage() {
 
   const [loading, setLoading] = useState(!isNew)
   const [submitting, setSubmitting] = useState(false)
+  const [paymentTerms, setPaymentTerms] = useState([])
   const [header, setHeader] = useState({
     invoice_number: '',
     date: today(),
     due_date: '',
     customer_id: '',
+    payment_term_id: '',
     sales_order_id: searchParams.get('so') || '', // overridden by ?from_gd= if present
     goods_delivery_id: '',
     status: 'draft',
     notes: '',
   })
   const [items, setItems] = useState([LineItemsTable.emptyRow()])
+
+  useEffect(() => {
+    getPaymentTerms()
+      .then(setPaymentTerms)
+      .catch(err => toast.error('Gagal load syarat pembayaran: ' + err.message))
+  }, [])
 
   // ----- Recurring template state (only relevant for new invoices) -----
   const [makeRecurring, setMakeRecurring] = useState(false)
@@ -59,6 +69,7 @@ export default function SalesInvoiceFormPage() {
             date: inv.date,
             due_date: inv.due_date || '',
             customer_id: inv.customer_id,
+            payment_term_id: inv.payment_term_id || '',
             sales_order_id: inv.sales_order_id || '',
             goods_delivery_id: inv.goods_delivery_id || '',
             status: inv.status,
@@ -111,6 +122,26 @@ export default function SalesInvoiceFormPage() {
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const readOnly = !isNew && header.status !== 'draft'
+
+  function handleDateChange(d) {
+    setHeader(h => {
+      const next = { ...h, date: d }
+      if (h.payment_term_id) {
+        const term = paymentTerms.find(p => p.id === h.payment_term_id)
+        if (term && d) next.due_date = dayjs(d).add(term.net_days, 'day').format('YYYY-MM-DD')
+      }
+      return next
+    })
+  }
+
+  function handlePaymentTermChange(termId) {
+    setHeader(h => {
+      const next = { ...h, payment_term_id: termId || '' }
+      const term = paymentTerms.find(p => p.id === termId)
+      if (term && h.date) next.due_date = dayjs(h.date).add(term.net_days, 'day').format('YYYY-MM-DD')
+      return next
+    })
+  }
 
   const handleSave = async () => {
     if (!header.customer_id) { toast.error('Pilih customer'); return }
@@ -236,7 +267,7 @@ export default function SalesInvoiceFormPage() {
       <DocumentHeader
         docNumber={header.invoice_number}
         date={header.date}
-        onDateChange={d => setHeader(h => ({ ...h, date: d }))}
+        onDateChange={handleDateChange}
         status={isNew ? null : header.status}
         partyLabel="Customer"
         partyId={header.customer_id}
@@ -248,6 +279,28 @@ export default function SalesInvoiceFormPage() {
         onNotesChange={v => setHeader(h => ({ ...h, notes: v }))}
         readOnly={readOnly}
       />
+
+      <Card size="small">
+        <Row gutter={16}>
+          <Col xs={24} md={10}>
+            <div style={{ marginBottom: 4, fontSize: 13, fontWeight: 500 }}>Syarat Pembayaran</div>
+            <AntdSelect
+              allowClear
+              showSearch
+              optionFilterProp="label"
+              style={{ width: '100%' }}
+              placeholder="Pilih syarat pembayaran..."
+              value={header.payment_term_id || undefined}
+              onChange={handlePaymentTermChange}
+              disabled={readOnly}
+              options={paymentTerms.map(p => ({
+                value: p.id,
+                label: `${p.name} (Net ${p.net_days})`
+              }))}
+            />
+          </Col>
+        </Row>
+      </Card>
 
       <Space direction="vertical" style={{ width: '100%' }} size={8}>
         <Typography.Title level={5} style={{ margin: 0 }}>Item Invoice</Typography.Title>

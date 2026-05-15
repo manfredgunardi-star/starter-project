@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Space, Flex, Row, Col, Typography, Card, Alert } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useProducts, useUnits } from '../../hooks/useMasterData'
 import * as svc from '../../services/masterDataService'
+import { getProductCategories } from '../../services/productCategoryService'
+import { getTaxCodes } from '../../services/taxCodeService'
 import { formatCurrency } from '../../utils/currency'
 import Button from '../../components/ui/Button'
 import Input from '../../components/ui/Input'
@@ -19,20 +21,44 @@ const emptyForm = {
   sku: '',
   name: '',
   category: '',
+  category_id: '',
   base_unit_id: '',
   buy_price: '',
   sell_price: '',
+  default_tax_code_id: '',
   is_taxable: false,
   tax_rate: 11,
+}
+
+function formatTaxCodeLabel(taxCode) {
+  if (!taxCode) return '-'
+  const rate = Number(taxCode.rate ?? 0)
+  return `${taxCode.code || '-'} (${Number.isFinite(rate) ? rate : 0}%)`
+}
+
+function getJoinedObject(row, keys) {
+  for (const key of keys) {
+    if (row[key] && typeof row[key] === 'object') return row[key]
+  }
+  return null
+}
+
+function formatLegacyCategory(value) {
+  if (!value) return '-'
+  if (typeof value === 'object') return `${value.code || '-'} - ${value.name || '-'}`
+  return value
 }
 
 export default function ProductsPage() {
   const navigate = useNavigate()
   const { canWrite } = useAuth()
   const toast = useToast()
+  const toastRef = useRef(toast)
   const { products, loading, error, refetch } = useProducts()
   const { units } = useUnits()
 
+  const [productCategories, setProductCategories] = useState([])
+  const [taxCodes, setTaxCodes] = useState([])
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -42,6 +68,36 @@ export default function ProductsPage() {
   const [formErrors, setFormErrors] = useState({})
   // conversions: [{ from_unit_id, conversion_factor }]
   const [conversions, setConversions] = useState([])
+
+  useEffect(() => {
+    toastRef.current = toast
+  }, [toast])
+
+  useEffect(() => {
+    let ignore = false
+
+    async function loadDropdowns() {
+      try {
+        const [categoryData, taxCodeData] = await Promise.all([
+          getProductCategories(),
+          getTaxCodes(),
+        ])
+        if (ignore) return
+        setProductCategories(categoryData || [])
+        setTaxCodes(taxCodeData || [])
+      } catch (err) {
+        if (!ignore) {
+          toastRef.current.error(`Gagal memuat master kategori/tax code: ${err.message}`)
+        }
+      }
+    }
+
+    loadDropdowns()
+
+    return () => {
+      ignore = true
+    }
+  }, [])
 
   const openAdd = () => {
     setEditingId(null)
@@ -56,10 +112,12 @@ export default function ProductsPage() {
     setFormData({
       sku: product.sku || '',
       name: product.name,
-      category: product.category || '',
+      category: typeof product.category === 'string' ? product.category : '',
+      category_id: product.category_id || '',
       base_unit_id: product.base_unit_id,
       buy_price: product.buy_price,
       sell_price: product.sell_price,
+      default_tax_code_id: product.default_tax_code_id || '',
       is_taxable: product.is_taxable,
       tax_rate: product.tax_rate,
     })
@@ -74,16 +132,10 @@ export default function ProductsPage() {
   }
 
   const field = (key, value) => {
-    setFormData(prev => {
-      const next = { ...prev, [key]: value }
-      // When base unit changes, clear conversions using new base unit as from_unit
-      if (key === 'base_unit_id') {
-        setConversions(prev =>
-          prev.filter(c => c.from_unit_id !== value)
-        )
-      }
-      return next
-    })
+    setFormData(prev => ({ ...prev, [key]: value }))
+    if (key === 'base_unit_id') {
+      setConversions(prev => prev.filter(c => c.from_unit_id !== value))
+    }
     if (formErrors[key]) setFormErrors(e => ({ ...e, [key]: null }))
   }
 
@@ -109,11 +161,19 @@ export default function ProductsPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+
+    if (!canWrite) {
+      toast.error('Anda tidak memiliki akses untuk mengubah produk')
+      return
+    }
+
     if (!validate()) return
     setIsSubmitting(true)
     try {
       const payload = {
         ...formData,
+        category_id: formData.category_id || null,
+        default_tax_code_id: formData.default_tax_code_id || null,
         buy_price: Number(formData.buy_price),
         sell_price: Number(formData.sell_price),
         tax_rate: Number(formData.tax_rate),
@@ -135,6 +195,13 @@ export default function ProductsPage() {
   }
 
   const handleDelete = async () => {
+    if (!deletingId) return
+
+    if (!canWrite) {
+      toast.error('Anda tidak memiliki akses untuk menghapus produk')
+      return
+    }
+
     setIsSubmitting(true)
     try {
       await svc.softDeleteProduct(deletingId)
@@ -176,11 +243,64 @@ export default function ProductsPage() {
   const baseUnitName = units.find(u => u.id === formData.base_unit_id)?.name || '—'
 
   const unitOptions = units.map(u => ({ value: u.id, label: u.name }))
+  const productCategoryOptions = productCategories.map(category => ({
+    value: category.id,
+    label: `${category.code} - ${category.name}`,
+  }))
+  const taxCodeOptions = taxCodes.map(taxCode => ({
+    value: taxCode.id,
+    label: formatTaxCodeLabel(taxCode),
+  }))
+
+  const categoryById = useMemo(() => {
+    return productCategories.reduce((acc, category) => {
+      acc[category.id] = category
+      return acc
+    }, {})
+  }, [productCategories])
+
+  const taxCodeById = useMemo(() => {
+    return taxCodes.reduce((acc, taxCode) => {
+      acc[taxCode.id] = taxCode
+      return acc
+    }, {})
+  }, [taxCodes])
+
+  const formatMasterCategory = (product) => {
+    const joinedCategory = getJoinedObject(product, [
+      'product_category',
+      'master_category',
+      'category_master',
+      'productCategory',
+      'category',
+    ])
+    const category = joinedCategory || categoryById[product.category_id]
+    if (category) return `${category.code || '-'} - ${category.name || '-'}`
+    if (product.category_id) return product.category_id
+    return product.category || '-'
+  }
+
+  const formatDefaultTaxCode = (product) => {
+    const joinedTaxCode = getJoinedObject(product, [
+      'default_tax_code',
+      'tax_code',
+      'defaultTaxCode',
+      'product_tax_code',
+    ])
+    const taxCode = joinedTaxCode || taxCodeById[product.default_tax_code_id]
+    if (taxCode) return formatTaxCodeLabel(taxCode)
+    return product.default_tax_code_id || '-'
+  }
 
   const columns = [
     { key: 'sku', label: 'SKU', render: (v) => v || '-' },
     { key: 'name', label: 'Nama' },
-    { key: 'category', label: 'Kategori', render: (v) => v || '-' },
+    { key: 'category', label: 'Kategori', render: (v) => formatLegacyCategory(v) },
+    {
+      key: 'category_id',
+      label: 'Kategori (Master)',
+      render: (_, row) => formatMasterCategory(row),
+    },
     {
       key: 'base_unit',
       label: 'Satuan',
@@ -192,6 +312,11 @@ export default function ProductsPage() {
       key: 'is_taxable',
       label: 'PPN',
       render: (v, row) => v ? `${row.tax_rate}%` : '-'
+    },
+    {
+      key: 'default_tax_code_id',
+      label: 'Default Tax Code',
+      render: (_, row) => formatDefaultTaxCode(row),
     },
     {
       key: 'id',
@@ -272,6 +397,27 @@ export default function ProductsPage() {
                   value={formData.name}
                   onChange={e => field('name', e.target.value)}
                   error={formErrors.name}
+                />
+              </Col>
+            </Row>
+
+            <Row gutter={16}>
+              <Col span={12}>
+                <Select
+                  label="Kategori (Master)"
+                  options={productCategoryOptions}
+                  value={formData.category_id}
+                  onChange={e => field('category_id', e.target.value)}
+                  placeholder="Pilih kategori master..."
+                />
+              </Col>
+              <Col span={12}>
+                <Select
+                  label="Default Tax Code"
+                  options={taxCodeOptions}
+                  value={formData.default_tax_code_id}
+                  onChange={e => field('default_tax_code_id', e.target.value)}
+                  placeholder="Pilih tax code..."
                 />
               </Col>
             </Row>

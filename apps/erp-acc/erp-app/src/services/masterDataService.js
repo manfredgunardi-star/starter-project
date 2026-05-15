@@ -55,7 +55,9 @@ export async function getProducts() {
         conversion_factor,
         from_unit:units!unit_conversions_from_unit_id_fkey(id, name),
         to_unit:units!unit_conversions_to_unit_id_fkey(id, name)
-      )
+      ),
+      category_ref:product_categories!products_category_id_fkey(id, code, name),
+      default_tax_code:tax_codes!products_default_tax_code_id_fkey(id, code, name, rate, is_inclusive)
     `)
     .eq('is_active', true)
     .order('name')
@@ -71,9 +73,11 @@ export async function createProduct(product, conversions = []) {
       sku: product.sku || null,
       name: product.name,
       category: product.category || null,
+      category_id: product.category_id || null,
       base_unit_id: product.base_unit_id,
       buy_price: product.buy_price || 0,
       sell_price: product.sell_price || 0,
+      default_tax_code_id: product.default_tax_code_id || null,
       is_taxable: product.is_taxable || false,
       tax_rate: product.is_taxable ? (product.tax_rate || 11) : 11,
     })
@@ -106,9 +110,11 @@ export async function updateProduct(id, product, conversions = []) {
       sku: product.sku || null,
       name: product.name,
       category: product.category || null,
+      category_id: product.category_id || null,
       base_unit_id: product.base_unit_id,
       buy_price: product.buy_price || 0,
       sell_price: product.sell_price || 0,
+      default_tax_code_id: product.default_tax_code_id || null,
       is_taxable: product.is_taxable || false,
       tax_rate: product.is_taxable ? (product.tax_rate || 11) : 11,
     })

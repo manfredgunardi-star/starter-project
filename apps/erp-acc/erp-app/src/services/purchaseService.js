@@ -37,6 +37,7 @@ export async function saveGoodsReceipt(gr, items) {
       date:              gr.date,
       supplier_id:       gr.supplier_id,
       purchase_order_id: gr.purchase_order_id || null,
+      warehouse_id:      gr.warehouse_id || null,
       status:            gr.status            || 'draft',
       notes:             gr.notes             || null,
     },
@@ -49,7 +50,17 @@ export async function saveGoodsReceipt(gr, items) {
     })),
   })
   if (error) throw error
-  return data
+
+  const grId = data
+  if (Object.prototype.hasOwnProperty.call(gr, 'warehouse_id')) {
+    const { error: warehouseError } = await supabase
+      .from('goods_receipts')
+      .update({ warehouse_id: gr.warehouse_id || null })
+      .eq('id', grId)
+    if (warehouseError) throw warehouseError
+  }
+
+  return grId
 }
 
 export async function postGoodsReceipt(id) {
@@ -112,6 +123,16 @@ export async function savePurchaseInvoice(invoice, items) {
     })),
   })
   if (error) throw error
+
+  // Persist payment_term_id — not handled by save_purchase_invoice RPC (adds nullable FK column)
+  if (invoice.payment_term_id) {
+    const { error: ptErr } = await supabase
+      .from('invoices')
+      .update({ payment_term_id: invoice.payment_term_id })
+      .eq('id', data)
+    if (ptErr) throw ptErr
+  }
+
   return data
 }
 
@@ -168,11 +189,13 @@ export async function getPurchaseOrder(id) {
 export async function savePurchaseOrder(po, items) {
   const { data, error } = await supabase.rpc('save_purchase_order', {
     p_po: {
-      id:          po.id          || null,
-      date:        po.date,
-      supplier_id: po.supplier_id,
-      status:      po.status      || 'draft',
-      notes:       po.notes       || null,
+      id:              po.id              || null,
+      date:            po.date,
+      supplier_id:     po.supplier_id,
+      payment_term_id: po.payment_term_id || null,
+      warehouse_id:    po.warehouse_id    || null,
+      status:          po.status          || 'draft',
+      notes:           po.notes           || null,
     },
     p_items: items.map(i => ({
       product_id:    i.product_id,
@@ -185,7 +208,31 @@ export async function savePurchaseOrder(po, items) {
     })),
   })
   if (error) throw error
-  return data
+
+  const poId = data
+  const hasPaymentTerm = Object.prototype.hasOwnProperty.call(po, 'payment_term_id')
+  const hasWarehouse = Object.prototype.hasOwnProperty.call(po, 'warehouse_id')
+
+  if (hasPaymentTerm || hasWarehouse) {
+    const updatePayload = {}
+
+    if (hasPaymentTerm) {
+      updatePayload.payment_term_id = po.payment_term_id || null
+    }
+
+    if (hasWarehouse) {
+      updatePayload.warehouse_id = po.warehouse_id || null
+    }
+
+    const { error: updateError } = await supabase
+      .from('purchase_orders')
+      .update(updatePayload)
+      .eq('id', poId)
+
+    if (updateError) throw updateError
+  }
+
+  return poId
 }
 
 export async function confirmPurchaseOrder(id) {

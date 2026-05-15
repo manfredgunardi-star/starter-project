@@ -1,12 +1,15 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Space, Flex, Typography } from 'antd'
+import { Space, Flex, Typography, Col } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useProducts, useCustomers } from '../../hooks/useMasterData'
 import { getSalesOrder, saveSalesOrder, confirmSalesOrder } from '../../services/salesService'
+import { getPaymentTerms } from '../../services/paymentTermService'
+import { getWarehouses, getDefaultWarehouse } from '../../services/warehouseService'
 import { today } from '../../utils/date'
 import Button from '../../components/ui/Button'
+import Select from '../../components/ui/Select'
 import DocumentHeader from '../../components/shared/DocumentHeader'
 import LineItemsTable from '../../components/shared/LineItemsTable'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
@@ -17,6 +20,7 @@ export default function SalesOrderFormPage() {
   const navigate = useNavigate()
   const { canWrite, canPost } = useAuth()
   const toast = useToast()
+  const toastRef = useRef(toast)
   const isNew = !id || id === 'new'
 
   const { products } = useProducts()
@@ -28,10 +32,49 @@ export default function SalesOrderFormPage() {
     so_number: '',
     date: today(),
     customer_id: '',
+    payment_term_id: '',
+    warehouse_id: '',
     status: 'draft',
     notes: '',
   })
   const [items, setItems] = useState([LineItemsTable.emptyRow()])
+  const [paymentTerms, setPaymentTerms] = useState([])
+  const [warehouses, setWarehouses] = useState([])
+
+  useEffect(() => {
+    toastRef.current = toast
+  }, [toast])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadHeaderReferences() {
+      try {
+        const [terms, warehouseList, defaultWarehouse] = await Promise.all([
+          getPaymentTerms(),
+          getWarehouses(),
+          isNew ? getDefaultWarehouse() : Promise.resolve(null),
+        ])
+
+        if (cancelled) return
+
+        setPaymentTerms(terms || [])
+        setWarehouses(warehouseList || [])
+
+        if (isNew && defaultWarehouse?.id) {
+          setHeader(h => h.warehouse_id ? h : { ...h, warehouse_id: defaultWarehouse.id })
+        }
+      } catch (err) {
+        if (!cancelled) toastRef.current.error(err.message)
+      }
+    }
+
+    loadHeaderReferences()
+
+    return () => {
+      cancelled = true
+    }
+  }, [isNew])
 
   useEffect(() => {
     if (!isNew) {
@@ -42,6 +85,8 @@ export default function SalesOrderFormPage() {
             so_number: so.so_number,
             date: so.date,
             customer_id: so.customer_id,
+            payment_term_id: so.payment_term_id || '',
+            warehouse_id: so.warehouse_id || '',
             status: so.status,
             notes: so.notes || '',
           })
@@ -56,7 +101,7 @@ export default function SalesOrderFormPage() {
             total: i.total,
           })))
         })
-        .catch(err => toast.error(err.message))
+        .catch(err => toastRef.current.error(err.message))
         .finally(() => setLoading(false))
     }
   }, [id, isNew])
@@ -98,6 +143,14 @@ export default function SalesOrderFormPage() {
   }
 
   const customerOptions = customers.map(c => ({ value: c.id, label: c.name }))
+  const paymentTermOptions = paymentTerms.map(term => ({
+    value: term.id,
+    label: `${term.name} (Net ${term.net_days ?? 0})`,
+  }))
+  const warehouseOptions = warehouses.map(warehouse => ({
+    value: warehouse.id,
+    label: warehouse.code ? `${warehouse.code} - ${warehouse.name}` : warehouse.name,
+  }))
 
   if (loading) return <LoadingSpinner message="Memuat sales order..." />
 
@@ -151,7 +204,29 @@ export default function SalesOrderFormPage() {
         notes={header.notes}
         onNotesChange={v => setHeader(h => ({ ...h, notes: v }))}
         readOnly={readOnly}
-      />
+      >
+        <Col span={12} style={{ marginTop: 16 }}>
+          <Select
+            label="Syarat Pembayaran"
+            options={paymentTermOptions}
+            value={header.payment_term_id || ''}
+            onChange={e => setHeader(h => ({ ...h, payment_term_id: e.target.value }))}
+            placeholder="Pilih syarat pembayaran..."
+            disabled={readOnly}
+          />
+        </Col>
+
+        <Col span={12} style={{ marginTop: 16 }}>
+          <Select
+            label="Gudang"
+            options={warehouseOptions}
+            value={header.warehouse_id || ''}
+            onChange={e => setHeader(h => ({ ...h, warehouse_id: e.target.value }))}
+            placeholder="Pilih gudang..."
+            disabled={readOnly}
+          />
+        </Col>
+      </DocumentHeader>
 
       {/* Line items */}
       <Space direction="vertical" style={{ width: '100%' }} size={8}>
