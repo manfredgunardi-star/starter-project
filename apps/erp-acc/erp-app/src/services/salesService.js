@@ -123,6 +123,7 @@ export async function saveGoodsDelivery(gd, items) {
       date:           gd.date,
       customer_id:    gd.customer_id,
       sales_order_id: gd.sales_order_id || null,
+      warehouse_id:   gd.warehouse_id || null,
       status:         gd.status         || 'draft',
       notes:          gd.notes          || null,
     },
@@ -134,7 +135,17 @@ export async function saveGoodsDelivery(gd, items) {
     })),
   })
   if (error) throw error
-  return data
+
+  const gdId = data
+  if (Object.prototype.hasOwnProperty.call(gd, 'warehouse_id')) {
+    const { error: warehouseError } = await supabase
+      .from('goods_deliveries')
+      .update({ warehouse_id: gd.warehouse_id || null })
+      .eq('id', gdId)
+    if (warehouseError) throw warehouseError
+  }
+
+  return gdId
 }
 
 export async function postGoodsDelivery(id) {

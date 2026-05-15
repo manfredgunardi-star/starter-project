@@ -37,6 +37,7 @@ export async function saveGoodsReceipt(gr, items) {
       date:              gr.date,
       supplier_id:       gr.supplier_id,
       purchase_order_id: gr.purchase_order_id || null,
+      warehouse_id:      gr.warehouse_id || null,
       status:            gr.status            || 'draft',
       notes:             gr.notes             || null,
     },
@@ -49,7 +50,17 @@ export async function saveGoodsReceipt(gr, items) {
     })),
   })
   if (error) throw error
-  return data
+
+  const grId = data
+  if (Object.prototype.hasOwnProperty.call(gr, 'warehouse_id')) {
+    const { error: warehouseError } = await supabase
+      .from('goods_receipts')
+      .update({ warehouse_id: gr.warehouse_id || null })
+      .eq('id', grId)
+    if (warehouseError) throw warehouseError
+  }
+
+  return grId
 }
 
 export async function postGoodsReceipt(id) {

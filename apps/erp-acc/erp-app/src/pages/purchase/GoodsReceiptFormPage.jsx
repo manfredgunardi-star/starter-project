@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { Space, Flex, Typography, Alert } from 'antd'
+import { Space, Flex, Typography, Alert, Select as AntdSelect, Card, Row, Col } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useProducts, useSuppliers } from '../../hooks/useMasterData'
 import { getGoodsReceipt, saveGoodsReceipt, postGoodsReceipt, getPurchaseOrder } from '../../services/purchaseService'
+import { getWarehouses, getDefaultWarehouse } from '../../services/warehouseService'
 import { today } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import DocumentHeader from '../../components/shared/DocumentHeader'
@@ -16,6 +17,7 @@ export default function GoodsReceiptFormPage() {
   const navigate = useNavigate()
   const { canWrite, canPost } = useAuth()
   const toast = useToast()
+  const toastRef = useRef(toast)
   const isNew = !id || id === 'new'
   const [searchParams] = useSearchParams()
 
@@ -29,10 +31,44 @@ export default function GoodsReceiptFormPage() {
     date: today(),
     supplier_id: '',
     purchase_order_id: '',
+    warehouse_id: '',
     status: 'draft',
     notes: '',
   })
   const [items, setItems] = useState([{ _key: Date.now(), product_id: '', unit_id: '', quantity: '', quantity_base: 0, unit_price: '' }])
+  const [warehouses, setWarehouses] = useState([])
+
+  useEffect(() => {
+    toastRef.current = toast
+  }, [toast])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadWarehouses() {
+      try {
+        const [warehouseList, defaultWarehouse] = await Promise.all([
+          getWarehouses(),
+          isNew ? getDefaultWarehouse() : Promise.resolve(null),
+        ])
+
+        if (cancelled) return
+        setWarehouses(warehouseList || [])
+
+        if (isNew && defaultWarehouse?.id) {
+          setHeader(h => h.warehouse_id ? h : { ...h, warehouse_id: defaultWarehouse.id })
+        }
+      } catch (err) {
+        if (!cancelled) toastRef.current.error(`Gagal load gudang: ${err.message}`)
+      }
+    }
+
+    loadWarehouses()
+
+    return () => {
+      cancelled = true
+    }
+  }, [isNew])
 
   useEffect(() => {
     if (!isNew) {
@@ -44,6 +80,7 @@ export default function GoodsReceiptFormPage() {
             date: gr.date,
             supplier_id: gr.supplier_id,
             purchase_order_id: gr.purchase_order_id || '',
+            warehouse_id: gr.warehouse_id || '',
             status: gr.status,
             notes: gr.notes || '',
           })
@@ -58,7 +95,7 @@ export default function GoodsReceiptFormPage() {
             unit_price: i.unit_price,
           })))
         })
-        .catch(err => toast.error(err.message))
+        .catch(err => toastRef.current.error(err.message))
         .finally(() => setLoading(false))
     }
   }, [id, isNew])
@@ -72,6 +109,7 @@ export default function GoodsReceiptFormPage() {
           ...h,
           supplier_id: po.supplier_id,
           purchase_order_id: po.id,
+          warehouse_id: po.warehouse_id || h.warehouse_id,
         }))
         setItems(
           (po.purchase_order_items || []).map(i => ({
@@ -86,7 +124,7 @@ export default function GoodsReceiptFormPage() {
           }))
         )
       })
-      .catch(err => toast.error('Gagal load PO: ' + err.message))
+      .catch(err => toastRef.current.error('Gagal load PO: ' + err.message))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const readOnly = !isNew && header.status === 'posted'
@@ -155,6 +193,10 @@ export default function GoodsReceiptFormPage() {
   }
 
   const supplierOptions = suppliers.map(s => ({ value: s.id, label: s.name }))
+  const warehouseOptions = warehouses.map(w => ({
+    value: w.id,
+    label: w.code ? `${w.code} - ${w.name}` : w.name,
+  }))
 
   if (loading) return <LoadingSpinner message="Memuat penerimaan barang..." />
 
@@ -201,6 +243,25 @@ export default function GoodsReceiptFormPage() {
         onNotesChange={v => setHeader(h => ({ ...h, notes: v }))}
         readOnly={readOnly}
       />
+
+      <Card size="small">
+        <Row gutter={16}>
+          <Col xs={24} md={10}>
+            <div style={{ marginBottom: 4, fontSize: 13, fontWeight: 500 }}>Gudang</div>
+            <AntdSelect
+              showSearch
+              allowClear
+              optionFilterProp="label"
+              style={{ width: '100%' }}
+              placeholder="Pilih gudang..."
+              value={header.warehouse_id || undefined}
+              onChange={value => setHeader(h => ({ ...h, warehouse_id: value || '' }))}
+              disabled={readOnly || Boolean(header.purchase_order_id)}
+              options={warehouseOptions}
+            />
+          </Col>
+        </Row>
+      </Card>
 
       {/* Items table with unit price */}
       <Space direction="vertical" style={{ width: '100%' }} size={12}>

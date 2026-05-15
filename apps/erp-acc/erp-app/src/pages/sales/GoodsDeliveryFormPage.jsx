@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { Space, Flex, Typography, Alert } from 'antd'
+import { Space, Flex, Typography, Alert, Select as AntdSelect, Card, Row, Col } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useProducts, useCustomers } from '../../hooks/useMasterData'
 import { getGoodsDelivery, saveGoodsDelivery, postGoodsDelivery, getSalesOrder } from '../../services/salesService'
+import { getWarehouses, getDefaultWarehouse } from '../../services/warehouseService'
 import { today } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import DocumentHeader from '../../components/shared/DocumentHeader'
@@ -17,6 +18,7 @@ export default function GoodsDeliveryFormPage() {
   const [searchParams] = useSearchParams()
   const { canPost, canWrite } = useAuth()
   const toast = useToast()
+  const toastRef = useRef(toast)
   const isNew = !id || id === 'new'
 
   const { products } = useProducts()
@@ -29,10 +31,44 @@ export default function GoodsDeliveryFormPage() {
     date: today(),
     customer_id: '',
     sales_order_id: '',
+    warehouse_id: '',
     status: 'draft',
     notes: '',
   })
   const [items, setItems] = useState([{ _key: Date.now(), product_id: '', unit_id: '', quantity: '', quantity_base: 0 }])
+  const [warehouses, setWarehouses] = useState([])
+
+  useEffect(() => {
+    toastRef.current = toast
+  }, [toast])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadWarehouses() {
+      try {
+        const [warehouseList, defaultWarehouse] = await Promise.all([
+          getWarehouses(),
+          isNew ? getDefaultWarehouse() : Promise.resolve(null),
+        ])
+
+        if (cancelled) return
+        setWarehouses(warehouseList || [])
+
+        if (isNew && defaultWarehouse?.id) {
+          setHeader(h => h.warehouse_id ? h : { ...h, warehouse_id: defaultWarehouse.id })
+        }
+      } catch (err) {
+        if (!cancelled) toastRef.current.error(`Gagal load gudang: ${err.message}`)
+      }
+    }
+
+    loadWarehouses()
+
+    return () => {
+      cancelled = true
+    }
+  }, [isNew])
 
   useEffect(() => {
     if (!isNew) {
@@ -44,6 +80,7 @@ export default function GoodsDeliveryFormPage() {
             date: gd.date,
             customer_id: gd.customer_id,
             sales_order_id: gd.sales_order_id || '',
+            warehouse_id: gd.warehouse_id || '',
             status: gd.status,
             notes: gd.notes || '',
           })
@@ -57,7 +94,7 @@ export default function GoodsDeliveryFormPage() {
             quantity_base: i.quantity_base,
           })))
         })
-        .catch(err => toast.error(err.message))
+        .catch(err => toastRef.current.error(err.message))
         .finally(() => setLoading(false))
     }
   }, [id, isNew])
@@ -71,6 +108,7 @@ export default function GoodsDeliveryFormPage() {
           ...h,
           customer_id: so.customer_id,
           sales_order_id: so.id,
+          warehouse_id: so.warehouse_id || h.warehouse_id,
         }))
         setItems(
           (so.items || []).map(i => ({
@@ -84,7 +122,7 @@ export default function GoodsDeliveryFormPage() {
           }))
         )
       })
-      .catch(err => toast.error('Gagal load SO: ' + err.message))
+      .catch(err => toastRef.current.error('Gagal load SO: ' + err.message))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const readOnly = !isNew && header.status === 'posted'
@@ -152,6 +190,10 @@ export default function GoodsDeliveryFormPage() {
   }
 
   const customerOptions = customers.map(c => ({ value: c.id, label: c.name }))
+  const warehouseOptions = warehouses.map(w => ({
+    value: w.id,
+    label: w.code ? `${w.code} - ${w.name}` : w.name,
+  }))
 
   if (loading) return <LoadingSpinner message="Memuat pengiriman..." />
 
@@ -198,6 +240,25 @@ export default function GoodsDeliveryFormPage() {
         onNotesChange={v => setHeader(h => ({ ...h, notes: v }))}
         readOnly={readOnly}
       />
+
+      <Card size="small">
+        <Row gutter={16}>
+          <Col xs={24} md={10}>
+            <div style={{ marginBottom: 4, fontSize: 13, fontWeight: 500 }}>Gudang</div>
+            <AntdSelect
+              showSearch
+              allowClear
+              optionFilterProp="label"
+              style={{ width: '100%' }}
+              placeholder="Pilih gudang..."
+              value={header.warehouse_id || undefined}
+              onChange={value => setHeader(h => ({ ...h, warehouse_id: value || '' }))}
+              disabled={readOnly || Boolean(header.sales_order_id)}
+              options={warehouseOptions}
+            />
+          </Col>
+        </Row>
+      </Card>
 
       {/* Delivery items — no price, just qty */}
       <Space direction="vertical" style={{ width: '100%' }} size={12}>
