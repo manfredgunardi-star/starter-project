@@ -1,18 +1,19 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Space, Flex, Typography, Card, Alert, Spin } from 'antd'
+import { Space, Flex, Typography, Card, Alert, Spin, Col } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
-import { usePurchaseOrders } from '../../hooks/usePurchase'
 import { useSuppliers } from '../../hooks/useMasterData'
 import { useProducts } from '../../hooks/useMasterData'
 import { savePurchaseOrder, getPurchaseOrder, confirmPurchaseOrder } from '../../services/purchaseService'
-import { formatCurrency } from '../../utils/currency'
+import { getPaymentTerms } from '../../services/paymentTermService'
+import { getWarehouses, getDefaultWarehouse } from '../../services/warehouseService'
 import { today } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import DocumentHeader from '../../components/shared/DocumentHeader'
 import LineItemsTable from '../../components/shared/LineItemsTable'
+import Select from '../../components/ui/Select'
 import { ArrowLeft, Save, Check, Printer, FileDown, ClipboardList } from 'lucide-react'
 import { usePrintPO } from '../../hooks/usePrintPO'
 
@@ -21,16 +22,56 @@ export default function PurchaseOrderFormPage() {
   const { id } = useParams()
   const { canWrite, canPost } = useAuth()
   const toast = useToast()
+  const toastRef = useRef(toast)
   const { triggerPrint, triggerPDF, loadingIds } = usePrintPO()
 
   const { suppliers } = useSuppliers()
   const { products } = useProducts()
-  const { purchaseOrders } = usePurchaseOrders()
 
   const [loading, setLoading] = useState(!!id)
   const [submitting, setSubmitting] = useState(false)
   const [po, setPO] = useState(null)
   const [items, setItems] = useState([])
+  const [paymentTerms, setPaymentTerms] = useState([])
+  const [warehouses, setWarehouses] = useState([])
+
+  useEffect(() => {
+    toastRef.current = toast
+  }, [toast])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadHeaderReferences() {
+      try {
+        const [terms, warehouseList, defaultWarehouse] = await Promise.all([
+          getPaymentTerms(),
+          getWarehouses(),
+          !id ? getDefaultWarehouse() : Promise.resolve(null),
+        ])
+
+        if (cancelled) return
+
+        setPaymentTerms(terms || [])
+        setWarehouses(warehouseList || [])
+
+        if (!id && defaultWarehouse?.id) {
+          setPO(current => {
+            if (!current || current.warehouse_id) return current
+            return { ...current, warehouse_id: defaultWarehouse.id }
+          })
+        }
+      } catch (err) {
+        if (!cancelled) toastRef.current.error(err.message)
+      }
+    }
+
+    loadHeaderReferences()
+
+    return () => {
+      cancelled = true
+    }
+  }, [id])
 
   // Load existing PO if editing
   useEffect(() => {
@@ -39,6 +80,8 @@ export default function PurchaseOrderFormPage() {
         po_number: '',
         date: today(),
         supplier_id: '',
+        payment_term_id: '',
+        warehouse_id: '',
         status: 'draft',
         notes: '',
       })
@@ -54,22 +97,33 @@ export default function PurchaseOrderFormPage() {
           po_number: data.po_number,
           date: data.date,
           supplier_id: data.supplier_id,
+          payment_term_id: data.payment_term_id || '',
+          warehouse_id: data.warehouse_id || '',
           status: data.status,
-          notes: data.notes,
+          notes: data.notes || '',
         })
         setItems(data.purchase_order_items || [])
       })
       .catch(err => {
-        toast.error(err.message)
+        toastRef.current.error(err.message)
         navigate('/purchase/orders')
       })
       .finally(() => setLoading(false))
-  }, [id])
+  }, [id, navigate])
 
   if (loading) return <LoadingSpinner message="Memuat PO..." />
   if (!po) return null
 
   const supplierOptions = suppliers.map(s => ({ value: s.id, label: s.name }))
+  const paymentTermOptions = paymentTerms.map(term => ({
+    value: term.id,
+    label: `${term.name} (Net ${term.net_days ?? 0})`,
+  }))
+  const warehouseOptions = warehouses.map(warehouse => ({
+    value: warehouse.id,
+    label: warehouse.code ? `${warehouse.code} - ${warehouse.name}` : warehouse.name,
+  }))
+  const readOnly = po.status !== 'draft'
 
   const validate = () => {
     if (!po.date) { toast.error('Tanggal wajib diisi'); return false }
@@ -135,8 +189,30 @@ export default function PurchaseOrderFormPage() {
             partyOptions={supplierOptions}
             notes={po.notes}
             onNotesChange={v => setPO({ ...po, notes: v })}
-            readOnly={po.status !== 'draft'}
-          />
+            readOnly={readOnly}
+          >
+            <Col span={12} style={{ marginTop: 16 }}>
+              <Select
+                label="Syarat Pembayaran"
+                options={paymentTermOptions}
+                value={po.payment_term_id || ''}
+                onChange={e => setPO({ ...po, payment_term_id: e.target.value })}
+                placeholder="Pilih syarat pembayaran..."
+                disabled={readOnly}
+              />
+            </Col>
+
+            <Col span={12} style={{ marginTop: 16 }}>
+              <Select
+                label="Gudang"
+                options={warehouseOptions}
+                value={po.warehouse_id || ''}
+                onChange={e => setPO({ ...po, warehouse_id: e.target.value })}
+                placeholder="Pilih gudang..."
+                disabled={readOnly}
+              />
+            </Col>
+          </DocumentHeader>
 
           <LineItemsTable
             items={items}
@@ -144,7 +220,7 @@ export default function PurchaseOrderFormPage() {
             products={products}
             priceField="buy_price"
             showTax={true}
-            readOnly={po.status !== 'draft'}
+            readOnly={readOnly}
           />
 
           <Alert

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useLocation, Link, useNavigate } from 'react-router-dom'
+import { useLocation, Link } from 'react-router-dom'
 import { Layout, Menu, Button, Space, Typography, Divider } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import {
@@ -28,6 +28,10 @@ const menuGroups = [
     key: 'master',
     items: [
       { label: 'Satuan', path: '/master/units' },
+      { label: 'Kategori Produk', path: '/master/categories' },
+      { label: 'Syarat Pembayaran', path: '/master/payment-terms' },
+      { label: 'Kode Pajak', path: '/master/tax-codes' },
+      { label: 'Gudang', path: '/master/warehouses' },
       { label: 'Produk', path: '/master/products' },
       { label: 'Customer', path: '/master/customers' },
       { label: 'Supplier', path: '/master/suppliers' },
@@ -126,7 +130,6 @@ const menuGroups = [
 
 export default function Sidebar() {
   const location = useLocation()
-  const navigate = useNavigate()
   const { canWrite, isAdmin, profile, signOut } = useAuth()
   const [collapsed, setCollapsed] = useState(false)
 
