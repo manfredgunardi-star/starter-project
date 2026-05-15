@@ -1,43 +1,5 @@
 import { supabase } from '../lib/supabase'
 
-async function getCurrentUserId() {
-  const { data } = await supabase.auth.getUser()
-  return data?.user?.id ?? null
-}
-
-async function countReferences(table, column, value, options = {}) {
-  let query = supabase
-    .from(table)
-    .select('id', { count: 'exact', head: true })
-    .eq(column, value)
-
-  if (options.activeOnly) {
-    query = query.eq('is_active', true)
-  }
-
-  const { count, error } = await query
-  if (error) throw error
-  return count ?? 0
-}
-
-async function assertProductCategoryNotReferenced(id) {
-  const checks = [
-    {
-      label: 'sub-kategori aktif',
-      count: await countReferences('product_categories', 'parent_id', id, { activeOnly: true }),
-    },
-    {
-      label: 'produk aktif',
-      count: await countReferences('products', 'category_id', id, { activeOnly: true }),
-    },
-  ]
-
-  const reference = checks.find(check => check.count > 0)
-  if (reference) {
-    throw new Error(`Kategori produk masih digunakan oleh ${reference.count} ${reference.label}`)
-  }
-}
-
 export async function getProductCategories() {
   const { data, error } = await supabase
     .from('product_categories')
@@ -78,16 +40,6 @@ export async function updateProductCategory(id, category) {
 }
 
 export async function deleteProductCategory(id) {
-  await assertProductCategoryNotReferenced(id)
-
-  const userId = await getCurrentUserId()
-  const { error } = await supabase
-    .from('product_categories')
-    .update({
-      is_active: false,
-      deleted_at: new Date().toISOString(),
-      deleted_by: userId,
-    })
-    .eq('id', id)
+  const { error } = await supabase.rpc('soft_delete_product_category', { p_id: id })
   if (error) throw error
 }
