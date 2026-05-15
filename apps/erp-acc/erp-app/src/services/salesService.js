@@ -36,6 +36,8 @@ export async function saveSalesOrder(so, items) {
       id:          so.id          || null,
       date:        so.date,
       customer_id: so.customer_id,
+      payment_term_id: so.payment_term_id || null,
+      warehouse_id: so.warehouse_id || null,
       status:      so.status      || 'draft',
       notes:       so.notes       || null,
     },
@@ -50,7 +52,31 @@ export async function saveSalesOrder(so, items) {
     })),
   })
   if (error) throw error
-  return data
+
+  const soId = data
+  const hasPaymentTerm = Object.prototype.hasOwnProperty.call(so, 'payment_term_id')
+  const hasWarehouse = Object.prototype.hasOwnProperty.call(so, 'warehouse_id')
+
+  if (hasPaymentTerm || hasWarehouse) {
+    const updatePayload = {}
+
+    if (hasPaymentTerm) {
+      updatePayload.payment_term_id = so.payment_term_id || null
+    }
+
+    if (hasWarehouse) {
+      updatePayload.warehouse_id = so.warehouse_id || null
+    }
+
+    const { error: updateError } = await supabase
+      .from('sales_orders')
+      .update(updatePayload)
+      .eq('id', soId)
+
+    if (updateError) throw updateError
+  }
+
+  return soId
 }
 
 export async function confirmSalesOrder(id) {
@@ -170,6 +196,16 @@ export async function saveSalesInvoice(invoice, items) {
     })),
   })
   if (error) throw error
+
+  // Persist payment_term_id — not handled by save_sales_invoice RPC (adds nullable FK column)
+  if (invoice.payment_term_id) {
+    const { error: ptErr } = await supabase
+      .from('invoices')
+      .update({ payment_term_id: invoice.payment_term_id })
+      .eq('id', data)
+    if (ptErr) throw ptErr
+  }
+
   return data
 }
 
