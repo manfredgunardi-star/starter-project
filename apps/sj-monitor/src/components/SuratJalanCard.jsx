@@ -49,10 +49,15 @@ const SuratJalanCard = ({
   }
 
   if (canMarkGagal() && suratJalan.status !== 'gagal') {
+    const isCancel = suratJalan.status === 'terkirim';
     swipeActions.push({
-      label: suratJalan.status === 'terkirim' ? 'Batalkan' : 'Tandai Gagal',
+      label: isCancel ? 'Batalkan' : 'Tandai Gagal',
       icon: <XCircle className="h-5 w-5" />,
-      color: suratJalan.status === 'terkirim' ? '#ea580c' : '#dc2626',
+      color: isCancel ? '#ea580c' : '#dc2626',
+      requireConfirm: true,
+      confirmMessage: isCancel
+        ? `Batalkan pengiriman "${suratJalan.nomorSJ}"?`
+        : `Tandai "${suratJalan.nomorSJ}" sebagai gagal?`,
       onClick: () => onMarkGagal(suratJalan.id),
     });
   }
@@ -62,6 +67,8 @@ const SuratJalanCard = ({
       label: 'Restore',
       icon: <RefreshCw className="h-5 w-5" />,
       color: '#16a34a',
+      requireConfirm: true,
+      confirmMessage: `Restore "${suratJalan.nomorSJ}" ke status pending?`,
       onClick: () => onRestore(suratJalan.id),
     });
   }

@@ -1,7 +1,7 @@
 {
   "projects": {
     "default": "surat-jalan-monitor",
-    "staging": "surat-jalan-monitor",
+    "staging": "sj-monitor-staging",
     "newest": "surat-jalan-monitor"
   },
   "targets": {},
