@@ -153,11 +153,26 @@ Before considering a component "done", verify:
 
 ### Smoke Test Protocol (Wajib untuk Setiap Deploy)
 
-1. **Start emulator:** `npm run emulator`
-2. **Dev mode:** `npm run dev` → buka `http://localhost:5173`
-3. **Test semua aksi** di emulator (zero production writes)
-4. **Build check:** `npm run build` harus pass 0 error
-5. **Test check:** `npm test` harus pass semua
-6. **Deploy** hanya setelah semua di atas pass
+```bash
+# Dari C:\Project\apps\sj-monitor — jalankan SETIAP KALI pekerjaan selesai
+npm run smoketest
+```
 
-> Lihat detail lengkap di: `docs/FIRESTORE-WRITE-SAFETY.md`
+Perintah ini: build staging → deploy ke `sj-monitor-staging` → print URL staging.
+
+**Urutan validasi lengkap sebelum mengklaim selesai:**
+```bash
+npm test          # 14/14 tests harus pass
+npm run lint      # 0 errors (perubahan di src/utils/ atau src/services/)
+npm run build     # 0 errors production build
+npm run smoketest # → https://sj-monitor-staging.web.app (staging, bukan production)
+```
+
+**Staging vs Production:**
+| | Staging | Production |
+|---|---|---|
+| Project | `sj-monitor-staging` | `surat-jalan-monitor` |
+| URL | `https://sj-monitor-staging.web.app` | `https://surat-jalan-monitor.web.app` |
+| Data | Terpisah — aman untuk test CRUD | Data user asli — JANGAN disentuh |
+
+> Lihat detail aturan write safety di: `docs/FIRESTORE-WRITE-SAFETY.md`

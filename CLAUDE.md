@@ -44,6 +44,7 @@ cd apps/sj-monitor && npm run dev      # Local dev server
 cd apps/sj-monitor && npm run build    # Production build (validate before claiming done)
 cd apps/sj-monitor && npm test         # Run Vitest (exit 0 = ok)
 cd apps/sj-monitor && npm run lint     # ESLint on src/utils/ + src/services/
+cd apps/sj-monitor && npm run smoketest  # Build + deploy to STAGING (wajib sebelum production deploy)
 cd apps/bul-accounting && npm run dev
 cd apps/bul-accounting && npm run build
 cd apps/bul-monitor && npm run dev
@@ -52,7 +53,9 @@ cd apps/erp-acc/erp-app && npm run dev
 cd apps/erp-acc/erp-app && npm run build
 ```
 
-**Deployment**: Claude may deploy to dev/staging only. Never deploy to production. Use `firebase deploy --only hosting` from the project directory.
+**Deployment**: Claude may deploy to staging only. Never deploy to production.
+- **sj-monitor staging**: `cd apps/sj-monitor && npm run smoketest`
+- **sj-monitor production**: User deploys manually — Claude does NOT run `firebase deploy` on the default project.
 
 ## Module Boundaries
 
@@ -138,6 +141,28 @@ Variant of sj-monitor for a different company. Main logic in App.jsx (7,249 line
 - Run `npm run build` in the affected project — **must pass with no errors** before claiming work is done.
 - For sj-monitor `src/utils/` or `src/services/` changes: run `npm test && npm run lint` first.
 - Test files live at `sj-monitor/src/utils/__tests__/` and `sj-monitor/src/services/__tests__/`.
+
+### sj-monitor — Wajib Smoke Test ke Staging
+
+**SETIAP KALI** pekerjaan di sj-monitor selesai, jalankan smoke test ke staging **tanpa menunggu instruksi dari user**:
+
+```bash
+cd apps/sj-monitor
+npm run smoketest
+```
+
+Ini akan:
+1. Build dengan konfigurasi staging (`.env.staging`)
+2. Deploy ke Firebase Hosting staging project (`sj-monitor-staging`)
+3. Print URL: `https://sj-monitor-staging.web.app`
+
+**Staging environment:**
+- Project ID: `sj-monitor-staging`
+- URL: `https://sj-monitor-staging.web.app`
+- Firestore: database staging terpisah (tidak menyentuh data production)
+
+**JANGAN** jalankan `firebase deploy` tanpa `--project staging` — itu akan deploy ke production.
+**JANGAN** buka `https://surat-jalan-monitor.web.app` untuk smoke test — itu URL production.
 
 ## Autonomous Bug-Fix Pipeline
 
