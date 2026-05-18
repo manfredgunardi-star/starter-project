@@ -113,6 +113,10 @@ export default function SwipeableRow({ children, actions = [], disabled = false 
   };
 
   const handleActionClick = (action) => {
+    if (action.requireConfirm) {
+      const msg = action.confirmMessage ?? 'Konfirmasi aksi ini?';
+      if (!window.confirm(msg)) return;
+    }
     try {
       action.onClick();
     } finally {

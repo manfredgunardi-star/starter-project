@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
-import { getAuth, setPersistence, browserLocalPersistence } from 'firebase/auth';
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore';
+import { getAuth, setPersistence, browserLocalPersistence, connectAuthEmulator } from 'firebase/auth';
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, connectFirestoreEmulator } from 'firebase/firestore';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 
 // Firebase config dibaca dari environment variables (.env)
@@ -35,6 +35,21 @@ export const db = initializeFirestore(app, {
   useFetchStreams: false,
   localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
 });
+
+// ─── Firebase Local Emulator (Development Only) ────────────────────────────
+// Aktifkan dengan menambahkan VITE_USE_EMULATOR=true di file .env.local
+// Lalu jalankan: npm run emulator  (di terminal terpisah)
+// Kemudian:      npm run dev
+//
+// Emulator berjalan di localhost — 0 write ke production Firestore.
+// ⚠️  Emulator butuh Java 11+. Install dari: https://adoptium.net/
+const USE_EMULATOR = import.meta.env.VITE_USE_EMULATOR === 'true';
+
+if (USE_EMULATOR) {
+  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: false });
+  connectFirestoreEmulator(db, '127.0.0.1', 8080);
+  console.info('[firebase-config] 🧪 Emulator mode aktif — Firestore & Auth → localhost');
+}
 
 /**
  * Helper: pastikan user authenticated sebelum operasi write.

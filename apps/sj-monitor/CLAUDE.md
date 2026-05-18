@@ -110,3 +110,54 @@ Before considering a component "done", verify:
 - [ ] All animations use Framer Motion spring (stiffness: 150, damping: 20)
 - [ ] Rounded corners ≥ 24px for containers (rounded-3xl or rounded-[28px])
 - [ ] Navigation uses Floating Pill pattern if applicable
+
+---
+
+## 🚨 Firestore Write Safety Rules (WAJIB DIIKUTI)
+
+> Pelanggaran aturan ini dapat mengakibatkan app **terblokir 24 jam** karena melebihi kuota 20.000 write/hari (Firebase Spark plan).
+
+### Aturan Testing & Deployment
+
+#### DILARANG KERAS
+- ❌ **Jangan pernah** smoke test di URL live (`https://surat-jalan-monitor.web.app`) saat mengembangkan atau menguji fitur baru
+- ❌ **Jangan pernah** set `ENABLE_AUTO_UANG_JALAN_RECONCILE = true` tanpa:
+  1. Menghitung jumlah SJ yang akan di-backfill
+  2. Mendapat persetujuan eksplisit dari user/superadmin
+  3. Menjalankannya di luar jam operasional
+  4. Memiliki mekanisme preview sebelum write
+- ❌ **Jangan pernah** membuat loop yang iterasi dokumen Firestore dan menulis tanpa pagination atau batasan
+- ❌ **Jangan pernah** trigger bulk write dari `useEffect` tanpa guard (ref flag, `canWrite` check, dll.)
+
+#### WAJIB DILAKUKAN
+- ✅ **Selalu** gunakan Firebase Emulator (`npm run emulator`) untuk development lokal
+- ✅ **Selalu** test dengan `npm run dev` (bukan URL live) untuk fitur baru
+- ✅ **Selalu** tambahkan `requireConfirm: true` pada swipe/touch actions yang destruktif (Tandai Gagal, Restore, Hapus)
+- ✅ **Selalu** gunakan `didReconcileRef.current` atau flag serupa untuk mencegah `useEffect` write loop
+- ✅ Monitor usage di [Firebase Console → Usage](https://console.firebase.google.com/project/surat-jalan-monitor/firestore/usage)
+
+### Write Budget Estimasi
+
+| Operasi | Write per Aksi | Catatan |
+|---|---|---|
+| Buat SJ baru | 1 | setDoc ke collection suratJalan |
+| Mark Terkirim | 2 | updateDoc + addHistoryLog |
+| Tandai Gagal | 2 | updateDoc + addHistoryLog |
+| Restore | 2 | updateDoc + addHistoryLog |
+| Edit Terkirim | 2 | updateDoc + addHistoryLog |
+| Buat Transaksi Keuangan | 1–2 | tergantung upsert |
+| Auto Reconcile (DISABLED) | N × SJ | 🚨 BAHAYA jika diaktifkan |
+
+**Budget aman: ~100–500 write/hari untuk operasional normal.**
+**Batas Spark: 20.000/hari. Alert dipasang di 15.000.**
+
+### Smoke Test Protocol (Wajib untuk Setiap Deploy)
+
+1. **Start emulator:** `npm run emulator`
+2. **Dev mode:** `npm run dev` → buka `http://localhost:5173`
+3. **Test semua aksi** di emulator (zero production writes)
+4. **Build check:** `npm run build` harus pass 0 error
+5. **Test check:** `npm test` harus pass semua
+6. **Deploy** hanya setelah semua di atas pass
+
+> Lihat detail lengkap di: `docs/FIRESTORE-WRITE-SAFETY.md`

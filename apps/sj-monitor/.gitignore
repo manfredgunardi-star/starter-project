@@ -64,8 +64,16 @@ node_modules/
 
 # dotenv environment variables file
 .env
+.env.local
+.env.staging
 env.txt
 build.log
 
 # dataconnect generated files
 .dataconnect
+
+# Firebase Emulator data (snapshot lokal, tidak perlu di-commit)
+emulator-data/firestore_export/
+emulator-data/auth_export/
+emulator-data/*.json
+emulator-data/*.bin
