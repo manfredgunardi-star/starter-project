@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase'
 import { addDays, addWeeks, addMonths, addYears, endOfMonth, setDate } from 'date-fns'
+import { softDelete } from './supabaseUtils'
 
 // ---- Helpers ----
 
@@ -106,17 +107,7 @@ export async function resumeRecurringTemplate(id) {
 }
 
 export async function softDeleteRecurringTemplate(id) {
-  const { data: { user } } = await supabase.auth.getUser()
-
-  const { error } = await supabase
-    .from('recurring_templates')
-    .update({
-      is_active:  false,
-      deleted_at: new Date().toISOString(),
-      deleted_by: user?.id ?? null,
-    })
-    .eq('id', id)
-  if (error) throw error
+  await softDelete('recurring_templates', id)
 }
 
 // ---- Run Now ----

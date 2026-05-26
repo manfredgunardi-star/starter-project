@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { softDelete } from './supabaseUtils'
 
 // ---- UNITS ----
 // units table: id, name, created_at (no is_active, no updated_at)
@@ -147,16 +148,7 @@ export async function updateProduct(id, product, conversions = []) {
 }
 
 export async function softDeleteProduct(id) {
-  const { data: { user } } = await supabase.auth.getUser()
-  const { error } = await supabase
-    .from('products')
-    .update({
-      is_active: false,
-      deleted_at: new Date().toISOString(),
-      deleted_by: user?.id ?? null,
-    })
-    .eq('id', id)
-  if (error) throw error
+  await softDelete('products', id)
 }
 
 // ---- COA (Chart of Accounts) ----
@@ -218,16 +210,7 @@ export async function softDeleteCOA(id) {
   if (checkError) throw checkError
   if (count > 0) throw new Error('Akun ini sudah digunakan dalam jurnal dan tidak dapat dihapus')
 
-  const { data: { user } } = await supabase.auth.getUser()
-  const { error } = await supabase
-    .from('coa')
-    .update({
-      is_active: false,
-      deleted_at: new Date().toISOString(),
-      deleted_by: user?.id ?? null,
-    })
-    .eq('id', id)
-  if (error) throw error
+  await softDelete('coa', id)
 }
 
 // ---- CUSTOMERS ----
@@ -275,16 +258,7 @@ export async function updateCustomer(id, customer) {
 }
 
 export async function softDeleteCustomer(id) {
-  const { data: { user } } = await supabase.auth.getUser()
-  const { error } = await supabase
-    .from('customers')
-    .update({
-      is_active: false,
-      deleted_at: new Date().toISOString(),
-      deleted_by: user?.id ?? null,
-    })
-    .eq('id', id)
-  if (error) throw error
+  await softDelete('customers', id)
 }
 
 // ---- SUPPLIERS ----
@@ -332,16 +306,7 @@ export async function updateSupplier(id, supplier) {
 }
 
 export async function softDeleteSupplier(id) {
-  const { data: { user } } = await supabase.auth.getUser()
-  const { error } = await supabase
-    .from('suppliers')
-    .update({
-      is_active: false,
-      deleted_at: new Date().toISOString(),
-      deleted_by: user?.id ?? null,
-    })
-    .eq('id', id)
-  if (error) throw error
+  await softDelete('suppliers', id)
 }
 
 // ---- CASH/BANK ACCOUNTS ----
@@ -385,16 +350,7 @@ export async function updateCashBankAccount(id, account) {
 }
 
 export async function softDeleteCashBankAccount(id) {
-  const { data: { user } } = await supabase.auth.getUser()
-  const { error } = await supabase
-    .from('accounts')
-    .update({
-      is_active: false,
-      deleted_at: new Date().toISOString(),
-      deleted_by: user?.id ?? null,
-    })
-    .eq('id', id)
-  if (error) throw error
+  await softDelete('accounts', id)
 }
 
 // Get COA accounts filtered for Kas/Bank (codes starting with 1-11xxx or 1-12xxx)
