@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase'
+import { softDelete } from './supabaseUtils'
 
 // ---- ASSET CATEGORIES ----
 
@@ -124,15 +125,5 @@ export async function softDeleteCategory(id) {
     throw new Error('Kategori masih dipakai aset aktif')
   }
 
-  const { data: { user } } = await supabase.auth.getUser()
-
-  const { error } = await supabase
-    .from('asset_categories')
-    .update({
-      is_active: false,
-      deleted_at: new Date().toISOString(),
-      deleted_by: user?.id ?? null,
-    })
-    .eq('id', id)
-  if (error) throw error
+  await softDelete('asset_categories', id)
 }
