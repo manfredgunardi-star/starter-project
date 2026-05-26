@@ -7,7 +7,7 @@ const { Text } = Typography
 
 function emptyRow() {
   return {
-    _key: Math.random().toString(36).slice(2),
+    _key: crypto.randomUUID(),
     product_id: '',
     unit_id: '',
     quantity: '',
