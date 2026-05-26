@@ -195,3 +195,13 @@ export async function getOutstandingInvoices(customerId) {
   if (error) throw error
   return data
 }
+
+export async function closeSalesOrder(id) {
+  const { error } = await supabase.rpc('close_sales_order', { p_so_id: id })
+  if (error) throw error
+}
+
+export async function cancelSalesOrder(id) {
+  const { error } = await supabase.rpc('cancel_sales_order', { p_so_id: id })
+  if (error) throw error
+}
