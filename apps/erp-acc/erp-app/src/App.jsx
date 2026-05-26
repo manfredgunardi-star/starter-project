@@ -1,4 +1,4 @@
-import { Suspense } from 'react'
+import { Suspense, lazy } from 'react'
 import { Spin } from 'antd'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
@@ -9,82 +9,82 @@ import ProtectedRoute from './components/layout/ProtectedRoute'
 import RoleGuard from './components/layout/RoleGuard'
 
 // Master Data
-import UnitsPage from './pages/master/UnitsPage'
-import ProductCategoriesPage from './pages/master/ProductCategoriesPage'
-import PaymentTermsPage from './pages/master/PaymentTermsPage'
-import TaxCodesPage from './pages/master/TaxCodesPage'
-import WarehousesPage from './pages/master/WarehousesPage'
-import ProductsPage from './pages/master/ProductsPage'
-import CustomersPage from './pages/master/CustomersPage'
-import SuppliersPage from './pages/master/SuppliersPage'
-import COAPage from './pages/master/COAPage'
-import ProductsBulkImportPage from './pages/master/ProductsBulkImportPage'
-import CustomersBulkImportPage from './pages/master/CustomersBulkImportPage'
-import SuppliersBulkImportPage from './pages/master/SuppliersBulkImportPage'
+const UnitsPage = lazy(() => import('./pages/master/UnitsPage'))
+const ProductCategoriesPage = lazy(() => import('./pages/master/ProductCategoriesPage'))
+const PaymentTermsPage = lazy(() => import('./pages/master/PaymentTermsPage'))
+const TaxCodesPage = lazy(() => import('./pages/master/TaxCodesPage'))
+const WarehousesPage = lazy(() => import('./pages/master/WarehousesPage'))
+const ProductsPage = lazy(() => import('./pages/master/ProductsPage'))
+const CustomersPage = lazy(() => import('./pages/master/CustomersPage'))
+const SuppliersPage = lazy(() => import('./pages/master/SuppliersPage'))
+const COAPage = lazy(() => import('./pages/master/COAPage'))
+const ProductsBulkImportPage = lazy(() => import('./pages/master/ProductsBulkImportPage'))
+const CustomersBulkImportPage = lazy(() => import('./pages/master/CustomersBulkImportPage'))
+const SuppliersBulkImportPage = lazy(() => import('./pages/master/SuppliersBulkImportPage'))
 
 // Inventory
-import StockPage from './pages/inventory/StockPage'
-import StockCardPage from './pages/inventory/StockCardPage'
+const StockPage = lazy(() => import('./pages/inventory/StockPage'))
+const StockCardPage = lazy(() => import('./pages/inventory/StockCardPage'))
 
 // Sales
-import SalesOrdersPage from './pages/sales/SalesOrdersPage'
-import SalesOrderFormPage from './pages/sales/SalesOrderFormPage'
-import GoodsDeliveriesPage from './pages/sales/GoodsDeliveriesPage'
-import GoodsDeliveryFormPage from './pages/sales/GoodsDeliveryFormPage'
-import SalesInvoicesPage from './pages/sales/SalesInvoicesPage'
-import SalesInvoiceFormPage from './pages/sales/SalesInvoiceFormPage'
+const SalesOrdersPage = lazy(() => import('./pages/sales/SalesOrdersPage'))
+const SalesOrderFormPage = lazy(() => import('./pages/sales/SalesOrderFormPage'))
+const GoodsDeliveriesPage = lazy(() => import('./pages/sales/GoodsDeliveriesPage'))
+const GoodsDeliveryFormPage = lazy(() => import('./pages/sales/GoodsDeliveryFormPage'))
+const SalesInvoicesPage = lazy(() => import('./pages/sales/SalesInvoicesPage'))
+const SalesInvoiceFormPage = lazy(() => import('./pages/sales/SalesInvoiceFormPage'))
 
 // Purchase
-import PurchaseOrdersPage from './pages/purchase/PurchaseOrdersPage'
-import PurchaseOrderFormPage from './pages/purchase/PurchaseOrderFormPage'
-import GoodsReceiptsPage from './pages/purchase/GoodsReceiptsPage'
-import GoodsReceiptFormPage from './pages/purchase/GoodsReceiptFormPage'
-import PurchaseInvoicesPage from './pages/purchase/PurchaseInvoicesPage'
-import PurchaseInvoiceFormPage from './pages/purchase/PurchaseInvoiceFormPage'
+const PurchaseOrdersPage = lazy(() => import('./pages/purchase/PurchaseOrdersPage'))
+const PurchaseOrderFormPage = lazy(() => import('./pages/purchase/PurchaseOrderFormPage'))
+const GoodsReceiptsPage = lazy(() => import('./pages/purchase/GoodsReceiptsPage'))
+const GoodsReceiptFormPage = lazy(() => import('./pages/purchase/GoodsReceiptFormPage'))
+const PurchaseInvoicesPage = lazy(() => import('./pages/purchase/PurchaseInvoicesPage'))
+const PurchaseInvoiceFormPage = lazy(() => import('./pages/purchase/PurchaseInvoiceFormPage'))
 
 // Cash & Bank
-import CashBankAccountsPage from './pages/cash/AccountsPage'
-import PaymentsPage from './pages/cash/PaymentsPage'
-import PaymentFormPage from './pages/cash/PaymentFormPage'
-import TransferFormPage from './pages/cash/TransferFormPage'
-import ReconciliationPage from './pages/cash/ReconciliationPage'
+const CashBankAccountsPage = lazy(() => import('./pages/cash/AccountsPage'))
+const PaymentsPage = lazy(() => import('./pages/cash/PaymentsPage'))
+const PaymentFormPage = lazy(() => import('./pages/cash/PaymentFormPage'))
+const TransferFormPage = lazy(() => import('./pages/cash/TransferFormPage'))
+const ReconciliationPage = lazy(() => import('./pages/cash/ReconciliationPage'))
 
 // Accounting
-import JournalsPage from './pages/accounting/JournalsPage'
-import ManualJournalFormPage from './pages/accounting/ManualJournalFormPage'
-import LedgerPage from './pages/accounting/LedgerPage'
-import RecurringPage from './pages/accounting/RecurringPage'
-import RecurringFormPage from './pages/accounting/RecurringFormPage'
+const JournalsPage = lazy(() => import('./pages/accounting/JournalsPage'))
+const ManualJournalFormPage = lazy(() => import('./pages/accounting/ManualJournalFormPage'))
+const LedgerPage = lazy(() => import('./pages/accounting/LedgerPage'))
+const RecurringPage = lazy(() => import('./pages/accounting/RecurringPage'))
+const RecurringFormPage = lazy(() => import('./pages/accounting/RecurringFormPage'))
 
 // Reports
-import BalanceSheetPage from './pages/reports/BalanceSheetPage'
-import IncomeStatementPage from './pages/reports/IncomeStatementPage'
-import CashFlowPage from './pages/reports/CashFlowPage'
-import ARAPAgingPage from './pages/reports/ARAPAgingPage'
+const BalanceSheetPage = lazy(() => import('./pages/reports/BalanceSheetPage'))
+const IncomeStatementPage = lazy(() => import('./pages/reports/IncomeStatementPage'))
+const CashFlowPage = lazy(() => import('./pages/reports/CashFlowPage'))
+const ARAPAgingPage = lazy(() => import('./pages/reports/ARAPAgingPage'))
 
 // Dashboard
-import DashboardPage from './pages/DashboardPage'
+const DashboardPage = lazy(() => import('./pages/DashboardPage'))
 
 // Fixed Assets
-import AssetsPage from './pages/assets/AssetsPage'
-import AssetCategoriesPage from './pages/assets/AssetCategoriesPage'
-import AssetFormPage from './pages/assets/AssetFormPage'
-import AssetDetailPage from './pages/assets/AssetDetailPage'
-import DepreciationRunPage from './pages/assets/DepreciationRunPage'
-import AssetDisposalFormPage from './pages/assets/AssetDisposalFormPage'
-import AssetBulkImportPage from './pages/assets/AssetBulkImportPage'
+const AssetsPage = lazy(() => import('./pages/assets/AssetsPage'))
+const AssetCategoriesPage = lazy(() => import('./pages/assets/AssetCategoriesPage'))
+const AssetFormPage = lazy(() => import('./pages/assets/AssetFormPage'))
+const AssetDetailPage = lazy(() => import('./pages/assets/AssetDetailPage'))
+const DepreciationRunPage = lazy(() => import('./pages/assets/DepreciationRunPage'))
+const AssetDisposalFormPage = lazy(() => import('./pages/assets/AssetDisposalFormPage'))
+const AssetBulkImportPage = lazy(() => import('./pages/assets/AssetBulkImportPage'))
 
 // Fixed Assets Reports
-import AssetsListReportPage from './pages/reports/AssetsListReportPage'
-import DepreciationPeriodReportPage from './pages/reports/DepreciationPeriodReportPage'
-import AssetDisposalsReportPage from './pages/reports/AssetDisposalsReportPage'
-import AssetsSummaryReportPage from './pages/reports/AssetsSummaryReportPage'
+const AssetsListReportPage = lazy(() => import('./pages/reports/AssetsListReportPage'))
+const DepreciationPeriodReportPage = lazy(() => import('./pages/reports/DepreciationPeriodReportPage'))
+const AssetDisposalsReportPage = lazy(() => import('./pages/reports/AssetDisposalsReportPage'))
+const AssetsSummaryReportPage = lazy(() => import('./pages/reports/AssetsSummaryReportPage'))
 
 // Settings
-import AuditLogPage from './pages/settings/AuditLogPage'
-import UsersPage from './pages/settings/UsersPage'
-import CompanySettingsPage from './pages/settings/CompanySettingsPage'
-import ClosingPeriodPage from './pages/settings/ClosingPeriodPage'
+const AuditLogPage = lazy(() => import('./pages/settings/AuditLogPage'))
+const UsersPage = lazy(() => import('./pages/settings/UsersPage'))
+const CompanySettingsPage = lazy(() => import('./pages/settings/CompanySettingsPage'))
+const ClosingPeriodPage = lazy(() => import('./pages/settings/ClosingPeriodPage'))
 
 
 function AppContent() {
