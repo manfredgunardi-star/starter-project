@@ -11,10 +11,12 @@ import { Plus, Search, Printer, FileDown } from 'lucide-react'
 import { usePrintPO } from '../../hooks/usePrintPO'
 
 const STATUS_COLOR = {
-  draft: 'default',
+  draft:     'default',
   confirmed: 'blue',
-  received: 'gold',
-  done: 'success',
+  received:  'gold',
+  done:      'success',
+  closed:    'default',
+  cancelled: 'error',
 }
 
 export default function PurchaseOrdersPage() {
@@ -70,6 +72,8 @@ export default function PurchaseOrdersPage() {
           <option value="confirmed">Confirmed</option>
           <option value="received">Received</option>
           <option value="done">Done</option>
+          <option value="closed">Closed</option>
+          <option value="cancelled">Cancelled</option>
         </select>
       </Space>
 

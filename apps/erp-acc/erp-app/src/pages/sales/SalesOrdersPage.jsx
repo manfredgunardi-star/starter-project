@@ -63,6 +63,8 @@ export default function SalesOrdersPage() {
           <option value="confirmed">Confirmed</option>
           <option value="invoiced">Invoiced</option>
           <option value="done">Done</option>
+          <option value="closed">Closed</option>
+          <option value="cancelled">Cancelled</option>
         </select>
       </Space>
 
