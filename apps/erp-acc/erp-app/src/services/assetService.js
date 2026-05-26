@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase'
 import { listCategories } from './assetCategoryService'
+import { softDelete } from './supabaseUtils'
 
 // Financial fields that are locked once depreciation has been posted
 const FINANCIAL_FIELDS = [
@@ -275,17 +276,5 @@ export async function softDeleteAsset(id) {
     throw new Error('Aset sudah punya jurnal terposting – gunakan Disposal')
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  const { error } = await supabase
-    .from('assets')
-    .update({
-      is_active: false,
-      deleted_at: new Date().toISOString(),
-      deleted_by: user?.id ?? null,
-    })
-    .eq('id', id)
-  if (error) throw error
+  await softDelete('assets', id)
 }
