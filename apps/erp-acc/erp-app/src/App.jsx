@@ -7,6 +7,7 @@ import LoginPage from './pages/LoginPage'
 import AppLayout from './components/layout/AppLayout'
 import ProtectedRoute from './components/layout/ProtectedRoute'
 import RoleGuard from './components/layout/RoleGuard'
+import RouteErrorBoundary from './components/layout/RouteErrorBoundary'
 
 // Master Data
 const UnitsPage = lazy(() => import('./pages/master/UnitsPage'))
@@ -103,8 +104,9 @@ function AppContent() {
   }
 
   return (
-    <Suspense fallback={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}><Spin size="large" description="Memuat..." /></div>}>
-      <Routes>
+    <RouteErrorBoundary>
+      <Suspense fallback={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}><Spin size="large" description="Memuat..." /></div>}>
+        <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route
           path="/*"
@@ -200,7 +202,8 @@ function AppContent() {
           <Route index element={<DashboardPage />} />
         </Route>
       </Routes>
-    </Suspense>
+      </Suspense>
+    </RouteErrorBoundary>
   )
 }
 
