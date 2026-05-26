@@ -19,10 +19,13 @@ export function parseCurrency(str) {
   const s = String(str).trim()
   if (!s) return 0
   // Format Indonesia: titik = pemisah ribuan, koma = desimal
-  // Hapus semua selain digit, koma, dan minus, lalu ubah koma jadi titik
-  const cleaned = s
-    .replace(/[^0-9,\-]/g, '')   // hapus: Rp, titik ribuan, spasi, dll
-    .replace(',', '.')           // koma desimal → titik
-  const n = parseFloat(cleaned)
+  // 1. Hapus semua selain digit, koma, dan minus
+  // 2. Ubah semua koma ke titik, lalu normalisasi: hanya titik terakhir = desimal
+  const stripped = s.replace(/[^0-9,\-]/g, '')
+  const parts = stripped.split(',')
+  const normalized = parts.length > 1
+    ? parts.slice(0, -1).join('') + '.' + parts[parts.length - 1]
+    : stripped
+  const n = parseFloat(normalized)
   return Number.isFinite(n) ? n : 0
 }
