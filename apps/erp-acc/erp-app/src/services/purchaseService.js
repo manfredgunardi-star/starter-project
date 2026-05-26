@@ -199,3 +199,13 @@ export async function confirmPurchaseOrder(id) {
     .eq('id', id)
   if (error) throw error
 }
+
+export async function closePurchaseOrder(id) {
+  const { error } = await supabase.rpc('close_purchase_order', { p_po_id: id })
+  if (error) throw error
+}
+
+export async function cancelPurchaseOrder(id) {
+  const { error } = await supabase.rpc('cancel_purchase_order', { p_po_id: id })
+  if (error) throw error
+}
