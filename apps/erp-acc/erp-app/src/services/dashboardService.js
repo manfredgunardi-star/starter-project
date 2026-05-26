@@ -1,14 +1,9 @@
 import { supabase } from '../lib/supabase'
+import { today } from '../utils/date'
 
 function monthStart() {
   const d = new Date()
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
-}
-
-function today() {
-  // Gunakan waktu lokal, bukan UTC — mencegah off-by-one di timezone WIB (UTC+7)
-  const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 function lastMonthStart() {
