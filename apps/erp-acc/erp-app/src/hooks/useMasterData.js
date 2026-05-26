@@ -1,63 +1,45 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useCallback } from 'react'
+import { useQuery } from './useQuery'
 import * as svc from '../services/masterDataService'
 
-function useFetchList(fetcher) {
-  const [data, setData] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-
-  const fetch = useCallback(async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const result = await fetcher()
-      setData(result || [])
-    } catch (err) {
-      setError(err.message)
-      // Data lama tetap tampil — jangan clear saat refetch gagal
-    } finally {
-      setLoading(false)
-    }
-  }, [fetcher])
-
-  useEffect(() => {
-    fetch()
-  }, [fetch])
-
-  return { data, loading, error, refetch: fetch }
-}
-
 export function useUnits() {
-  const { data: units, loading, error, refetch } = useFetchList(svc.getUnits)
+  const fetcher = useCallback(() => svc.getUnits(), [])
+  const { data: units, loading, error, refetch } = useQuery(fetcher, { keepDataOnError: true })
   return { units, loading, error, refetch }
 }
 
 export function useProducts() {
-  const { data: products, loading, error, refetch } = useFetchList(svc.getProducts)
+  const fetcher = useCallback(() => svc.getProducts(), [])
+  const { data: products, loading, error, refetch } = useQuery(fetcher, { keepDataOnError: true })
   return { products, loading, error, refetch }
 }
 
 export function useCOA() {
-  const { data: coa, loading, error, refetch } = useFetchList(svc.getCOA)
+  const fetcher = useCallback(() => svc.getCOA(), [])
+  const { data: coa, loading, error, refetch } = useQuery(fetcher, { keepDataOnError: true })
   return { coa, loading, error, refetch }
 }
 
 export function useCustomers() {
-  const { data: customers, loading, error, refetch } = useFetchList(svc.getCustomers)
+  const fetcher = useCallback(() => svc.getCustomers(), [])
+  const { data: customers, loading, error, refetch } = useQuery(fetcher, { keepDataOnError: true })
   return { customers, loading, error, refetch }
 }
 
 export function useSuppliers() {
-  const { data: suppliers, loading, error, refetch } = useFetchList(svc.getSuppliers)
+  const fetcher = useCallback(() => svc.getSuppliers(), [])
+  const { data: suppliers, loading, error, refetch } = useQuery(fetcher, { keepDataOnError: true })
   return { suppliers, loading, error, refetch }
 }
 
 export function useCashBankAccounts() {
-  const { data: accounts, loading, error, refetch } = useFetchList(svc.getCashBankAccounts)
+  const fetcher = useCallback(() => svc.getCashBankAccounts(), [])
+  const { data: accounts, loading, error, refetch } = useQuery(fetcher, { keepDataOnError: true })
   return { accounts, loading, error, refetch }
 }
 
 export function useCOAForCashBank() {
-  const { data: coaOptions, loading, error } = useFetchList(svc.getCOAForCashBank)
+  const fetcher = useCallback(() => svc.getCOAForCashBank(), [])
+  const { data: coaOptions, loading, error } = useQuery(fetcher, { keepDataOnError: true })
   return { coaOptions, loading, error }
 }
