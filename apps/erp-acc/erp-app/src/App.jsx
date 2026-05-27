@@ -34,6 +34,8 @@ const GoodsDeliveriesPage = lazy(() => import('./pages/sales/GoodsDeliveriesPage
 const GoodsDeliveryFormPage = lazy(() => import('./pages/sales/GoodsDeliveryFormPage'))
 const SalesInvoicesPage = lazy(() => import('./pages/sales/SalesInvoicesPage'))
 const SalesInvoiceFormPage = lazy(() => import('./pages/sales/SalesInvoiceFormPage'))
+const SalesReturnsPage = lazy(() => import('./pages/sales/SalesReturnsPage'))
+const SalesReturnFormPage = lazy(() => import('./pages/sales/SalesReturnFormPage'))
 
 // Purchase
 const PurchaseOrdersPage = lazy(() => import('./pages/purchase/PurchaseOrdersPage'))
@@ -42,6 +44,8 @@ const GoodsReceiptsPage = lazy(() => import('./pages/purchase/GoodsReceiptsPage'
 const GoodsReceiptFormPage = lazy(() => import('./pages/purchase/GoodsReceiptFormPage'))
 const PurchaseInvoicesPage = lazy(() => import('./pages/purchase/PurchaseInvoicesPage'))
 const PurchaseInvoiceFormPage = lazy(() => import('./pages/purchase/PurchaseInvoiceFormPage'))
+const PurchaseReturnsPage = lazy(() => import('./pages/purchase/PurchaseReturnsPage'))
+const PurchaseReturnFormPage = lazy(() => import('./pages/purchase/PurchaseReturnFormPage'))
 
 // Cash & Bank
 const CashBankAccountsPage = lazy(() => import('./pages/cash/AccountsPage'))
@@ -145,6 +149,11 @@ function AppContent() {
           <Route path="sales/invoices/new" element={<RoleGuard require="canWrite"><SalesInvoiceFormPage /></RoleGuard>} />
           <Route path="sales/invoices/:id" element={<SalesInvoiceFormPage />} />
 
+          {/* Sales Returns */}
+          <Route path="sales/returns" element={<SalesReturnsPage />} />
+          <Route path="sales/returns/new" element={<RoleGuard require="canWrite"><SalesReturnFormPage /></RoleGuard>} />
+          <Route path="sales/returns/:id" element={<SalesReturnFormPage />} />
+
           {/* Purchase */}
           <Route path="purchase/orders" element={<PurchaseOrdersPage />} />
           <Route path="purchase/orders/new" element={<RoleGuard require="canWrite"><PurchaseOrderFormPage /></RoleGuard>} />
@@ -155,6 +164,11 @@ function AppContent() {
           <Route path="purchase/invoices" element={<PurchaseInvoicesPage />} />
           <Route path="purchase/invoices/new" element={<RoleGuard require="canWrite"><PurchaseInvoiceFormPage /></RoleGuard>} />
           <Route path="purchase/invoices/:id" element={<PurchaseInvoiceFormPage />} />
+
+          {/* Purchase Returns */}
+          <Route path="purchase/returns" element={<PurchaseReturnsPage />} />
+          <Route path="purchase/returns/new" element={<RoleGuard require="canWrite"><PurchaseReturnFormPage /></RoleGuard>} />
+          <Route path="purchase/returns/:id" element={<PurchaseReturnFormPage />} />
 
           {/* Cash & Bank */}
           <Route path="cash/accounts" element={<CashBankAccountsPage />} />
