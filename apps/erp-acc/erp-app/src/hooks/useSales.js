@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { useQuery } from './useQuery'
 import { getSalesOrders, getGoodsDeliveries, getSalesInvoices } from '../services/salesService'
+import { getSalesReturns } from '../services/salesReturnService'
 
 export function useSalesOrders() {
   const fetcher = useCallback(() => getSalesOrders(), [])
@@ -18,4 +19,10 @@ export function useSalesInvoices() {
   const fetcher = useCallback(() => getSalesInvoices(), [])
   const { data: invoices, loading, error, refetch } = useQuery(fetcher)
   return { invoices, loading, error, refetch }
+}
+
+export function useSalesReturns() {
+  const fetcher = useCallback(() => getSalesReturns(), [])
+  const { data: returns, loading, error, refetch } = useQuery(fetcher)
+  return { returns, loading, error, refetch }
 }

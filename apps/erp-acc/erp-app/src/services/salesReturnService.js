@@ -1,0 +1,59 @@
+import { supabase } from '../lib/supabase'
+
+export async function getSalesReturns() {
+  const { data, error } = await supabase
+    .from('sales_returns')
+    .select('*, customer:customers(name), sales_order:sales_orders(so_number)')
+    .order('date', { ascending: false })
+  if (error) throw error
+  return data
+}
+
+export async function getSalesReturn(id) {
+  const { data, error } = await supabase
+    .from('sales_returns')
+    .select(`
+      *,
+      customer:customers(id, name),
+      sales_order:sales_orders(id, so_number),
+      items:sales_return_items(
+        id, product_id, unit_id, quantity, quantity_base, unit_price, tax_amount, total,
+        product:products(id, name, sku, is_taxable, tax_rate, sell_price),
+        unit:units(id, name)
+      )
+    `)
+    .eq('id', id)
+    .single()
+  if (error) throw error
+  return data
+}
+
+export async function saveSalesReturn(sr, items) {
+  const { data, error } = await supabase.rpc('save_sales_return', {
+    p_sr: {
+      id:             sr.id             || null,
+      date:           sr.date,
+      customer_id:    sr.customer_id,
+      sales_order_id: sr.sales_order_id || null,
+      warehouse_id:   sr.warehouse_id   || null,
+      status:         sr.status         || 'draft',
+      notes:          sr.notes          || null,
+    },
+    p_items: items.map(i => ({
+      product_id:    i.product_id,
+      unit_id:       i.unit_id,
+      quantity:      Number(i.quantity),
+      quantity_base: Number(i.quantity_base) || Number(i.quantity),
+      unit_price:    Number(i.unit_price)    || 0,
+      tax_amount:    Number(i.tax_amount)    || 0,
+      total:         Number(i.total)         || 0,
+    })),
+  })
+  if (error) throw error
+  return data
+}
+
+export async function postSalesReturn(id) {
+  const { error } = await supabase.rpc('post_sales_return', { p_sr_id: id })
+  if (error) throw error
+}

@@ -54,7 +54,8 @@ const menuGroups = [
     items: [
       { label: 'Sales Order', path: '/sales/orders' },
       { label: 'Pengiriman', path: '/sales/deliveries' },
-      { label: 'Invoice Penjualan', path: '/sales/invoices' }
+      { label: 'Invoice Penjualan', path: '/sales/invoices' },
+      { label: 'Retur Penjualan', path: '/sales/returns' }
     ]
   },
   {
@@ -64,7 +65,8 @@ const menuGroups = [
     items: [
       { label: 'Purchase Order', path: '/purchase/orders' },
       { label: 'Penerimaan', path: '/purchase/receipts' },
-      { label: 'Invoice Pembelian', path: '/purchase/invoices' }
+      { label: 'Invoice Pembelian', path: '/purchase/invoices' },
+      { label: 'Retur Pembelian', path: '/purchase/returns' }
     ]
   },
   {
