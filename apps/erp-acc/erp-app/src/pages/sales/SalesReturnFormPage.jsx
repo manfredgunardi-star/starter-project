@@ -29,6 +29,7 @@ export default function SalesReturnFormPage() {
 
   const [loading, setLoading] = useState(!isNew)
   const [submitting, setSubmitting] = useState(false)
+  const gdPrefillDoneRef = useRef(false)
   const [header, setHeader] = useState({
     sr_number: '',
     date: today(),
@@ -97,9 +98,12 @@ export default function SalesReturnFormPage() {
   }, [id, isNew])
 
   // Pre-fill from GD (shortcut from GoodsDeliveryFormPage)
+  // Wait for products to load before running so sell_price is available
   useEffect(() => {
     const fromGdId = searchParams.get('from_gd')
-    if (!fromGdId || !isNew) return
+    if (!fromGdId || !isNew || gdPrefillDoneRef.current) return
+    if (products.length === 0) return // products not loaded yet — re-run when they arrive
+    gdPrefillDoneRef.current = true
     getGoodsDelivery(fromGdId)
       .then(gd => {
         setHeader(h => ({
@@ -125,7 +129,7 @@ export default function SalesReturnFormPage() {
         )
       })
       .catch(err => toastRef.current.error('Gagal load GD: ' + err.message))
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [products, isNew, searchParams])
 
   const readOnly = !isNew && header.status === 'posted'
 
