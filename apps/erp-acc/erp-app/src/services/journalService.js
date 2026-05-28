@@ -22,7 +22,7 @@ export async function getJournal(id) {
     .select(`
       *,
       journal_items(
-        id, coa_id, debit, credit, description,
+        id, coa_id, cost_center_id, debit, credit, description,
         coa:coa(id, code, name)
       )
     `)
@@ -58,6 +58,7 @@ export async function saveManualJournal(header, items) {
     debit: Number(i.debit) || 0,
     credit: Number(i.credit) || 0,
     description: i.description || null,
+    cost_center_id: i.cost_center_id ?? null,
   }))
   const { error: itemErr } = await supabase.from('journal_items').insert(itemRows)
   if (itemErr) throw itemErr

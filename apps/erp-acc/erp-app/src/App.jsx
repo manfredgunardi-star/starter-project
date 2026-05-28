@@ -15,6 +15,7 @@ const ProductCategoriesPage = lazy(() => import('./pages/master/ProductCategorie
 const PaymentTermsPage = lazy(() => import('./pages/master/PaymentTermsPage'))
 const TaxCodesPage = lazy(() => import('./pages/master/TaxCodesPage'))
 const WarehousesPage = lazy(() => import('./pages/master/WarehousesPage'))
+const CostCentersPage = lazy(() => import('./pages/master/CostCentersPage'))
 const ProductsPage = lazy(() => import('./pages/master/ProductsPage'))
 const CustomersPage = lazy(() => import('./pages/master/CustomersPage'))
 const SuppliersPage = lazy(() => import('./pages/master/SuppliersPage'))
@@ -71,6 +72,7 @@ const ARAPAgingPage = lazy(() => import('./pages/reports/ARAPAgingPage'))
 const TrialBalancePage = lazy(() => import('./pages/reports/TrialBalancePage'))
 const SalesReportPage = lazy(() => import('./pages/reports/SalesReportPage'))
 const PurchaseReportPage = lazy(() => import('./pages/reports/PurchaseReportPage'))
+const PLByCostCenterPage = lazy(() => import('./pages/reports/PLByCostCenterPage'))
 
 // Dashboard
 const DashboardPage = lazy(() => import('./pages/DashboardPage'))
@@ -131,6 +133,7 @@ function AppContent() {
           <Route path="master/payment-terms" element={<PaymentTermsPage />} />
           <Route path="master/tax-codes" element={<TaxCodesPage />} />
           <Route path="master/warehouses" element={<WarehousesPage />} />
+          <Route path="master/cost-centers" element={<CostCentersPage />} />
           <Route path="master/products" element={<ProductsPage />} />
           <Route path="master/products/import" element={<RoleGuard require="canWrite"><ProductsBulkImportPage /></RoleGuard>} />
           <Route path="master/customers" element={<CustomersPage />} />
@@ -201,6 +204,7 @@ function AppContent() {
           <Route path="reports/trial-balance" element={<TrialBalancePage />} />
           <Route path="reports/sales" element={<SalesReportPage />} />
           <Route path="reports/purchases" element={<PurchaseReportPage />} />
+          <Route path="reports/pl-cost-center" element={<PLByCostCenterPage />} />
           <Route path="reports/assets-list" element={<AssetsListReportPage />} />
           <Route path="reports/depreciation-period" element={<DepreciationPeriodReportPage />} />
           <Route path="reports/asset-disposals" element={<AssetDisposalsReportPage />} />
