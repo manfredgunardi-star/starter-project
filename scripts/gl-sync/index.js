@@ -19,7 +19,7 @@
 
 'use strict'
 
-const admin = require('firebase-admin')
+const { Firestore } = require('@google-cloud/firestore')
 const { google } = require('googleapis')
 
 // ─── Config ──────────────────────────────────────────────────────────────────
@@ -33,10 +33,9 @@ if (!SPREADSHEET_ID) {
   process.exit(1)
 }
 
-// ─── Init Firebase Admin SDK (menggunakan Application Default Credentials) ───
+// ─── Init Firestore (@google-cloud/firestore — supports WIF natively) ────────
 
-admin.initializeApp({ projectId: FIREBASE_PROJECT_ID })
-const db = admin.firestore()
+const db = new Firestore({ projectId: FIREBASE_PROJECT_ID })
 
 // ─── Init Google Sheets API (juga menggunakan ADC) ───────────────────────────
 
