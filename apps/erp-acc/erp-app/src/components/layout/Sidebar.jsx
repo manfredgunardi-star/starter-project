@@ -77,7 +77,8 @@ const menuGroups = [
       { label: 'Akun', path: '/cash/accounts' },
       { label: 'Pembayaran', path: '/cash/payments' },
       { label: 'Transfer', path: '/cash/transfers/new', minRole: 'write' },
-      { label: 'Rekonsiliasi', path: '/cash/reconciliation' }
+      { label: 'Rekonsiliasi', path: '/cash/reconciliation' },
+      { label: 'Import Rekening Koran', path: '/cash/import', minRole: 'write' }
     ]
   },
   {
@@ -110,6 +111,9 @@ const menuGroups = [
       { label: 'Laba Rugi', path: '/reports/income-statement' },
       { label: 'Arus Kas', path: '/reports/cash-flow' },
       { label: 'AR/AP Aging', path: '/reports/ar-ap-aging' },
+      { label: 'Neraca Saldo', path: '/reports/trial-balance' },
+      { label: 'Laporan Penjualan', path: '/reports/sales' },
+      { label: 'Laporan Pembelian', path: '/reports/purchases' },
       { label: 'Daftar Aset Tetap', path: '/reports/assets-list' },
       { label: 'Penyusutan per Periode', path: '/reports/depreciation-period' },
       { label: 'Disposal Aset', path: '/reports/asset-disposals' },

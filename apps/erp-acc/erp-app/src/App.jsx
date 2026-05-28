@@ -53,6 +53,8 @@ const PaymentsPage = lazy(() => import('./pages/cash/PaymentsPage'))
 const PaymentFormPage = lazy(() => import('./pages/cash/PaymentFormPage'))
 const TransferFormPage = lazy(() => import('./pages/cash/TransferFormPage'))
 const ReconciliationPage = lazy(() => import('./pages/cash/ReconciliationPage'))
+const BankStatementImportPage = lazy(() => import('./pages/cash/BankStatementImportPage'))
+const BankImportPreviewPage = lazy(() => import('./pages/cash/BankImportPreviewPage'))
 
 // Accounting
 const JournalsPage = lazy(() => import('./pages/accounting/JournalsPage'))
@@ -66,6 +68,9 @@ const BalanceSheetPage = lazy(() => import('./pages/reports/BalanceSheetPage'))
 const IncomeStatementPage = lazy(() => import('./pages/reports/IncomeStatementPage'))
 const CashFlowPage = lazy(() => import('./pages/reports/CashFlowPage'))
 const ARAPAgingPage = lazy(() => import('./pages/reports/ARAPAgingPage'))
+const TrialBalancePage = lazy(() => import('./pages/reports/TrialBalancePage'))
+const SalesReportPage = lazy(() => import('./pages/reports/SalesReportPage'))
+const PurchaseReportPage = lazy(() => import('./pages/reports/PurchaseReportPage'))
 
 // Dashboard
 const DashboardPage = lazy(() => import('./pages/DashboardPage'))
@@ -176,6 +181,8 @@ function AppContent() {
           <Route path="cash/payments/new" element={<RoleGuard require="canWrite"><PaymentFormPage /></RoleGuard>} />
           <Route path="cash/transfers/new" element={<RoleGuard require="canWrite"><TransferFormPage /></RoleGuard>} />
           <Route path="cash/reconciliation" element={<ReconciliationPage />} />
+          <Route path="cash/import" element={<RoleGuard require="canWrite"><BankStatementImportPage /></RoleGuard>} />
+          <Route path="cash/import/:sessionId" element={<BankImportPreviewPage />} />
 
           {/* Accounting */}
           <Route path="accounting/journals" element={<JournalsPage />} />
@@ -191,6 +198,9 @@ function AppContent() {
           <Route path="reports/income-statement" element={<IncomeStatementPage />} />
           <Route path="reports/cash-flow" element={<CashFlowPage />} />
           <Route path="reports/ar-ap-aging" element={<ARAPAgingPage />} />
+          <Route path="reports/trial-balance" element={<TrialBalancePage />} />
+          <Route path="reports/sales" element={<SalesReportPage />} />
+          <Route path="reports/purchases" element={<PurchaseReportPage />} />
           <Route path="reports/assets-list" element={<AssetsListReportPage />} />
           <Route path="reports/depreciation-period" element={<DepreciationPeriodReportPage />} />
           <Route path="reports/asset-disposals" element={<AssetDisposalsReportPage />} />
