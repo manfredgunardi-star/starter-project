@@ -65,6 +65,8 @@ export function mapStatementRows(rawRows, colMap, skipRows) {
 }
 
 export async function createImportSession(accountId, fileName, importDate, rows) {
+  // Note: @supabase/supabase-js v2.x automatically serializes JS arrays to JSONB
+  // when passed to rpc(). JSON.stringify is NOT needed and would break the jsonb param.
   const { data, error } = await supabase.rpc('create_bank_import_session', {
     p_account_id: accountId,
     p_file_name: fileName,

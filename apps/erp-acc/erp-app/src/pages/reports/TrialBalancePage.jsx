@@ -33,7 +33,8 @@ export default function TrialBalancePage() {
 
   const totalDebit = data ? data.reduce((sum, row) => sum + Number(row.total_debit), 0) : 0
   const totalCredit = data ? data.reduce((sum, row) => sum + Number(row.total_credit), 0) : 0
-  const isBalanced = data && Math.abs(totalDebit - totalCredit) < 0.01
+  const isBalanced = data && data.length > 0 && Math.abs(totalDebit - totalCredit) < 0.01
+  const isEmpty = data && data.length === 0
 
   const columns = [
     {
@@ -127,8 +128,10 @@ export default function TrialBalancePage() {
 
       {data && !loading && (
         <>
-          {isBalanced ? (
-            <Alert message="Pembukuan balance - total debit = total kredit." type="success" showIcon />
+          {isEmpty ? (
+            <Alert message="Tidak ada jurnal terposting untuk periode ini." type="info" showIcon />
+          ) : isBalanced ? (
+            <Alert message="Pembukuan balance — total debit = total kredit." type="success" showIcon />
           ) : (
             <Alert
               message={`Pembukuan TIDAK balance! Selisih: ${formatCurrency(Math.abs(totalDebit - totalCredit))}`}

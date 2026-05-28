@@ -28,7 +28,8 @@ export default function BankImportPreviewPage() {
   const [session, setSession] = useState(null)
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
-  const [actionLoading, setActionLoading] = useState(false)
+  const [confirmLoading, setConfirmLoading] = useState(false)
+  const [cancelLoading, setCancelLoading] = useState(false)
 
   useEffect(() => {
     Promise.all([getImportSession(sessionId), getImportRows(sessionId)])
@@ -38,7 +39,7 @@ export default function BankImportPreviewPage() {
       })
       .catch(err => toast.error(err.message))
       .finally(() => setLoading(false))
-  }, [sessionId])
+  }, [sessionId, toast])
 
   async function handleSkip(rowId) {
     try {
@@ -52,7 +53,7 @@ export default function BankImportPreviewPage() {
   }
 
   async function handleConfirm() {
-    setActionLoading(true)
+    setConfirmLoading(true)
     try {
       await confirmImport(sessionId)
       toast.success('Import dikonfirmasi')
@@ -60,12 +61,12 @@ export default function BankImportPreviewPage() {
     } catch (err) {
       toast.error(err.message)
     } finally {
-      setActionLoading(false)
+      setConfirmLoading(false)
     }
   }
 
   async function handleCancel() {
-    setActionLoading(true)
+    setCancelLoading(true)
     try {
       await cancelImport(sessionId)
       toast.success('Import dibatalkan')
@@ -73,7 +74,7 @@ export default function BankImportPreviewPage() {
     } catch (err) {
       toast.error(err.message)
     } finally {
-      setActionLoading(false)
+      setCancelLoading(false)
     }
   }
 
@@ -207,7 +208,7 @@ export default function BankImportPreviewPage() {
             okText="Ya, Batalkan"
             cancelText="Tidak"
           >
-            <Button loading={actionLoading} icon={<XCircle size={14} />}>Batalkan Import</Button>
+            <Button loading={cancelLoading} disabled={confirmLoading} icon={<XCircle size={14} />}>Batalkan Import</Button>
           </Popconfirm>
           <Popconfirm
             title="Konfirmasi import?"
@@ -216,7 +217,7 @@ export default function BankImportPreviewPage() {
             okText="Ya, Konfirmasi"
             cancelText="Tidak"
           >
-            <Button type="primary" loading={actionLoading} icon={<CheckCircle size={14} />}>
+            <Button type="primary" loading={confirmLoading} disabled={cancelLoading} icon={<CheckCircle size={14} />}>
               Konfirmasi Import
             </Button>
           </Popconfirm>

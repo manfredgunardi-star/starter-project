@@ -18,11 +18,11 @@ function firstOfMonth() {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`
 }
 
+// Draft invoices excluded by design — laporan ini hanya menampilkan faktur terposting.
 const STATUS_MAP = {
-  paid: { color: 'success', label: 'Lunas' },
+  paid:    { color: 'success',    label: 'Lunas' },
   partial: { color: 'processing', label: 'Sebagian' },
-  posted: { color: 'warning', label: 'Terposting' },
-  draft: { color: 'default', label: 'Draft' },
+  posted:  { color: 'warning',    label: 'Terposting' },
 }
 
 export default function SalesReportPage() {
@@ -182,6 +182,13 @@ export default function SalesReportPage() {
           </Button>
         </Space>
       </Card>
+
+      <Alert
+        message="Catatan: faktur berstatus Draft tidak ditampilkan dalam laporan ini."
+        type="info"
+        showIcon
+        style={{ marginTop: 0 }}
+      />
 
       {loading && <LoadingSpinner />}
       {error && <Alert message={error} type="error" showIcon />}
