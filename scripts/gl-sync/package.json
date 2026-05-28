@@ -1,0 +1,16 @@
+{
+  "name": "gl-sync",
+  "version": "1.0.0",
+  "description": "BUL-Accounting General Ledger → Google Sheets daily sync",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.1.0",
+    "googleapis": "^140.0.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
