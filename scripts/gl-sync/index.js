@@ -27,6 +27,7 @@ const { google } = require('googleapis')
 const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID || 'bul-accounting'
 const SPREADSHEET_ID      = process.env.GOOGLE_SPREADSHEET_ID
 const DRY_RUN             = process.env.DRY_RUN === 'true'
+const FULL_SYNC           = process.env.FULL_SYNC === 'true'
 
 if (!SPREADSHEET_ID) {
   console.error('❌ GOOGLE_SPREADSHEET_ID environment variable tidak di-set.')
@@ -141,6 +142,30 @@ async function getAuditEntries(start, end) {
     .get()
 
   // Hanya catat perubahan dan penghapusan (bukan pembuatan baru)
+  return snapshot.docs
+    .map(doc => doc.data())
+    .filter(entry => entry.action === 'update' || entry.action === 'delete')
+}
+
+/**
+ * [FULL SYNC] Ambil SEMUA jurnal tanpa filter tanggal.
+ * Digunakan hanya untuk initial backfill.
+ */
+async function getAllJournals() {
+  const snapshot = await db.collection('journals')
+    .orderBy('createdAt', 'asc')
+    .get()
+  return snapshot.docs.map(doc => ({ _docId: doc.id, ...doc.data() }))
+}
+
+/**
+ * [FULL SYNC] Ambil SEMUA audit_log tanpa filter tanggal.
+ * Tetap hanya mengambil action update/delete (create tercermin di GL).
+ */
+async function getAllAuditEntries() {
+  const snapshot = await db.collection('audit_log')
+    .orderBy('at', 'asc')
+    .get()
   return snapshot.docs
     .map(doc => doc.data())
     .filter(entry => entry.action === 'update' || entry.action === 'delete')
@@ -273,22 +298,35 @@ async function logSyncRun(dateStr, status, journalCount, auditCount, syncTimesta
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
-  const { start, end, dateStr } = getYesterdayWIBRange()
   const syncTimestamp = new Date().toLocaleString('id-ID', WIB_LOCALE_OPTIONS)
+
+  // ── Tentukan range berdasarkan mode ──────────────────────────────────────
+  let start, end, dateStr
+  if (FULL_SYNC) {
+    dateStr = 'full-sync'
+  } else {
+    ;({ start, end, dateStr } = getYesterdayWIBRange())
+  }
 
   console.log('═══════════════════════════════════════════════════════════')
   console.log(`  BUL-Accounting GL Sync`)
-  console.log(`  Sync tanggal  : ${dateStr} (WIB)`)
-  console.log(`  Range UTC     : ${start.toISOString()} → ${end.toISOString()}`)
+  if (FULL_SYNC) {
+    console.log(`  Mode          : ⚡ FULL SYNC (semua data historis)`)
+  } else {
+    console.log(`  Sync tanggal  : ${dateStr} (WIB)`)
+    console.log(`  Range UTC     : ${start.toISOString()} → ${end.toISOString()}`)
+  }
   console.log(`  Spreadsheet   : ${SPREADSHEET_ID}`)
-  console.log(`  Mode          : ${DRY_RUN ? '🧪 DRY RUN' : '🚀 LIVE'}`)
+  console.log(`  DRY RUN       : ${DRY_RUN ? '🧪 YA' : '🚀 TIDAK'}`)
   console.log('═══════════════════════════════════════════════════════════')
 
-  // ── Deduplication check ──────────────────────────────────────────────────
-  const alreadyRun = await checkAlreadyRun(dateStr)
-  if (alreadyRun) {
-    console.log(`\n⏭️  Sync untuk ${dateStr} sudah pernah berhasil. Skip untuk mencegah duplikasi.`)
-    process.exit(0)
+  // ── Deduplication check (dilewati untuk full sync) ───────────────────────
+  if (!FULL_SYNC) {
+    const alreadyRun = await checkAlreadyRun(dateStr)
+    if (alreadyRun) {
+      console.log(`\n⏭️  Sync untuk ${dateStr} sudah pernah berhasil. Skip untuk mencegah duplikasi.`)
+      process.exit(0)
+    }
   }
 
   // ── Pastikan headers ada ─────────────────────────────────────────────────
@@ -296,17 +334,21 @@ async function main() {
   await ensureHeaders()
 
   // ── Fetch data dari Firestore ────────────────────────────────────────────
-  console.log('\n📡 Mengambil data dari Firestore...')
+  if (FULL_SYNC) {
+    console.log('\n📡 Full sync — mengambil SEMUA data dari Firestore...')
+  } else {
+    console.log('\n📡 Mengambil data dari Firestore...')
+  }
   const [journals, auditEntries] = await Promise.all([
-    getNewJournals(start, end),
-    getAuditEntries(start, end)
+    FULL_SYNC ? getAllJournals() : getNewJournals(start, end),
+    FULL_SYNC ? getAllAuditEntries() : getAuditEntries(start, end)
   ])
 
-  console.log(`  ✓ Jurnal baru    : ${journals.length}`)
-  console.log(`  ✓ Audit entries  : ${auditEntries.length}`)
+  console.log(`  ✓ Jurnal       : ${journals.length}`)
+  console.log(`  ✓ Audit entries: ${auditEntries.length}`)
 
-  // ── No activity check ────────────────────────────────────────────────────
-  if (journals.length === 0 && auditEntries.length === 0) {
+  // ── No activity check (hanya untuk daily sync) ───────────────────────────
+  if (!FULL_SYNC && journals.length === 0 && auditEntries.length === 0) {
     console.log(`\n✅ Tidak ada aktivitas pada ${dateStr}. Sync dilewati.`)
     await logSyncRun(dateStr, 'no-activity', 0, 0, syncTimestamp)
     process.exit(0)
@@ -318,6 +360,8 @@ async function main() {
     const glRows = buildGLRows(journals, syncTimestamp)
     await appendRows('General Ledger', glRows)
     console.log(`  ✓ ${journals.length} jurnal berhasil di-append (${glRows.length} baris termasuk separator)`)
+  } else {
+    console.log('\n📊 Tidak ada jurnal untuk ditulis ke General Ledger.')
   }
 
   // ── Sync Audit Log ───────────────────────────────────────────────────────
@@ -329,7 +373,8 @@ async function main() {
   }
 
   // ── Log ke _sync_log ─────────────────────────────────────────────────────
-  await logSyncRun(dateStr, 'success', journals.length, auditEntries.length, syncTimestamp)
+  const logStatus = FULL_SYNC ? 'full-sync' : 'success'
+  await logSyncRun(dateStr, logStatus, journals.length, auditEntries.length, syncTimestamp)
 
   console.log('\n✅ Sync selesai!')
   console.log(`   📄 General Ledger : +${journals.length} jurnal`)

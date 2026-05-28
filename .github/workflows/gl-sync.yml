@@ -13,6 +13,11 @@ on:
         required: false
         type: boolean
         default: false
+      full_sync:
+        description: 'Full sync — ambil SEMUA data Firestore tanpa filter tanggal (hanya untuk initial load pertama kali)'
+        required: false
+        type: boolean
+        default: false
 
 # Hanya satu GL sync berjalan sekaligus
 concurrency:
@@ -55,6 +60,7 @@ jobs:
           GOOGLE_SPREADSHEET_ID: ${{ secrets.GOOGLE_SPREADSHEET_ID }}
           FIREBASE_PROJECT_ID: bul-accounting
           DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          FULL_SYNC: ${{ github.event.inputs.full_sync || 'false' }}
         run: node index.js
 
       - name: Upload log on failure
