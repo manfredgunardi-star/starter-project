@@ -5,6 +5,7 @@ import { useToast } from '../../components/ui/ToastContext'
 import { useCOA } from '../../hooks/useMasterData'
 import { saveManualJournal, postManualJournal, getJournal } from '../../services/journalService'
 import { createRecurringTemplate } from '../../services/recurringService'
+import { listCostCenters } from '../../services/costCenterService'
 import { formatCurrency } from '../../utils/currency'
 import { today } from '../../utils/date'
 import Button from '../../components/ui/Button'
@@ -14,7 +15,7 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { ArrowLeft, Save, Send, Plus, Trash2, Repeat } from 'lucide-react'
 import { Space, Flex, Card, Row, Col, Alert, Typography, Switch, Select as AntdSelect } from 'antd'
 
-const emptyRow = () => ({ _key: Date.now() + Math.random(), coa_id: '', description: '', debit: '', credit: '' })
+const emptyRow = () => ({ _key: Date.now() + Math.random(), coa_id: '', description: '', cost_center_id: '', debit: '', credit: '' })
 
 export default function ManualJournalFormPage() {
   const { id } = useParams()
@@ -28,12 +29,17 @@ export default function ManualJournalFormPage() {
   const [submitting, setSubmitting] = useState(false)
   const [header, setHeader] = useState({ date: today(), description: '', status: 'draft' })
   const [items, setItems] = useState([emptyRow(), emptyRow()])
+  const [costCenters, setCostCenters] = useState([])
 
   // ----- Recurring template state (only relevant for new journals) -----
   const [makeRecurring, setMakeRecurring] = useState(false)
   const [recurInterval, setRecurInterval] = useState('monthly')
   const [recurDay,      setRecurDay]      = useState(1)
   const [recurStart,    setRecurStart]    = useState('')
+
+  useEffect(() => {
+    listCostCenters().then(setCostCenters).catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (!isNew) {
@@ -52,6 +58,7 @@ export default function ManualJournalFormPage() {
             coa_code: i.coa?.code,
             coa_name: i.coa?.name,
             description: i.description || '',
+            cost_center_id: i.cost_center_id || '',
             debit: i.debit > 0 ? i.debit : '',
             credit: i.credit > 0 ? i.credit : '',
           })))
@@ -85,7 +92,7 @@ export default function ManualJournalFormPage() {
     if (!header.description) { toast.error('Deskripsi wajib diisi'); return }
     const validItems = items
       .filter(i => i.coa_id && (Number(i.debit) > 0 || Number(i.credit) > 0))
-      .map(i => ({ ...i, debit: round2(i.debit), credit: round2(i.credit) }))
+      .map(i => ({ ...i, cost_center_id: i.cost_center_id || null, debit: round2(i.debit), credit: round2(i.credit) }))
     if (validItems.length < 2) { toast.error('Minimal 2 baris jurnal'); return }
     if (makeRecurring && !recurStart) {
       toast.error('Tanggal mulai untuk template berulang wajib diisi')
@@ -109,6 +116,7 @@ export default function ManualJournalFormPage() {
               items: validItems.map(it => ({
                 coa_id:      it.coa_id,
                 description: it.description ?? '',
+                cost_center_id: it.cost_center_id ?? null,
                 debit:       Number(it.debit)  || 0,
                 credit:      Number(it.credit) || 0,
               })),
@@ -147,6 +155,8 @@ export default function ManualJournalFormPage() {
   const coaOptions = coa.filter(c => !c.children?.length).map(c => ({ value: c.id, label: `${c.code} — ${c.name}` }))
   // Actually show all COA with code
   const allCoaOptions = coa.map(c => ({ value: c.id, label: `${c.code} — ${c.name}` }))
+
+  const getCostCenterName = costCenterId => costCenters.find(cc => cc.id === costCenterId)?.name || '-'
 
   if (loading) return <LoadingSpinner message="Memuat jurnal..." />
 
@@ -209,6 +219,7 @@ export default function ManualJournalFormPage() {
             <tr>
               <th style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, textAlign: 'left', fontSize: 12, fontWeight: 500, color: '#374151' }}>Akun (COA)</th>
               <th style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, textAlign: 'left', fontSize: 12, fontWeight: 500, color: '#374151' }}>Keterangan</th>
+              <th style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, textAlign: 'left', fontSize: 12, fontWeight: 500, color: '#374151' }}>Cost Center</th>
               <th style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, textAlign: 'right', fontSize: 12, fontWeight: 500, color: '#374151' }}>Debit</th>
               <th style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, textAlign: 'right', fontSize: 12, fontWeight: 500, color: '#374151' }}>Kredit</th>
               {!readOnly && <th style={{ width: 40 }}></th>}
@@ -244,6 +255,22 @@ export default function ManualJournalFormPage() {
                       onChange={e => updateItem(idx, 'description', e.target.value)}
                       placeholder="Keterangan..."
                     />
+                  )}
+                </td>
+                <td style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, minWidth: 180 }}>
+                  {readOnly ? (
+                    <span style={{ fontSize: 14, color: '#4b5563' }}>{getCostCenterName(item.cost_center_id)}</span>
+                  ) : (
+                    <select
+                      style={{ width: '100%', fontSize: 14, border: '1px solid #d1d5db', borderRadius: 4, paddingLeft: 8, paddingRight: 8, paddingTop: 4, paddingBottom: 4 }}
+                      value={item.cost_center_id}
+                      onChange={e => updateItem(idx, 'cost_center_id', e.target.value)}
+                    >
+                      <option value="">Tanpa CC</option>
+                      {costCenters.map(cc => (
+                        <option key={cc.id} value={cc.id}>{cc.code} - {cc.name}</option>
+                      ))}
+                    </select>
                   )}
                 </td>
                 <td style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, width: 144 }}>
@@ -291,7 +318,7 @@ export default function ManualJournalFormPage() {
           </tbody>
           <tfoot style={{ backgroundColor: '#f9fafb', borderTop: '2px solid #d1d5db' }}>
             <tr>
-              <td colSpan={2} style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, fontSize: 14, fontWeight: 600, textAlign: 'right', color: '#374151' }}>Total</td>
+              <td colSpan={3} style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, fontSize: 14, fontWeight: 600, textAlign: 'right', color: '#374151' }}>Total</td>
               <td style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8, fontSize: 14, textAlign: 'right' }}>
                 <Typography.Text strong>{formatCurrency(totalDebit)}</Typography.Text>
               </td>
@@ -302,7 +329,7 @@ export default function ManualJournalFormPage() {
             </tr>
             {!readOnly && (
               <tr>
-                <td colSpan={4} className="px-4 py-2">
+                <td colSpan={5} className="px-4 py-2">
                   <Typography.Text
                     type={isBalanced ? 'success' : totalDebit > 0 ? 'warning' : 'secondary'}
                     style={{ fontSize: 12, fontWeight: 500 }}

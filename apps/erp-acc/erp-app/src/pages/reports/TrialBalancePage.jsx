@@ -1,13 +1,16 @@
 import { useState } from 'react'
+import { jsPDF } from 'jspdf'
+import 'jspdf-autotable'
+import * as XLSX from 'xlsx'
 import { getTrialBalance } from '../../services/reportService'
 import { formatCurrency } from '../../utils/currency'
 import { today } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import DateInput from '../../components/ui/DateInput'
-import { Search } from 'lucide-react'
+import { Download, FileText, Search } from 'lucide-react'
 import {
-  Space, Card, Typography, Alert, Table, Row, Col, Statistic,
+  Button as AntButton, Space, Card, Typography, Alert, Table, Row, Col, Statistic,
 } from 'antd'
 
 const { Title, Text } = Typography
@@ -35,6 +38,56 @@ export default function TrialBalancePage() {
   const totalCredit = data ? data.reduce((sum, row) => sum + Number(row.total_credit), 0) : 0
   const isBalanced = data && data.length > 0 && Math.abs(totalDebit - totalCredit) < 0.01
   const isEmpty = data && data.length === 0
+
+  const exportPDF = () => {
+    const doc = new jsPDF()
+    doc.setFontSize(16)
+    doc.text('Neraca Saldo (Trial Balance)', 14, 15)
+    doc.setFontSize(10)
+    doc.text(`Per Tanggal: ${asOfDate}`, 14, 23)
+
+    doc.autoTable({
+      startY: 32,
+      head: [['Kode', 'Nama Akun', 'Tipe', 'Debit', 'Kredit', 'Saldo']],
+      body: data.map(row => [
+        row.code,
+        row.name,
+        row.type,
+        formatCurrency(row.total_debit),
+        formatCurrency(row.total_credit),
+        formatCurrency(row.balance),
+      ]),
+      foot: [['', '', 'Total', formatCurrency(totalDebit), formatCurrency(totalCredit), '']],
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [52, 73, 94] },
+      footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+    })
+
+    doc.save(`neraca-saldo-${asOfDate}.pdf`)
+  }
+
+  const exportExcel = () => {
+    const rows = [
+      ['Neraca Saldo (Trial Balance)'],
+      [`Per Tanggal: ${asOfDate}`],
+      [],
+      ['Kode', 'Nama Akun', 'Tipe', 'Debit', 'Kredit', 'Saldo'],
+      ...data.map(row => [
+        row.code,
+        row.name,
+        row.type,
+        Number(row.total_debit),
+        Number(row.total_credit),
+        Number(row.balance),
+      ]),
+      ['', '', 'Total', totalDebit, totalCredit, ''],
+    ]
+
+    const ws = XLSX.utils.aoa_to_sheet(rows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Neraca Saldo')
+    XLSX.writeFile(wb, `neraca-saldo-${asOfDate}.xlsx`)
+  }
 
   const columns = [
     {
@@ -151,6 +204,17 @@ export default function TrialBalancePage() {
               <Statistic title="Total Kredit" value={formatCurrency(totalCredit)} />
             </Col>
           </Row>
+
+          {!isEmpty && (
+            <Space>
+              <AntButton icon={<FileText size={14} />} onClick={exportPDF}>
+                Export PDF
+              </AntButton>
+              <AntButton icon={<Download size={14} />} onClick={exportExcel}>
+                Export Excel
+              </AntButton>
+            </Space>
+          )}
 
           <Card
             title={`Neraca Saldo per ${asOfDate}`}

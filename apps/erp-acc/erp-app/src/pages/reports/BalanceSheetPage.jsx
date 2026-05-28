@@ -1,11 +1,14 @@
 import { useState } from 'react'
+import { jsPDF } from 'jspdf'
+import 'jspdf-autotable'
+import * as XLSX from 'xlsx'
 import { getAccountBalances } from '../../services/reportService'
 import { formatCurrency } from '../../utils/currency'
 import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import DateInput from '../../components/ui/DateInput'
-import { Search } from 'lucide-react'
-import { Space, Row, Col, Card, Typography, Alert, Statistic, Table } from 'antd'
+import { Download, FileText, Search } from 'lucide-react'
+import { Button as AntButton, Space, Row, Col, Card, Typography, Alert, Statistic, Table } from 'antd'
 
 const { Title, Text } = Typography
 
@@ -80,6 +83,69 @@ export default function BalanceSheetPage() {
   const totalModal = byType('equity').reduce((s, a) => s + a.balance, 0)
   const selisih = Math.abs(totalAset - totalKewajiban - totalModal)
 
+  const exportPDF = () => {
+    const doc = new jsPDF()
+    doc.setFontSize(16)
+    doc.text('Neraca (Balance Sheet)', 14, 15)
+    doc.setFontSize(10)
+    doc.text(`Per Tanggal: ${endDate}`, 14, 23)
+
+    let y = 32
+    const addSection = (title, accounts, total) => {
+      doc.setFontSize(12)
+      doc.text(title, 14, y)
+      y += 5
+      doc.autoTable({
+        startY: y,
+        head: [['Kode', 'Nama Akun', 'Saldo']],
+        body: accounts.map(account => [
+          account.code,
+          account.name,
+          formatCurrency(account.balance),
+        ]),
+        foot: [['', `Total ${title}`, formatCurrency(total)]],
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [52, 73, 94] },
+        footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+      })
+      y = doc.lastAutoTable.finalY + 10
+    }
+
+    addSection('ASET', byType('asset'), totalAset)
+    addSection('KEWAJIBAN', byType('liability'), totalKewajiban)
+    addSection('MODAL / EKUITAS', byType('equity'), totalModal)
+
+    doc.setFontSize(10)
+    doc.text(`Status: ${selisih < 0.01 ? 'Seimbang' : `Selisih ${formatCurrency(selisih)}`}`, 14, y)
+    doc.save(`neraca-${endDate}.pdf`)
+  }
+
+  const exportExcel = () => {
+    const rows = [
+      ['Neraca (Balance Sheet)'],
+      [`Per Tanggal: ${endDate}`],
+      [],
+    ]
+
+    const addSection = (title, accounts, total) => {
+      rows.push([title])
+      rows.push(['Kode', 'Nama Akun', 'Saldo'])
+      accounts.forEach(account => rows.push([account.code, account.name, account.balance]))
+      rows.push(['', `Total ${title}`, total])
+      rows.push([])
+    }
+
+    addSection('ASET', byType('asset'), totalAset)
+    addSection('KEWAJIBAN', byType('liability'), totalKewajiban)
+    addSection('MODAL / EKUITAS', byType('equity'), totalModal)
+    rows.push(['Status', selisih < 0.01 ? 'Seimbang' : `Selisih ${selisih}`])
+
+    const ws = XLSX.utils.aoa_to_sheet(rows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Neraca')
+    XLSX.writeFile(wb, `neraca-${endDate}.xlsx`)
+  }
+
   return (
     <Space direction="vertical" style={{ width: '100%' }}>
       <Title level={2}>Neraca (Balance Sheet)</Title>
@@ -100,6 +166,15 @@ export default function BalanceSheetPage() {
 
       {data && !loading && (
         <Space direction="vertical" style={{ width: '100%' }}>
+          <Space>
+            <AntButton icon={<FileText size={14} />} onClick={exportPDF}>
+              Export PDF
+            </AntButton>
+            <AntButton icon={<Download size={14} />} onClick={exportExcel}>
+              Export Excel
+            </AntButton>
+          </Space>
+
           <Row gutter={16}>
             <Col xs={24} md={12}>
               <Section title="ASET" accounts={byType('asset')} />

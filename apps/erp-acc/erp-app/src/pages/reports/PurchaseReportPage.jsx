@@ -1,4 +1,7 @@
 import { useEffect, useState } from 'react'
+import { jsPDF } from 'jspdf'
+import 'jspdf-autotable'
+import * as XLSX from 'xlsx'
 import { getPurchaseReport } from '../../services/reportService'
 import { supabase } from '../../lib/supabase'
 import { formatCurrency } from '../../utils/currency'
@@ -6,9 +9,9 @@ import { today } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import DateInput from '../../components/ui/DateInput'
-import { Search } from 'lucide-react'
+import { Download, FileText, Search } from 'lucide-react'
 import {
-  Space, Card, Typography, Alert, Table, Tag, Row, Col, Statistic, Select,
+  Button as AntButton, Space, Card, Typography, Alert, Table, Tag, Row, Col, Statistic, Select,
 } from 'antd'
 
 const { Title, Text } = Typography
@@ -61,6 +64,78 @@ export default function PurchaseReportPage() {
   const totalAmount = data ? data.reduce((sum, row) => sum + Number(row.total), 0) : 0
   const totalPaid = data ? data.reduce((sum, row) => sum + Number(row.amount_paid), 0) : 0
   const totalOutstanding = totalAmount - totalPaid
+
+  const exportPDF = () => {
+    const doc = new jsPDF('landscape')
+    doc.setFontSize(16)
+    doc.text('Laporan Pembelian', 14, 15)
+    doc.setFontSize(10)
+    doc.text(`Periode: ${startDate} s/d ${endDate}`, 14, 23)
+
+    doc.autoTable({
+      startY: 32,
+      head: [['No. Invoice', 'Tanggal', 'Supplier', 'Subtotal', 'PPN', 'Total', 'Terbayar', 'Hutang', 'Status']],
+      body: data.map(row => {
+        const outstanding = Number(row.total) - Number(row.amount_paid)
+        const status = STATUS_MAP[row.status]?.label || row.status
+        return [
+          row.invoice_number,
+          row.date,
+          row.supplier?.name || '-',
+          formatCurrency(row.subtotal),
+          formatCurrency(row.tax_amount),
+          formatCurrency(row.total),
+          formatCurrency(row.amount_paid),
+          formatCurrency(outstanding),
+          status,
+        ]
+      }),
+      foot: [[
+        '', '', 'Total',
+        formatCurrency(totalSubtotal),
+        formatCurrency(totalTax),
+        formatCurrency(totalAmount),
+        formatCurrency(totalPaid),
+        formatCurrency(totalOutstanding),
+        '',
+      ]],
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [52, 73, 94] },
+      footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+    })
+
+    doc.save(`laporan-pembelian-${startDate}-${endDate}.pdf`)
+  }
+
+  const exportExcel = () => {
+    const rows = [
+      ['Laporan Pembelian'],
+      [`Periode: ${startDate} s/d ${endDate}`],
+      [],
+      ['No. Invoice', 'Tanggal', 'Supplier', 'Subtotal', 'PPN', 'Total', 'Terbayar', 'Hutang', 'Status'],
+      ...data.map(row => {
+        const outstanding = Number(row.total) - Number(row.amount_paid)
+        const status = STATUS_MAP[row.status]?.label || row.status
+        return [
+          row.invoice_number,
+          row.date,
+          row.supplier?.name || '-',
+          Number(row.subtotal),
+          Number(row.tax_amount),
+          Number(row.total),
+          Number(row.amount_paid),
+          outstanding,
+          status,
+        ]
+      }),
+      ['', '', 'Total', totalSubtotal, totalTax, totalAmount, totalPaid, totalOutstanding, ''],
+    ]
+
+    const ws = XLSX.utils.aoa_to_sheet(rows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Pembelian')
+    XLSX.writeFile(wb, `laporan-pembelian-${startDate}-${endDate}.xlsx`)
+  }
 
   const columns = [
     { title: 'No. Invoice', dataIndex: 'invoice_number', key: 'invoice_number', width: 150 },
@@ -195,6 +270,15 @@ export default function PurchaseReportPage() {
 
       {data && !loading && (
         <>
+          <Space>
+            <AntButton icon={<FileText size={14} />} onClick={exportPDF}>
+              Export PDF
+            </AntButton>
+            <AntButton icon={<Download size={14} />} onClick={exportExcel}>
+              Export Excel
+            </AntButton>
+          </Space>
+
           <Row gutter={16}>
             <Col xs={12} sm={4}>
               <Statistic title="Total Invoice" value={data.length} />

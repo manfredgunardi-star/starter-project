@@ -76,6 +76,15 @@ export async function getTrialBalance(asOfDate) {
   return data
 }
 
+export async function getPLByCostCenter(startDate, endDate) {
+  const { data, error } = await supabase.rpc('get_pl_by_cost_center', {
+    p_start_date: startDate,
+    p_end_date: endDate,
+  })
+  if (error) throw error
+  return data || []
+}
+
 export async function getSalesReport(startDate, endDate, customerId = null) {
   let query = supabase
     .from('invoices')
