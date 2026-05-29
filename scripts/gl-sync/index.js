@@ -186,7 +186,7 @@ function toWIBString(isoStr) {
 
 function formatNumber(val) {
   if (val === undefined || val === null || val === 0) return ''
-  return new Intl.NumberFormat('id-ID').format(val)
+  return Number(val)  // Kirim angka murni — Google Sheets yang handle formatting
 }
 
 /**
@@ -285,6 +285,22 @@ async function appendRows(sheetName, rows) {
 }
 
 /**
+ * [FULL SYNC] Hapus semua data di sheet kecuali baris header (row 1).
+ * Digunakan sebelum re-import agar tidak ada data duplikat.
+ */
+async function clearSheetData(sheetName) {
+  if (DRY_RUN) {
+    console.log(`  [DRY RUN] Akan hapus data di "${sheetName}" (kecuali header)`)
+    return
+  }
+  await sheets.spreadsheets.values.clear({
+    spreadsheetId: SPREADSHEET_ID,
+    range: `${sheetName}!A2:Z100000`
+  })
+  console.log(`  🗑️  Data lama di "${sheetName}" dibersihkan`)
+}
+
+/**
  * Catat hasil run ke sheet "_sync_log".
  */
 async function logSyncRun(dateStr, status, journalCount, auditCount, syncTimestamp) {
@@ -332,6 +348,15 @@ async function main() {
   // ── Pastikan headers ada ─────────────────────────────────────────────────
   console.log('\n🔧 Memastikan header sheet...')
   await ensureHeaders()
+
+  // ── Bersihkan data lama (hanya full sync) ────────────────────────────────
+  if (FULL_SYNC) {
+    console.log('\n🗑️  Membersihkan data lama sebelum re-import...')
+    await Promise.all([
+      clearSheetData('General Ledger'),
+      clearSheetData('Audit Log')
+    ])
+  }
 
   // ── Fetch data dari Firestore ────────────────────────────────────────────
   if (FULL_SYNC) {
