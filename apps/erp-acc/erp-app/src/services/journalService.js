@@ -22,7 +22,7 @@ export async function getJournal(id) {
     .select(`
       *,
       journal_items(
-        id, coa_id, cost_center_id, debit, credit, description,
+        id, coa_id, cost_center_id, account_id, debit, credit, description,
         coa:coa(id, code, name)
       )
     `)
@@ -55,6 +55,7 @@ export async function saveManualJournal(header, items) {
   const itemRows = items.map(i => ({
     journal_id: journal.id,
     coa_id: i.coa_id,
+    account_id: i.account_id || null,
     debit: Number(i.debit) || 0,
     credit: Number(i.credit) || 0,
     description: i.description || null,

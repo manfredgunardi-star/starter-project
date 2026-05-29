@@ -39,7 +39,7 @@ export async function savePayment(payment) {
 export async function getAccounts() {
   const { data, error } = await supabase
     .from('accounts')
-    .select('id, name, type, balance')
+    .select('id, name, type, balance, coa_id')
     .eq('is_active', true)
     .order('name')
   if (error) throw error

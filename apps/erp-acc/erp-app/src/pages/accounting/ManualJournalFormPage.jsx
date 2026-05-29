@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
+import { useAccounts } from '../../hooks/useCashBank'
 import { useCOA } from '../../hooks/useMasterData'
 import { saveManualJournal, postManualJournal, getJournal } from '../../services/journalService'
 import { createRecurringTemplate } from '../../services/recurringService'
@@ -15,7 +16,7 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { ArrowLeft, Save, Send, Plus, Trash2, Repeat } from 'lucide-react'
 import { Space, Flex, Card, Row, Col, Alert, Typography, Switch, Select as AntdSelect } from 'antd'
 
-const emptyRow = () => ({ _key: Date.now() + Math.random(), coa_id: '', description: '', cost_center_id: '', debit: '', credit: '' })
+const emptyRow = () => ({ _key: Date.now() + Math.random(), coa_id: '', account_id: '', description: '', cost_center_id: '', debit: '', credit: '' })
 
 export default function ManualJournalFormPage() {
   const { id } = useParams()
@@ -24,6 +25,7 @@ export default function ManualJournalFormPage() {
   const toast = useToast()
   const isNew = !id || id === 'new'
   const { coa } = useCOA()
+  const { accounts } = useAccounts()
 
   const [loading, setLoading] = useState(!isNew)
   const [submitting, setSubmitting] = useState(false)
@@ -55,6 +57,7 @@ export default function ManualJournalFormPage() {
           setItems(j.journal_items.map(i => ({
             _key: i.id,
             coa_id: i.coa_id,
+            account_id: i.account_id || '',
             coa_code: i.coa?.code,
             coa_name: i.coa?.name,
             description: i.description || '',
@@ -78,6 +81,7 @@ export default function ManualJournalFormPage() {
     setItems(prev => prev.map((item, i) => {
       if (i !== idx) return item
       const updated = { ...item, [key]: value }
+      if (key === 'coa_id') updated.account_id = ''
       // Clear the other side when one is entered
       if (key === 'debit' && value) updated.credit = ''
       if (key === 'credit' && value) updated.debit = ''
@@ -157,6 +161,9 @@ export default function ManualJournalFormPage() {
   const allCoaOptions = coa.map(c => ({ value: c.id, label: `${c.code} — ${c.name}` }))
 
   const getCostCenterName = costCenterId => costCenters.find(cc => cc.id === costCenterId)?.name || '-'
+
+  const getAccountsForCoa = coaId =>
+    accounts.filter(a => a.coa_id === coaId)
 
   if (loading) return <LoadingSpinner message="Memuat jurnal..." />
 
@@ -242,6 +249,24 @@ export default function ManualJournalFormPage() {
                         <option key={o.value} value={o.value}>{o.label}</option>
                       ))}
                     </select>
+                  )}
+                  {item.coa_id && getAccountsForCoa(item.coa_id).length > 0 && (
+                    <div style={{ marginTop: 8 }}>
+                      <label style={{ display: 'block', marginBottom: 4, fontSize: 12, fontWeight: 500, color: '#374151' }}>
+                        Rekening (opsional)
+                      </label>
+                      <select
+                        style={{ width: '100%', fontSize: 14, border: '1px solid #d1d5db', borderRadius: 4, paddingLeft: 8, paddingRight: 8, paddingTop: 4, paddingBottom: 4 }}
+                        value={item.account_id || ''}
+                        onChange={e => updateItem(idx, 'account_id', e.target.value)}
+                        disabled={readOnly}
+                      >
+                        <option value="">— tidak dispesifikasi —</option>
+                        {getAccountsForCoa(item.coa_id).map(a => (
+                          <option key={a.id} value={a.id}>{a.name} ({formatCurrency(a.balance)})</option>
+                        ))}
+                      </select>
+                    </div>
                   )}
                 </td>
                 <td style={{ paddingLeft: 16, paddingRight: 16, paddingTop: 8, paddingBottom: 8 }}>
