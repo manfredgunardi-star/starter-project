@@ -1,6 +1,7 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { jsPDF } from 'jspdf'
-import 'jspdf-autotable'
+import { applyPlugin } from 'jspdf-autotable'
+applyPlugin(jsPDF)
 import * as XLSX from 'xlsx'
 import { getTrialBalance } from '../../services/reportService'
 import { formatCurrency } from '../../utils/currency'
@@ -184,7 +185,7 @@ export default function TrialBalancePage() {
           {isEmpty ? (
             <Alert message="Tidak ada jurnal terposting untuk periode ini." type="info" showIcon />
           ) : isBalanced ? (
-            <Alert message="Pembukuan balance — total debit = total kredit." type="success" showIcon />
+            <Alert message="Pembukuan balance â€” total debit = total kredit." type="success" showIcon />
           ) : (
             <Alert
               message={`Pembukuan TIDAK balance! Selisih: ${formatCurrency(Math.abs(totalDebit - totalCredit))}`}

@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react'
+﻿import { useEffect, useState } from 'react'
 import { jsPDF } from 'jspdf'
-import 'jspdf-autotable'
+import { applyPlugin } from 'jspdf-autotable'
+applyPlugin(jsPDF)
 import * as XLSX from 'xlsx'
 import { getSalesReport } from '../../services/reportService'
 import { supabase } from '../../lib/supabase'
@@ -21,7 +22,7 @@ function firstOfMonth() {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-01`
 }
 
-// Draft invoices excluded by design — laporan ini hanya menampilkan faktur terposting.
+// Draft invoices excluded by design â€” laporan ini hanya menampilkan faktur terposting.
 const STATUS_MAP = {
   paid:    { color: 'success',    label: 'Lunas' },
   partial: { color: 'processing', label: 'Sebagian' },

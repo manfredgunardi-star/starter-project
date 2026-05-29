@@ -1,9 +1,10 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { formatCurrency } from '../../utils/currency'
 import { formatDate } from '../../utils/date'
 import { jsPDF } from 'jspdf'
-import 'jspdf-autotable'
+import { applyPlugin } from 'jspdf-autotable'
+applyPlugin(jsPDF)
 import * as XLSX from 'xlsx'
 import { Download, FileText } from 'lucide-react'
 import DateInput from '../../components/ui/DateInput'
@@ -44,8 +45,8 @@ export default function AssetDisposalsReportPage() {
 
       const result = data.map(d => ({
         disposalDate: d.disposal_date,
-        code: d.asset?.code || '—',
-        name: d.asset?.name || '—',
+        code: d.asset?.code || 'â€”',
+        name: d.asset?.name || 'â€”',
         type: d.disposal_type,
         salePrice: d.sale_price || 0,
         acquisitionCost: d.asset?.acquisition_cost || 0,
@@ -73,7 +74,7 @@ export default function AssetDisposalsReportPage() {
       r.name,
       r.type === 'sale' ? 'Penjualan' : 'Penghapusan',
       formatCurrency(r.salePrice),
-      r.type === 'sale' ? formatCurrency(r.gainLoss) : '—',
+      r.type === 'sale' ? formatCurrency(r.gainLoss) : 'â€”',
     ])
     doc.autoTable({
       head: [['Tgl', 'Kode', 'Nama', 'Tipe', 'Harga Jual', 'Gain/Loss']],

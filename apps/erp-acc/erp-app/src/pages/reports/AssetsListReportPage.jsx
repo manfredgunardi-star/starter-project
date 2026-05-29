@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { listCategories } from '../../services/assetCategoryService'
 import { formatCurrency } from '../../utils/currency'
 import { formatDate } from '../../utils/date'
 import { jsPDF } from 'jspdf'
-import 'jspdf-autotable'
+import { applyPlugin } from 'jspdf-autotable'
+applyPlugin(jsPDF)
 import * as XLSX from 'xlsx'
 import { Download, FileText } from 'lucide-react'
 import DateInput from '../../components/ui/DateInput'
@@ -60,7 +61,7 @@ export default function AssetsListReportPage() {
           return {
             code: asset.code,
             name: asset.name,
-            category: asset.category?.name || '—',
+            category: asset.category?.name || 'â€”',
             acquisitionDate: asset.acquisition_date,
             acquisitionCost: asset.acquisition_cost,
             accumulated,

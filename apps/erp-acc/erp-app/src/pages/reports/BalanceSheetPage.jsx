@@ -1,6 +1,7 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { jsPDF } from 'jspdf'
-import 'jspdf-autotable'
+import { applyPlugin } from 'jspdf-autotable'
+applyPlugin(jsPDF)
 import * as XLSX from 'xlsx'
 import { getAccountBalances } from '../../services/reportService'
 import { formatCurrency } from '../../utils/currency'
@@ -51,7 +52,7 @@ function Section({ title, accounts }) {
         size="small"
         showHeader={false}
         footer={footer}
-        locale={{ emptyText: '—' }}
+        locale={{ emptyText: 'â€”' }}
       />
     </Card>
   )
@@ -201,7 +202,7 @@ export default function BalanceSheetPage() {
             </Row>
             <div style={{ marginTop: 12 }}>
               {selisih < 0.01
-                ? <Alert type="success" message="Neraca seimbang — Aset = Kewajiban + Modal" showIcon />
+                ? <Alert type="success" message="Neraca seimbang â€” Aset = Kewajiban + Modal" showIcon />
                 : <Alert type="error" message={`Selisih: ${formatCurrency(selisih)}`} showIcon />
               }
             </div>

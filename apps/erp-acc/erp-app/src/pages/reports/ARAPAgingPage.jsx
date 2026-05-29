@@ -1,6 +1,7 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { jsPDF } from 'jspdf'
-import 'jspdf-autotable'
+import { applyPlugin } from 'jspdf-autotable'
+applyPlugin(jsPDF)
 import * as XLSX from 'xlsx'
 import { getARAgingData, getAPAgingData } from '../../services/reportService'
 import { formatCurrency } from '../../utils/currency'
@@ -18,9 +19,9 @@ const { Title, Text } = Typography
 const BUCKETS = ['current', '1-30', '31-60', '61-90', '90+']
 const BUCKET_LABELS = {
   current: 'Belum Jatuh Tempo',
-  '1-30': '1–30 Hari',
-  '31-60': '31–60 Hari',
-  '61-90': '61–90 Hari',
+  '1-30': '1â€“30 Hari',
+  '31-60': '31â€“60 Hari',
+  '61-90': '61â€“90 Hari',
   '90+': '> 90 Hari',
 }
 const BUCKET_COLORS = {
@@ -109,7 +110,7 @@ function buildColumns() {
       dataIndex: 'dueDate',
       key: 'dueDate',
       width: 110,
-      render: (v, row) => (row.isGroupHeader ? null : (v ? formatDate(v) : '—')),
+      render: (v, row) => (row.isGroupHeader ? null : (v ? formatDate(v) : 'â€”')),
     },
     {
       title: 'Total Invoice',

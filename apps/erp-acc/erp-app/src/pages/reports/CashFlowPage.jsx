@@ -1,6 +1,7 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { jsPDF } from 'jspdf'
-import 'jspdf-autotable'
+import { applyPlugin } from 'jspdf-autotable'
+applyPlugin(jsPDF)
 import * as XLSX from 'xlsx'
 import { getCashFlowData } from '../../services/reportService'
 import { formatCurrency } from '../../utils/currency'
@@ -117,9 +118,9 @@ export default function CashFlowPage() {
 
   const incomingColumns = [
     { title: 'Tanggal', dataIndex: 'date', key: 'date', width: 110, render: v => formatDate(v) },
-    { title: 'Customer', dataIndex: 'customer', key: 'customer', render: v => v?.name || '—' },
-    { title: 'Akun', dataIndex: 'account', key: 'account', render: v => v?.name || '—' },
-    { title: 'Ref. Invoice', dataIndex: 'invoice', key: 'invoice', render: v => <Text code>{v?.invoice_number || '—'}</Text> },
+    { title: 'Customer', dataIndex: 'customer', key: 'customer', render: v => v?.name || 'â€”' },
+    { title: 'Akun', dataIndex: 'account', key: 'account', render: v => v?.name || 'â€”' },
+    { title: 'Ref. Invoice', dataIndex: 'invoice', key: 'invoice', render: v => <Text code>{v?.invoice_number || 'â€”'}</Text> },
     {
       title: 'Jumlah',
       dataIndex: 'amount',
@@ -131,9 +132,9 @@ export default function CashFlowPage() {
 
   const outgoingColumns = [
     { title: 'Tanggal', dataIndex: 'date', key: 'date', width: 110, render: v => formatDate(v) },
-    { title: 'Supplier', dataIndex: 'supplier', key: 'supplier', render: v => v?.name || '—' },
-    { title: 'Akun', dataIndex: 'account', key: 'account', render: v => v?.name || '—' },
-    { title: 'Ref. Invoice', dataIndex: 'invoice', key: 'invoice', render: v => <Text code>{v?.invoice_number || '—'}</Text> },
+    { title: 'Supplier', dataIndex: 'supplier', key: 'supplier', render: v => v?.name || 'â€”' },
+    { title: 'Akun', dataIndex: 'account', key: 'account', render: v => v?.name || 'â€”' },
+    { title: 'Ref. Invoice', dataIndex: 'invoice', key: 'invoice', render: v => <Text code>{v?.invoice_number || 'â€”'}</Text> },
     {
       title: 'Jumlah',
       dataIndex: 'amount',
@@ -207,7 +208,7 @@ export default function CashFlowPage() {
           <Card
             title={
               <Text strong style={{ color: '#166534' }}>
-                Kas Masuk (dari Customer) — {incoming.length} transaksi
+                Kas Masuk (dari Customer) â€” {incoming.length} transaksi
               </Text>
             }
             size="small"
@@ -236,7 +237,7 @@ export default function CashFlowPage() {
           <Card
             title={
               <Text strong style={{ color: '#991b1b' }}>
-                Kas Keluar (ke Supplier) — {outgoing.length} transaksi
+                Kas Keluar (ke Supplier) â€” {outgoing.length} transaksi
               </Text>
             }
             size="small"

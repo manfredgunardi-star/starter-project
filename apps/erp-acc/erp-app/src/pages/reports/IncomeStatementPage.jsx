@@ -1,6 +1,7 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { jsPDF } from 'jspdf'
-import 'jspdf-autotable'
+import { applyPlugin } from 'jspdf-autotable'
+applyPlugin(jsPDF)
 import * as XLSX from 'xlsx'
 import { getAccountBalances } from '../../services/reportService'
 import { formatCurrency } from '../../utils/currency'
@@ -28,11 +29,11 @@ function Section({ title, accounts, totalLabel, totalType }) {
       </Text>
       {accounts.map(a => (
         <Row key={a.coa_id} justify="space-between">
-          <Col><Text style={{ paddingLeft: 16 }}>{a.code} — {a.name}</Text></Col>
+          <Col><Text style={{ paddingLeft: 16 }}>{a.code} â€” {a.name}</Text></Col>
           <Col><Text strong>{formatCurrency(a.balance)}</Text></Col>
         </Row>
       ))}
-      {accounts.length === 0 && <Text type="secondary" style={{ paddingLeft: 16 }}>—</Text>}
+      {accounts.length === 0 && <Text type="secondary" style={{ paddingLeft: 16 }}>â€”</Text>}
       <Divider style={{ margin: '4px 0' }} />
       <Row justify="space-between">
         <Col><Text strong>{totalLabel}</Text></Col>

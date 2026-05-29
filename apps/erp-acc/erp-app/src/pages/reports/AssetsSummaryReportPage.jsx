@@ -1,8 +1,9 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { formatCurrency } from '../../utils/currency'
 import { jsPDF } from 'jspdf'
-import 'jspdf-autotable'
+import { applyPlugin } from 'jspdf-autotable'
+applyPlugin(jsPDF)
 import * as XLSX from 'xlsx'
 import { Download, FileText } from 'lucide-react'
 import DateInput from '../../components/ui/DateInput'
@@ -36,8 +37,8 @@ export default function AssetsSummaryReportPage() {
           const catKey = asset.category?.id || 'unknown'
           if (!byCategory[catKey]) {
             byCategory[catKey] = {
-              code: asset.category?.code || '—',
-              name: asset.category?.name || '—',
+              code: asset.category?.code || 'â€”',
+              name: asset.category?.name || 'â€”',
               count: 0,
               totalAcquisition: 0,
               totalAccumulated: 0,
