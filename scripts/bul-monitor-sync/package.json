@@ -1,0 +1,16 @@
+{
+  "name": "bul-monitor-sync",
+  "version": "1.0.0",
+  "description": "BUL-Monitor Firestore → Google Sheets daily full-refresh sync",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@google-cloud/firestore": "^7.10.0",
+    "googleapis": "^140.0.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
