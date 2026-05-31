@@ -37,6 +37,8 @@ const SalesInvoicesPage = lazy(() => import('./pages/sales/SalesInvoicesPage'))
 const SalesInvoiceFormPage = lazy(() => import('./pages/sales/SalesInvoiceFormPage'))
 const SalesReturnsPage = lazy(() => import('./pages/sales/SalesReturnsPage'))
 const SalesReturnFormPage = lazy(() => import('./pages/sales/SalesReturnFormPage'))
+const ProformaInvoicesPage = lazy(() => import('./pages/sales/ProformaInvoicesPage'))
+const ProformaInvoiceFormPage = lazy(() => import('./pages/sales/ProformaInvoiceFormPage'))
 
 // Purchase
 const PurchaseOrdersPage = lazy(() => import('./pages/purchase/PurchaseOrdersPage'))
@@ -162,6 +164,11 @@ function AppContent() {
           <Route path="sales/returns/new" element={<RoleGuard require="canWrite"><SalesReturnFormPage /></RoleGuard>} />
           <Route path="sales/returns/:id" element={<SalesReturnFormPage />} />
 
+          {/* Proforma Invoices */}
+          <Route path="sales/proforma" element={<ProformaInvoicesPage />} />
+          <Route path="sales/proforma/new" element={<RoleGuard require="canWrite"><ProformaInvoiceFormPage /></RoleGuard>} />
+          <Route path="sales/proforma/:id" element={<ProformaInvoiceFormPage />} />
+
           {/* Purchase */}
           <Route path="purchase/orders" element={<PurchaseOrdersPage />} />
           <Route path="purchase/orders/new" element={<RoleGuard require="canWrite"><PurchaseOrderFormPage /></RoleGuard>} />
@@ -241,6 +248,7 @@ export default function App() {
       <AuthProvider>
         <ToastProvider>
           <div id="invoice-print-root" style={{ display: 'none' }} />
+          <div id="proforma-invoice-print-root" style={{ display: 'none' }} />
           <AppContent />
         </ToastProvider>
       </AuthProvider>

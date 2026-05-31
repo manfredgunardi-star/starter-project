@@ -56,6 +56,7 @@ const menuGroups = [
       { label: 'Sales Order', path: '/sales/orders' },
       { label: 'Pengiriman', path: '/sales/deliveries' },
       { label: 'Invoice Penjualan', path: '/sales/invoices' },
+      { label: 'Proforma Invoice', path: '/sales/proforma' },
       { label: 'Retur Penjualan', path: '/sales/returns' }
     ]
   },
