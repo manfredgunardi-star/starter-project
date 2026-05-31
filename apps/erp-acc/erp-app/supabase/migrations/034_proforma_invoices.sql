@@ -12,9 +12,9 @@ create table proforma_invoices (
   customer_id     uuid not null references customers(id),
   sales_order_id  uuid references sales_orders(id),
   notes           text,
-  subtotal        numeric(18,2) not null default 0,
-  tax_total       numeric(18,2) not null default 0,
-  total           numeric(18,2) not null default 0,
+  subtotal        numeric(15,2) not null default 0,
+  tax_total       numeric(15,2) not null default 0,
+  total           numeric(15,2) not null default 0,
   is_active       boolean not null default true,
   created_by      uuid references auth.users(id),
   created_at      timestamptz not null default now(),
@@ -27,24 +27,60 @@ create table proforma_invoice_items (
   proforma_id     uuid not null references proforma_invoices(id) on delete cascade,
   product_id      uuid not null references products(id),
   unit_id         uuid not null references units(id),
-  quantity        numeric(18,4) not null default 0,
-  quantity_base   numeric(18,4) not null default 0,
-  unit_price      numeric(18,2) not null default 0,
-  tax_amount      numeric(18,2) not null default 0,
-  total           numeric(18,2) not null default 0
+  quantity        numeric(15,4) not null default 0,
+  quantity_base   numeric(15,4) not null default 0,
+  unit_price      numeric(15,2) not null default 0,
+  tax_amount      numeric(15,2) not null default 0,
+  total           numeric(15,2) not null default 0
 );
+
+-- updated_at trigger
+create trigger set_updated_at
+  before update on proforma_invoices
+  for each row execute function update_updated_at();
+
+-- Indexes
+create index idx_proforma_customer on proforma_invoices(customer_id);
+create index idx_proforma_date     on proforma_invoices(date);
+create index idx_proforma_active   on proforma_invoices(is_active) where is_active = true;
 
 -- RLS
 alter table proforma_invoices enable row level security;
 alter table proforma_invoice_items enable row level security;
 
-create policy "auth users full access on proforma_invoices"
-  on proforma_invoices for all to authenticated
-  using (true) with check (true);
+-- proforma_invoices: granular per-operation policies (pattern from migration 009)
+create policy "Authenticated read proforma_invoices"
+  on proforma_invoices for select to authenticated
+  using (true);
 
-create policy "auth users full access on proforma_invoice_items"
-  on proforma_invoice_items for all to authenticated
-  using (true) with check (true);
+create policy "Admin/staff insert proforma_invoices"
+  on proforma_invoices for insert to authenticated
+  with check (is_admin_or_staff());
+
+create policy "Admin/staff update proforma_invoices"
+  on proforma_invoices for update to authenticated
+  using (is_admin_or_staff());
+
+create policy "Admin delete proforma_invoices"
+  on proforma_invoices for delete to authenticated
+  using (is_admin());
+
+-- proforma_invoice_items: granular per-operation policies
+create policy "Authenticated read proforma_invoice_items"
+  on proforma_invoice_items for select to authenticated
+  using (true);
+
+create policy "Admin/staff insert proforma_invoice_items"
+  on proforma_invoice_items for insert to authenticated
+  with check (is_admin_or_staff());
+
+create policy "Admin/staff update proforma_invoice_items"
+  on proforma_invoice_items for update to authenticated
+  using (is_admin_or_staff());
+
+create policy "Admin delete proforma_invoice_items"
+  on proforma_invoice_items for delete to authenticated
+  using (is_admin());
 
 -- RPC: save (upsert) proforma invoice + items atomically
 -- generate_number('PFI') menghasilkan format PFI-2026-00001 dst.
@@ -52,11 +88,18 @@ create or replace function save_proforma_invoice(
   p_proforma jsonb,
   p_items    jsonb
 ) returns uuid
-language plpgsql security definer as $$
+language plpgsql
+security definer
+set search_path = public
+as $$
 declare
   v_id     uuid := nullif(p_proforma->>'id', '')::uuid;
   v_number text;
 begin
+  if not is_admin_or_staff() then
+    raise exception 'permission denied';
+  end if;
+
   if v_id is null then
     -- INSERT baru
     v_number := generate_number('PFI');
@@ -90,6 +133,10 @@ begin
       updated_at     = now()
     where id = v_id;
 
+    if not found then
+      raise exception 'proforma invoice tidak ditemukan (id: %)', v_id;
+    end if;
+
     -- Hapus items lama (akan diinsert ulang)
     delete from proforma_invoice_items where proforma_id = v_id;
   end if;
@@ -118,10 +165,21 @@ $$;
 -- RPC: soft-delete proforma invoice
 create or replace function cancel_proforma_invoice(p_id uuid)
 returns void
-language plpgsql security definer as $$
+language plpgsql
+security definer
+set search_path = public
+as $$
 begin
+  if not is_admin_or_staff() then
+    raise exception 'permission denied';
+  end if;
+
   update proforma_invoices
   set is_active = false, updated_at = now()
   where id = p_id;
+
+  if not found then
+    raise exception 'proforma invoice tidak ditemukan (id: %)', p_id;
+  end if;
 end;
 $$;
