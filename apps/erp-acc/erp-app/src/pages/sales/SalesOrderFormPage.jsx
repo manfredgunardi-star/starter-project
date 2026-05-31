@@ -231,6 +231,11 @@ export default function SalesOrderFormPage() {
               Buat Invoice
             </Button>
           )}
+          {!isNew && (
+            <Button variant="secondary" onClick={() => navigate(`/sales/proforma/new?so=${id}`)}>
+              Proforma Invoice
+            </Button>
+          )}
           {!isNew && header.status === 'confirmed' && canPost && (
             <Button variant="secondary" onClick={handleCloseOrder} loading={submitting}>
               <Archive size={18} /> Tutup SO
