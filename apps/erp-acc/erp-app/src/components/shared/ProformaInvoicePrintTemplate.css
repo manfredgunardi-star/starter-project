@@ -34,6 +34,15 @@
 
 .inv-valid-until { color: #b45309; font-weight: 600; }
 
-/* Fix: constrain right header column so title wraps cleanly to 2 lines */
-.inv-header-right { max-width: 220px; }
-.inv-title { line-height: 1.2; }
+/* Fix: constrain right header column so title wraps cleanly to 2 lines.
+   font-size 16px ensures "PROFORMA INVOICE" (line 1) fits within 200px
+   at all screen sizes and print configurations. */
+.inv-header-right {
+  max-width: 200px;
+}
+.inv-title {
+  font-size: 16px;
+  line-height: 1.25;
+  letter-spacing: 0.3px;
+  word-break: keep-all;
+}
