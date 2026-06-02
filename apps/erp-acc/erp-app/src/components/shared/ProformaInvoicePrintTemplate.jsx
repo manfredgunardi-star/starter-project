@@ -36,7 +36,7 @@ export default function ProformaInvoicePrintTemplate({ proforma, company }) {
           </div>
         </div>
         <div className="inv-header-right">
-          <p className="inv-title">Proforma Invoice Penjualan</p>
+          <p className="inv-title">Proforma Invoice<br />Penjualan</p>
           <p className="inv-number">{proforma.proforma_number}</p>
           <p className="inv-meta-row">Tanggal: {formatDate(proforma.date)}</p>
           {proforma.valid_until && (
