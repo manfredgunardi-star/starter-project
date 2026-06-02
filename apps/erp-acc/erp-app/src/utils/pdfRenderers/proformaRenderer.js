@@ -46,16 +46,22 @@ export async function renderProformaPdf(proforma, company) {
   // Page 1 Header
   // ---------------------------------------------------------------------------
   const headerEndY = drawCompanyHeader(doc, company, MARGIN.top, CONTENT.width * 0.55, logoDataUrl)
-  const titleEndY = drawDocTitle(
-    doc,
-    {
-      label: 'Proforma Invoice Penjualan',
-      number: proforma?.proforma_number,
-      status: '',
-      accentColor: COLOR.blue,
-    },
-    MARGIN.top,
-  )
+  // Custom title block: 2-line label to prevent charSpace overflow with long text.
+  // drawDocTitle uses withCharSpace(2) internally — for 26-char label that adds ~52pt
+  // extra width which overflows page right edge. We split into 2 short lines instead.
+  let titleY = MARGIN.top
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(FONT.docLabel)
+  doc.setTextColor(...COLOR.blue)
+  doc.text('PROFORMA INVOICE', rightX, titleY, { align: 'right', charSpace: 1.5 })
+  titleY += 13
+  doc.text('PENJUALAN', rightX, titleY, { align: 'right', charSpace: 1.5 })
+  titleY += 13
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(FONT.docNumber)
+  doc.setTextColor(...COLOR.textPrimary)
+  doc.text(safeText(proforma?.proforma_number), rightX, titleY, { align: 'right' })
+  const titleEndY = titleY + 10
 
   let y = Math.max(headerEndY, titleEndY, MARGIN.top + 60) + 8
   drawDivider(doc, y, COLOR.blue)
@@ -182,7 +188,7 @@ export async function renderProformaPdf(proforma, company) {
         drawProformaWatermark(doc)
         drawContinuationHeader(doc, {
           companyName,
-          docTitle: 'Proforma Invoice Penjualan',
+          docTitle: 'Proforma Invoice',
           docNumber: proforma?.proforma_number,
           accentColor: COLOR.blue,
         })
