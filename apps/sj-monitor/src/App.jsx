@@ -98,6 +98,8 @@ const SuratJalanMonitor = () => {
   const [modalType, setModalType] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
   const [filter, setFilter] = useState('all');
+  const [searchNomorSJ, setSearchNomorSJ] = useState('');
+  const [searchTanggal, setSearchTanggal] = useState('');
   const [sjRecapDateField, setSjRecapDateField] = useState('tanggalSJ');
   const [sjRecapStartDate, setSjRecapStartDate] = useState('');
   const [sjRecapEndDate, setSjRecapEndDate] = useState('');
@@ -1709,11 +1711,18 @@ setTransaksiList(prev => prev.filter(t => t.suratJalanId !== id));
   }, []);
 
   const filteredSuratJalan = useMemo(
-    () => suratJalanList.filter(sj => filter === 'all' || sj.status === filter),
-    [suratJalanList, filter]
+    () => suratJalanList.filter(sj => {
+      const matchStatus  = filter === 'all' || sj.status === filter;
+      const matchNomor   = !searchNomorSJ ||
+        (sj.nomorSJ || '').toLowerCase().includes(searchNomorSJ.toLowerCase());
+      const matchTanggal = !searchTanggal ||
+        (sj.tanggalSJ || '').startsWith(searchTanggal);
+      return matchStatus && matchNomor && matchTanggal;
+    }),
+    [suratJalanList, filter, searchNomorSJ, searchTanggal]
   );
   const [sjPage, setSJPage] = useState(1);
-  useEffect(() => { setSJPage(1); }, [filter]);
+  useEffect(() => { setSJPage(1); }, [filter, searchNomorSJ, searchTanggal]);
   const safeSJPage = clampPage(sjPage, filteredSuratJalan.length);
   const pagedSJ = filteredSuratJalan.slice((safeSJPage - 1) * PAGE_SIZE, safeSJPage * PAGE_SIZE);
 
@@ -2198,6 +2207,30 @@ try { unsubTransaksi(); } catch {}
                     <span>Download Rekapan</span>
                   </button>
                 </>
+              )}
+            </div>
+            <div className="flex items-center gap-2 mb-3">
+              <input
+                type="text"
+                placeholder="Cari nomor SJ..."
+                value={searchNomorSJ}
+                onChange={e => setSearchNomorSJ(e.target.value)}
+                className="flex-1 px-3 py-1.5 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <input
+                type="date"
+                value={searchTanggal}
+                onChange={e => setSearchTanggal(e.target.value)}
+                className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {(searchNomorSJ || searchTanggal) && (
+                <button
+                  onClick={() => { setSearchNomorSJ(''); setSearchTanggal(''); }}
+                  className="px-2 py-1.5 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-300"
+                  title="Reset pencarian"
+                >
+                  ✕
+                </button>
               )}
             </div>
             <div className="flex gap-2 flex-wrap">
