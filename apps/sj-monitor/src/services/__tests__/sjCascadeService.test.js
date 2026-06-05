@@ -1,5 +1,15 @@
-import { describe, it, expect } from 'vitest';
-import { computeCascadePlan } from '../sjCascadeService.js';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+const batchMock = { set: vi.fn(), update: vi.fn(), commit: vi.fn().mockResolvedValue(undefined) };
+vi.mock('firebase/firestore', () => ({
+  writeBatch: () => batchMock,
+  doc: (_db, col, id) => ({ __ref: true, col, id }),
+  collection: (_db, col) => ({ __col: true, col }),
+}));
+vi.mock('../../config/firebase-config.js', () => ({ db: {}, ensureAuthed: vi.fn().mockResolvedValue(undefined) }));
+vi.mock('../../firestoreService.js', () => ({ sanitizeForFirestore: (x) => x }));
+
+import { computeCascadePlan, executeCascadePlan } from '../sjCascadeService.js';
 
 const masters = {
   truckList: [{ id: 'T1', nomorPolisi: 'B 1' }],
@@ -71,5 +81,48 @@ describe('computeCascadePlan', () => {
     const tx = plan.impacts.find((i) => i.collection === 'transaksi');
     expect(tx.op).toBe('update');
     expect(tx.changes.find((c) => c.field === 'isActive')).toMatchObject({ before: false, after: true });
+  });
+});
+
+describe('executeCascadePlan', () => {
+  beforeEach(() => { batchMock.set.mockClear(); batchMock.update.mockClear(); batchMock.commit.mockClear(); });
+
+  it('menulis SJ + impact update + history dalam satu batch lalu commit', async () => {
+    const plan = {
+      sjId: 'SJ-1', sjBefore: { id: 'SJ-1', nomorSJ: '001' }, sjAfter: { id: 'SJ-1', nomorSJ: '001', rute: 'A-C' },
+      fieldChanges: [{ field: 'rute', before: 'A-B', after: 'A-C' }],
+      impacts: [{ collection: 'transaksi', docId: 'TX-UJ-SJ-1', op: 'update', changes: [{ field: 'nominal', before: 100, after: 250 }] }],
+      warnings: [],
+    };
+    await executeCascadePlan(plan, { currentUser: { name: 'Boss' } });
+    expect(batchMock.set).toHaveBeenCalled();    // SJ + history_log
+    expect(batchMock.update).toHaveBeenCalled();  // transaksi update
+    expect(batchMock.commit).toHaveBeenCalledTimes(1);
+  });
+
+  it('softDelete impact memakai batch.update dengan isActive:false', async () => {
+    const plan = {
+      sjId: 'SJ-1', sjBefore: { id: 'SJ-1' }, sjAfter: { id: 'SJ-1', nomorSJ: '001' }, fieldChanges: [],
+      impacts: [{ collection: 'transaksi', docId: 'TX-UJ-SJ-1', op: 'softDelete', changes: [] }],
+      warnings: [],
+    };
+    await executeCascadePlan(plan, { currentUser: { name: 'Boss' } });
+    const updateArg = batchMock.update.mock.calls[0][1];
+    expect(updateArg.isActive).toBe(false);
+    expect(batchMock.commit).toHaveBeenCalledTimes(1);
+  });
+
+  it('invoice impact menulis snapshot + totals via batch.set merge', async () => {
+    const plan = {
+      sjId: 'SJ-1', sjBefore: { id: 'SJ-1' }, sjAfter: { id: 'SJ-1', nomorSJ: '001' }, fieldChanges: [],
+      impacts: [{ collection: 'invoice', docId: 'INV-9', op: 'update', changes: [],
+        newSJList: [{ id: 'SJ-1' }], newTotals: { totalQty: 12, totalHarga: 1000, totalUM: 0, totalHargaAfterUM: 1000 } }],
+      warnings: [],
+    };
+    await executeCascadePlan(plan, { currentUser: { name: 'Boss' } });
+    const setCalls = batchMock.set.mock.calls.map((c) => c[1]);
+    const invWrite = setCalls.find((d) => d && d.totalQty === 12);
+    expect(invWrite).toBeTruthy();
+    expect(invWrite.suratJalanList).toEqual([{ id: 'SJ-1' }]);
   });
 });

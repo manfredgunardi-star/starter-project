@@ -1,5 +1,8 @@
+import { writeBatch, doc, collection } from 'firebase/firestore';
 import { recomputeDenormalizedSJ, diffSJFields } from '../utils/sjCascadeHelpers.js';
 import { computeInvoiceTotals } from '../utils/invoiceTotals.js';
+import { db, ensureAuthed } from '../config/firebase-config.js';
+import { sanitizeForFirestore } from '../firestoreService.js';
 
 const buildUJId = (sjId) => `TX-UJ-${String(sjId)}`;
 const ujKeterangan = (sj) => `Uang Jalan - ${sj.nomorSJ} (${sj.rute || ''})`;
@@ -73,4 +76,59 @@ export function computeCascadePlan(oldSJ, changes, ctx) {
   }
 
   return { sjId: oldSJ.id, sjBefore: oldSJ, sjAfter, fieldChanges, impacts, warnings };
+}
+
+/**
+ * Terapkan CascadePlan secara atomic (satu writeBatch) + tulis audit log.
+ * @param {object} plan hasil computeCascadePlan
+ * @param {{currentUser?:{name?:string}}} opts
+ */
+export async function executeCascadePlan(plan, { currentUser } = {}) {
+  await ensureAuthed();
+  const who = currentUser?.name || 'superadmin';
+  const nowIso = new Date().toISOString();
+  const batch = writeBatch(db);
+
+  // 1) SJ utama
+  batch.set(
+    doc(db, 'surat_jalan', plan.sjId),
+    sanitizeForFirestore({ ...plan.sjAfter, updatedAt: nowIso, updatedBy: who }),
+    { merge: true }
+  );
+
+  // 2) Impact per collection
+  (plan.impacts || []).forEach((imp) => {
+    const ref = doc(db, imp.collection, imp.docId);
+    if (imp.op === 'softDelete') {
+      batch.update(ref, sanitizeForFirestore({
+        isActive: false, deletedAt: nowIso, deletedBy: who, updatedAt: nowIso, updatedBy: who,
+      }));
+    } else if (imp.collection === 'invoice') {
+      batch.set(ref, sanitizeForFirestore({
+        suratJalanList: imp.newSJList, ...imp.newTotals, updatedAt: nowIso, updatedBy: who,
+      }), { merge: true });
+    } else {
+      const patch = { updatedAt: nowIso, updatedBy: who };
+      (imp.changes || []).forEach((c) => { patch[c.field] = c.after; });
+      if (imp.op === 'create') batch.set(ref, sanitizeForFirestore(patch), { merge: true });
+      else batch.update(ref, sanitizeForFirestore(patch));
+    }
+  });
+
+  // 3) Audit trail
+  const logId = `LOG-EDITSJ-${plan.sjId}-${Date.now()}`;
+  batch.set(doc(collection(db, 'history_log'), logId), sanitizeForFirestore({
+    id: logId,
+    action: 'edit_sj_cascade',
+    suratJalanId: plan.sjId,
+    suratJalanNo: plan.sjAfter?.nomorSJ || '',
+    details: {
+      fieldChanges: plan.fieldChanges,
+      impacts: (plan.impacts || []).map((i) => ({ collection: i.collection, docId: i.docId, op: i.op, changes: i.changes })),
+    },
+    createdAt: nowIso,
+    createdBy: who,
+  }));
+
+  await batch.commit();
 }
