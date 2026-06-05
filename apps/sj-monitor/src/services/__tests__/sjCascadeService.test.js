@@ -60,4 +60,16 @@ describe('computeCascadePlan', () => {
     const plan = computeCascadePlan(sj, { qtyBongkar: 12 }, baseCtx);
     expect(plan.warnings.join(' ')).toMatch(/gaji|payslip/i);
   });
+
+  it('revive: SJ gagal→terkirim dengan UJ transaksi soft-deleted → impact update menyalakan isActive', () => {
+    const gagalSJ = { ...sj, status: 'gagal', isActive: false };
+    const ctxDeleted = {
+      ...baseCtx,
+      transaksiList: [{ id: 'TX-UJ-SJ-1', suratJalanId: 'SJ-1', nominal: 100, keterangan: 'Uang Jalan - 001 (A-B)', tanggal: '2026-06-01', isActive: false }],
+    };
+    const plan = computeCascadePlan(gagalSJ, { status: 'terkirim', isActive: true }, ctxDeleted);
+    const tx = plan.impacts.find((i) => i.collection === 'transaksi');
+    expect(tx.op).toBe('update');
+    expect(tx.changes.find((c) => c.field === 'isActive')).toMatchObject({ before: false, after: true });
+  });
 });

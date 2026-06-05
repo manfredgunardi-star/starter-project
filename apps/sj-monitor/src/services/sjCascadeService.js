@@ -38,6 +38,9 @@ export function computeCascadePlan(oldSJ, changes, ctx) {
     const ketAfter = ujKeterangan(sjAfter);
     if ((existingUJ?.keterangan || '') !== ketAfter) changesUJ.push({ field: 'keterangan', before: existingUJ?.keterangan || '', after: ketAfter });
     if ((existingUJ?.tanggal || '') !== sjAfter.tanggalSJ) changesUJ.push({ field: 'tanggal', before: existingUJ?.tanggal || '', after: sjAfter.tanggalSJ });
+    if (existingUJ && existingUJ.isActive === false) {
+      changesUJ.push({ field: 'isActive', before: false, after: true });
+    }
     if (changesUJ.length) {
       impacts.push({
         collection: 'transaksi', docId: ujId, label: 'Transaksi Uang Jalan',
