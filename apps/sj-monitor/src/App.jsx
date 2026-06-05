@@ -16,6 +16,7 @@ import SearchableSelect from './components/SearchableSelect.jsx';
 import StatSummary from './components/StatSummary.jsx';
 import AlertBanner from './components/AlertBanner.jsx';
 import SuratJalanCard from './components/SuratJalanCard.jsx';
+import EditSJModal from './components/EditSJModal.jsx';
 import Pagination, { PAGE_SIZE, clampPage } from './components/Pagination.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 const LaporanKasPage   = React.lazy(() => import('./pages/LaporanKasPage.jsx'));
@@ -93,6 +94,7 @@ const SuratJalanMonitor = () => {
   const { usersList, setUsersList, addUser, updateUser, deleteUser: deleteUserFn, toggleUserActive } = useUsers({ currentUser, setAlertMessage });
   const deleteUser = (id) => deleteUserFn(id, setConfirmDialog);
   const [showModal, setShowModal] = useState(false);
+  const [editSJTarget, setEditSJTarget] = useState(null);
   const [showRitasiBulkUpload, setShowRitasiBulkUpload] = useState(false);
   const [showTarifBulkUpload, setShowTarifBulkUpload] = useState(false);
   const [tarifHistoryRute, setTarifHistoryRute] = useState(null);
@@ -2294,6 +2296,7 @@ try { unsubTransaksi(); } catch {}
                     currentUser={currentUser}
                     onUpdate={handleSJCardUpdate}
                     onEditTerkirim={handleSJCardEditTerkirim}
+                    onEditSJ={setEditSJTarget}
                     onMarkGagal={markAsGagal}
                     onRestore={restoreFromGagal}
                     onDeleteBiaya={deleteBiaya}
@@ -2389,6 +2392,21 @@ try { unsubTransaksi(); } catch {}
               await addUangMuka(data);
               setShowModal(false);
             }
+          }}
+        />
+      )}
+
+      {/* Edit SJ Modal (superadmin only) */}
+      {editSJTarget && effectiveRole === 'superadmin' && (
+        <EditSJModal
+          sj={editSJTarget}
+          masters={{ truckList, supirList, ruteList, materialList }}
+          ctx={{ masters: { truckList, supirList, ruteList, materialList }, transaksiList, invoiceList, uangMukaList, biayaList }}
+          currentUser={currentUser}
+          onClose={() => setEditSJTarget(null)}
+          onDone={(sjAfter) => {
+            setSuratJalanList((prev) => prev.map((s) => (s.id === sjAfter.id ? { ...s, ...sjAfter } : s)));
+            setEditSJTarget(null);
           }}
         />
       )}
