@@ -42,6 +42,18 @@ service cloud.firestore {
       ]);
     }
 
+    // Admin SJ hanya boleh update field operasional (bukan identity/master-linked seperti nomorSJ, ruteId, dll).
+    // statusLabel + uangJalan ikut di-whitelist karena flow mark gagal / restore di App.jsx
+    // (updateSuratJalan + markAsGagal + restoreFromGagal) menulis kedua field tersebut.
+    function sjOperationalFieldsOnly() {
+      return request.resource.data.diff(resource.data).changedKeys().hasOnly([
+        'status','statusLabel','tglTerkirim','qtyBongkar','quantityLoss','abolishPenalty',
+        'bonusAdjustment','isActive','uangJalan','deletedUangJalan',
+        'statusInvoice','invoiceId','invoiceNo','invoiceTanggal',
+        'updatedAt','updatedBy'
+      ]);
+    }
+
     // --- USERS ---
     match /users/{uid} {
       // User boleh baca doc sendiri. Admin/staff boleh baca semua (untuk panel user).
@@ -111,8 +123,10 @@ service cloud.firestore {
     match /surat_jalan/{id} {
       allow read: if signedIn();
       allow create: if isSuperAdmin() || isAdminSJ();
-      // Allow editing SJ with new fields (quantityLoss, abolishPenalty, bonusAdjustment)
-      allow update: if isSuperAdmin() || isAdminSJ() || (isAdminInv() && sjInvoiceFieldsOnly());
+      // Full-field edits superadmin-only; admin_sj dibatasi field operasional, admin_invoice field invoice.
+      allow update: if isSuperAdmin()
+        || (isAdminSJ() && sjOperationalFieldsOnly())
+        || (isAdminInv() && sjInvoiceFieldsOnly());
       allow delete: if isSuperAdmin();
     }
 
@@ -120,7 +134,9 @@ service cloud.firestore {
     match /suratJalan/{id} {
       allow read: if signedIn();
       allow create: if isSuperAdmin() || isAdminSJ();
-      allow update: if isSuperAdmin() || isAdminSJ() || (isAdminInv() && sjInvoiceFieldsOnly());
+      allow update: if isSuperAdmin()
+        || (isAdminSJ() && sjOperationalFieldsOnly())
+        || (isAdminInv() && sjInvoiceFieldsOnly());
       allow delete: if isSuperAdmin();
     }
 
