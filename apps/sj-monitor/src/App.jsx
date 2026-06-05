@@ -639,6 +639,7 @@ const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist }) => {
       ...invoice,
       suratJalanIds: newSJIds,
       suratJalanList: updatedSJList.filter(sj => newSJIds.includes(sj.id)),
+      // totalQty sengaja tetap dari updatedSJList (mirror perilaku lama); qtyBongkar tak berubah oleh update status jadi nilainya identik.
       totalQty: updatedSJList
         .filter(sj => newSJIds.includes(sj.id))
         .reduce((sum, sj) => sum + Number(sj.qtyBongkar || 0), 0),
