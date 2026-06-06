@@ -37,16 +37,32 @@ function formatNumber(value) {
   return Number(value)
 }
 
-function buildGLRows(journals, options = {}) {
-  const accountMap = options.accountMap
-  const formatTimestamp = options.formatTimestamp || formatTimestampWIB
-  const syncTimestamp = options.syncTimestamp || new Date().toISOString()
+function pickLatestTimestamp(...values) {
+  let latestValue = ''
+  let latestTime = -Infinity
+
+  for (const value of values) {
+    if (!value) continue
+    const timestamp = new Date(value).getTime()
+    if (Number.isNaN(timestamp)) continue
+    if (timestamp > latestTime) {
+      latestTime = timestamp
+      latestValue = value
+    }
+  }
+
+  return latestValue || values.find(Boolean) || ''
+}
+
+function buildGLRows(journals, accountMap, syncTimestamp, formatTimestamp = formatTimestampWIB) {
+  const effectiveSyncTimestamp = syncTimestamp || new Date().toISOString()
   const rows = []
 
   for (const journal of journals || []) {
     const journalId = String(journal._docId || journal.id || '')
     const journalNumber = journalId.slice(0, 8)
     const statusLabel = journal.status === 'deleted' ? 'Dihapus' : 'Aktif'
+    const updatedTimestamp = pickLatestTimestamp(journal.updatedAt, journal.deletedAt)
     const lines = Array.isArray(journal.lines) ? journal.lines : []
 
     lines.forEach((line, index) => {
@@ -66,8 +82,8 @@ function buildGLRows(journals, options = {}) {
         statusLabel,
         journal.createdBy || '',
         formatTimestamp(journal.createdAt),
-        formatTimestamp(journal.updatedAt),
-        formatTimestamp(syncTimestamp),
+        formatTimestamp(updatedTimestamp),
+        formatTimestamp(effectiveSyncTimestamp),
       ])
     })
   }
@@ -119,6 +135,7 @@ function buildJournalDeleteRequests(existingRows, journalIds, sheetId) {
 module.exports = {
   GL_HEADERS,
   formatTimestampWIB,
+  pickLatestTimestamp,
   buildGLRows,
   buildJournalDeleteRequests,
 }

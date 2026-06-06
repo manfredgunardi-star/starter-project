@@ -59,6 +59,7 @@ test('buildGLRows repeats metadata per line, uses account-map fallback, and mark
       createdBy: 'user-1',
       createdAt: '2026-06-05T01:02:03.000Z',
       updatedAt: '2026-06-05T04:05:06.000Z',
+      deletedAt: '2026-06-05T04:06:07.000Z',
       lines: [
         {
           accountCode: '1111',
@@ -78,11 +79,12 @@ test('buildGLRows repeats metadata per line, uses account-map fallback, and mark
     },
   ]
 
-  const rows = generalLedger.buildGLRows(journals, {
+  const rows = generalLedger.buildGLRows(
+    journals,
     accountMap,
-    formatTimestamp,
     syncTimestamp,
-  })
+    formatTimestamp
+  )
 
   assert.deepStrictEqual(rows, [
     [
@@ -100,7 +102,7 @@ test('buildGLRows repeats metadata per line, uses account-map fallback, and mark
       'Dihapus',
       'user-1',
       'fmt:2026-06-05T01:02:03.000Z',
-      'fmt:2026-06-05T04:05:06.000Z',
+      'fmt:2026-06-05T04:06:07.000Z',
       'fmt:2026-06-06T08:09:10.000Z',
     ],
     [
@@ -118,7 +120,7 @@ test('buildGLRows repeats metadata per line, uses account-map fallback, and mark
       'Dihapus',
       'user-1',
       'fmt:2026-06-05T01:02:03.000Z',
-      'fmt:2026-06-05T04:05:06.000Z',
+      'fmt:2026-06-05T04:06:07.000Z',
       'fmt:2026-06-06T08:09:10.000Z',
     ],
   ])
@@ -130,33 +132,86 @@ test('buildGLRows uses id when _docId is missing and falls back truck to dash', 
     []
   )
 
-  const rows = generalLedger.buildGLRows([
-    {
-      id: 'ABCDEF123456',
-      date: '2026-06-06',
-      type: 'umum',
-      createdBy: 'user-2',
-      createdAt: '2026-06-06T01:00:00.000Z',
-      updatedAt: '2026-06-06T02:00:00.000Z',
-      lines: [
-        {
-          accountCode: '1111',
-          debit: 10,
-          credit: 0,
-          keterangan: 'Kas masuk',
-        },
-      ],
-    },
-  ], {
+  const rows = generalLedger.buildGLRows(
+    [
+      {
+        id: 'ABCDEF123456',
+        date: '2026-06-06',
+        type: 'umum',
+        createdBy: 'user-2',
+        createdAt: '2026-06-06T01:00:00.000Z',
+        updatedAt: '2026-06-06T02:00:00.000Z',
+        lines: [
+          {
+            accountCode: '1111',
+            debit: 10,
+            credit: 0,
+            keterangan: 'Kas masuk',
+          },
+        ],
+      },
+    ],
     accountMap,
-    formatTimestamp: (value) => value,
-    syncTimestamp: '2026-06-06T03:00:00.000Z',
-  })
+    '2026-06-06T03:00:00.000Z',
+    (value) => value
+  )
 
   assert.equal(rows[0][1], 'ABCDEF123456')
   assert.equal(rows[0][2], 'ABCDEF12')
   assert.equal(rows[0][6], '-')
   assert.equal(rows[0][11], 'Aktif')
+})
+
+test('buildGLRows picks the latest updatedAt or deletedAt for Terakhir Diubah', () => {
+  const accountMap = buildAccountMap(
+    [{ code: '1111', name: 'Kas Kecil', normalBalance: 'debit' }],
+    []
+  )
+
+  const rows = generalLedger.buildGLRows(
+    [
+      {
+        _docId: 'J-DELETE-1',
+        date: '2026-06-06',
+        type: 'umum',
+        createdBy: 'user-3',
+        createdAt: '2026-06-06T01:00:00.000Z',
+        updatedAt: '2026-06-06T04:00:00.000Z',
+        deletedAt: '2026-06-06T03:00:00.000Z',
+        lines: [
+          {
+            accountCode: '1111',
+            debit: 10,
+            credit: 0,
+            keterangan: 'latest updated wins',
+          },
+        ],
+      },
+      {
+        _docId: 'J-DELETE-2',
+        date: '2026-06-06',
+        type: 'umum',
+        createdBy: 'user-4',
+        createdAt: '2026-06-06T01:00:00.000Z',
+        updatedAt: '2026-06-06T02:00:00.000Z',
+        deletedAt: '2026-06-06T05:00:00.000Z',
+        lines: [
+          {
+            accountCode: '1111',
+            debit: 20,
+            credit: 0,
+            keterangan: 'latest delete wins',
+          },
+        ],
+      },
+    ],
+    accountMap,
+    '2026-06-06T06:00:00.000Z',
+    (value) => value
+  )
+
+  assert.equal(rows[0][14], '2026-06-06T04:00:00.000Z')
+  assert.equal(rows[1][14], '2026-06-06T05:00:00.000Z')
 })
 
 test('buildJournalDeleteRequests treats existingRows as sheet values including header and groups contiguous journal rows descending', () => {

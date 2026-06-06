@@ -24,6 +24,29 @@ const SYNC_LOG_HEADERS = [
   'Selesai Pada (WIB)',
 ]
 
+const DEFAULT_SHEET_SCHEMAS = [
+  {
+    title: GL_SHEET_NAME,
+    headerRange: 'General Ledger!A1:P1',
+    dataRange: 'General Ledger!A:P',
+    appendRange: 'General Ledger!A2',
+    clearRange: 'General Ledger!A2:Z',
+    headers: GL_HEADERS,
+    requireFullSyncForHeaderMismatch: true,
+    mismatchError: 'Header General Ledger legacy terdeteksi. Jalankan FULL_SYNC=true untuk migrasi.',
+  },
+  {
+    title: AUDIT_SHEET_NAME,
+    headerRange: 'Audit Log!A1:G1',
+    headers: AUDIT_HEADERS,
+  },
+  {
+    title: SYNC_LOG_SHEET_NAME,
+    headerRange: '_sync_log!A1:E1',
+    headers: SYNC_LOG_HEADERS,
+  },
+]
+
 function isSameHeader(actualRow, expectedRow) {
   if (!Array.isArray(actualRow)) return false
   if (actualRow.length !== expectedRow.length) return false
@@ -41,6 +64,16 @@ async function getSheetMetadata(sheets, spreadsheetId) {
 
 function findSheet(metadata, title) {
   return metadata.find((sheet) => sheet.title === title) || null
+}
+
+function getSchemas(schemas) {
+  return Array.isArray(schemas) && schemas.length > 0
+    ? schemas
+    : DEFAULT_SHEET_SCHEMAS
+}
+
+function planOperation(plannedOperations, operation) {
+  plannedOperations.push(operation)
 }
 
 async function updateHeader({ sheets, spreadsheetId, range, headers, dryRun }) {
@@ -70,13 +103,10 @@ async function appendRows({ sheets, spreadsheetId, sheetName, rows, dryRun }) {
   })
 }
 
-async function ensureSheetsAndHeaders({ sheets, spreadsheetId, dryRun = false, fullSync = false }) {
+async function ensureSheetsAndHeaders({ sheets, spreadsheetId, schemas, dryRun = false, fullSync = false }) {
   const metadata = await getSheetMetadata(sheets, spreadsheetId)
-  const requiredSheets = [
-    { title: GL_SHEET_NAME, range: 'General Ledger!A1:P1', headers: GL_HEADERS },
-    { title: AUDIT_SHEET_NAME, range: 'Audit Log!A1:G1', headers: AUDIT_HEADERS },
-    { title: SYNC_LOG_SHEET_NAME, range: '_sync_log!A1:E1', headers: SYNC_LOG_HEADERS },
-  ]
+  const requiredSheets = getSchemas(schemas)
+  const plannedOperations = []
 
   const missingSheets = requiredSheets.filter((sheet) => !findSheet(metadata, sheet.title))
 
@@ -93,18 +123,38 @@ async function ensureSheetsAndHeaders({ sheets, spreadsheetId, dryRun = false, f
     })
   }
 
+  for (const sheet of missingSheets) {
+    planOperation(plannedOperations, { type: 'addSheet', title: sheet.title })
+    planOperation(plannedOperations, { type: 'setHeader', title: sheet.title, range: sheet.headerRange })
+  }
+
   for (const sheet of requiredSheets) {
+    const existingSheet = findSheet(metadata, sheet.title)
+    if (!existingSheet) {
+      if (dryRun) continue
+
+      await updateHeader({
+        sheets,
+        spreadsheetId,
+        range: sheet.headerRange,
+        headers: sheet.headers,
+        dryRun,
+      })
+      continue
+    }
+
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId,
-      range: sheet.range,
+      range: sheet.headerRange,
     })
     const existingHeader = response.data.values && response.data.values[0]
 
     if (!existingHeader || existingHeader.length === 0) {
+      planOperation(plannedOperations, { type: 'setHeader', title: sheet.title, range: sheet.headerRange })
       await updateHeader({
         sheets,
         spreadsheetId,
-        range: sheet.range,
+        range: sheet.headerRange,
         headers: sheet.headers,
         dryRun,
       })
@@ -113,17 +163,23 @@ async function ensureSheetsAndHeaders({ sheets, spreadsheetId, dryRun = false, f
 
     if (isSameHeader(existingHeader, sheet.headers)) continue
 
-    if (sheet.title === GL_SHEET_NAME && !fullSync) {
-      throw new Error('Header General Ledger legacy terdeteksi. Jalankan FULL_SYNC=true untuk migrasi.')
+    if (sheet.requireFullSyncForHeaderMismatch && !fullSync) {
+      throw new Error(sheet.mismatchError || 'Header sheet tidak cocok. Jalankan FULL_SYNC=true untuk migrasi.')
     }
 
+    planOperation(plannedOperations, { type: 'setHeader', title: sheet.title, range: sheet.headerRange })
     await updateHeader({
       sheets,
       spreadsheetId,
-      range: sheet.range,
+      range: sheet.headerRange,
       headers: sheet.headers,
       dryRun,
     })
+  }
+
+  return {
+    plannedOperations,
+    sheets: metadata,
   }
 }
 
@@ -144,7 +200,13 @@ async function replaceSheet({ sheets, spreadsheetId, sheetName, rows = [], dryRu
   })
 }
 
-async function upsertGeneralLedger({ sheets, spreadsheetId, rows = [], dryRun = false }) {
+function getGeneralLedgerSchema(schemas) {
+  const requiredSheets = getSchemas(schemas)
+  return requiredSheets.find((sheet) => sheet.title === GL_SHEET_NAME) || DEFAULT_SHEET_SCHEMAS[0]
+}
+
+async function upsertGeneralLedger({ sheets, spreadsheetId, schemas, journalIds = [], rows = [], dryRun = false }) {
+  const generalLedgerSchema = getGeneralLedgerSchema(schemas)
   const metadata = await getSheetMetadata(sheets, spreadsheetId)
   const sheet = findSheet(metadata, GL_SHEET_NAME)
   if (!sheet) {
@@ -153,11 +215,14 @@ async function upsertGeneralLedger({ sheets, spreadsheetId, rows = [], dryRun = 
 
   const existingResponse = await sheets.spreadsheets.values.get({
     spreadsheetId,
-    range: 'General Ledger!A:P',
+    range: generalLedgerSchema.dataRange || 'General Ledger!A:P',
   })
   const existingRows = existingResponse.data.values || []
-  const journalIds = [...new Set(rows.map((row) => row[1]).filter(Boolean))]
-  const requests = buildJournalDeleteRequests(existingRows, journalIds, sheet.sheetId)
+  const impactedJournalIds = [...new Set([
+    ...journalIds,
+    ...rows.map((row) => row[1]).filter(Boolean),
+  ].filter(Boolean))]
+  const requests = buildJournalDeleteRequests(existingRows, impactedJournalIds, sheet.sheetId)
 
   if (!dryRun && requests.length > 0) {
     await sheets.spreadsheets.batchUpdate({
@@ -171,7 +236,7 @@ async function upsertGeneralLedger({ sheets, spreadsheetId, rows = [], dryRun = 
   await appendRows({
     sheets,
     spreadsheetId,
-    sheetName: GL_SHEET_NAME,
+    sheetName: generalLedgerSchema.title || GL_SHEET_NAME,
     rows,
     dryRun,
   })
@@ -179,6 +244,7 @@ async function upsertGeneralLedger({ sheets, spreadsheetId, rows = [], dryRun = 
 
 module.exports = {
   AUDIT_HEADERS,
+  DEFAULT_SHEET_SCHEMAS,
   SYNC_LOG_HEADERS,
   ensureSheetsAndHeaders,
   replaceSheet,
