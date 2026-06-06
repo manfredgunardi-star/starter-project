@@ -17,12 +17,10 @@ function inferNormalBalance(code) {
 }
 
 function extractQuotedProperty(objectSource, propertyName) {
-  const pattern = new RegExp(
-    `\\b${propertyName}\\s*:\\s*(['"])((?:\\\\.|(?!\\1).)*)\\1`,
-    's'
-  )
-  const match = objectSource.match(pattern)
-  return match ? match[2].replace(/\\(['"])/g, '$1') : null
+  const properties = parseDirectProperties(objectSource)
+  if (!Object.prototype.hasOwnProperty.call(properties, propertyName)) return null
+  const value = properties[propertyName]
+  return typeof value === 'string' ? value : null
 }
 
 function stripComments(source) {
@@ -77,19 +75,93 @@ function stripComments(source) {
 }
 
 function extractNullableStringProperty(objectSource, propertyName) {
-  const cleanedSource = stripComments(objectSource)
-  const quotedValue = extractQuotedProperty(cleanedSource, propertyName)
-  if (quotedValue !== null) return quotedValue
-
-  const nullPattern = new RegExp(`\\b${propertyName}\\s*:\\s*null\\b`)
-  return nullPattern.test(cleanedSource) ? null : undefined
+  const properties = parseDirectProperties(objectSource)
+  if (!Object.prototype.hasOwnProperty.call(properties, propertyName)) return undefined
+  return properties[propertyName] === null ? null : properties[propertyName]
 }
 
 function extractNumericProperty(objectSource, propertyName) {
-  const cleanedSource = stripComments(objectSource)
-  const pattern = new RegExp(`\\b${propertyName}\\s*:\\s*(-?\\d+)\\b`)
-  const match = cleanedSource.match(pattern)
-  return match ? Number(match[1]) : undefined
+  const properties = parseDirectProperties(objectSource)
+  if (!Object.prototype.hasOwnProperty.call(properties, propertyName)) return undefined
+  return typeof properties[propertyName] === 'number' ? properties[propertyName] : undefined
+}
+
+function splitTopLevelEntries(objectSource) {
+  const text = stripComments(String(objectSource)).trim()
+  const body = text.startsWith('{') && text.endsWith('}') ? text.slice(1, -1) : text
+  const entries = []
+  let start = 0
+  let depth = 0
+  let inString = null
+
+  for (let index = 0; index < body.length; index += 1) {
+    const current = body[index]
+
+    if (inString) {
+      if (current === '\\') {
+        index += 1
+        continue
+      }
+      if (current === inString) {
+        inString = null
+      }
+      continue
+    }
+
+    if (current === '"' || current === "'" || current === '`') {
+      inString = current
+      continue
+    }
+
+    if (current === '{' || current === '[' || current === '(') {
+      depth += 1
+      continue
+    }
+
+    if (current === '}' || current === ']' || current === ')') {
+      depth = Math.max(0, depth - 1)
+      continue
+    }
+
+    if (current === ',' && depth === 0) {
+      const entry = body.slice(start, index).trim()
+      if (entry) entries.push(entry)
+      start = index + 1
+    }
+  }
+
+  const finalEntry = body.slice(start).trim()
+  if (finalEntry) entries.push(finalEntry)
+  return entries
+}
+
+function parseDirectProperties(objectSource) {
+  const properties = {}
+  for (const entry of splitTopLevelEntries(objectSource)) {
+    const colonIndex = entry.indexOf(':')
+    if (colonIndex === -1) continue
+
+    const key = entry.slice(0, colonIndex).trim()
+    const rawValue = entry.slice(colonIndex + 1).trim()
+    if (!key) continue
+
+    if (/^null$/i.test(rawValue)) {
+      properties[key] = null
+      continue
+    }
+
+    if (/^-?\d+$/.test(rawValue)) {
+      properties[key] = Number(rawValue)
+      continue
+    }
+
+    const quotedMatch = rawValue.match(/^(['"])((?:\\.|(?!\1).)*)\1$/s)
+    if (quotedMatch) {
+      properties[key] = quotedMatch[2].replace(/\\(['"])/g, '$1')
+    }
+  }
+
+  return properties
 }
 
 function extractObjectLiterals(source) {
@@ -97,6 +169,7 @@ function extractObjectLiterals(source) {
   const objects = []
   const length = text.length
   let index = 0
+  const stack = []
 
   while (index < length) {
     const char = text[index]
@@ -133,54 +206,18 @@ function extractObjectLiterals(source) {
     }
 
     if (char === '{') {
-      let depth = 1
-      let cursor = index + 1
-      let inString = null
+      stack.push(index)
+      index += 1
+      continue
+    }
 
-      while (cursor < length && depth > 0) {
-        const current = text[cursor]
-
-        if (inString) {
-          if (current === '\\') {
-            cursor += 2
-            continue
-          }
-          if (current === inString) {
-            inString = null
-          }
-          cursor += 1
-          continue
-        }
-
-        if (current === '"' || current === "'" || current === '`') {
-          inString = current
-          cursor += 1
-          continue
-        }
-
-        if (current === '/' && text[cursor + 1] === '/') {
-          cursor += 2
-          while (cursor < length && text[cursor] !== '\n') cursor += 1
-          continue
-        }
-
-        if (current === '/' && text[cursor + 1] === '*') {
-          cursor += 2
-          while (cursor < length && !(text[cursor] === '*' && text[cursor + 1] === '/')) cursor += 1
-          cursor += 2
-          continue
-        }
-
-        if (current === '{') depth += 1
-        if (current === '}') depth -= 1
-        cursor += 1
+    if (char === '}') {
+      const start = stack.pop()
+      if (start !== undefined) {
+        objects.push(text.slice(start, index + 1))
       }
-
-      if (depth === 0) {
-        objects.push(text.slice(index, cursor))
-        index = cursor
-        continue
-      }
+      index += 1
+      continue
     }
 
     index += 1
@@ -192,26 +229,25 @@ function extractObjectLiterals(source) {
 function parseBuiltinAccounts(source) {
   const accounts = []
   for (const objectSource of extractObjectLiterals(source)) {
-    const cleanedObjectSource = stripComments(objectSource)
-    const code = extractQuotedProperty(cleanedObjectSource, 'code')
-    const name = extractQuotedProperty(cleanedObjectSource, 'name')
+    const properties = parseDirectProperties(objectSource)
+    const code = properties.code
+    const name = properties.name
     if (!code || !name) continue
 
-    const normalBalance = extractQuotedProperty(cleanedObjectSource, 'normalBalance')
     const account = {
       code,
       name,
-      normalBalance: normalBalance || inferNormalBalance(code),
+      normalBalance: typeof properties.normalBalance === 'string' ? properties.normalBalance : inferNormalBalance(code),
     }
 
-    const parent = extractNullableStringProperty(cleanedObjectSource, 'parent')
+    const parent = Object.prototype.hasOwnProperty.call(properties, 'parent') ? properties.parent : undefined
     if (parent !== undefined) account.parent = parent
 
-    const level = extractNumericProperty(cleanedObjectSource, 'level')
+    const level = Object.prototype.hasOwnProperty.call(properties, 'level') ? properties.level : undefined
     if (level !== undefined) account.level = level
 
-    const type = extractQuotedProperty(cleanedObjectSource, 'type')
-    if (type !== null) account.type = type
+    const type = Object.prototype.hasOwnProperty.call(properties, 'type') ? properties.type : undefined
+    if (type !== undefined) account.type = type
 
     accounts.push(account)
   }

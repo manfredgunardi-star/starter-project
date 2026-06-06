@@ -145,6 +145,47 @@ test('parseBuiltinAccounts preserves multiple top-level account objects and igno
   ])
 })
 
+test('parseBuiltinAccounts isolates three accounts inside a wrapper function return array', () => {
+  const source = `
+    function x() {
+      return [
+        { code: "1000", name: "ASET", parent: null, level: 0, type: "header" },
+        { code: "1111", name: "Kas Kecil", parent: "1000", level: 3, type: "detail" },
+        { code: "2000", name: "KEWAJIBAN", parent: null, level: 0, type: "header" },
+      ]
+    }
+  `
+
+  const accounts = parseBuiltinAccounts(source)
+
+  assert.deepStrictEqual(accounts, [
+    {
+      code: '1000',
+      name: 'ASET',
+      parent: null,
+      level: 0,
+      type: 'header',
+      normalBalance: 'debit',
+    },
+    {
+      code: '1111',
+      name: 'Kas Kecil',
+      parent: '1000',
+      level: 3,
+      type: 'detail',
+      normalBalance: 'debit',
+    },
+    {
+      code: '2000',
+      name: 'KEWAJIBAN',
+      parent: null,
+      level: 0,
+      type: 'header',
+      normalBalance: 'credit',
+    },
+  ])
+})
+
 test('buildAccountMap accepts builtin accounts first and custom accounts second', () => {
   const builtinAccounts = [
     { code: '1111', name: 'Kas Kecil', normalBalance: 'debit' },
