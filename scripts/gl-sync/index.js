@@ -237,7 +237,7 @@ async function runSync({
     fullSync,
   })
 
-  if (!fullSync && await checkAlreadyRun(sheets, spreadsheetId, dateRange.dateStr)) {
+  if (!dryRun && !fullSync && await checkAlreadyRun(sheets, spreadsheetId, dateRange.dateStr)) {
     logger.log(`Sync untuk ${dateRange.dateStr} sudah pernah berhasil. Skip.`)
     return {
       dateStr: dateRange.dateStr,

@@ -293,6 +293,36 @@ test('runSync provisions _sync_log before daily dedup check on a new spreadsheet
   assert.ok(syncLogReadIndex > syncLogHeaderIndex)
 })
 
+test('runSync dry run skips daily dedup check when _sync_log is missing', async () => {
+  const db = createFakeDb({
+    journals: [createJournal('JNEW')],
+    audit_log: [],
+    coa: [],
+    invoices: [],
+    assets: [],
+  })
+  const sheets = createFakeSheets({
+    missingTitles: ['_sync_log'],
+    requireSyncLogProvisioning: true,
+  })
+
+  const result = await runSync({
+    db,
+    sheets,
+    spreadsheetId: 'sheet-1',
+    dryRun: true,
+    now: new Date('2026-06-06T17:00:00.000Z'),
+    logger: { log() {} },
+  })
+
+  assert.equal(result.status, 'success')
+  assert.equal(sheets.calls.sequence.some((call) => call.type === 'get' && call.range === '_sync_log!A:B'), false)
+  assert.equal(sheets.calls.append.length, 0)
+  assert.equal(sheets.calls.batchUpdate.length, 0)
+  assert.equal(sheets.calls.clear.length, 0)
+  assert.equal(sheets.calls.update.length, 0)
+})
+
 test('runSync deletes stale ledger rows when an audited journal document is missing', async () => {
   const db = createFakeDb({
     journals: [],
