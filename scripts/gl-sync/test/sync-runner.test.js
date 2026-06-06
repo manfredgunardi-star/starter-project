@@ -79,20 +79,30 @@ function createHeaders(overrides = {}) {
   ]))
 }
 
-function createFakeSheets({ headers = createHeaders(), syncLogRows = [['Tanggal (WIB)', 'Status']], glRows = [] } = {}) {
+function createFakeSheets({
+  headers = createHeaders(),
+  syncLogRows = [['Tanggal (WIB)', 'Status']],
+  glRows = [],
+  missingTitles = [],
+  requireSyncLogProvisioning = false,
+} = {}) {
   const calls = {
     append: [],
     batchUpdate: [],
     clear: [],
     get: [],
+    sequence: [],
     update: [],
   }
-  const metadata = ALL_SHEET_SCHEMAS.map((schema, index) => ({
-    properties: {
-      sheetId: index + 100,
-      title: schema.title,
-    },
-  }))
+  let syncLogProvisioned = !requireSyncLogProvisioning
+  const metadata = ALL_SHEET_SCHEMAS
+    .filter((schema) => !missingTitles.includes(schema.title))
+    .map((schema, index) => ({
+      properties: {
+        sheetId: index + 100,
+        title: schema.title,
+      },
+    }))
 
   const sheets = {
     calls,
@@ -103,17 +113,28 @@ function createFakeSheets({ headers = createHeaders(), syncLogRows = [['Tanggal 
       },
       async batchUpdate(request) {
         calls.batchUpdate.push(request)
+        for (const operation of request.requestBody.requests || []) {
+          if (operation.addSheet) {
+            metadata.push({ properties: { sheetId: metadata.length + 100, title: operation.addSheet.properties.title } })
+          }
+        }
         return { data: {} }
       },
       values: {
         async get(request) {
           calls.get.push(request)
-          if (request.range === '_sync_log!A:B') return { data: { values: syncLogRows } }
+          calls.sequence.push({ type: 'get', range: request.range })
+          if (request.range === '_sync_log!A:B') {
+            if (!syncLogProvisioned) throw new Error('_sync_log belum ada')
+            return { data: { values: syncLogRows } }
+          }
           if (request.range === 'General Ledger!A:P') return { data: { values: glRows } }
           return { data: { values: headers[request.range] || [] } }
         },
         async update(request) {
           calls.update.push(request)
+          calls.sequence.push({ type: 'update', range: request.range })
+          if (request.range === '_sync_log!A1:E1') syncLogProvisioned = true
           return { data: {} }
         },
         async append(request) {
@@ -210,11 +231,66 @@ test('runSync daily upserts created, updated, and deleted journals, then refresh
   assert.ok(glAppend.requestBody.values.some((row) => row[1] === 'JDEL' && row[11] === 'Dihapus'))
   assert.ok(glAppend.requestBody.values.every((row) => row[8] !== row[7]))
 
+  assert.equal(sheets.calls.clear.filter((call) => call.range === 'Audit Log!A2:Z').length, 1)
   const auditAppend = sheets.calls.append.find((call) => call.range === 'Audit Log!A2')
   assert.equal(auditAppend.requestBody.values.length, 2)
   assert.equal(sheets.calls.clear.filter((call) => call.range.includes('Review Jurnal')).length, 1)
   assert.equal(sheets.calls.append.filter((call) => call.range === '_sync_log!A2').length, 1)
   assert.ok(sheets.calls.batchUpdate.some((call) => call.requestBody.requests[0].deleteDimension))
+})
+
+test('runSync daily refreshes full Audit Log instead of appending only daily audit entries', async () => {
+  const db = createFakeDb({
+    journals: [createJournal('JUPD', { createdAt: '2026-05-01T00:00:00.000Z' })],
+    audit_log: [
+      { id: 'AOLD', journalId: 'JOLD', action: 'update', at: '2026-06-01T10:00:00.000Z', by: 'tester' },
+      { id: 'ANEW', journalId: 'JUPD', action: 'update', at: '2026-06-05T18:00:00.000Z', by: 'tester' },
+    ],
+    coa: [],
+    invoices: [],
+    assets: [],
+  })
+  const sheets = createFakeSheets()
+
+  await runSync({
+    db,
+    sheets,
+    spreadsheetId: 'sheet-1',
+    now: new Date('2026-06-06T17:00:00.000Z'),
+    logger: { log() {} },
+  })
+
+  assert.equal(sheets.calls.clear.filter((call) => call.range === 'Audit Log!A2:Z').length, 1)
+  const auditAppend = sheets.calls.append.find((call) => call.range === 'Audit Log!A2')
+  assert.deepEqual(auditAppend.requestBody.values.map((row) => row[1]), ['JOLD', 'JUPD'])
+})
+
+test('runSync provisions _sync_log before daily dedup check on a new spreadsheet', async () => {
+  const db = createFakeDb({
+    journals: [createJournal('JNEW')],
+    audit_log: [],
+    coa: [],
+    invoices: [],
+    assets: [],
+  })
+  const sheets = createFakeSheets({
+    missingTitles: ['_sync_log'],
+    requireSyncLogProvisioning: true,
+  })
+
+  const result = await runSync({
+    db,
+    sheets,
+    spreadsheetId: 'sheet-1',
+    now: new Date('2026-06-06T17:00:00.000Z'),
+    logger: { log() {} },
+  })
+
+  assert.equal(result.status, 'success')
+  const syncLogReadIndex = sheets.calls.sequence.findIndex((call) => call.type === 'get' && call.range === '_sync_log!A:B')
+  const syncLogHeaderIndex = sheets.calls.sequence.findIndex((call) => call.type === 'update' && call.range === '_sync_log!A1:E1')
+  assert.ok(syncLogHeaderIndex >= 0)
+  assert.ok(syncLogReadIndex > syncLogHeaderIndex)
 })
 
 test('runSync deletes stale ledger rows when an audited journal document is missing', async () => {

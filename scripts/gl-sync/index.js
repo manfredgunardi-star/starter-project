@@ -229,6 +229,14 @@ async function runSync({
 
   logger.log(`BUL-Accounting GL Sync: ${fullSync ? 'FULL_SYNC' : dateRange.dateStr}`)
 
+  const ensureResult = await ensureSheetsAndHeaders({
+    sheets,
+    spreadsheetId,
+    schemas: ALL_SHEET_SCHEMAS,
+    dryRun,
+    fullSync,
+  })
+
   if (!fullSync && await checkAlreadyRun(sheets, spreadsheetId, dateRange.dateStr)) {
     logger.log(`Sync untuk ${dateRange.dateStr} sudah pernah berhasil. Skip.`)
     return {
@@ -238,36 +246,32 @@ async function runSync({
       auditCount: 0,
       impactedJournalIds: [],
       reportRowCounts: {},
+      plannedOperations: ensureResult.plannedOperations,
     }
   }
-
-  const ensureResult = await ensureSheetsAndHeaders({
-    sheets,
-    spreadsheetId,
-    schemas: ALL_SHEET_SCHEMAS,
-    dryRun,
-    fullSync,
-  })
 
   const [
     customAccounts,
     allJournals,
     invoices,
     assets,
+    allAuditEntries,
     activityJournals,
-    auditEntries,
+    periodAuditEntries,
   ] = await Promise.all([
     getCollectionDocuments(db, 'coa'),
     getAllJournals(db),
     getCollectionDocuments(db, 'invoices'),
     getCollectionDocuments(db, 'assets'),
+    getAllAuditEntries(db),
     fullSync ? Promise.resolve([]) : getNewJournals(db, dateRange.start, dateRange.end),
-    fullSync ? getAllAuditEntries(db) : getAuditEntries(db, dateRange.start, dateRange.end),
+    fullSync ? Promise.resolve([]) : getAuditEntries(db, dateRange.start, dateRange.end),
   ])
+  const auditEntries = fullSync ? allAuditEntries : periodAuditEntries
 
   const accountMap = buildAccountMap(undefined, customAccounts)
   const allJournalRows = buildGLRows(allJournals, accountMap, now)
-  const auditRows = buildAuditRows(auditEntries)
+  const auditRows = buildAuditRows(allAuditEntries)
   const consultantSheets = buildConsultantSheetRows({
     journals: allJournals,
     invoices,
@@ -297,9 +301,7 @@ async function runSync({
       })
     }
 
-    if (auditRows.length > 0) {
-      await appendRows({ sheets, spreadsheetId, sheetName: 'Audit Log', rows: auditRows, dryRun })
-    }
+    await replaceSheet({ sheets, spreadsheetId, sheetName: 'Audit Log', rows: auditRows, dryRun })
   }
 
   await refreshConsultantSheets({ sheets, spreadsheetId, consultantSheets, dryRun })
