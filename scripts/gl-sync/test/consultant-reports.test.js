@@ -168,6 +168,40 @@ test('buildJournalReviewRows flags imbalance, missing accounts, blank line descr
   ])
 })
 
+test('buildJournalReviewRows omits clean journals without review flags', () => {
+  const accountMap = createAccountMap()
+  const journals = [
+    {
+      _docId: 'J-CLEAN',
+      date: '2026-01-08',
+      description: 'Jurnal bersih',
+      type: 'umum',
+      status: 'posted',
+      lines: [
+        { accountCode: '1111', debit: 100, credit: 0, keterangan: 'Kas masuk' },
+        { accountCode: '4100', debit: 0, credit: 100, keterangan: 'Pendapatan jasa' },
+      ],
+    },
+    {
+      _docId: 'J-BAD',
+      date: '2026-01-09',
+      description: 'Jurnal tidak balance',
+      type: 'umum',
+      status: 'posted',
+      lines: [
+        { accountCode: '1111', debit: 100, credit: 0, keterangan: 'Kas masuk' },
+        { accountCode: '4100', debit: 0, credit: 90, keterangan: 'Pendapatan jasa' },
+      ],
+    },
+  ]
+
+  const rows = consultantReports.buildJournalReviewRows(journals, accountMap)
+
+  assert.equal(rows.length, 1)
+  assert.equal(rows[0][1], 'J-BAD')
+  assert.equal(rows[0][11], 'Tidak balance')
+})
+
 test('buildMonthlyTrialBalanceRows rolls opening and ending balances forward by month and excludes deleted journals from numeric columns', () => {
   const accountMap = createAccountMap()
   const journals = [

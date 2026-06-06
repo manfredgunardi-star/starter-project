@@ -288,6 +288,7 @@ function buildJournalReviewRows(journals, accountMap) {
         duplicateKey,
       ]
     })
+    .filter((row) => row[11])
     .sort((left, right) => {
       return compareRows(left[0], right[0]) ||
         compareRows(left[1], right[1])
