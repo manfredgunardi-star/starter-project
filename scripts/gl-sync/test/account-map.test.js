@@ -31,11 +31,17 @@ test('parseBuiltinAccounts reads code, name, and normalBalance from source chart
   assert.deepStrictEqual(accounts.find((account) => account.code === '1111'), {
     code: '1111',
     name: 'Kas Kecil',
+    parent: '1110',
+    level: 3,
+    type: 'detail',
     normalBalance: 'debit',
   })
   assert.deepStrictEqual(accounts.find((account) => account.code === '1130'), {
     code: '1130',
     name: 'Cadangan Kerugian Piutang',
+    parent: '1100',
+    level: 2,
+    type: 'detail',
     normalBalance: 'credit',
   })
 })
@@ -48,6 +54,9 @@ test('parseBuiltinAccounts returns native plain objects that pass deepStrictEqua
   assert.deepStrictEqual(sample, {
     code: '1111',
     name: 'Kas Kecil',
+    parent: '1110',
+    level: 3,
+    type: 'detail',
     normalBalance: 'debit',
   })
 })
@@ -89,6 +98,50 @@ test('parseBuiltinAccounts handles multiline object literals with the array decl
 
   assert.deepStrictEqual(accounts, [
     { code: '3000', name: 'Ekuitas', normalBalance: 'credit' },
+  ])
+})
+
+test('parseBuiltinAccounts preserves multiple top-level account objects and ignores comment fake accounts', () => {
+  const source = `
+    const COA = [
+      // { code: "9999", name: "Fake", normalBalance: "credit" }
+      {
+        code: "1000",
+        name: "ASET",
+        parent: null,
+        level: 0,
+        type: "header",
+      },
+      {
+        code: "1111",
+        name: "Kas Kecil",
+        parent: "1000",
+        level: 3,
+        type: "detail",
+        normalBalance: "debit",
+      },
+    ]
+  `
+
+  const accounts = parseBuiltinAccounts(source)
+
+  assert.deepStrictEqual(accounts, [
+    {
+      code: '1000',
+      name: 'ASET',
+      parent: null,
+      level: 0,
+      type: 'header',
+      normalBalance: 'debit',
+    },
+    {
+      code: '1111',
+      name: 'Kas Kecil',
+      parent: '1000',
+      level: 3,
+      type: 'detail',
+      normalBalance: 'debit',
+    },
   ])
 })
 
@@ -159,4 +212,18 @@ test('loadBuiltinAccounts reads the repository chart of accounts relative to __d
 
   assert.ok(accounts.some((account) => account.code === '1111'))
   assert.equal(accounts.find((account) => account.code === '1111').name, 'Kas Kecil')
+})
+
+test('builtin header account 1000 keeps parent null, level 0, and type header', () => {
+  const accounts = loadBuiltinAccounts()
+  const header = accounts.find((account) => account.code === '1000')
+
+  assert.deepStrictEqual(header, {
+    code: '1000',
+    name: 'ASET',
+    parent: null,
+    level: 0,
+    type: 'header',
+    normalBalance: 'debit',
+  })
 })

@@ -25,6 +25,73 @@ function extractQuotedProperty(objectSource, propertyName) {
   return match ? match[2].replace(/\\(['"])/g, '$1') : null
 }
 
+function stripComments(source) {
+  const text = String(source)
+  let output = ''
+  let index = 0
+  let inString = null
+
+  while (index < text.length) {
+    const current = text[index]
+
+    if (inString) {
+      output += current
+      if (current === '\\') {
+        if (index + 1 < text.length) {
+          output += text[index + 1]
+          index += 2
+          continue
+        }
+      } else if (current === inString) {
+        inString = null
+      }
+      index += 1
+      continue
+    }
+
+    if (current === '"' || current === "'" || current === '`') {
+      inString = current
+      output += current
+      index += 1
+      continue
+    }
+
+    if (current === '/' && text[index + 1] === '/') {
+      index += 2
+      while (index < text.length && text[index] !== '\n') index += 1
+      continue
+    }
+
+    if (current === '/' && text[index + 1] === '*') {
+      index += 2
+      while (index < text.length && !(text[index] === '*' && text[index + 1] === '/')) index += 1
+      index += 2
+      continue
+    }
+
+    output += current
+    index += 1
+  }
+
+  return output
+}
+
+function extractNullableStringProperty(objectSource, propertyName) {
+  const cleanedSource = stripComments(objectSource)
+  const quotedValue = extractQuotedProperty(cleanedSource, propertyName)
+  if (quotedValue !== null) return quotedValue
+
+  const nullPattern = new RegExp(`\\b${propertyName}\\s*:\\s*null\\b`)
+  return nullPattern.test(cleanedSource) ? null : undefined
+}
+
+function extractNumericProperty(objectSource, propertyName) {
+  const cleanedSource = stripComments(objectSource)
+  const pattern = new RegExp(`\\b${propertyName}\\s*:\\s*(-?\\d+)\\b`)
+  const match = cleanedSource.match(pattern)
+  return match ? Number(match[1]) : undefined
+}
+
 function extractObjectLiterals(source) {
   const text = String(source)
   const objects = []
@@ -125,16 +192,28 @@ function extractObjectLiterals(source) {
 function parseBuiltinAccounts(source) {
   const accounts = []
   for (const objectSource of extractObjectLiterals(source)) {
-    const code = extractQuotedProperty(objectSource, 'code')
-    const name = extractQuotedProperty(objectSource, 'name')
+    const cleanedObjectSource = stripComments(objectSource)
+    const code = extractQuotedProperty(cleanedObjectSource, 'code')
+    const name = extractQuotedProperty(cleanedObjectSource, 'name')
     if (!code || !name) continue
 
-    const normalBalance = extractQuotedProperty(objectSource, 'normalBalance')
-    accounts.push({
+    const normalBalance = extractQuotedProperty(cleanedObjectSource, 'normalBalance')
+    const account = {
       code,
       name,
       normalBalance: normalBalance || inferNormalBalance(code),
-    })
+    }
+
+    const parent = extractNullableStringProperty(cleanedObjectSource, 'parent')
+    if (parent !== undefined) account.parent = parent
+
+    const level = extractNumericProperty(cleanedObjectSource, 'level')
+    if (level !== undefined) account.level = level
+
+    const type = extractQuotedProperty(cleanedObjectSource, 'type')
+    if (type !== null) account.type = type
+
+    accounts.push(account)
   }
 
   if (accounts.length === 0) {
@@ -190,17 +269,26 @@ function normalizeCustomAccount(account) {
 }
 
 function normalizeBuiltinAccount(account) {
-  return {
+  const normalized = {
     code: String(account.code),
     name: String(account.name || ''),
-    parent: account.parent || null,
-    level: account.level ?? 2,
-    type: account.type || 'detail',
     normalBalance: account.normalBalance || inferNormalBalance(account.code),
     custom: false,
     inactive: false,
     missing: false,
   }
+
+  if (Object.prototype.hasOwnProperty.call(account, 'parent')) {
+    normalized.parent = account.parent
+  }
+  if (Object.prototype.hasOwnProperty.call(account, 'level')) {
+    normalized.level = account.level
+  }
+  if (Object.prototype.hasOwnProperty.call(account, 'type')) {
+    normalized.type = account.type
+  }
+
+  return normalized
 }
 
 function buildAccountMap(builtinAccounts = loadBuiltinAccounts(), customAccounts = []) {
