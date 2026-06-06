@@ -456,6 +456,48 @@ test('upsertGeneralLedger uses supplied sheetId without requiring sheet metadata
   ])
 })
 
+test('upsertGeneralLedger treats a single string journalId as one impacted journal', async () => {
+  const fakeSheets = createFakeSheets({
+    sheetsMetadata: [{ sheetId: 77, title: 'General Ledger' }],
+    valuesByRange: {
+      'General Ledger!A:P': [
+        GL_HEADERS,
+        ['2026-06-04', 'J-404', 'J-404', 1],
+        ['2026-06-04', 'J-404', 'J-404', 2],
+      ],
+    },
+  })
+
+  await sheetOperations.upsertGeneralLedger({
+    sheets: fakeSheets,
+    spreadsheetId: 'spreadsheet-1',
+    schemas: DEFAULT_SCHEMAS,
+    journalIds: 'J-404',
+    rows: [],
+    dryRun: false,
+  })
+
+  assert.deepStrictEqual(fakeSheets.calls.batchUpdate, [
+    {
+      spreadsheetId: 'spreadsheet-1',
+      requestBody: {
+        requests: [
+          {
+            deleteDimension: {
+              range: {
+                sheetId: 77,
+                dimension: 'ROWS',
+                startIndex: 1,
+                endIndex: 3,
+              },
+            },
+          },
+        ],
+      },
+    },
+  ])
+})
+
 test('upsertGeneralLedger dry run never writes, clears, appends, or batch deletes', async () => {
   const fakeSheets = createFakeSheets({
     sheetsMetadata: [{ sheetId: 77, title: 'General Ledger' }],

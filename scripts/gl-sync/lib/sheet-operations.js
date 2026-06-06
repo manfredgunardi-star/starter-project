@@ -205,6 +205,11 @@ function getGeneralLedgerSchema(schemas) {
   return requiredSheets.find((sheet) => sheet.title === GL_SHEET_NAME) || DEFAULT_SHEET_SCHEMAS[0]
 }
 
+function normalizeJournalIds(journalIds) {
+  if (typeof journalIds === 'string') return [journalIds]
+  return Array.from(journalIds || [])
+}
+
 async function upsertGeneralLedger({ sheets, spreadsheetId, schemas, sheetId, journalIds = [], rows = [], dryRun = false }) {
   const generalLedgerSchema = getGeneralLedgerSchema(schemas)
   let resolvedSheetId = sheetId
@@ -224,7 +229,7 @@ async function upsertGeneralLedger({ sheets, spreadsheetId, schemas, sheetId, jo
   })
   const existingRows = existingResponse.data.values || []
   const impactedJournalIds = [...new Set([
-    ...journalIds,
+    ...normalizeJournalIds(journalIds),
     ...rows.map((row) => row[1]).filter(Boolean),
   ].filter(Boolean))]
   const requests = buildJournalDeleteRequests(existingRows, impactedJournalIds, resolvedSheetId)
