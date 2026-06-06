@@ -92,7 +92,10 @@ function buildGLRows(journals, accountMap, syncTimestamp, formatTimestamp = form
 }
 
 function buildJournalDeleteRequests(existingRows, journalIds, sheetId) {
-  const ids = new Set((journalIds || []).filter(Boolean).map(String))
+  const idList = typeof journalIds === 'string'
+    ? [journalIds]
+    : Array.from(journalIds || [])
+  const ids = new Set(idList.filter(Boolean).map(String))
   if (ids.size === 0 || sheetId === undefined || sheetId === null) return []
 
   const matches = []

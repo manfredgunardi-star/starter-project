@@ -262,3 +262,27 @@ test('buildJournalDeleteRequests treats existingRows as sheet values including h
     },
   ])
 })
+
+test('buildJournalDeleteRequests accepts Set journal IDs from the plan contract', () => {
+  const existingRows = [
+    generalLedger.GL_HEADERS,
+    ['2026-06-01', 'J-A', 'J-A', 1],
+    ['2026-06-01', 'J-A', 'J-A', 2],
+    ['2026-06-02', 'J-B', 'J-B', 1],
+  ]
+
+  const requests = generalLedger.buildJournalDeleteRequests(existingRows, new Set(['J-A']), 456)
+
+  assert.deepStrictEqual(requests, [
+    {
+      deleteDimension: {
+        range: {
+          sheetId: 456,
+          dimension: 'ROWS',
+          startIndex: 1,
+          endIndex: 3,
+        },
+      },
+    },
+  ])
+})

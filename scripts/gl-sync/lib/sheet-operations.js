@@ -205,12 +205,17 @@ function getGeneralLedgerSchema(schemas) {
   return requiredSheets.find((sheet) => sheet.title === GL_SHEET_NAME) || DEFAULT_SHEET_SCHEMAS[0]
 }
 
-async function upsertGeneralLedger({ sheets, spreadsheetId, schemas, journalIds = [], rows = [], dryRun = false }) {
+async function upsertGeneralLedger({ sheets, spreadsheetId, schemas, sheetId, journalIds = [], rows = [], dryRun = false }) {
   const generalLedgerSchema = getGeneralLedgerSchema(schemas)
-  const metadata = await getSheetMetadata(sheets, spreadsheetId)
-  const sheet = findSheet(metadata, GL_SHEET_NAME)
-  if (!sheet) {
-    throw new Error('Sheet General Ledger tidak ditemukan.')
+  let resolvedSheetId = sheetId
+
+  if (resolvedSheetId === undefined || resolvedSheetId === null) {
+    const metadata = await getSheetMetadata(sheets, spreadsheetId)
+    const sheet = findSheet(metadata, GL_SHEET_NAME)
+    if (!sheet) {
+      throw new Error('Sheet General Ledger tidak ditemukan.')
+    }
+    resolvedSheetId = sheet.sheetId
   }
 
   const existingResponse = await sheets.spreadsheets.values.get({
@@ -222,7 +227,7 @@ async function upsertGeneralLedger({ sheets, spreadsheetId, schemas, journalIds 
     ...journalIds,
     ...rows.map((row) => row[1]).filter(Boolean),
   ].filter(Boolean))]
-  const requests = buildJournalDeleteRequests(existingRows, impactedJournalIds, sheet.sheetId)
+  const requests = buildJournalDeleteRequests(existingRows, impactedJournalIds, resolvedSheetId)
 
   if (!dryRun && requests.length > 0) {
     await sheets.spreadsheets.batchUpdate({

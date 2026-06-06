@@ -414,6 +414,48 @@ test('upsertGeneralLedger deletes impacted IDs even when rows are empty', async 
   assert.equal(fakeSheets.calls.valuesAppend.length, 0)
 })
 
+test('upsertGeneralLedger uses supplied sheetId without requiring sheet metadata', async () => {
+  const fakeSheets = createFakeSheets({
+    sheetsMetadata: [],
+    valuesByRange: {
+      'General Ledger!A:P': [
+        GL_HEADERS,
+        ['2026-06-04', 'J-777', 'J-777', 1],
+      ],
+    },
+  })
+
+  await sheetOperations.upsertGeneralLedger({
+    sheets: fakeSheets,
+    spreadsheetId: 'spreadsheet-1',
+    schemas: DEFAULT_SCHEMAS,
+    sheetId: 88,
+    journalIds: ['J-777'],
+    rows: [['2026-06-06', 'J-777', 'J-777', 1]],
+    dryRun: false,
+  })
+
+  assert.deepStrictEqual(fakeSheets.calls.batchUpdate, [
+    {
+      spreadsheetId: 'spreadsheet-1',
+      requestBody: {
+        requests: [
+          {
+            deleteDimension: {
+              range: {
+                sheetId: 88,
+                dimension: 'ROWS',
+                startIndex: 1,
+                endIndex: 2,
+              },
+            },
+          },
+        ],
+      },
+    },
+  ])
+})
+
 test('upsertGeneralLedger dry run never writes, clears, appends, or batch deletes', async () => {
   const fakeSheets = createFakeSheets({
     sheetsMetadata: [{ sheetId: 77, title: 'General Ledger' }],
