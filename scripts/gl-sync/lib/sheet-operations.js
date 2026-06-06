@@ -214,6 +214,8 @@ async function upsertGeneralLedger({ sheets, spreadsheetId, schemas, sheetId, jo
   const generalLedgerSchema = getGeneralLedgerSchema(schemas)
   let resolvedSheetId = sheetId
 
+  if (dryRun) return
+
   if (resolvedSheetId === undefined || resolvedSheetId === null) {
     const metadata = await getSheetMetadata(sheets, spreadsheetId)
     const sheet = findSheet(metadata, GL_SHEET_NAME)
