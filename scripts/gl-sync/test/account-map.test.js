@@ -40,20 +40,32 @@ test('parseBuiltinAccounts reads code, name, and normalBalance from source chart
   })
 })
 
-test('buildAccountMap lets active and inactive custom accounts override built-in accounts and ignores deleted accounts', () => {
-  const map = buildAccountMap(
-    [
-      { code: '1111', name: 'Kas Kecil Custom Aktif', status: 'active' },
-      { code: '1112', name: 'Bank BCA Nonaktif', status: 'inactive' },
-      { code: '1113', name: 'Bank Mandiri Dihapus', status: 'deleted' },
-      { code: '9900', name: 'Akun Baru', status: 'active', normalBalance: 'credit' },
-    ],
-    [
-      { code: '1111', name: 'Kas Kecil', normalBalance: 'debit' },
-      { code: '1112', name: 'Bank BCA Operasional', normalBalance: 'debit' },
-      { code: '1113', name: 'Bank Mandiri Operasional', normalBalance: 'debit' },
-    ]
-  )
+test('parseBuiltinAccounts returns native plain objects that pass deepStrictEqual on sample data', () => {
+  const source = fs.readFileSync(chartPath, 'utf8')
+  const accounts = parseBuiltinAccounts(source)
+  const sample = accounts.find((account) => account.code === '1111')
+
+  assert.deepStrictEqual(sample, {
+    code: '1111',
+    name: 'Kas Kecil',
+    normalBalance: 'debit',
+  })
+})
+
+test('buildAccountMap accepts builtin accounts first and custom accounts second', () => {
+  const builtinAccounts = [
+    { code: '1111', name: 'Kas Kecil', normalBalance: 'debit' },
+    { code: '1112', name: 'Bank BCA Operasional', normalBalance: 'debit' },
+    { code: '1113', name: 'Bank Mandiri Operasional', normalBalance: 'debit' },
+  ]
+  const customAccounts = [
+    { code: '1111', name: 'Kas Kecil Custom Aktif', status: 'active' },
+    { code: '1112', name: 'Bank BCA Nonaktif', status: 'inactive' },
+    { code: '1113', name: 'Bank Mandiri Dihapus', status: 'deleted' },
+    { code: '9900', name: 'Akun Baru', status: 'active', normalBalance: 'credit' },
+  ]
+
+  const map = buildAccountMap(builtinAccounts, customAccounts)
 
   assert.equal(map.get('1111').name, 'Kas Kecil Custom Aktif')
   assert.equal(map.get('1111').inactive, false)
@@ -65,22 +77,41 @@ test('buildAccountMap lets active and inactive custom accounts override built-in
   assert.equal(map.get('9900').custom, true)
 })
 
-test('resolveAccount returns fallback label and infers normal balance for unknown accounts', () => {
-  const map = buildAccountMap([], [
-    { code: '1111', name: 'Kas Kecil', normalBalance: 'debit' },
-  ])
+test('resolveAccount returns minimal fallback object with missing true', () => {
+  const map = buildAccountMap(
+    [{ code: '1111', name: 'Kas Kecil', normalBalance: 'debit' }],
+    []
+  )
 
   const resolved = resolveAccount('9999', map)
 
-  assert.equal(resolved.code, '9999')
-  assert.equal(resolved.name, '[Akun tidak ditemukan: 9999]')
-  assert.equal(resolved.normalBalance, 'credit')
+  assert.deepStrictEqual(resolved, {
+    code: '9999',
+    name: '[Akun tidak ditemukan: 9999]',
+    normalBalance: 'debit',
+    missing: true,
+  })
+})
+
+test('resolveAccount exposes missing false for known accounts', () => {
+  const map = buildAccountMap(
+    [{ code: '1111', name: 'Kas Kecil', normalBalance: 'debit' }],
+    []
+  )
+
+  const resolved = resolveAccount('1111', map)
+
+  assert.equal(resolved.missing, false)
+  assert.equal(resolved.code, '1111')
+  assert.equal(resolved.name, 'Kas Kecil')
 })
 
 test('inferNormalBalance follows account code groups and known exceptions', () => {
   assert.equal(inferNormalBalance('1111'), 'debit')
   assert.equal(inferNormalBalance('2134'), 'credit')
   assert.equal(inferNormalBalance('9110'), 'debit')
+  assert.equal(inferNormalBalance('9000'), 'debit')
+  assert.equal(inferNormalBalance('9100'), 'credit')
 })
 
 test('loadBuiltinAccounts reads the repository chart of accounts relative to __dirname', () => {

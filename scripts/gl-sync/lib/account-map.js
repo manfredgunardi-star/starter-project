@@ -2,46 +2,49 @@
 
 const fs = require('node:fs')
 const path = require('node:path')
-const vm = require('node:vm')
 
 function inferNormalBalance(code) {
   const value = String(code || '')
 
-  if (value === '9110') return 'debit'
   if (value === '9100') return 'credit'
+  if (value === '9110') return 'debit'
 
   const firstDigit = value.charAt(0)
   if (['1', '5', '6', '8'].includes(firstDigit)) return 'debit'
-  if (['2', '3', '4', '7', '9'].includes(firstDigit)) return 'credit'
+  if (['2', '3', '4', '7'].includes(firstDigit)) return 'credit'
 
   return 'debit'
 }
 
 function parseBuiltinAccounts(source) {
-  const transformedSource = String(source)
-    .replace(/export\s+const\s+/g, 'const ')
-    .replace(/export\s+function\s+/g, 'function ')
-
-  const sandbox = {
-    globalThis: {},
+  const lines = String(source).split(/\r?\n/)
+  const startIndex = lines.findIndex((line) => line.includes('export const COA = ['))
+  if (startIndex === -1) {
+    throw new Error('Tidak menemukan deklarasi COA')
   }
 
-  vm.runInNewContext(
-    `${transformedSource}\n;globalThis.__builtinAccounts = COA`,
-    sandbox,
-    { timeout: 1000 }
-  )
+  const accounts = []
+  for (let index = startIndex + 1; index < lines.length; index += 1) {
+    const line = lines[index].trim()
+    if (line === ']') break
+    if (!line.startsWith('{')) continue
 
-  const accounts = sandbox.globalThis.__builtinAccounts
-  if (!Array.isArray(accounts)) {
-    throw new Error('COA source tidak menghasilkan array akun')
+    const codeMatch = line.match(/code:\s*"([^"]+)"/)
+    const nameMatch = line.match(/name:\s*"([^"]+)"/)
+    const balanceMatch = line.match(/normalBalance:\s*"([^"]+)"/)
+
+    if (!codeMatch || !nameMatch) {
+      throw new Error(`Gagal mem-parse akun builtin: ${line}`)
+    }
+
+    accounts.push({
+      code: codeMatch[1],
+      name: nameMatch[1],
+      normalBalance: balanceMatch ? balanceMatch[1] : inferNormalBalance(codeMatch[1]),
+    })
   }
 
-  return accounts.map((account) => ({
-    code: String(account.code),
-    name: String(account.name),
-    normalBalance: account.normalBalance || inferNormalBalance(account.code),
-  }))
+  return accounts
 }
 
 function findRepoRoot(startDir) {
@@ -85,6 +88,7 @@ function normalizeCustomAccount(account) {
     custom: true,
     firestoreId: account.id,
     inactive: account.status === 'inactive',
+    missing: false,
   }
 }
 
@@ -98,10 +102,11 @@ function normalizeBuiltinAccount(account) {
     normalBalance: account.normalBalance || inferNormalBalance(account.code),
     custom: false,
     inactive: false,
+    missing: false,
   }
 }
 
-function buildAccountMap(customAccounts = [], builtinAccounts = loadBuiltinAccounts()) {
+function buildAccountMap(builtinAccounts = loadBuiltinAccounts(), customAccounts = []) {
   const map = new Map()
 
   for (const builtinAccount of builtinAccounts) {
@@ -120,18 +125,19 @@ function resolveAccount(code, accountMap) {
   const key = String(code)
   if (accountMap && typeof accountMap.get === 'function') {
     const account = accountMap.get(key)
-    if (account) return account
+    if (account) {
+      return {
+        ...account,
+        missing: false,
+      }
+    }
   }
 
   return {
     code: key,
     name: `[Akun tidak ditemukan: ${key}]`,
-    parent: null,
-    level: 2,
-    type: 'detail',
     normalBalance: inferNormalBalance(key),
-    custom: false,
-    inactive: false,
+    missing: true,
   }
 }
 
