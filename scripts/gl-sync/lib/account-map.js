@@ -16,32 +16,129 @@ function inferNormalBalance(code) {
   return 'debit'
 }
 
-function parseBuiltinAccounts(source) {
-  const lines = String(source).split(/\r?\n/)
-  const startIndex = lines.findIndex((line) => line.includes('export const COA = ['))
-  if (startIndex === -1) {
-    throw new Error('Tidak menemukan deklarasi COA')
-  }
+function extractQuotedProperty(objectSource, propertyName) {
+  const pattern = new RegExp(
+    `\\b${propertyName}\\s*:\\s*(['"])((?:\\\\.|(?!\\1).)*)\\1`,
+    's'
+  )
+  const match = objectSource.match(pattern)
+  return match ? match[2].replace(/\\(['"])/g, '$1') : null
+}
 
-  const accounts = []
-  for (let index = startIndex + 1; index < lines.length; index += 1) {
-    const line = lines[index].trim()
-    if (line === ']') break
-    if (!line.startsWith('{')) continue
+function extractObjectLiterals(source) {
+  const text = String(source)
+  const objects = []
+  const length = text.length
+  let index = 0
 
-    const codeMatch = line.match(/code:\s*"([^"]+)"/)
-    const nameMatch = line.match(/name:\s*"([^"]+)"/)
-    const balanceMatch = line.match(/normalBalance:\s*"([^"]+)"/)
+  while (index < length) {
+    const char = text[index]
 
-    if (!codeMatch || !nameMatch) {
-      throw new Error(`Gagal mem-parse akun builtin: ${line}`)
+    if (char === '"' || char === "'" || char === '`') {
+      const quote = char
+      index += 1
+      while (index < length) {
+        const current = text[index]
+        if (current === '\\') {
+          index += 2
+          continue
+        }
+        if (current === quote) {
+          index += 1
+          break
+        }
+        index += 1
+      }
+      continue
     }
 
+    if (char === '/' && text[index + 1] === '/') {
+      index += 2
+      while (index < length && text[index] !== '\n') index += 1
+      continue
+    }
+
+    if (char === '/' && text[index + 1] === '*') {
+      index += 2
+      while (index < length && !(text[index] === '*' && text[index + 1] === '/')) index += 1
+      index += 2
+      continue
+    }
+
+    if (char === '{') {
+      let depth = 1
+      let cursor = index + 1
+      let inString = null
+
+      while (cursor < length && depth > 0) {
+        const current = text[cursor]
+
+        if (inString) {
+          if (current === '\\') {
+            cursor += 2
+            continue
+          }
+          if (current === inString) {
+            inString = null
+          }
+          cursor += 1
+          continue
+        }
+
+        if (current === '"' || current === "'" || current === '`') {
+          inString = current
+          cursor += 1
+          continue
+        }
+
+        if (current === '/' && text[cursor + 1] === '/') {
+          cursor += 2
+          while (cursor < length && text[cursor] !== '\n') cursor += 1
+          continue
+        }
+
+        if (current === '/' && text[cursor + 1] === '*') {
+          cursor += 2
+          while (cursor < length && !(text[cursor] === '*' && text[cursor + 1] === '/')) cursor += 1
+          cursor += 2
+          continue
+        }
+
+        if (current === '{') depth += 1
+        if (current === '}') depth -= 1
+        cursor += 1
+      }
+
+      if (depth === 0) {
+        objects.push(text.slice(index, cursor))
+        index = cursor
+        continue
+      }
+    }
+
+    index += 1
+  }
+
+  return objects
+}
+
+function parseBuiltinAccounts(source) {
+  const accounts = []
+  for (const objectSource of extractObjectLiterals(source)) {
+    const code = extractQuotedProperty(objectSource, 'code')
+    const name = extractQuotedProperty(objectSource, 'name')
+    if (!code || !name) continue
+
+    const normalBalance = extractQuotedProperty(objectSource, 'normalBalance')
     accounts.push({
-      code: codeMatch[1],
-      name: nameMatch[1],
-      normalBalance: balanceMatch ? balanceMatch[1] : inferNormalBalance(codeMatch[1]),
+      code,
+      name,
+      normalBalance: normalBalance || inferNormalBalance(code),
     })
+  }
+
+  if (accounts.length === 0) {
+    throw new Error('Tidak menemukan akun builtin pada source')
   }
 
   return accounts
