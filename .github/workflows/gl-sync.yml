@@ -54,6 +54,10 @@ jobs:
         working-directory: scripts/gl-sync
         run: npm ci
 
+      - name: Test GL sync
+        working-directory: scripts/gl-sync
+        run: npm test
+
       - name: Run GL sync
         working-directory: scripts/gl-sync
         env:
