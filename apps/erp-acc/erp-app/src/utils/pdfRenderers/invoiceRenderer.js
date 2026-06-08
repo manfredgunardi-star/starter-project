@@ -7,6 +7,7 @@ import {
   COLOR,
   FONT,
   formatCurrency,
+  formatQuantity,
   formatDate,
   formatDiscount,
   safeText,
@@ -152,7 +153,7 @@ export async function renderInvoicePdf(invoice, company) {
     return [
       String(idx + 1).padStart(2, '0'),
       descLines.join('\n'),
-      formatCurrency(item?.quantity),
+      formatQuantity(item?.quantity),
       safeText(item?.unit?.name, ''),
       formatCurrency(item?.unit_price),
       formatDiscount(item?.discount_percent),
