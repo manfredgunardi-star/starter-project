@@ -14,6 +14,7 @@ import Button from '../../components/ui/Button'
 import DateInput from '../../components/ui/DateInput'
 import DocumentHeader from '../../components/shared/DocumentHeader'
 import LineItemsTable from '../../components/shared/LineItemsTable'
+import { rowTotals } from '../../utils/lineItemTotals'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { usePrintInvoice } from '../../hooks/usePrintInvoice'
 import { ArrowLeft, Save, Send, Printer, FileDown, Repeat } from 'lucide-react'
@@ -46,6 +47,7 @@ export default function SalesInvoiceFormPage() {
     notes: '',
   })
   const [items, setItems] = useState([LineItemsTable.emptyRow()])
+  const [gdRaw, setGdRaw] = useState(null) // raw GD awaiting products master to compute price + PPN
 
   useEffect(() => {
     getPaymentTerms()
@@ -104,22 +106,31 @@ export default function SalesInvoiceFormPage() {
           sales_order_id: gd.sales_order_id || '',
           goods_delivery_id: gd.id,
         }))
-        // GD has no unit_price — LineItemsTable will auto-fill from product.sell_price
-        setItems(
-          (gd.items || []).map(i => ({
-            _key: i.id,
-            product_id: i.product_id,
-            unit_id: i.unit_id,
-            quantity: i.quantity,
-            quantity_base: i.quantity_base,
-            unit_price: '',
-            tax_amount: 0,
-            total: 0,
-          }))
-        )
+        setGdRaw(gd)
       })
       .catch(err => toast.error('Gagal load GD: ' + err.message))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Map GD items to invoice lines once the products master is loaded. GD carries
+  // no price, so fill unit_price from product.sell_price, then compute PPN
+  // (is_taxable / tax_rate) instead of leaving price/tax at 0.
+  useEffect(() => {
+    if (!gdRaw || products.length === 0) return
+    setItems(
+      (gdRaw.items || []).map(i => {
+        const prod = products.find(p => p.id === i.product_id)
+        const row = {
+          _key: i.id,
+          product_id: i.product_id,
+          unit_id: i.unit_id,
+          quantity: i.quantity,
+          quantity_base: i.quantity_base,
+          unit_price: prod ? (prod.sell_price ?? 0) : '',
+        }
+        return { ...row, ...rowTotals(row, prod) }
+      })
+    )
+  }, [gdRaw, products])
 
   const readOnly = !isNew && header.status !== 'draft'
 

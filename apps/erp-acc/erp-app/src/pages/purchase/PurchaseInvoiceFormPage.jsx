@@ -12,6 +12,7 @@ import { formatCurrency } from '../../utils/currency'
 import Button from '../../components/ui/Button'
 import DocumentHeader from '../../components/shared/DocumentHeader'
 import LineItemsTable from '../../components/shared/LineItemsTable'
+import { rowTotals } from '../../utils/lineItemTotals'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { ArrowLeft, Save, Send } from 'lucide-react'
 
@@ -41,6 +42,7 @@ export default function PurchaseInvoiceFormPage() {
     payment_term_id: '',
   })
   const [items, setItems] = useState([LineItemsTable.emptyRow()])
+  const [grRaw, setGrRaw] = useState(null) // raw GR awaiting products master to compute PPN
 
   useEffect(() => {
     getPaymentTerms()
@@ -93,21 +95,30 @@ export default function PurchaseInvoiceFormPage() {
           purchase_order_id: gr.purchase_order_id || '',
           goods_receipt_id: gr.id,
         }))
-        setItems(
-          (gr.items || []).map(i => ({
-            _key: i.id,
-            product_id: i.product_id,
-            unit_id: i.unit_id,
-            quantity: i.quantity,
-            quantity_base: i.quantity_base,
-            unit_price: i.unit_price,
-            tax_amount: 0,
-            total: 0,
-          }))
-        )
+        setGrRaw(gr)
       })
       .catch(err => toast.error('Gagal load GR: ' + err.message))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Map GR items to invoice lines once the products master is loaded, so PPN
+  // (is_taxable / tax_rate) can be computed instead of left at 0.
+  useEffect(() => {
+    if (!grRaw || products.length === 0) return
+    setItems(
+      (grRaw.items || []).map(i => {
+        const prod = products.find(p => p.id === i.product_id)
+        const row = {
+          _key: i.id,
+          product_id: i.product_id,
+          unit_id: i.unit_id,
+          quantity: i.quantity,
+          quantity_base: i.quantity_base,
+          unit_price: i.unit_price,
+        }
+        return { ...row, ...rowTotals(row, prod) }
+      })
+    )
+  }, [grRaw, products])
 
   const readOnly = !isNew && header.status !== 'draft'
 
