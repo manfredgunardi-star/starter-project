@@ -85,6 +85,25 @@ export function formatCurrency(amount, prefix = '') {
 }
 
 /**
+ * Format a quantity in Indonesian locale, preserving up to 2 decimal places.
+ *
+ * Unlike formatCurrency (which rounds to whole numbers), quantities can be
+ * fractional (e.g. 5813.97 m³) and must keep their decimals on the PDF to
+ * match what is shown on screen.
+ *
+ * @param {number|string|null} amount
+ * @returns {string}
+ */
+export function formatQuantity(amount) {
+  const n = Number(amount)
+  if (amount == null || isNaN(n)) return '0'
+  return n.toLocaleString('id-ID', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })
+}
+
+/**
  * Format an ISO date string for display.
  * @param {string|null} dateStr
  * @param {Intl.DateTimeFormatOptions} opts  Override/extend default options

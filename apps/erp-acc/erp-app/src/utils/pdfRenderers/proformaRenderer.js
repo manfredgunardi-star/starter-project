@@ -7,6 +7,7 @@ import {
   COLOR,
   FONT,
   formatCurrency,
+  formatQuantity,
   formatDate,
   safeText,
   loadLogoDataUrl,
@@ -148,7 +149,7 @@ export async function renderProformaPdf(proforma, company) {
     return [
       String(idx + 1).padStart(2, '0'),
       descLines.join('\n'),
-      formatCurrency(item?.quantity),
+      formatQuantity(item?.quantity),
       safeText(item?.unit?.name, ''),
       formatCurrency(item?.unit_price),
       formatCurrency(item?.total),
