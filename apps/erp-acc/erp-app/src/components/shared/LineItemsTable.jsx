@@ -1,5 +1,6 @@
 import { useCallback } from 'react'
 import { formatCurrency } from '../../utils/currency'
+import { rowTotals } from '../../utils/lineItemTotals'
 import { Plus, Trash2 } from 'lucide-react'
 import { Card, Space, Typography, Flex, Divider } from 'antd'
 
@@ -31,14 +32,10 @@ function getUnitOptions(product) {
 function recalcRow(row, product, unitFactor) {
   const qty = Number(row.quantity) || 0
   const qtyBase = qty * (unitFactor ?? 1)
-  const price = Number(row.unit_price) || 0
-  const subtotal = qty * price
-  const taxAmt = product?.is_taxable ? subtotal * ((product.tax_rate || 11) / 100) : 0
   return {
     ...row,
     quantity_base: qtyBase,
-    tax_amount: taxAmt,
-    total: subtotal + taxAmt,
+    ...rowTotals(row, product),
   }
 }
 
