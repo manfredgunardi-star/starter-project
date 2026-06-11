@@ -148,3 +148,125 @@ begin
 
   return v_inv_id;
 end $$;
+
+-- -------------------------------------------------------
+-- post_sales_invoice: debit akun UM mengurangi piutang yang dibukukan.
+-- Jurnal pendapatan (lanjutan dari migration 011):
+--   D Piutang            = total - UM        (hanya jika > 0)
+--   D Akun Uang Muka     = UM                (hanya jika UM > 0)
+--   C Pendapatan         = subtotal
+--   C PPN Keluaran       = tax_amount        (hanya jika > 0)
+-- Status invoice: 'paid' bila UM >= total - 0.01 (UM menutup seluruh tagihan),
+-- selain itu 'posted'.
+-- -------------------------------------------------------
+create or replace function post_sales_invoice(p_invoice_id uuid)
+returns uuid as $$
+declare
+  v_inv record;
+  v_item record;
+  v_journal_id uuid;
+  v_hpp_journal_id uuid;
+  v_coa_piutang uuid;
+  v_coa_pendapatan uuid;
+  v_coa_ppn_out uuid;
+  v_coa_hpp uuid;
+  v_coa_persediaan uuid;
+  v_has_gd boolean;
+  v_avg_cost numeric;
+  v_total_hpp numeric := 0;
+  v_piutang numeric;
+begin
+  select * into v_inv from invoices where id = p_invoice_id;
+  if v_inv.status != 'draft' then
+    raise exception 'Invoice already posted';
+  end if;
+  if v_inv.type != 'sales' then
+    raise exception 'Not a sales invoice';
+  end if;
+
+  if v_inv.advance_deduction_amount > 0 and v_inv.advance_deduction_coa_id is null then
+    raise exception 'akun COA uang muka wajib dipilih jika potongan uang muka > 0';
+  end if;
+  if v_inv.advance_deduction_amount > v_inv.total + 0.01 then
+    raise exception 'potongan uang muka melebihi total invoice';
+  end if;
+
+  select id into v_coa_piutang from coa where code = '1-13000'; -- Piutang Usaha
+  select id into v_coa_pendapatan from coa where code = '4-11000'; -- Pendapatan Penjualan
+  select id into v_coa_ppn_out from coa where code = '2-12000'; -- PPN Keluaran
+  select id into v_coa_hpp from coa where code = '5-11000'; -- HPP
+  select id into v_coa_persediaan from coa where code = '1-14000'; -- Persediaan
+
+  -- Revenue journal
+  v_journal_id := gen_random_uuid();
+  insert into journals (id, journal_number, date, description, source, reference_type, reference_id, customer_id, is_posted, created_by)
+    values (v_journal_id, generate_number('JRN'), v_inv.date,
+      'Penjualan ' || v_inv.invoice_number, 'auto', 'sales_invoice', p_invoice_id,
+      v_inv.customer_id, true, v_inv.created_by);
+
+  -- Debit: Piutang = total - uang muka (skip jika 0)
+  v_piutang := v_inv.total - v_inv.advance_deduction_amount;
+  if v_piutang > 0 then
+    insert into journal_items (journal_id, coa_id, debit, description)
+      values (v_journal_id, v_coa_piutang, v_piutang, 'Piutang - ' || v_inv.invoice_number);
+  end if;
+
+  -- Debit: Akun Uang Muka (offset) jika ada
+  if v_inv.advance_deduction_amount > 0 then
+    insert into journal_items (journal_id, coa_id, debit, description)
+      values (v_journal_id, v_inv.advance_deduction_coa_id, v_inv.advance_deduction_amount,
+              'Potongan uang muka - ' || v_inv.invoice_number);
+  end if;
+
+  -- Credit: Pendapatan = subtotal (sebelum PPN)
+  insert into journal_items (journal_id, coa_id, credit, description)
+    values (v_journal_id, v_coa_pendapatan, v_inv.subtotal, 'Pendapatan - ' || v_inv.invoice_number);
+
+  -- Credit: PPN Keluaran (jika ada)
+  if v_inv.tax_amount > 0 then
+    insert into journal_items (journal_id, coa_id, credit, description)
+      values (v_journal_id, v_coa_ppn_out, v_inv.tax_amount, 'PPN Keluaran - ' || v_inv.invoice_number);
+  end if;
+
+  -- Check if goods already delivered via goods_deliveries (HPP sudah dibuat)
+  select exists(
+    select 1 from goods_deliveries
+      where sales_order_id = v_inv.sales_order_id
+        and status = 'posted'
+  ) into v_has_gd;
+
+  -- Jika belum ada delivery, handle HPP + stock out sekarang
+  if not v_has_gd then
+    for v_item in select * from invoice_items where invoice_id = p_invoice_id
+    loop
+      v_avg_cost := inventory_stock_out(
+        v_item.product_id, v_item.quantity_base,
+        v_item.unit_id, v_item.quantity, 'sales_invoice', p_invoice_id, v_inv.date
+      );
+      v_total_hpp := v_total_hpp + (v_item.quantity_base * v_avg_cost);
+    end loop;
+
+    if v_total_hpp > 0 then
+      v_hpp_journal_id := gen_random_uuid();
+      insert into journals (id, journal_number, date, description, source, reference_type, reference_id, customer_id, is_posted, created_by)
+        values (v_hpp_journal_id, generate_number('JRN'), v_inv.date,
+          'HPP Penjualan ' || v_inv.invoice_number, 'auto', 'sales_invoice_hpp', p_invoice_id,
+          v_inv.customer_id, true, v_inv.created_by);
+      insert into journal_items (journal_id, coa_id, debit, description)
+        values (v_hpp_journal_id, v_coa_hpp, v_total_hpp, 'HPP - ' || v_inv.invoice_number);
+      insert into journal_items (journal_id, coa_id, credit, description)
+        values (v_hpp_journal_id, v_coa_persediaan, v_total_hpp, 'Persediaan keluar - ' || v_inv.invoice_number);
+    end if;
+  end if;
+
+  -- Update invoice status & SO status. UM penuh => langsung 'paid'.
+  update invoices
+     set status = case when advance_deduction_amount >= total - 0.01 then 'paid' else 'posted' end
+   where id = p_invoice_id;
+  if v_inv.sales_order_id is not null then
+    update sales_orders set status = 'invoiced' where id = v_inv.sales_order_id;
+  end if;
+
+  return v_journal_id;
+end;
+$$ language plpgsql;
