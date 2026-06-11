@@ -162,6 +162,8 @@ export async function saveSalesInvoice(invoice, items) {
       payment_term_id:  invoice.payment_term_id  || null,
       status:           invoice.status           || 'draft',
       notes:            invoice.notes            || null,
+      advance_deduction_amount: Number(invoice.advance_deduction_amount) || 0,
+      advance_deduction_coa_id: invoice.advance_deduction_coa_id || null,
     },
     p_items: items.map(i => ({
       product_id:    i.product_id,
