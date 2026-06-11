@@ -88,13 +88,13 @@ export default function PaymentFormPage() {
     if (!form.invoice_id) return
     const inv = invoices.find(i => i.id === form.invoice_id)
     if (inv) {
-      const remaining = inv.total - inv.amount_paid
+      const remaining = inv.total - inv.amount_paid - (inv.advance_deduction_amount || 0)
       field('amount', remaining > 0 ? remaining : '')
     }
   }, [form.invoice_id, invoices])
 
   const selectedInvoice = invoices.find(i => i.id === form.invoice_id)
-  const remaining = selectedInvoice ? selectedInvoice.total - selectedInvoice.amount_paid : null
+  const remaining = selectedInvoice ? selectedInvoice.total - selectedInvoice.amount_paid - (selectedInvoice.advance_deduction_amount || 0) : null
 
   const validate = () => {
     if (!form.date) { toast.error('Tanggal wajib diisi'); return false }

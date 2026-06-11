@@ -82,7 +82,7 @@ export async function saveReconciliation({ account_id, date, statement_balance }
 export async function getOutstandingInvoicesByCustomer(customerId) {
   const { data, error } = await supabase
     .from('invoices')
-    .select('id, invoice_number, date, total, amount_paid, status')
+    .select('id, invoice_number, date, total, amount_paid, advance_deduction_amount, status')
     .eq('type', 'sales')
     .eq('customer_id', customerId)
     .in('status', ['posted', 'partial'])
