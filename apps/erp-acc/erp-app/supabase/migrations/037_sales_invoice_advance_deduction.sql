@@ -270,3 +270,158 @@ begin
   return v_journal_id;
 end;
 $$ language plpgsql;
+
+-- -------------------------------------------------------
+-- post_payment: identik migration 033, KECUALI ambang status invoice
+-- kini memperhitungkan advance_deduction_amount agar invoice dengan
+-- potongan uang muka tetap bisa mencapai 'paid' saat sisa tagih lunas.
+-- -------------------------------------------------------
+create or replace function post_payment(p_payment_id uuid)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_pay           record;
+  v_journal_id    uuid;
+  v_coa_piutang   uuid;
+  v_coa_hutang    uuid;
+  v_effective     numeric;
+begin
+  perform _ensure_can_post();
+
+  select p.*, a.coa_id as account_coa_id
+    into v_pay
+    from payments p
+    join accounts a on p.account_id = a.id
+   where p.id = p_payment_id
+     for update of p;
+
+  if v_pay is null then
+    raise exception 'payment % not found', p_payment_id;
+  end if;
+
+  if v_pay.is_posted then
+    return v_pay.posted_journal_id;
+  end if;
+
+  perform _ensure_period_open(v_pay.date);
+
+  select id into v_coa_piutang from coa where code = '1-13000';
+  select id into v_coa_hutang  from coa where code = '2-11000';
+
+  v_effective := v_pay.amount + v_pay.discount_amount + v_pay.rounding_amount;
+
+  v_journal_id := gen_random_uuid();
+  insert into journals (
+    id, journal_number, date, description, source,
+    reference_type, reference_id, customer_id, supplier_id,
+    is_posted, created_by
+  ) values (
+    v_journal_id, generate_number('JRN'), v_pay.date,
+    'Pembayaran ' || v_pay.payment_number, 'auto', 'payment', p_payment_id,
+    v_pay.customer_id, v_pay.supplier_id, true, v_pay.created_by
+  );
+
+  if v_pay.type = 'incoming' then
+    insert into journal_items (journal_id, coa_id, debit, description)
+      values (v_journal_id, v_pay.account_coa_id, v_pay.amount,
+              'Terima pembayaran - ' || v_pay.payment_number);
+
+    if v_pay.discount_amount > 0 then
+      if v_pay.discount_coa_id is null then
+        raise exception 'COA diskon wajib diisi jika discount_amount > 0';
+      end if;
+      insert into journal_items (journal_id, coa_id, debit, description)
+        values (v_journal_id, v_pay.discount_coa_id, v_pay.discount_amount,
+                'Diskon penjualan - ' || v_pay.payment_number);
+    end if;
+
+    if v_pay.rounding_amount != 0 then
+      if v_pay.rounding_coa_id is null then
+        raise exception 'COA pembulatan wajib diisi jika rounding_amount != 0';
+      end if;
+      if v_pay.rounding_amount > 0 then
+        insert into journal_items (journal_id, coa_id, debit, description)
+          values (v_journal_id, v_pay.rounding_coa_id, v_pay.rounding_amount,
+                  'Selisih pembulatan - ' || v_pay.payment_number);
+      else
+        insert into journal_items (journal_id, coa_id, credit, description)
+          values (v_journal_id, v_pay.rounding_coa_id, abs(v_pay.rounding_amount),
+                  'Selisih pembulatan - ' || v_pay.payment_number);
+      end if;
+    end if;
+
+    insert into journal_items (journal_id, coa_id, credit, description)
+      values (v_journal_id, v_coa_piutang, v_effective,
+              'Pelunasan piutang - ' || v_pay.payment_number);
+
+    update accounts set balance = balance + v_pay.amount
+     where id = v_pay.account_id;
+
+  elsif v_pay.type = 'outgoing' then
+    insert into journal_items (journal_id, coa_id, debit, description)
+      values (v_journal_id, v_coa_hutang, v_effective,
+              'Pelunasan hutang - ' || v_pay.payment_number);
+
+    if v_pay.fee_amount > 0 then
+      if v_pay.fee_coa_id is null then
+        raise exception 'COA biaya bank wajib diisi jika fee_amount > 0';
+      end if;
+      insert into journal_items (journal_id, coa_id, debit, description)
+        values (v_journal_id, v_pay.fee_coa_id, v_pay.fee_amount,
+                'Biaya transfer - ' || v_pay.payment_number);
+    end if;
+
+    insert into journal_items (journal_id, coa_id, credit, description)
+      values (v_journal_id, v_pay.account_coa_id, v_pay.amount + v_pay.fee_amount,
+              'Bayar supplier - ' || v_pay.payment_number);
+
+    if v_pay.discount_amount > 0 then
+      if v_pay.discount_coa_id is null then
+        raise exception 'COA diskon wajib diisi jika discount_amount > 0';
+      end if;
+      insert into journal_items (journal_id, coa_id, credit, description)
+        values (v_journal_id, v_pay.discount_coa_id, v_pay.discount_amount,
+                'Diskon pembelian - ' || v_pay.payment_number);
+    end if;
+
+    if v_pay.rounding_amount != 0 then
+      if v_pay.rounding_coa_id is null then
+        raise exception 'COA pembulatan wajib diisi jika rounding_amount != 0';
+      end if;
+      if v_pay.rounding_amount > 0 then
+        insert into journal_items (journal_id, coa_id, credit, description)
+          values (v_journal_id, v_pay.rounding_coa_id, v_pay.rounding_amount,
+                  'Selisih pembulatan - ' || v_pay.payment_number);
+      else
+        insert into journal_items (journal_id, coa_id, debit, description)
+          values (v_journal_id, v_pay.rounding_coa_id, abs(v_pay.rounding_amount),
+                  'Selisih pembulatan - ' || v_pay.payment_number);
+      end if;
+    end if;
+
+    update accounts set balance = balance - (v_pay.amount + v_pay.fee_amount)
+     where id = v_pay.account_id;
+  end if;
+
+  -- Update invoice: ambang 'paid' kini memperhitungkan potongan uang muka.
+  if v_pay.invoice_id is not null then
+    update invoices
+       set amount_paid = amount_paid + v_effective,
+           status = case
+             when amount_paid + v_effective + advance_deduction_amount >= total - 0.01 then 'paid'
+             else 'partial'
+           end
+     where id = v_pay.invoice_id;
+  end if;
+
+  update payments
+     set is_posted         = true,
+         posted_journal_id = v_journal_id,
+         posted_at         = now()
+   where id = p_payment_id;
+
+  return v_journal_id;
+end $$;
