@@ -49,7 +49,7 @@ function buildRows(invoices, partyKey, asOfDate) {
   for (const inv of invoices) {
     const party = inv[partyKey]
     const partyName = party?.name || '(Tidak Diketahui)'
-    const balance = Number(inv.total) - Number(inv.amount_paid)
+    const balance = Number(inv.total) - Number(inv.amount_paid) - Number(inv.advance_deduction_amount || 0)
     const bucket = getAgingBucket(inv.due_date, asOfDate)
     if (!grouped[partyName]) {
       grouped[partyName] = { partyName, invoices: [], totals: {} }

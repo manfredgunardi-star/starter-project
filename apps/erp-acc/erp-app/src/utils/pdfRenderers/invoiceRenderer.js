@@ -257,6 +257,26 @@ export async function renderInvoicePdf(invoice, company) {
   doc.text(`${currency} ${formatCurrency(total)}`, rightX, y, { align: 'right' })
   y += 16
 
+  // Potongan Uang Muka + Sisa Tagih (jika ada potongan uang muka)
+  const advanceDeduction = Number(invoice?.advance_deduction_amount) || 0
+  if (advanceDeduction > 0) {
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(FONT.totalLabel)
+    doc.setTextColor(...COLOR.textSecondary)
+    doc.text('Potongan Uang Muka', totalsLeftX, y)
+    doc.setFontSize(FONT.totalValue)
+    doc.setTextColor(...COLOR.textPrimary)
+    doc.text(`${currency} (${formatCurrency(advanceDeduction)})`, rightX, y, { align: 'right' })
+    y += 14
+
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(FONT.totalLabel)
+    doc.setTextColor(...COLOR.textPrimary)
+    doc.text('Sisa Tagih', totalsLeftX, y)
+    doc.text(`${currency} ${formatCurrency(total - advanceDeduction)}`, rightX, y, { align: 'right' })
+    y += 16
+  }
+
   // ---------------------------------------------------------------------------
   // Payment Info + Terms & Conditions + Signatures
   // ---------------------------------------------------------------------------

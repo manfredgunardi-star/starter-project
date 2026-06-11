@@ -40,7 +40,7 @@ export async function getARAgingData(asOfDate) {
   const { data, error } = await supabase
     .from('invoices')
     .select(`
-      id, invoice_number, date, due_date, total, amount_paid, status,
+      id, invoice_number, date, due_date, total, amount_paid, advance_deduction_amount, status,
       customer:customers(id, name)
     `)
     .eq('type', 'sales')
