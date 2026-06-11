@@ -146,7 +146,7 @@ export default function PaymentFormPage() {
   const accountOptions = accounts.map(a => ({ value: a.id, label: `${a.name} (${formatCurrency(a.balance)})` }))
   const invoiceOptions = invoices.map(i => ({
     value: i.id,
-    label: `${i.invoice_number} — Sisa: ${formatCurrency(i.total - i.amount_paid)}`
+    label: `${i.invoice_number} — Sisa: ${formatCurrency(i.total - i.amount_paid - (i.advance_deduction_amount || 0))}`
   }))
   const coaOptions = coa.map(c => ({ value: c.id, label: `${c.code} — ${c.name}` }))
 
