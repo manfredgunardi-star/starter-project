@@ -151,7 +151,11 @@ end $$;
 
 -- -------------------------------------------------------
 -- post_sales_invoice: debit akun UM mengurangi piutang yang dibukukan.
--- Jurnal pendapatan (lanjutan dari migration 011):
+-- PENTING: definisi efektif fungsi ini ada di migration 016 (period lock),
+-- bukan 011. Versi di bawah mempertahankan SEMUA kontrol 016
+-- (_ensure_can_post, null guard, _ensure_period_open, security definer,
+-- set search_path) dan menambahkan logika potongan uang muka.
+-- Jurnal pendapatan:
 --   D Piutang            = total - UM        (hanya jika > 0)
 --   D Akun Uang Muka     = UM                (hanya jika UM > 0)
 --   C Pendapatan         = subtotal
@@ -176,7 +180,10 @@ declare
   v_total_hpp numeric := 0;
   v_piutang numeric;
 begin
+  perform _ensure_can_post();
+
   select * into v_inv from invoices where id = p_invoice_id;
+  if v_inv is null then raise exception 'invoice not found'; end if;
   if v_inv.status != 'draft' then
     raise exception 'Invoice already posted';
   end if;
@@ -190,6 +197,8 @@ begin
   if v_inv.advance_deduction_amount > v_inv.total + 0.01 then
     raise exception 'potongan uang muka melebihi total invoice';
   end if;
+
+  perform _ensure_period_open(v_inv.date);
 
   select id into v_coa_piutang from coa where code = '1-13000'; -- Piutang Usaha
   select id into v_coa_pendapatan from coa where code = '4-11000'; -- Pendapatan Penjualan
@@ -269,7 +278,7 @@ begin
 
   return v_journal_id;
 end;
-$$ language plpgsql;
+$$ language plpgsql security definer set search_path = public;
 
 -- -------------------------------------------------------
 -- post_payment: identik migration 033, KECUALI ambang status invoice
