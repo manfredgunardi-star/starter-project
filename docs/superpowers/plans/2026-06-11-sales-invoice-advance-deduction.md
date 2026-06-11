@@ -955,6 +955,52 @@ git commit -m "docs(sales-invoice): manual smoke test steps for advance deductio
 
 ---
 
+## Task 9: Payment form — account for advance deduction in outstanding/remaining
+
+**Context:** Discovered in final review. `PaymentFormPage` computes the receivable a customer still owes as `total − amount_paid`, which ignores the advance deduction. For a sales invoice with an advance, this over-fills the payment amount and lets a user post a payment larger than the booked receivable — crediting Piutang beyond what was debited and driving the customer's Piutang sub-ledger negative. Must subtract the advance everywhere "sisa piutang" is computed for sales invoices. (Purchase/AP invoices have `advance_deduction_amount = 0` by default, so the `|| 0` form is safe for the shared path.)
+
+**Files:**
+- Modify: `apps/erp-acc/erp-app/src/services/cashBankService.js:85` (`getOutstandingInvoicesByCustomer` select)
+- Modify: `apps/erp-acc/erp-app/src/pages/cash/PaymentFormPage.jsx:91,97` (two `remaining` formulas)
+
+- [ ] **Step 1: Include the advance column in the outstanding-invoices query**
+
+In `cashBankService.js`, `getOutstandingInvoicesByCustomer`, add `advance_deduction_amount` to the select:
+
+```js
+    .select('id, invoice_number, date, total, amount_paid, advance_deduction_amount, status')
+```
+
+- [ ] **Step 2: Subtract the advance in both `remaining` computations**
+
+In `PaymentFormPage.jsx`, the auto-fill effect (line ~91):
+
+```js
+      const remaining = inv.total - inv.amount_paid - (inv.advance_deduction_amount || 0)
+```
+
+and the derived `remaining` (line ~97):
+
+```js
+  const remaining = selectedInvoice ? selectedInvoice.total - selectedInvoice.amount_paid - (selectedInvoice.advance_deduction_amount || 0) : null
+```
+
+This corrects the auto-filled amount, the over-payment guard in `validate()` (which reads `remaining`), and the displayed "Sisa piutang" — keeping them consistent with the invoice form's "Sisa Tagih", AR aging, and the PDF.
+
+- [ ] **Step 3: Verify build**
+
+Run: `cd apps/erp-acc/erp-app; npm run build`
+Expected: build sukses tanpa error.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add apps/erp-acc/erp-app/src/services/cashBankService.js apps/erp-acc/erp-app/src/pages/cash/PaymentFormPage.jsx
+git commit -m "fix(payment): subtract advance deduction from outstanding receivable in payment form"
+```
+
+---
+
 ## Self-Review Notes
 
 - **Spec coverage:** Kolom skema (T1) ✓, validasi UM≤total (T1+T5) ✓, jurnal offset piutang (T2) ✓, status paid memperhitungkan UM (T3) ✓, akun COA dipilih user (T1+T5) ✓, lokasi invoice-only (semua task) ✓, AR aging benar (T6) ✓, PDF (T7) ✓.
