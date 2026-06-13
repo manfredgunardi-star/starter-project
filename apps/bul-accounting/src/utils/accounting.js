@@ -92,9 +92,8 @@ export async function deleteJournal(id, deletedBy) {
   await writeAuditLog(id, 'delete', deletedBy)
 }
 
-export async function hardDeleteJournal(id) {
-  await deleteDoc(doc(db, 'journals', id))
-}
+// Catatan: fungsi hardDeleteJournal dihapus — melanggar aturan soft-delete (Data Safety Rule #1).
+// Penghapusan jurnal harus selalu lewat deleteJournal() yang menyetel status 'deleted'.
 
 // ===== FETCH JOURNALS =====
 export async function getJournals(filters = {}) {
@@ -268,8 +267,17 @@ export async function generateArusKasData(startDate, endDate, truckId = 'all') {
     else operasional += kasFlow
   })
 
-  // Get beginning and ending cash balances
-  const beginBalances = await getAccountBalances(startDate, null, truckId)
+  // Get beginning and ending cash balances.
+  // Saldo awal harus EKSKLUSIF terhadap startDate (saldo akhir periode sebelumnya),
+  // karena arus periode (operasional/investasi/pendanaan) sudah mencakup transaksi
+  // bertanggal startDate. Memakai startDate inklusif membuat transaksi hari pertama
+  // terhitung dua kali → saldoAwal + totalPerubahan ≠ saldoAkhir.
+  const startExclusive = (() => {
+    const d = new Date(`${startDate}T00:00:00Z`)
+    d.setUTCDate(d.getUTCDate() - 1)
+    return d.toISOString().slice(0, 10)
+  })()
+  const beginBalances = await getAccountBalances(startExclusive, null, truckId)
   const endBalances = await getAccountBalances(endDate, null, truckId)
 
   const beginCash = kasAccounts.reduce((s, code) => {
@@ -522,7 +530,9 @@ export async function addInvoicePayment(invoiceId, payment) {
   const inv = snap.data()
   const payments = [...(inv.payments || []), { ...payment, createdAt: new Date().toISOString() }]
   const totalPaid = payments.reduce((s, p) => s + (p.jumlahBayar || 0), 0)
-  const status = totalPaid >= inv.amount ? 'paid' : 'partial'
+  // Pakai pembulatan yang sama dengan removeInvoicePayment agar penentuan status konsisten
+  // (hindari selisih floating-point yang membuat invoice lunas tampil 'partial').
+  const status = Math.round(totalPaid) >= Math.round(inv.amount) ? 'paid' : (totalPaid > 0 ? 'partial' : 'unpaid')
   await updateDoc(doc(db, 'invoices', invoiceId), {
     payments, totalPaid, status, updatedAt: new Date().toISOString(),
   })

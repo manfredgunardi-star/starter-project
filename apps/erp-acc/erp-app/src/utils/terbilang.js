@@ -1,5 +1,5 @@
 // Mengkonversi angka ke kalimat Rupiah Indonesia.
-// Mendukung 0 sampai 999.999.999.999 (ratusan milyar).
+// Mendukung 0 sampai 999.999.999.999.999 (ratusan triliun).
 
 const SATUAN = [
   '', 'Satu', 'Dua', 'Tiga', 'Empat', 'Lima', 'Enam', 'Tujuh', 'Delapan', 'Sembilan',
@@ -28,12 +28,14 @@ export function terbilang(angka) {
   const n = Math.floor(angka || 0)
   if (n <= 0) return 'Nol Rupiah'
 
-  const milyar = Math.floor(n / 1_000_000_000)
+  const triliun = Math.floor(n / 1_000_000_000_000)
+  const milyar = Math.floor((n % 1_000_000_000_000) / 1_000_000_000)
   const juta   = Math.floor((n % 1_000_000_000) / 1_000_000)
   const ribu   = Math.floor((n % 1_000_000) / 1_000)
   const sisa   = n % 1_000
 
   const parts = []
+  if (triliun) parts.push(ratusan(triliun) + ' Triliun')
   if (milyar) parts.push(ratusan(milyar) + ' Milyar')
   if (juta)   parts.push(ratusan(juta) + ' Juta')
   if (ribu)   parts.push(ribu === 1 ? 'Seribu' : ratusan(ribu) + ' Ribu')

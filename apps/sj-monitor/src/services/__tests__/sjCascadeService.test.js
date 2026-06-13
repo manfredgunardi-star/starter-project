@@ -82,6 +82,33 @@ describe('computeCascadePlan', () => {
     expect(tx.op).toBe('update');
     expect(tx.changes.find((c) => c.field === 'isActive')).toMatchObject({ before: false, after: true });
   });
+
+  it('UJ belum ada di transaksiList (mis. soft-deleted terfilter) → impact create membawa data lengkap', () => {
+    const ctxNoTx = { ...baseCtx, transaksiList: [] };
+    const plan = computeCascadePlan(sj, { ruteId: 'R2' }, ctxNoTx);
+    const tx = plan.impacts.find((i) => i.collection === 'transaksi');
+    expect(tx.op).toBe('create');
+    // Dokumen UJ harus lengkap — bukan sekadar field yang berubah.
+    expect(tx.txData).toMatchObject({
+      id: 'TX-UJ-SJ-1',
+      tipe: 'pengeluaran',
+      suratJalanId: 'SJ-1',
+      pt: 'PT A',
+      source: 'auto_sj',
+      isActive: true,
+      nominal: 250,
+    });
+  });
+
+  it('revive produksi: UJ soft-deleted terfilter dari list → txData reaktivasi (isActive:true, deletedAt null)', () => {
+    const gagalSJ = { ...sj, status: 'gagal', isActive: false };
+    const ctxEmpty = { ...baseCtx, transaksiList: [] }; // mencerminkan subscription yang memfilter isActive:false
+    const plan = computeCascadePlan(gagalSJ, { status: 'terkirim', isActive: true }, ctxEmpty);
+    const tx = plan.impacts.find((i) => i.collection === 'transaksi');
+    expect(tx.txData.isActive).toBe(true);
+    expect(tx.txData.deletedAt).toBeNull();
+    expect(tx.txData.deletedBy).toBeNull();
+  });
 });
 
 describe('executeCascadePlan', () => {
@@ -110,6 +137,23 @@ describe('executeCascadePlan', () => {
     const updateArg = batchMock.update.mock.calls[0][1];
     expect(updateArg.isActive).toBe(false);
     expect(batchMock.commit).toHaveBeenCalledTimes(1);
+  });
+
+  it('transaksi impact dengan txData ditulis penuh via set merge (create/revive)', async () => {
+    const plan = {
+      sjId: 'SJ-1', sjBefore: { id: 'SJ-1' }, sjAfter: { id: 'SJ-1', nomorSJ: '001' }, fieldChanges: [],
+      impacts: [{
+        collection: 'transaksi', docId: 'TX-UJ-SJ-1', op: 'create', severity: 'finance', changes: [],
+        txData: { id: 'TX-UJ-SJ-1', tipe: 'pengeluaran', nominal: 250, suratJalanId: 'SJ-1', pt: 'PT A', source: 'auto_sj', isActive: true, deletedAt: null, deletedBy: null },
+      }],
+      warnings: [],
+    };
+    await executeCascadePlan(plan, { currentUser: { name: 'Boss' } });
+    const setCalls = batchMock.set.mock.calls.map((c) => c[1]);
+    const txWrite = setCalls.find((d) => d && d.tipe === 'pengeluaran');
+    expect(txWrite).toBeTruthy();
+    expect(txWrite).toMatchObject({ suratJalanId: 'SJ-1', isActive: true, source: 'auto_sj', nominal: 250 });
+    expect(txWrite.deletedAt).toBeNull();
   });
 
   it('invoice impact menulis snapshot + totals via batch.set merge', async () => {

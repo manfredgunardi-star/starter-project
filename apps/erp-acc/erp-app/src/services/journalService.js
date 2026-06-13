@@ -62,7 +62,13 @@ export async function saveManualJournal(header, items) {
     cost_center_id: i.cost_center_id ?? null,
   }))
   const { error: itemErr } = await supabase.from('journal_items').insert(itemRows)
-  if (itemErr) throw itemErr
+  if (itemErr) {
+    // Kompensasi: insert header & items belum atomik (idealnya satu RPC transaksional,
+    // mirip save_and_post_payment). Bila insert baris gagal, hapus header yatim agar
+    // tidak meninggalkan jurnal tanpa baris di database.
+    await supabase.from('journals').delete().eq('id', journal.id)
+    throw itemErr
+  }
 
   return journal.id
 }
