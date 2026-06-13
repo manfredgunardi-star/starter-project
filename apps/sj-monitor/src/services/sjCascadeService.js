@@ -45,9 +45,28 @@ export function computeCascadePlan(oldSJ, changes, ctx) {
       changesUJ.push({ field: 'isActive', before: false, after: true });
     }
     if (changesUJ.length) {
+      // Dokumen UJ kanonik — cermin auto-uang-jalan di App.jsx (addSuratJalan).
+      // Ditulis penuh via set+merge agar:
+      //  - jalur "create" menghasilkan dokumen lengkap (tipe/suratJalanId/source/isActive),
+      //    bukan hanya field yang berubah; dan
+      //  - revive UJ yang sudah ter-soft-delete tetap reaktif walau dokumennya
+      //    terfilter dari transaksiList (subscription membuang isActive:false).
+      const txData = {
+        id: ujId,
+        tipe: 'pengeluaran',
+        nominal: nominalAfter,
+        keterangan: ketAfter,
+        tanggal: sjAfter.tanggalSJ,
+        suratJalanId: oldSJ.id,
+        pt: sjAfter.pt || '',
+        source: 'auto_sj',
+        isActive: true,
+        deletedAt: null,
+        deletedBy: null,
+      };
       impacts.push({
         collection: 'transaksi', docId: ujId, label: 'Transaksi Uang Jalan',
-        op: existingUJ ? 'update' : 'create', severity: 'finance', changes: changesUJ,
+        op: existingUJ ? 'update' : 'create', severity: 'finance', changes: changesUJ, txData,
       });
     }
   }
@@ -106,6 +125,11 @@ export async function executeCascadePlan(plan, { currentUser } = {}) {
     } else if (imp.collection === 'invoice') {
       batch.set(ref, sanitizeForFirestore({
         suratJalanList: imp.newSJList, ...imp.newTotals, updatedAt: nowIso, updatedBy: who,
+      }), { merge: true });
+    } else if (imp.collection === 'transaksi' && imp.txData) {
+      // Tulis dokumen UJ kanonik secara penuh (create + revive) — set+merge.
+      batch.set(ref, sanitizeForFirestore({
+        ...imp.txData, updatedAt: nowIso, updatedBy: who,
       }), { merge: true });
     } else {
       const patch = { updatedAt: nowIso, updatedBy: who };

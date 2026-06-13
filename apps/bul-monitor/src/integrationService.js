@@ -81,6 +81,12 @@ async function upsertQueueDoc(ref, payload) {
   // Dokumen sudah ada — kirim ulang setelah rejected/cancelled
   const prev = snap.data();
 
+  // Jangan reset item yang sudah di-approve: jurnalnya sudah diposting di bul-accounting.
+  // Kirim ulang akan menghapus referensi journalId & balik ke 'pending' → berisiko jurnal ganda.
+  if (prev.status === 'approved') {
+    throw new Error('Dokumen sudah di-approve di bul-accounting (jurnal sudah dibuat). Batalkan/unapprove dulu sebelum kirim ulang.');
+  }
+
   // Bangun entri riwayat dari data penolakan/pembatalan sebelumnya
   const historyEntry = {
     status: prev.status,
@@ -135,7 +141,7 @@ async function fetchPelangganByName(ptName) {
  * Kirim data Uang Jalan dari sebuah Surat Jalan ke antrian review bul-accounting.
  * Menggunakan ID deterministik (IQ-UJ-{sjId}) agar idempotent.
  *
- * Jurnal utama: Dr 1151 (Uang Muka Sopir/UJ) / Cr 2122 (Hutang UJ Sopir)
+ * Jurnal utama: Dr 1151 (Uang Muka Sopir/UJ) / Cr 2141 (Uang Muka Pelanggan)
  * Biaya tambahan: Dr 5130 (Upah Sopir) / Cr 2122 per item biaya
  *
  * @param {Object}   sj          - Dokumen Surat Jalan dari bul_surat_jalan
