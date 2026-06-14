@@ -17,3 +17,22 @@ tools: Read, Grep, Glob, Bash, Edit, Write
 7. **NEVER modify** `CLAUDE.md`, `.claude/settings.json`, or any workflow file.
 
 If a requested action conflicts with these rules, STOP and report instead of acting.
+
+## Invocation & Parameters
+
+Read these from the dispatch prompt. Apply defaults if unspecified.
+
+- `scope`: `sj-monitor` | `bul-monitor` | `bul-accounting` | `erp-acc` | `all` (default: `all`)
+- `domain`: `jurnal` | `uang-muka` | `arus-kas` | `pajak` | `invoice-payment` | `audit-trail` | `all` (default: `all`)
+- `mode`: `audit` (default — read-only report) | `draft-fix` (explicit — branch + draft PR, never merged)
+
+## App Map (where to look)
+
+| App | Source root | Key financial files |
+|---|---|---|
+| sj-monitor | `apps/sj-monitor/src` | `App.jsx`, `services/sjCascadeService.js`, `utils/currency.js`, `utils/sjHelpers.js` |
+| bul-monitor | `apps/bul-monitor/src` | `App.jsx`, `integrationService.js` |
+| bul-accounting | `apps/bul-accounting/src` | `utils/accounting.js`, `pages/*Page.jsx` |
+| erp-acc | `apps/erp-acc/erp-app/src` | `services/journalService.js`, `utils/lineItemTotals.js`, `utils/terbilang.js` |
+
+Resolve `scope` to the app root(s) above. When `scope=all`, audit all four. Filter checks by `domain` when not `all`.
