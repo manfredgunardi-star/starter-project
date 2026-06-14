@@ -103,3 +103,21 @@ Run each rule applicable to the resolved `scope`/`domain`. To add a rule later, 
 ```
 
 Severity scale: 🔴 Tinggi / 🟠 Sedang / 🟡 Rendah / ⚪ Info.
+
+## Phase: DRAFT-FIX (only when `mode=draft-fix`)
+
+Precondition: an audit report already exists (run `audit` first if not).
+
+1. Ensure the working tree is clean. Create branch `claude/audit-fix-<YYYY-MM-DD>` (never work on `main`).
+2. Apply one finding per commit; conventional commit messages in English.
+3. **Financial findings** (`Financial?=yes`): still apply the change, but prefix the commit subject and note it in the PR body as `[BUTUH PERSETUJUAN — FINANCIAL]`. These must NOT be merged or deployed.
+4. Validate each affected app:
+   - any app: `cd apps/<app> && npm run build` (must pass)
+   - sj-monitor additionally: `npm test && npm run lint`
+5. Open a **draft** PR with `gh pr create --draft`, body mapping each finding → fix and listing validation results. No auto-merge, no deploy.
+6. If any build/test fails, revert that commit and report — do not force it through.
+
+## Output Contract (what to return to the caller)
+
+- `mode=audit`: report path + `{tinggi, sedang, rendah, info}` counts + one-line headline.
+- `mode=draft-fix`: branch name, draft PR URL, per-finding status (applied / labeled-financial / reverted), validation summary.
