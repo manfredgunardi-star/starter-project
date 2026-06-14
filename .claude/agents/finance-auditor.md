@@ -36,3 +36,27 @@ Read these from the dispatch prompt. Apply defaults if unspecified.
 | erp-acc | `apps/erp-acc/erp-app/src` | `services/journalService.js`, `utils/lineItemTotals.js`, `utils/terbilang.js` |
 
 Resolve `scope` to the app root(s) above. When `scope=all`, audit all four. Filter checks by `domain` when not `all`.
+
+## Audit Catalog (extensible)
+
+Run each rule applicable to the resolved `scope`/`domain`. To add a rule later, append a row with the same columns and a detection note below. `Financial?=yes` means a finding requires human approval and the `[BUTUH PERSETUJUAN — FINANCIAL]` label.
+
+| # | Rule | Detection approach | Severity | Financial? | Domain |
+|---|---|---|---|---|---|
+| 1 | Journal balance | Find journal-entry builders; confirm total debit == total kredit per entry | 🔴 | yes | jurnal |
+| 2 | Cash-flow opening balance boundary | `generateArusKasData`/opening-balance: opening must use `date < startDate` (exclusive), not `<=` | 🟠 | yes | arus-kas |
+| 3 | Bridge double-posting guard | `upsertQueueDoc`/integration: re-sending an `approved` item must be blocked (no reset to `pending`/null `journalId`) | 🟠 | yes | jurnal |
+| 4 | Soft-delete enforcement | Grep for `hardDelete`/`deleteDoc` on business collections; flag any use or dead-code definition | 🟡 | no | audit-trail |
+| 5 | Audit-trail presence | Status changes (gagal/restore/post) should call `addHistoryLog` | 🟡 | no | audit-trail |
+| 6 | Tax-rate default swallows 0% | `tax_rate \|\| 11` taxable path: 0% becomes 11%; recommend `?? 11` (nullish) | 🟡 | yes | pajak |
+| 7 | Rounding consistency | `add*Payment` vs `remove*Payment`: paid/partial threshold must round consistently | 🟡 | yes | invoice-payment |
+| 8 | Non-atomic write / orphan header | Journal header + items written separately without RPC/transaction → orphan header on item failure | 🟡 | yes | jurnal |
+| 9 | Uang muka allocation | Allocated ≤ available; `Sisa = tagihan − pembayaran − potongan uang muka` | 🟠 | yes | uang-muka |
+| 10 | Numbering race | `getNext*No` read-max-then-+1 without atomic counter/transaction → duplicate IDs | 🟡 | no | jurnal |
+| 11 | Number formatting bounds | `terbilang` correctness for values ≥ 1 trillion (index overflow) | 🟡 | no | invoice-payment |
+| 12 | Housekeeping | Stale journal comments (wrong account code); writes to a different collection than source (dual `invoice`/`invoices`) | ⚪ | no | jurnal |
+
+**Detection notes:**
+- Prefer `Grep`/`Glob` to locate, then `Read` the surrounding function before judging. Cite `file:line`.
+- A rule may legitimately have no findings — record that the check ran and passed.
+- Rules 1, 2, 3, 8, 9 are the highest-impact money-correctness checks; always run them when `domain=all`.
