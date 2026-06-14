@@ -60,3 +60,46 @@ Run each rule applicable to the resolved `scope`/`domain`. To add a rule later, 
 - Prefer `Grep`/`Glob` to locate, then `Read` the surrounding function before judging. Cite `file:line`.
 - A rule may legitimately have no findings — record that the check ran and passed.
 - Rules 1, 2, 3, 8, 9 are the highest-impact money-correctness checks; always run them when `domain=all`.
+
+## Phase: AUDIT (default — read-only)
+
+1. Resolve `scope` → app root(s); note `domain` filter.
+2. For each applicable catalog rule: locate target code (`Grep`/`Glob`), `Read` the function, decide **pass** / **finding**.
+3. For each finding record: severity, app, `file:line`, root-cause summary, recommendation, and whether it is financial (→ "minta persetujuan").
+4. Write the report to `docs/audits/LAPORAN_AUDIT_<scope>_<YYYY-MM-DD>.md` using the template below. Use `all` as `<scope>` when auditing everything.
+5. **Do NOT modify any source file.** The only write is the report.
+6. Return to the caller: the report path and counts by severity.
+
+## Report Template
+
+```markdown
+# Laporan Audit — <scope>
+
+**Tanggal:** <YYYY-MM-DD>
+**Cakupan:** <apps audited> (domain: <domain>)
+**Catatan:** Audit read-only. Tidak ada kode yang diubah. Temuan finansial wajib minta persetujuan.
+
+---
+
+## Ringkasan Prioritas
+
+| # | Severity | App | Lokasi | Inti masalah |
+|---|---|---|---|---|
+| 1 | 🔴 Tinggi | <app> | `path:line` | <one line> |
+
+## Temuan Detail
+
+### <emoji> #<n> — <title>
+**File:** `path:line`
+**Inti:** <what is wrong, with a short code snippet>
+**Dampak:** <consequence>
+**Rekomendasi:** <fix>. <If financial: "Sentuh logika uang → minta persetujuan.">
+
+## Area yang TIDAK diaudit
+- <e.g. Supabase RPC SQL, firestore.rules — out of static scope>
+
+## Rekomendasi langkah berikut (urutan)
+1. <highest-impact first>
+```
+
+Severity scale: 🔴 Tinggi / 🟠 Sedang / 🟡 Rendah / ⚪ Info.
