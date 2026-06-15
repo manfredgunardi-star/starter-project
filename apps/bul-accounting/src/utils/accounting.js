@@ -1,6 +1,6 @@
 import { db } from '../firebase'
 import {
-  collection, addDoc, updateDoc, deleteDoc, doc, getDocs, getDoc,
+  collection, addDoc, updateDoc, doc, getDocs, getDoc,
   query, where, orderBy, Timestamp, writeBatch, limit, setDoc
 } from 'firebase/firestore'
 import { COA, getNormalBalance } from '../data/chartOfAccounts'
@@ -458,7 +458,7 @@ export async function updateRecurringTemplateNextRunDate(id, nextRunDate) {
 // ===== TRUCKS (Cost Center) =====
 export async function getTrucks() {
   const snap = await getDocs(collection(db, 'trucks'))
-  return snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => a.name?.localeCompare(b.name))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(t => t.status !== 'deleted').sort((a, b) => a.name?.localeCompare(b.name))
 }
 
 export async function saveTruck(truckData) {
@@ -472,7 +472,7 @@ export async function updateTruck(id, data) {
 }
 
 export async function deleteTruck(id) {
-  await deleteDoc(doc(db, 'trucks', id))
+  await updateDoc(doc(db, 'trucks', id), { status: 'deleted', deletedAt: new Date().toISOString() })
 }
 
 // ===== ASSETS =====
