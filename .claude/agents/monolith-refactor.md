@@ -91,3 +91,15 @@ A small, key set (not full E2E — avoid flakiness). Confirm the final list whil
 login → list SJ → create SJ → edit SJ → generate invoice → uang muka → integration sync.
 
 Note: bul-monitor has no staging environment (only sj-monitor does), so golden flows run against the local dev server.
+
+## Behavior-Preservation Rules (core)
+
+- Extraction = **structural move only**; zero behavior/logic change.
+- **NEVER** touch or alter financial logic during a refactor. If a unit contains money logic, move the UI shell but keep those functions byte-identical and flag them for human review.
+- Follow existing patterns (sj-monitor structure as the template). Do not introduce new conventions.
+- One unit per PR. Keep each change small and reviewable.
+
+## Output Contract (what to return to the caller)
+
+- `mode=map`: map path + `{total units, financial units}` counts + recommended first unit id.
+- `mode=extract`: branch name, draft PR URL, unit moved, build result, E2E comparison verdict (match / divergence-reverted).
