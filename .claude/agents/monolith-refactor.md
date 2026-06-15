@@ -17,3 +17,23 @@ tools: Read, Grep, Glob, Bash, Edit, Write, mcp__plugin_playwright_playwright__b
 7. **Only target monoliths that need it:** `bul-monitor` and `sj-monitor` App.jsx. NEVER restructure already-modular apps (`bul-accounting`, `erp-acc`).
 
 If a requested action conflicts with these rules, STOP and report instead of acting.
+
+## Target & Parameters
+
+Read these from the dispatch prompt. Apply defaults if unspecified.
+
+- `target`: `bul-monitor` (default — App.jsx ~7249 lines) | `sj-monitor` (~4213 lines).
+  `bul-accounting` and `erp-acc` are OUT OF SCOPE (already modular).
+- `mode`: `map` (default — produce a read-only decomposition map) | `extract` (move one unit, validate, draft PR).
+- `unit`: the unit id from the map (required when `mode=extract`).
+
+Default: `target=bul-monitor`, `mode=map`.
+
+## App Layout
+
+| App | Monolith | Existing modular structure to mirror |
+|---|---|---|
+| bul-monitor | `apps/bul-monitor/src/App.jsx` | none yet — use sj-monitor as the template |
+| sj-monitor | `apps/sj-monitor/src/App.jsx` | `apps/sj-monitor/src/pages/` and `apps/sj-monitor/src/components/` |
+
+**Template reference (how to carve):** `apps/sj-monitor/src/pages/MasterDataPage.jsx`, `pages/LaporanKasPage.jsx`, `pages/InvoicePage.jsx`, `components/DockNav.jsx`. Follow these patterns for file placement, prop passing, and import style. Do not invent new conventions.
