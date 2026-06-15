@@ -12,6 +12,7 @@ import {
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from "firebase/auth";
 import React, { useState, useEffect, useRef } from 'react';
 import * as XLSX from 'xlsx';
+import StatCard from './components/StatCard.jsx';
 
 // Namespace koleksi untuk BUL-monitor (pisah total dari app lain)
 // NOTE: Keep this near the top so ALL helpers (including login/bootstrap writes) are consistent.
@@ -5895,20 +5896,6 @@ const LoginScreen = ({ onLogin, alertMessage, setAlertMessage, appSettings }) =>
     </div>
   );
 };
-
-const StatCard = ({ title, value, icon, color }) => (
-  <div className="bg-white rounded-lg shadow-md p-6">
-    <div className="flex items-center justify-between">
-      <div>
-        <p className="text-gray-600 text-sm">{title}</p>
-        <p className="text-3xl font-bold text-gray-800 mt-1">{value}</p>
-      </div>
-      <div className={`${color} p-3 rounded-lg text-white`}>
-        {icon}
-      </div>
-    </div>
-  </div>
-);
 
 const SuratJalanCard = ({
   suratJalan,
