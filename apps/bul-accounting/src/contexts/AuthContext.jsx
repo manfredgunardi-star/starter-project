@@ -7,7 +7,7 @@ import {
   createUserWithEmailAndPassword
 } from 'firebase/auth'
 import {
-  doc, getDoc, setDoc, collection, getDocs, deleteDoc, query, where
+  doc, getDoc, setDoc, collection, getDocs, updateDoc, query, where
 } from 'firebase/firestore'
 
 const AuthContext = createContext()
@@ -29,6 +29,11 @@ export function AuthProvider({ children }) {
   async function login(email, password) {
     const cred = await signInWithEmailAndPassword(auth, email, password)
     const userDoc = await getDoc(doc(db, 'users', cred.user.uid))
+    if (userDoc.exists() && userDoc.data().status === 'deleted') {
+      // Akun di-soft-delete — cabut sesi, jangan beri akses.
+      await signOut(auth)
+      throw new Error('Akun ini telah dinonaktifkan. Hubungi administrator.')
+    }
     if (userDoc.exists()) {
       setUserRole(userDoc.data().role)
       setUserName(userDoc.data().name || email)
@@ -67,14 +72,20 @@ export function AuthProvider({ children }) {
   }
 
   async function deleteUser(uid) {
-    await deleteDoc(doc(db, 'users', uid))
-    // Note: actual auth user deletion requires admin SDK (server-side)
-    // For now we just remove Firestore record; user won't be able to access
+    // Soft delete — pertahankan dokumen untuk jejak audit & cegah auto-recreate
+    // sebagai READER di onAuthStateChanged. Akses dicabut lewat gating status
+    // 'deleted' di login() & onAuthStateChanged().
+    // Catatan: pencabutan akun Firebase Auth penuh perlu Admin SDK (server-side).
+    await updateDoc(doc(db, 'users', uid), {
+      status: 'deleted',
+      deletedAt: new Date().toISOString(),
+      deletedBy: currentUser?.uid || null
+    })
   }
 
   async function getAllUsers() {
     const snap = await getDocs(collection(db, 'users'))
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }))
+    return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(u => u.status !== 'deleted')
   }
 
   function can(action) {
@@ -94,13 +105,20 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        setCurrentUser(user)
         const userDoc = await getDoc(doc(db, 'users', user.uid))
-        if (userDoc.exists()) {
+        if (userDoc.exists() && userDoc.data().status === 'deleted') {
+          // Akun di-soft-delete — cabut sesi, jangan pulihkan role.
+          await signOut(auth)
+          setCurrentUser(null)
+          setUserRole(null)
+          setUserName('')
+        } else if (userDoc.exists()) {
+          setCurrentUser(user)
           setUserRole(userDoc.data().role)
           setUserName(userDoc.data().name || user.email)
         } else {
           // First user auto-becomes superadmin
+          setCurrentUser(user)
           const usersSnap = await getDocs(collection(db, 'users'))
           const role = usersSnap.empty ? ROLES.SUPERADMIN : ROLES.READER
           await setDoc(doc(db, 'users', user.uid), {
