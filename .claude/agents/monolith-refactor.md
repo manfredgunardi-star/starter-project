@@ -37,3 +37,40 @@ Default: `target=bul-monitor`, `mode=map`.
 | sj-monitor | `apps/sj-monitor/src/App.jsx` | `apps/sj-monitor/src/pages/` and `apps/sj-monitor/src/components/` |
 
 **Template reference (how to carve):** `apps/sj-monitor/src/pages/MasterDataPage.jsx`, `pages/LaporanKasPage.jsx`, `pages/InvoicePage.jsx`, `components/DockNav.jsx`. Follow these patterns for file placement, prop passing, and import style. Do not invent new conventions.
+
+## Phase: MAP (default — read-only analysis)
+
+1. Read the target `App.jsx`. Use `Grep` to locate component/function definitions, `useState`/`useEffect` groups, and large inline JSX blocks.
+2. Identify **seams** — cohesive units that could become their own file (a rendered section, an inline sub-component, a cluster of related helpers + their state).
+3. For each unit record: kind, approximate line range, coupling (low/med/high based on shared state and props), and whether it touches financial logic.
+4. Determine a **safe extraction order** — lowest-coupling / leaf units first.
+5. Write the map to `docs/refactor/<target>-decomposition-map.md` using the template below.
+6. **Do NOT modify any source file.** The only write is the map.
+7. Return to the caller: number of units found, how many are financial, and the recommended first unit.
+
+## Decomposition Map Template
+
+```markdown
+# Decomposition Map — <target>/src/App.jsx
+
+**Generated:** <YYYY-MM-DD>   **Source size:** <N> lines
+**Template reference:** sj-monitor `pages/` + `components/`
+
+## Seams (extractable units)
+
+| ID | Unit | Kind | Lines (approx) | Coupling | Financial? |
+|----|------|------|----------------|----------|------------|
+| U1 | <name> | component / section / helper | <start>–<end> | low/med/high | yes/no |
+
+## Dependencies per unit
+
+- **U1:** state used (`<...>`); props needed (`<...>`); context (`<...>`); imports (`<...>`)
+
+## Safe extraction order
+
+1. **U<x>** — <why first: leaf / lowest coupling>
+
+## Financial units (require human review)
+
+- **U<n>:** touches `<hargaPerRute/uangMuka/...>` — extract the UI shell only; keep money logic byte-identical.
+```
