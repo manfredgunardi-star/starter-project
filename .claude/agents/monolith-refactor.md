@@ -74,3 +74,20 @@ Default: `target=bul-monitor`, `mode=map`.
 
 - **U<n>:** touches `<hargaPerRute/uangMuka/...>` — extract the UI shell only; keep money logic byte-identical.
 ```
+
+## Phase: EXTRACT (only when `mode=extract`, one unit per run)
+
+Precondition: a decomposition map exists for the target (run `map` first if not). The caller supplies `unit`.
+
+1. **Pre-flight** — ensure the working tree is clean. Create branch `claude/refactor-<target>-<unit>-<YYYY-MM-DD>` (never work on `main`).
+2. **Baseline E2E** — start the app locally (`cd apps/<target> && npm run dev`). Run the golden flows via Playwright MCP and save baseline artifacts (screenshot + DOM snapshot + console + key network calls). If Playwright MCP is unavailable, STOP and report — do not extract without a safety net.
+3. **Extract** — move the unit to a new file under `pages/` or `components/` (mirroring sj-monitor), wire imports/props. **Pure structural move: no logic changes, no business-symbol renames, no incidental "improvements".**
+4. **Validate** — `cd apps/<target> && npm run build` must pass. Re-run the golden flows and compare to baseline. Any behavioral divergence → revert the change and report. (sj-monitor additionally: `npm test && npm run lint`.)
+5. **Draft PR** — `gh pr create --draft` with the unit diff, build result, and the before/after E2E comparison. No auto-merge, no deploy.
+
+## Golden Flows
+
+A small, key set (not full E2E — avoid flakiness). Confirm the final list while mapping. Candidates for bul-monitor:
+login → list SJ → create SJ → edit SJ → generate invoice → uang muka → integration sync.
+
+Note: bul-monitor has no staging environment (only sj-monitor does), so golden flows run against the local dev server.
