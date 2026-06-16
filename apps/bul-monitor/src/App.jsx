@@ -976,6 +976,10 @@ const SuratJalanMonitor = () => {
   const [firebaseUser, setFirebaseUser] = useState(null);
   const [authReady, setAuthReady] = useState(false);
   const [suratJalanList, setSuratJalanList] = useState([]);
+  // SJ berstatus 'gagal' ditandai isActive:false sehingga dibuang dari suratJalanList
+  // (agar tidak muncul di Keuangan/Laporan Kas). Kita simpan terpisah supaya tetap bisa
+  // ditampilkan di tab "Gagal" — satu-satunya jalur agar superadmin dapat me-restore.
+  const [gagalSuratJalanList, setGagalSuratJalanList] = useState([]);
   const [biayaList, setBiayaList] = useState([]);
   const [transaksiList, setTransaksiList] = useState([]);
   const [historyLog, setHistoryLog] = useState([]);
@@ -2902,8 +2906,10 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
   };
 
   const restoreFromGagal = async (id) => {
-    const sj = suratJalanList.find(s => s.id === id);
-    
+    // SJ gagal tidak ada di suratJalanList (di-soft-lock isActive:false); cari juga di
+    // gagalSuratJalanList agar deletedUangJalan/nominal ikut ter-restore dengan benar.
+    const sj = suratJalanList.find(s => s.id === id) || gagalSuratJalanList.find(s => s.id === id);
+
     setConfirmDialog({
       show: true,
       message: 'Restore Surat Jalan ini dari status GAGAL?\n\n✅ Status akan kembali ke PENDING.\n💰 Uang Jalan akan dibuat ulang di Laporan Keuangan.',
@@ -3100,9 +3106,9 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
     return icons[status] || <FileText className="w-4 h-4" />;
   };
 
-  const filteredSuratJalan = suratJalanList.filter(sj =>
-    filter === 'all' || sj.status === filter
-  );
+  const filteredSuratJalan = filter === 'gagal'
+    ? gagalSuratJalanList
+    : suratJalanList.filter(sj => filter === 'all' || sj.status === filter);
 
   const pendingReviewCount = suratJalanList.filter(sj => sj.status === 'menunggu_review').length;
 
@@ -3342,9 +3348,15 @@ const normalizeSJ = (row, docId) => {
 };
 
 const applySJ = () => {
-  const merged = mergeById(sjPrimary, sjLegacy).filter((x) => !x?.deletedAt && x?.isActive !== false);
+  const all = mergeById(sjPrimary, sjLegacy).filter((x) => !x?.deletedAt);
+  const merged = all.filter((x) => x?.isActive !== false);
   merged.sort((a, b) => String(b?.tanggalSJ || "").localeCompare(String(a?.tanggalSJ || "")));
   setSuratJalanList(merged);
+  // SJ gagal (di-soft-lock via isActive:false) tidak ada di `merged`; kumpulkan terpisah
+  // agar tab "Gagal" bisa menampilkannya untuk keperluan restore.
+  const gagal = all.filter((x) => String(x?.status || "").toLowerCase() === "gagal");
+  gagal.sort((a, b) => String(b?.tanggalSJ || "").localeCompare(String(a?.tanggalSJ || "")));
+  setGagalSuratJalanList(gagal);
   if (!didFirstLoadRef.current) {
     setIsLoading(false);
     didFirstLoadRef.current = true;
@@ -4031,6 +4043,17 @@ useEffect(() => {
                 className={`px-4 py-2 rounded-lg transition ${filter === 'terkunci' ? 'bg-gray-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
               >
                 Terkunci
+              </button>
+              <button
+                onClick={() => { setFilter('gagal'); setSelectedBatalSJIds(new Set()); setSelectedSJIds(new Set()); }}
+                className={`px-4 py-2 rounded-lg transition flex items-center space-x-1 ${filter === 'gagal' ? 'bg-red-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+              >
+                <span>Gagal</span>
+                {gagalSuratJalanList.length > 0 && (
+                  <span className={`text-xs font-bold rounded-full px-1.5 py-0.5 ${filter === 'gagal' ? 'bg-white text-red-600' : 'bg-red-600 text-white'}`}>
+                    {gagalSuratJalanList.length}
+                  </span>
+                )}
               </button>
             </div>
           </div>
