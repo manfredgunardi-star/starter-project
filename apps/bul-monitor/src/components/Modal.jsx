@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Package, CheckCircle, XCircle, Search } from 'lucide-react';
 import SearchableSelect from './SearchableSelect.jsx';
+import TruckFormFields from './modals/TruckFormFields.jsx';
+import SupirFormFields from './modals/SupirFormFields.jsx';
+import PelangganFormFields from './modals/PelangganFormFields.jsx';
+import RuteFormFields from './modals/RuteFormFields.jsx';
+import MaterialFormFields from './modals/MaterialFormFields.jsx';
 
 const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [], supirList = [], ruteList = [], materialList = [], suratJalanList = [], pelangganList = [], onClose, onSubmit }) => {
   const [searchInvoiceSJ, setSearchInvoiceSJ] = useState('');
@@ -934,157 +939,27 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
 
           {/* Truck Form */}
           {(type === 'addTruck' || type === 'editTruck') && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nomor Polisi *</label>
-                <input
-                  type="text"
-                  value={formData.nomorPolisi}
-                  onChange={(e) => setFormData({ ...formData, nomorPolisi: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                  placeholder="Contoh: B 1234 XYZ"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status *</label>
-                <select
-                  value={formData.isActive ? 'true' : 'false'}
-                  onChange={(e) => setFormData({ ...formData, isActive: e.target.value === 'true' })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                >
-                  <option value="true">Aktif</option>
-                  <option value="false">Nonaktif</option>
-                </select>
-              </div>
-            </>
+            <TruckFormFields formData={formData} setFormData={setFormData} />
           )}
 
           {/* Supir Form */}
           {(type === 'addSupir' || type === 'editSupir') && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nama Supir *</label>
-                <input
-                  type="text"
-                  value={formData.namaSupir}
-                  onChange={(e) => setFormData({ ...formData, namaSupir: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                  placeholder="Nama lengkap supir"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">PT *</label>
-                <input
-                  type="text"
-                  value={formData.pt}
-                  onChange={(e) => setFormData({ ...formData, pt: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                  placeholder="Nama perusahaan"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status *</label>
-                <select
-                  value={formData.isActive ? 'true' : 'false'}
-                  onChange={(e) => setFormData({ ...formData, isActive: e.target.value === 'true' })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                >
-                  <option value="true">Aktif</option>
-                  <option value="false">Nonaktif</option>
-                </select>
-              </div>
-            </>
+            <SupirFormFields formData={formData} setFormData={setFormData} />
           )}
 
           {/* Pelanggan Form */}
           {(type === 'addPelanggan' || type === 'editPelanggan') && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nama Pelanggan / PT *</label>
-                <input
-                  type="text"
-                  value={formData.name || ''}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                  placeholder="PT. Nama Perusahaan"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
-                <textarea
-                  value={formData.address || ''}
-                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                  rows={2}
-                  placeholder="Alamat lengkap..."
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">NPWP</label>
-                <input
-                  type="text"
-                  value={formData.npwp || ''}
-                  onChange={(e) => setFormData({ ...formData, npwp: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono focus:ring-2 focus:ring-green-500"
-                  placeholder="00.000.000.0-000.000"
-                />
-              </div>
-            </>
+            <PelangganFormFields formData={formData} setFormData={setFormData} />
           )}
 
           {/* Rute Form */}
           {(type === 'addRute' || type === 'editRute') && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Rute *</label>
-                <input
-                  type="text"
-                  value={formData.rute}
-                  onChange={(e) => setFormData({ ...formData, rute: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                  placeholder="Contoh: Jakarta - Surabaya"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Uang Jalan (Rp) *</label>
-                <input
-                  type="number"
-                  value={formData.uangJalan}
-                  onChange={(e) => setFormData({ ...formData, uangJalan: e.target.value })}
-                  onWheel={(e) => e.currentTarget.blur()}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                  placeholder="Contoh: 500000"
-                  min="0"
-                  step="10000"
-                />
-              </div>
-            </>
+            <RuteFormFields formData={formData} setFormData={setFormData} />
           )}
 
           {/* Material Form */}
           {(type === 'addMaterial' || type === 'editMaterial') && (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Material *</label>
-                <input
-                  type="text"
-                  value={formData.material}
-                  onChange={(e) => setFormData({ ...formData, material: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                  placeholder="Contoh: Semen"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Satuan *</label>
-                <input
-                  type="text"
-                  value={formData.satuan}
-                  onChange={(e) => setFormData({ ...formData, satuan: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                  placeholder="Contoh: Ton, Kg, m³"
-                />
-              </div>
-            </>
+            <MaterialFormFields formData={formData} setFormData={setFormData} />
           )}
 
           <div className="flex space-x-3 pt-4">
