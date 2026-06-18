@@ -7,6 +7,15 @@ import { formatDate } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { Plus, Search } from 'lucide-react'
+import SortableHeader from '../../components/ui/SortableHeader'
+import { useSortableData } from '../../hooks/useSortableData'
+
+const SORT_CONFIG = {
+  number: { accessor: gr => gr.gr_number,       type: 'string' },
+  date:   { accessor: gr => gr.date,            type: 'date'   },
+  party:  { accessor: gr => gr.supplier?.name,  type: 'string' },
+}
+const DEFAULT_SORT = { key: 'date', direction: 'desc' }
 
 export default function GoodsReceiptsPage() {
   const navigate = useNavigate()
@@ -24,6 +33,8 @@ export default function GoodsReceiptsPage() {
       return matchSearch && matchStatus
     })
   }, [goodsReceipts, search, statusFilter])
+
+  const { sorted, sortKey, sortDirection, requestSort } = useSortableData(filtered, SORT_CONFIG, DEFAULT_SORT)
 
   if (loading) return <LoadingSpinner message="Memuat penerimaan barang..." />
   if (error) return <Typography.Text type="danger">{error}</Typography.Text>
@@ -65,22 +76,22 @@ export default function GoodsReceiptsPage() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead style={{ background: '#f3f4f6', borderBottom: '1px solid #e5e7eb' }}>
             <tr>
-              <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>No. GR</th>
-              <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Tanggal</th>
-              <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Supplier</th>
+              <SortableHeader label="No. GR" sortKey="number" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+              <SortableHeader label="Tanggal" sortKey="date" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+              <SortableHeader label="Supplier" sortKey="party" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
               <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Ref. PO</th>
               <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Status</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 ? (
+            {sorted.length === 0 ? (
               <tr>
                 <td colSpan={5} style={{ padding: '32px 24px', textAlign: 'center', fontSize: 14, color: '#6b7280' }}>
                   Belum ada data penerimaan barang
                 </td>
               </tr>
             ) : (
-              filtered.map(gr => (
+              sorted.map(gr => (
                 <tr
                   key={gr.id}
                   style={{ borderBottom: '1px solid #e5e7eb', cursor: 'pointer' }}
