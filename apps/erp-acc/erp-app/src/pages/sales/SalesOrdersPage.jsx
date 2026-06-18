@@ -8,7 +8,17 @@ import { formatDate } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import StatusBadge from '../../components/ui/StatusBadge'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
+import SortableHeader from '../../components/ui/SortableHeader'
+import { useSortableData } from '../../hooks/useSortableData'
 import { Plus, Search } from 'lucide-react'
+
+const SORT_CONFIG = {
+  number: { accessor: o => o.so_number,      type: 'string' },
+  date:   { accessor: o => o.date,           type: 'date'   },
+  party:  { accessor: o => o.customer?.name, type: 'string' },
+  total:  { accessor: o => o.total,          type: 'number' },
+}
+const DEFAULT_SORT = { key: 'date', direction: 'desc' }
 
 export default function SalesOrdersPage() {
   const navigate = useNavigate()
@@ -27,6 +37,8 @@ export default function SalesOrdersPage() {
     })
   }, [orders, search, statusFilter])
 
+  const { sorted, sortKey, sortDirection, requestSort } = useSortableData(filtered, SORT_CONFIG, DEFAULT_SORT)
+
   if (loading) return <LoadingSpinner message="Memuat sales orders..." />
   if (error) return <Typography.Text type="danger">{error}</Typography.Text>
 
@@ -41,7 +53,6 @@ export default function SalesOrdersPage() {
         )}
       </Flex>
 
-      {/* Filters */}
       <Space>
         <div style={{ position: 'relative' }}>
           <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af' }} />
@@ -68,27 +79,26 @@ export default function SalesOrdersPage() {
         </select>
       </Space>
 
-      {/* Table */}
       <div style={{ overflowX: 'auto', border: '1px solid #e5e7eb', borderRadius: 8 }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead style={{ background: '#f3f4f6', borderBottom: '1px solid #e5e7eb' }}>
             <tr>
-              <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>No. SO</th>
-              <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Tanggal</th>
-              <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Customer</th>
+              <SortableHeader label="No. SO" sortKey="number" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+              <SortableHeader label="Tanggal" sortKey="date" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+              <SortableHeader label="Customer" sortKey="party" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
               <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Status</th>
-              <th style={{ padding: '12px 24px', textAlign: 'right', fontSize: 14, fontWeight: 500 }}>Total</th>
+              <SortableHeader label="Total" sortKey="total" activeKey={sortKey} direction={sortDirection} onSort={requestSort} align="right" />
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 ? (
+            {sorted.length === 0 ? (
               <tr>
                 <td colSpan={5} style={{ padding: '32px 24px', textAlign: 'center', fontSize: 14, color: '#6b7280' }}>
                   Belum ada sales order
                 </td>
               </tr>
             ) : (
-              filtered.map(order => (
+              sorted.map(order => (
                 <tr
                   key={order.id}
                   onClick={() => navigate(`/sales/orders/${order.id}`)}
