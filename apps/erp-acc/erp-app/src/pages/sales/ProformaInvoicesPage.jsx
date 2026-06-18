@@ -7,8 +7,18 @@ import { formatCurrency } from '../../utils/currency'
 import { formatDate } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
+import SortableHeader from '../../components/ui/SortableHeader'
+import { useSortableData } from '../../hooks/useSortableData'
 import { Plus, Search, Printer, FileDown } from 'lucide-react'
 import { usePrintProformaInvoice } from '../../hooks/usePrintProformaInvoice'
+
+const SORT_CONFIG = {
+  number: { accessor: p => p.proforma_number,  type: 'string' },
+  date:   { accessor: p => p.date,             type: 'date'   },
+  party:  { accessor: p => p.customer?.name,   type: 'string' },
+  total:  { accessor: p => p.total,            type: 'number' },
+}
+const DEFAULT_SORT = { key: 'date', direction: 'desc' }
 
 export default function ProformaInvoicesPage() {
   const navigate = useNavigate()
@@ -56,6 +66,8 @@ export default function ProformaInvoicesPage() {
     })
   }, [proformas, search])
 
+  const { sorted, sortKey, sortDirection, requestSort } = useSortableData(filtered, SORT_CONFIG, DEFAULT_SORT)
+
   if (loading) return <LoadingSpinner message="Memuat proforma invoice..." />
   if (error) return <Typography.Text type="danger">{error}</Typography.Text>
 
@@ -87,21 +99,21 @@ export default function ProformaInvoicesPage() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead style={{ background: '#f3f4f6', borderBottom: '1px solid #e5e7eb' }}>
             <tr>
-              <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>No. Proforma</th>
-              <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Tanggal</th>
-              <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Customer</th>
+              <SortableHeader label="No. Proforma" sortKey="number" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+              <SortableHeader label="Tanggal" sortKey="date" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+              <SortableHeader label="Customer" sortKey="party" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
               <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Berlaku Hingga</th>
-              <th style={{ padding: '12px 24px', textAlign: 'right', fontSize: 14, fontWeight: 500 }}>Total</th>
+              <SortableHeader label="Total" sortKey="total" activeKey={sortKey} direction={sortDirection} onSort={requestSort} align="right" />
               <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: 14, fontWeight: 500 }}>Aksi</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 ? (
+            {sorted.length === 0 ? (
               <tr>
                 <td colSpan={6} style={{ padding: '32px 24px', textAlign: 'center', fontSize: 14, color: '#6b7280' }}>Belum ada proforma invoice</td>
               </tr>
             ) : (
-              filtered.map(p => (
+              sorted.map(p => (
                 <tr
                   key={p.id}
                   onClick={() => navigate(`/sales/proforma/${p.id}`)}

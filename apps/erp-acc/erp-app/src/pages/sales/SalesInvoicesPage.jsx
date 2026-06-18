@@ -8,8 +8,18 @@ import { formatDate } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import StatusBadge from '../../components/ui/StatusBadge'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
+import SortableHeader from '../../components/ui/SortableHeader'
+import { useSortableData } from '../../hooks/useSortableData'
 import { Plus, Search, Printer, FileDown } from 'lucide-react'
 import { usePrintInvoice } from '../../hooks/usePrintInvoice'
+
+const SORT_CONFIG = {
+  number: { accessor: inv => inv.invoice_number,  type: 'string' },
+  date:   { accessor: inv => inv.date,            type: 'date'   },
+  party:  { accessor: inv => inv.customer?.name,  type: 'string' },
+  total:  { accessor: inv => inv.total,           type: 'number' },
+}
+const DEFAULT_SORT = { key: 'date', direction: 'desc' }
 
 export default function SalesInvoicesPage() {
   const navigate = useNavigate()
@@ -28,6 +38,8 @@ export default function SalesInvoicesPage() {
       return matchSearch && matchStatus
     })
   }, [invoices, search, statusFilter])
+
+  const { sorted, sortKey, sortDirection, requestSort } = useSortableData(filtered, SORT_CONFIG, DEFAULT_SORT)
 
   if (loading) return <LoadingSpinner message="Memuat invoice..." />
   if (error) return <Typography.Text type="danger">{error}</Typography.Text>
@@ -71,23 +83,23 @@ export default function SalesInvoicesPage() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead style={{ background: '#f3f4f6', borderBottom: '1px solid #e5e7eb' }}>
             <tr>
-              <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>No. Invoice</th>
-              <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Tanggal</th>
-              <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Customer</th>
+              <SortableHeader label="No. Invoice" sortKey="number" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+              <SortableHeader label="Tanggal" sortKey="date" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+              <SortableHeader label="Customer" sortKey="party" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
               <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Jatuh Tempo</th>
               <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Status</th>
-              <th style={{ padding: '12px 24px', textAlign: 'right', fontSize: 14, fontWeight: 500 }}>Total</th>
+              <SortableHeader label="Total" sortKey="total" activeKey={sortKey} direction={sortDirection} onSort={requestSort} align="right" />
               <th style={{ padding: '12px 24px', textAlign: 'right', fontSize: 14, fontWeight: 500 }}>Dibayar</th>
               <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: 14, fontWeight: 500 }}>Aksi</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 ? (
+            {sorted.length === 0 ? (
               <tr>
                 <td colSpan={8} style={{ padding: '32px 24px', textAlign: 'center', fontSize: 14, color: '#6b7280' }}>Belum ada invoice</td>
               </tr>
             ) : (
-              filtered.map(inv => (
+              sorted.map(inv => (
                 <tr
                   key={inv.id}
                   onClick={() => navigate(`/sales/invoices/${inv.id}`)}

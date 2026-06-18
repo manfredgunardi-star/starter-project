@@ -1,35 +1,27 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { compareValues } from '../utils/sort'
 
-export function useSortableData(data = [], sortConfig = {}, defaultSort = {}) {
-  const [sortState, setSortState] = useState(defaultSort)
+export function useSortableData(data, sortConfig, defaultSort = { key: 'date', direction: 'desc' }) {
+  const [sortKey, setSortKey] = useState(defaultSort.key)
+  const [sortDirection, setSortDirection] = useState(defaultSort.direction)
+
+  const requestSort = useCallback((key) => {
+    if (key === sortKey) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortKey(key)
+      setSortDirection(key === 'date' ? 'desc' : 'asc')
+    }
+  }, [sortKey])
 
   const sorted = useMemo(() => {
-    const { key, direction } = sortState
-    if (!key || !sortConfig[key]) return data
-
-    const config = sortConfig[key]
-    const sorted = [...data].sort((a, b) => {
-      const aVal = config.accessor(a)
-      const bVal = config.accessor(b)
-      return compareValues(aVal, bVal, config.type, direction)
+    const config = sortConfig[sortKey]
+    if (!config) return data
+    return [...data].sort((a, b) => {
+      const cmp = compareValues(config.accessor(a), config.accessor(b), config.type)
+      return sortDirection === 'asc' ? cmp : -cmp
     })
+  }, [data, sortKey, sortDirection, sortConfig])
 
-    return sorted
-  }, [data, sortState, sortConfig])
-
-  const requestSort = (key) => {
-    let newDirection = 'asc'
-    if (sortState.key === key && sortState.direction === 'asc') {
-      newDirection = 'desc'
-    }
-    setSortState({ key, direction: newDirection })
-  }
-
-  return {
-    sorted,
-    sortKey: sortState.key,
-    sortDirection: sortState.direction,
-    requestSort,
-  }
+  return { sorted, sortKey, sortDirection, requestSort }
 }
