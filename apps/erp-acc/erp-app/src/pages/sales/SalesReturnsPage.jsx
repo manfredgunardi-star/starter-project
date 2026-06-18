@@ -8,7 +8,17 @@ import { formatDate } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import StatusBadge from '../../components/ui/StatusBadge'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
+import SortableHeader from '../../components/ui/SortableHeader'
+import { useSortableData } from '../../hooks/useSortableData'
 import { Plus, Search } from 'lucide-react'
+
+const SORT_CONFIG = {
+  number: { accessor: r => r.sr_number,        type: 'string' },
+  date:   { accessor: r => r.date,             type: 'date'   },
+  party:  { accessor: r => r.customer?.name,   type: 'string' },
+  total:  { accessor: r => r.total,            type: 'number' },
+}
+const DEFAULT_SORT = { key: 'date', direction: 'desc' }
 
 export default function SalesReturnsPage() {
   const navigate = useNavigate()
@@ -27,6 +37,8 @@ export default function SalesReturnsPage() {
       return matchSearch && matchStatus
     })
   }, [returns, search, statusFilter])
+
+  const { sorted, sortKey, sortDirection, requestSort } = useSortableData(filtered, SORT_CONFIG, DEFAULT_SORT)
 
   if (loading) return <LoadingSpinner message="Memuat retur penjualan..." />
   if (error) return <Typography.Text type="danger">{error}</Typography.Text>
@@ -68,23 +80,23 @@ export default function SalesReturnsPage() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead style={{ background: '#f3f4f6', borderBottom: '1px solid #e5e7eb' }}>
             <tr>
-              <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>No. Retur</th>
-              <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Tanggal</th>
-              <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Customer</th>
+              <SortableHeader label="No. Retur" sortKey="number" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+              <SortableHeader label="Tanggal" sortKey="date" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+              <SortableHeader label="Customer" sortKey="party" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
               <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Ref SO</th>
               <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Status</th>
-              <th style={{ padding: '12px 24px', textAlign: 'right', fontSize: 14, fontWeight: 500 }}>Total</th>
+              <SortableHeader label="Total" sortKey="total" activeKey={sortKey} direction={sortDirection} onSort={requestSort} align="right" />
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 ? (
+            {sorted.length === 0 ? (
               <tr>
                 <td colSpan={6} style={{ padding: '32px 24px', textAlign: 'center', fontSize: 14, color: '#6b7280' }}>
                   Belum ada retur penjualan
                 </td>
               </tr>
             ) : (
-              filtered.map(r => (
+              sorted.map(r => (
                 <tr
                   key={r.id}
                   onClick={() => navigate(`/sales/returns/${r.id}`)}
