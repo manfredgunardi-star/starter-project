@@ -26,6 +26,7 @@ service cloud.firestore {
     function isAdminSJ() { return signedIn() && myRole() == 'admin_sj'; }
     function isAdminInv() { return signedIn() && myRole() == 'admin_invoice'; }
     function isAdminKeu() { return signedIn() && myRole() == 'admin_keuangan'; }
+    function isAiAgent() { return signedIn() && myRole() == 'ai_agent'; }
 
     function isStaff() {
       return signedIn() && (myRole() in ['superadmin','owner','admin_sj','admin_invoice','admin_keuangan']);
@@ -97,28 +98,28 @@ service cloud.firestore {
     // --- TRANSAKSI ---
     match /bul_surat_jalan/{id} {
       allow read: if signedIn();
-      allow create: if isSuperAdmin() || isAdminSJ();
-      allow update: if isSuperAdmin() || isAdminSJ() || (isAdminInv() && sjInvoiceFieldsOnly());
+      allow create: if isSuperAdmin() || isAdminSJ() || isAiAgent();
+      allow update: if isSuperAdmin() || isAdminSJ() || ((isAdminInv() || isAiAgent()) && sjInvoiceFieldsOnly());
       allow delete: if isSuperAdmin();
     }
 
     // Backward compatibility
     match /bul_suratJalan/{id} {
       allow read: if signedIn();
-      allow create: if isSuperAdmin() || isAdminSJ();
-      allow update: if isSuperAdmin() || isAdminSJ() || (isAdminInv() && sjInvoiceFieldsOnly());
+      allow create: if isSuperAdmin() || isAdminSJ() || isAiAgent();
+      allow update: if isSuperAdmin() || isAdminSJ() || ((isAdminInv() || isAiAgent()) && sjInvoiceFieldsOnly());
       allow delete: if isSuperAdmin();
     }
 
     match /bul_invoice/{id} {
       allow read: if signedIn();
-      allow create, update: if isSuperAdmin() || isAdminInv();
+      allow create, update: if isSuperAdmin() || isAdminInv() || isAiAgent();
       allow delete: if isSuperAdmin();
     }
 
     match /bul_invoices/{id} {
       allow read: if signedIn();
-      allow create, update: if isSuperAdmin() || isAdminInv();
+      allow create, update: if isSuperAdmin() || isAdminInv() || isAiAgent();
       allow delete: if isSuperAdmin();
     }
 
@@ -135,7 +136,7 @@ service cloud.firestore {
       allow create, update: if isSuperAdmin() || isAdminKeu();
 
       // Admin SJ create pengeluaran uang jalan + soft delete
-      allow create: if isAdminSJ()
+      allow create: if (isAdminSJ() || isAiAgent())
         && request.resource.data.keys().hasAll(['id','tipe','nominal','pt','tanggal','keterangan','createdAt','createdBy','isActive','suratJalanId'])
         && request.resource.data.tipe == 'pengeluaran'
         && request.resource.data.isActive == true
@@ -143,7 +144,7 @@ service cloud.firestore {
         && request.resource.data.nominal >= 0
         && request.resource.data.suratJalanId is string;
 
-      allow update: if isAdminSJ()
+      allow update: if (isAdminSJ() || isAiAgent())
         && resource.data.suratJalanId is string
         && request.resource.data.diff(resource.data).changedKeys().hasOnly(['isActive','updatedAt','updatedBy']);
 
@@ -153,7 +154,7 @@ service cloud.firestore {
     // --- HISTORY LOG ---
     match /bul_history_log/{id} {
       allow read: if signedIn() && inRoles(['superadmin','owner','admin_sj','admin_invoice','admin_keuangan']);
-      allow create: if signedIn() && inRoles(['superadmin','admin_sj','admin_invoice','admin_keuangan']);
+      allow create: if signedIn() && inRoles(['superadmin','admin_sj','admin_invoice','admin_keuangan','ai_agent']);
       allow update, delete: if false;
     }
 
