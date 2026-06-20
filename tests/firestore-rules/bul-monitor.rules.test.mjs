@@ -80,6 +80,20 @@ describe('bul-monitor ai_agent — DENIED', () => {
     await assertFails(setDoc(doc(agentDb(), 'bul_transaksi/TX-2'), { ...validUJ, id: 'TX-2', tipe: 'pemasukan' }));
   });
 
+  test('cannot create transaksi missing required field (suratJalanId)', async () => {
+    const { suratJalanId, ...missingField } = validUJ;
+    await assertFails(setDoc(doc(agentDb(), 'bul_transaksi/TX-3'), { ...missingField, id: 'TX-3' }));
+  });
+
+  test('cannot update transaksi changing nominal (beyond isActive soft-delete)', async () => {
+    await testEnv.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'bul_transaksi/TX-UJ-SJ-1'), validUJ);
+    });
+    await assertFails(updateDoc(doc(agentDb(), 'bul_transaksi/TX-UJ-SJ-1'), {
+      nominal: 999999, updatedAt: 'x', updatedBy: 'agent',
+    }));
+  });
+
   test('cannot update SJ non-invoice fields', async () => {
     await seedSJ();
     await assertFails(updateDoc(doc(agentDb(), 'bul_surat_jalan/SJ-1'), { status: 'terkirim' }));
