@@ -20,6 +20,10 @@ service cloud.firestore {
       return isAuth() && (getUserRole() == 'superadmin' || getUserRole() == 'admin');
     }
 
+    function isAiAgent() {
+      return isAuth() && getUserRole() == 'ai_agent';
+    }
+
     // Users collection - only superadmin can manage
     match /users/{userId} {
       allow read: if isAuth();
@@ -30,7 +34,7 @@ service cloud.firestore {
     // Journals - superadmin full access, admin can create, reader can read
     match /journals/{journalId} {
       allow read: if isAuth();
-      allow create: if isAdminOrAbove();
+      allow create: if isAdminOrAbove() || isAiAgent();
       allow update, delete: if isSuperadmin();
     }
 
