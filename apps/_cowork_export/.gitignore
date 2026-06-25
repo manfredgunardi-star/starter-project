@@ -1,0 +1,5 @@
+# JANGAN commit kunci & data hasil ekspor
+keys/
+exports/
+node_modules/
+*.log

@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body { @apply h-full bg-cream text-ink font-sans antialiased; }
+  #root { @apply h-full; }
+  * { box-sizing: border-box; }
+}
+
+@layer utilities {
+  .tabular { font-variant-numeric: tabular-nums; }
+  .scrollbar-roma::-webkit-scrollbar { width: 10px; height: 10px; }
+  .scrollbar-roma::-webkit-scrollbar-track { background: transparent; }
+  .scrollbar-roma::-webkit-scrollbar-thumb { background: rgba(122,107,97,0.3); border-radius: 5px; }
+  .scrollbar-roma::-webkit-scrollbar-thumb:hover { background: rgba(122,107,97,0.5); }
+}
+
+@keyframes slideDown { from { transform: translateY(-8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes slideUp   { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes fadeIn    { from { opacity: 0; } to { opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes slideDown { from, to { transform: none; opacity: 1; } }
+  @keyframes slideUp   { from, to { transform: none; opacity: 1; } }
+}

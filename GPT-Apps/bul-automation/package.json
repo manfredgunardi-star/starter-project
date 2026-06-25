@@ -1,0 +1,22 @@
+{
+  "name": "bul-automation",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Standalone automation worker for PT Bangun Usaha Lancar reconciliation reports.",
+  "scripts": {
+    "dry-run": "node src/cli.js dry-run",
+    "run": "node src/cli.js run",
+    "email-sync": "node src/cli.js email-sync",
+    "test": "node --test",
+    "check": "node --check src/cli.js"
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.16",
+    "dotenv": "^16.4.7",
+    "firebase-admin": "^13.0.2",
+    "googleapis": "^144.0.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {}
+}

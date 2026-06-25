@@ -1,0 +1,17 @@
+{
+  "name": "bul-cowork-export",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Ekspor data Firestore bul-monitor & bul-accounting ke JSON untuk analisa Cowork (read-only).",
+  "type": "commonjs",
+  "scripts": {
+    "export:monitor": "node export-client.js --project=monitor",
+    "export:accounting": "node export-client.js --project=accounting",
+    "export:monitor:key": "node export-firestore.js --project=monitor",
+    "export:accounting:key": "node export-firestore.js --project=accounting"
+  },
+  "dependencies": {
+    "firebase": "^10.14.1",
+    "firebase-admin": "^12.0.0"
+  }
+}

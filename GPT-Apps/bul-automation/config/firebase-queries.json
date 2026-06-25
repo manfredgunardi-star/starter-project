@@ -1,0 +1,52 @@
+{
+  "apps": {
+    "bulMonitor": {
+      "enabled": false,
+      "projectId": "",
+      "credentialPathEnv": "BUL_MONITOR_SERVICE_ACCOUNT",
+      "queries": [
+        {
+          "enabled": false,
+          "collection": "bul_surat_jalan",
+          "dateField": "tanggalSJ",
+          "sheetName": "monitor_surat_jalan",
+          "filters": [
+            { "field": "isActive", "op": "!=", "value": false }
+          ]
+        },
+        {
+          "enabled": false,
+          "collection": "bul_invoices",
+          "dateField": "tglInvoice",
+          "sheetName": "monitor_invoices",
+          "filters": [
+            { "field": "isActive", "op": "!=", "value": false }
+          ]
+        }
+      ]
+    },
+    "bulAccounting": {
+      "enabled": false,
+      "projectId": "",
+      "credentialPathEnv": "BUL_ACCOUNTING_SERVICE_ACCOUNT",
+      "queries": [
+        {
+          "enabled": false,
+          "collection": "journals",
+          "dateField": "date",
+          "sheetName": "accounting_journals",
+          "filters": [
+            { "field": "status", "op": "==", "value": "posted" }
+          ]
+        },
+        {
+          "enabled": false,
+          "collection": "integration_queue",
+          "dateField": "tanggal",
+          "sheetName": "integration_queue",
+          "filters": []
+        }
+      ]
+    }
+  }
+}

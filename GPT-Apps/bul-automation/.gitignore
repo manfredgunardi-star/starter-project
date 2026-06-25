@@ -1,0 +1,9 @@
+node_modules/
+outputs/
+.env
+.env.*
+!.env.example
+credentials/
+token.json
+gmail-token.json
+firebase-service-account*.json

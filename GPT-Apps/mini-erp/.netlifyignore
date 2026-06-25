@@ -1,0 +1,12 @@
+node_modules
+dist
+.env
+.env.local
+.firebase
+.netlify
+.vercel
+playwright-report
+test-results
+supabase/.temp
+npm-debug.log*
+firebase-debug.log

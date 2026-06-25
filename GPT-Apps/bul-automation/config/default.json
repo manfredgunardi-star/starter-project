@@ -1,0 +1,39 @@
+{
+  "companyName": "PT. Bangun Usaha Lancar",
+  "driveRoot": "G:\\My Drive\\Documents\\PT. Bangun Usaha Lancar",
+  "recipientEmail": "",
+  "schedule": {
+    "timezone": "Asia/Bangkok",
+    "days": ["MO", "TH"],
+    "time": "08:00"
+  },
+  "workbooks": {
+    "coa": "CoA BUL.xlsx",
+    "mapping": "Rekapan Transaksi BUL.xlsx"
+  },
+  "folderNames": {
+    "transactions": "Transaksi",
+    "automationOutput": "Automation Output"
+  },
+  "journalImportHeader": [
+    "No.Jurnal",
+    "Tanggal",
+    "Deskripsi Jurnal",
+    "Kode Akun",
+    "Debit",
+    "Kredit",
+    "Keterangan Baris"
+  ],
+  "suratJalanImportHeader": [
+    "Nomor SJ",
+    "Tanggal SJ (DD/MM/YYYY)",
+    "Nomor Polisi",
+    "Nama Supir",
+    "Rute",
+    "Material",
+    "Qty Isi",
+    "Status",
+    "Tgl Terkirim (DD/MM/YYYY)",
+    "Qty Bongkar"
+  ]
+}
