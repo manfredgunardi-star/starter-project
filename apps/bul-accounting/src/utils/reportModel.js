@@ -83,7 +83,11 @@ export async function buildSaldoAkun(ds) {
   return { id: 'saldo', title: 'NERACA SALDO', periodLabel: fmtRange(ds.startDate || ds.endDate, ds.endDate), columns, rows }
 }
 
-export async function buildBukuBesar(ds) {
+// opts.accountCode (optional): limit the ledger to one account (used by the
+// Buku Besar tab, which views a single account). Omitted = all accounts (bulk,
+// used by Download-Semua).
+export async function buildBukuBesar(ds, opts = {}) {
+  const { accountCode } = opts
   const js = filterJournalsByDate(ds.journals, ds.startDate, ds.endDate)
   const columns = [
     { key: 'tanggal', label: 'Tanggal', align: 'left' }, { key: 'keterangan', label: 'Keterangan', align: 'left' },
@@ -95,6 +99,7 @@ export async function buildBukuBesar(ds) {
   const chrono = js.slice().reverse()
   const byAccount = {}
   chrono.forEach(j => j.lines?.forEach(l => {
+    if (accountCode && l.accountCode !== accountCode) return
     ;(byAccount[l.accountCode] ||= []).push({ date: j.date, keterangan: l.keterangan || j.description || '', debit: l.debit || 0, credit: l.credit || 0 })
   }))
   const rows = []
@@ -106,7 +111,8 @@ export async function buildBukuBesar(ds) {
       rows.push(trow('detail', { tanggal: formatDate(e.date), keterangan: e.keterangan, debit: e.debit, kredit: e.credit, saldo: Math.abs(bal) }))
     })
   })
-  return { id: 'buku_besar', title: 'BUKU BESAR', periodLabel: fmtRange(ds.startDate, ds.endDate), columns, rows }
+  const title = accountCode ? `BUKU BESAR — ${getAccountName(accountCode)}` : 'BUKU BESAR'
+  return { id: 'buku_besar', title, periodLabel: fmtRange(ds.startDate, ds.endDate), columns, rows }
 }
 
 export async function buildGLArmada(ds) {

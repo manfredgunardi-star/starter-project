@@ -489,7 +489,7 @@ function BukuBesarTab() {
 
   const handleExport = async (fmt) => {
     const ds = { journals: await getJournals({ endDate }), trucks: await getTrucks(), startDate, endDate }
-    const model = await buildBukuBesar(ds)
+    const model = await buildBukuBesar(ds, { accountCode: selectedAccount })
     fmt === 'excel' ? exportReportToExcel(model) : exportReportToPdf(model)
   }
 
