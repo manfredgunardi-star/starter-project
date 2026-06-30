@@ -32,3 +32,25 @@ describe('statement builders', () => {
     expect(m.rows.some(r => /SALDO KAS AKHIR/.test(r.cells.label))).toBe(true)
   })
 })
+
+import { buildSaldoAkun, buildBukuBesar, buildGLArmada, buildAllReports } from '../reportModel'
+
+describe('table builders', () => {
+  it('buildSaldoAkun has 5 columns and one detail row per account', async () => {
+    const m = await buildSaldoAkun(dataset)
+    expect(m.columns.map(c => c.key)).toEqual(['kode', 'nama', 'debit', 'kredit', 'saldo'])
+    expect(m.rows.filter(r => r.type === 'detail').length).toBeGreaterThan(0)
+  })
+  it('buildBukuBesar groups by account with heading rows', async () => {
+    const m = await buildBukuBesar(dataset)
+    expect(m.rows.some(r => r.type === 'heading')).toBe(true)
+  })
+  it('buildGLArmada returns a model', async () => {
+    const m = await buildGLArmada(dataset)
+    expect(m.id).toBe('gl_armada')
+  })
+  it('buildAllReports returns 6 models', async () => {
+    const models = await buildAllReports(dataset)
+    expect(models.map(m => m.id)).toEqual(['neraca','labarugi','aruskas','saldo','buku_besar','gl_armada'])
+  })
+})
