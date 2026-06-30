@@ -30,7 +30,7 @@ const NAV_ITEMS = [
   { path: '/kas-bank',   label: 'Kas & Bank',         icon: Wallet },
   { path: '/penjualan',  label: 'Penjualan',          icon: ShoppingCart },
   { path: '/biaya',      label: 'Biaya',              icon: Receipt },
-  { path: '/laporan',    label: 'Laporan',            icon: BarChart3 },
+  { path: '/laporan',    label: 'Laporan',            icon: BarChart3, perm: 'report' },
   { path: '/armada',     label: 'Armada',             icon: Truck },
   { path: '/pelanggan',  label: 'Pelanggan',          icon: Users },
   { path: '/supplier',   label: 'Supplier',           icon: Package },
@@ -121,7 +121,7 @@ function LoginPage() {
 
 // ─── Main App ──────────────────────────────────────────────────────────────────
 export default function App() {
-  const { currentUser, loading, logout, userName, userRole } = useAuth()
+  const { currentUser, loading, logout, userName, userRole, can } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
 
@@ -181,7 +181,7 @@ export default function App() {
 
         {/* Nav items */}
         <nav className="flex-1 overflow-y-auto py-3 space-y-0.5 px-2">
-          {NAV_ITEMS.map(({ path, label, icon: Icon, badge }) => {
+          {NAV_ITEMS.filter(({ perm }) => !perm || can(perm)).map(({ path, label, icon: Icon, badge }) => {
             const active = isActive(path)
             return (
               <button
@@ -250,7 +250,7 @@ export default function App() {
             <Route path="/kas-bank"   element={<KasBankPage />} />
             <Route path="/penjualan"  element={<PenjualanPage />} />
             <Route path="/biaya"      element={<BiayaPage />} />
-            <Route path="/laporan"    element={<LaporanPage />} />
+            <Route path="/laporan"    element={can('report') ? <LaporanPage /> : <Navigate to="/jurnal" replace />} />
             <Route path="/armada"     element={<ArmadaPage />} />
             <Route path="/pelanggan"  element={<PelangganPage />} />
             <Route path="/supplier"   element={<SupplierPage />} />
