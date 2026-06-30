@@ -99,7 +99,7 @@ export async function buildBukuBesar(ds) {
   }))
   const rows = []
   Object.keys(byAccount).sort().forEach(code => {
-    rows.push(trow('heading', { tanggal: `${code} - ${getAccountName(code) || ''}` }))
+    rows.push(trow('heading', { tanggal: getAccountName(code) }))
     let bal = 0
     byAccount[code].forEach(e => {
       bal += e.debit - e.credit
