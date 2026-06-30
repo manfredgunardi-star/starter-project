@@ -65,3 +65,15 @@ describe('generateArusKasData (characterization)', () => {
     expect(d.saldoAwal + d.totalPerubahanKas).toBe(d.saldoAkhir)
   })
 })
+
+import { filterJournalsByDate } from '../accounting'
+
+describe('injected journals equivalence', () => {
+  it('getAccountBalances(...,journals) equals fetched version', async () => {
+    globalThis.__SEED__ = globalThis.__SEED2__
+    const fetched = await getAccountBalances('2026-06-30')
+    const all = globalThis.__SEED2__
+    const injected = await getAccountBalances('2026-06-30', null, 'all', all)
+    expect(injected).toEqual(fetched)
+  })
+})
