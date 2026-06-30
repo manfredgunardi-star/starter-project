@@ -34,3 +34,34 @@ describe('generateNeracaData (characterization)', () => {
     expect(d.totalAset).toBe(d.totalKewajiban + d.totalEkuitas)
   })
 })
+
+import { generateLabaRugiData, generateArusKasData, getAccountBalances } from '../accounting'
+
+// '4100' = Pendapatan Usaha (detail, normalBalance: credit) ✓
+// '6110' = Gaji Staf Kantor (detail, normalBalance: debit) ✓  [6100 is a header, not detail]
+globalThis.__SEED2__ = [
+  // Pendapatan usaha 5,000 (kredit 4xxx) against cash debit
+  { id: 'p1', date: '2026-06-05', status: 'posted', truckId: '',
+    lines: [ { accountCode: '1111', debit: 5000, credit: 0 }, { accountCode: '4100', debit: 0, credit: 5000 } ] },
+  // Beban operasional 2,000 (debit 6xxx) paid cash
+  { id: 'b1', date: '2026-06-06', status: 'posted', truckId: '',
+    lines: [ { accountCode: '6110', debit: 2000, credit: 0 }, { accountCode: '1111', debit: 0, credit: 2000 } ] },
+]
+
+describe('generateLabaRugiData (characterization)', () => {
+  it('computes laba bersih = pendapatan - beban', async () => {
+    globalThis.__SEED__ = globalThis.__SEED2__
+    const d = await generateLabaRugiData('2026-06-01', '2026-06-30')
+    expect(d.totalPendapatanUsaha).toBe(5000)
+    expect(d.totalBebanOperasional).toBe(2000)
+    expect(d.labaBersih).toBe(3000)
+  })
+})
+
+describe('generateArusKasData (characterization)', () => {
+  it('saldoAwal + totalPerubahan == saldoAkhir', async () => {
+    globalThis.__SEED__ = globalThis.__SEED2__
+    const d = await generateArusKasData('2026-06-01', '2026-06-30')
+    expect(d.saldoAwal + d.totalPerubahanKas).toBe(d.saldoAkhir)
+  })
+})
