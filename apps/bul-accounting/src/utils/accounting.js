@@ -122,16 +122,27 @@ export async function getJournals(filters = {}) {
   return results.sort((a, b) => (a.date > b.date ? -1 : 1))
 }
 
+// Pure date/type/truck/account filter mirroring getJournals' client-side logic.
+// Used to derive per-report views from a single pre-fetched journal set.
+export function filterJournalsByDate(journals, startDate, endDate) {
+  let r = journals
+  if (startDate) r = r.filter(j => j.date >= startDate)
+  if (endDate) r = r.filter(j => j.date <= endDate)
+  return r.slice().sort((a, b) => (a.date > b.date ? -1 : 1))
+}
+
 // ===== ACCOUNT BALANCES =====
-export async function getAccountBalances(endDate, startDate = null, truckId = 'all') {
-  const journals = await getJournals({
-    startDate: startDate || '1900-01-01',
-    endDate
-  })
+export async function getAccountBalances(endDate, startDate = null, truckId = 'all', journals = null) {
+  const src = journals
+    ? filterJournalsByDate(journals, startDate || '1900-01-01', endDate)
+    : await getJournals({
+        startDate: startDate || '1900-01-01',
+        endDate
+      })
 
   const balances = {}
 
-  journals.forEach(j => {
+  src.forEach(j => {
     if (truckId !== 'all' && j.truckId && j.truckId !== truckId) return
 
     j.lines?.forEach(line => {
@@ -161,8 +172,8 @@ export async function getAccountBalances(endDate, startDate = null, truckId = 'a
 }
 
 // ===== FINANCIAL REPORTS =====
-export async function generateNeracaData(endDate, truckId = 'all') {
-  const balances = await getAccountBalances(endDate, null, truckId)
+export async function generateNeracaData(endDate, truckId = 'all', journals = null) {
+  const balances = await getAccountBalances(endDate, null, truckId, journals)
   const detailAccounts = COA.filter(a => a.type === 'detail')
 
   const getBalance = (code) => {
@@ -197,8 +208,8 @@ export async function generateNeracaData(endDate, truckId = 'all') {
   }
 }
 
-export async function generateLabaRugiData(startDate, endDate, truckId = 'all') {
-  const balances = await getAccountBalances(endDate, startDate, truckId)
+export async function generateLabaRugiData(startDate, endDate, truckId = 'all', journals = null) {
+  const balances = await getAccountBalances(endDate, startDate, truckId, journals)
 
   const getBalance = (code) => {
     if (!balances[code]) return 0
@@ -237,13 +248,15 @@ export async function generateLabaRugiData(startDate, endDate, truckId = 'all') 
   }
 }
 
-export async function generateArusKasData(startDate, endDate, truckId = 'all') {
-  const journals = await getJournals({ startDate, endDate })
+export async function generateArusKasData(startDate, endDate, truckId = 'all', journals = null) {
+  const src = journals
+    ? filterJournalsByDate(journals, startDate, endDate)
+    : await getJournals({ startDate, endDate })
   const kasAccounts = ['1111', '1112', '1113', '1114']
 
   let operasional = 0, investasi = 0, pendanaan = 0
 
-  journals.forEach(j => {
+  src.forEach(j => {
     if (truckId !== 'all' && j.truckId && j.truckId !== truckId) return
 
     const hasKas = j.lines?.some(l => kasAccounts.includes(l.accountCode))
@@ -277,8 +290,8 @@ export async function generateArusKasData(startDate, endDate, truckId = 'all') {
     d.setUTCDate(d.getUTCDate() - 1)
     return d.toISOString().slice(0, 10)
   })()
-  const beginBalances = await getAccountBalances(startExclusive, null, truckId)
-  const endBalances = await getAccountBalances(endDate, null, truckId)
+  const beginBalances = await getAccountBalances(startExclusive, null, truckId, journals)
+  const endBalances = await getAccountBalances(endDate, null, truckId, journals)
 
   const beginCash = kasAccounts.reduce((s, code) => {
     const b = beginBalances[code]
