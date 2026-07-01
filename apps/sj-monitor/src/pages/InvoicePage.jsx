@@ -5,6 +5,10 @@ import { exportLabaKotorToExcel } from '../utils/excel.js';
 import { isSJBelumInvoice, isSJTerinvoice } from '../utils/sjHelpers.js';
 import Pagination, { PAGE_SIZE, clampPage } from '../components/Pagination.jsx';
 import StatSummary from '../components/StatSummary.jsx';
+import { useSearchFilter } from '../hooks/useSearchFilter.js';
+import { useSortableData } from '../hooks/useSortableData.js';
+import SearchInput from '../components/SearchInput.jsx';
+import SortableHeader from '../components/SortableHeader.jsx';
 
 const STATUS_BADGE_STYLES = {
   'dalam perjalanan': 'bg-orange-50 text-orange-600',
@@ -68,12 +72,15 @@ export default function InvoiceManagement({
   );
 
   const filteredSJ = activeFilter === 'belum-terinvoice' ? sjBelumTerinvoice : sjTerinvoice;
+  const [searchSJ, setSearchSJ] = useState('');
+  const searchedSJ = useSearchFilter(filteredSJ, searchSJ, ['nomorSJ', 'nomorPolisi', 'rute', 'material']);
+  const { sorted: sortedSJ, sortConfig, toggleSort } = useSortableData(searchedSJ);
   const [invPage, setInvPage] = useState(1);
   const [invoicePage, setInvoicePage] = useState(1);
-  useEffect(() => { setInvPage(1); setInvoicePage(1); }, [activeFilter]);
-  const safeInvPage = clampPage(invPage, filteredSJ.length);
+  useEffect(() => { setInvPage(1); setInvoicePage(1); }, [activeFilter, searchSJ]);
+  const safeInvPage = clampPage(invPage, sortedSJ.length);
   const safeInvoicePage = clampPage(invoicePage, invoiceList.length);
-  const pagedSJ = filteredSJ.slice((safeInvPage - 1) * PAGE_SIZE, safeInvPage * PAGE_SIZE);
+  const pagedSJ = sortedSJ.slice((safeInvPage - 1) * PAGE_SIZE, safeInvPage * PAGE_SIZE);
   const pagedInvoices = invoiceList.slice((safeInvoicePage - 1) * PAGE_SIZE, safeInvoicePage * PAGE_SIZE);
 
   // Escape CSV cell values untuk mencegah CSV Injection (formula injection di Excel/Sheets)
@@ -250,41 +257,56 @@ export default function InvoiceManagement({
                   <strong>📋 Info:</strong> Pilih surat jalan di bawah untuk membuat invoice. Klik tombol "Buat Invoice Baru" di atas untuk memulai.
                 </p>
               </div>
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase">Nomor SJ</th>
-                      <th className="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase">Tgl SJ</th>
-                      <th className="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase">Tgl Terkirim</th>
-                      <th className="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase">Nomor Polisi</th>
-                      <th className="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase">Rute</th>
-                      <th className="px-2 py-2 sm:px-6 sm:py-3 text-left text-xs font-medium text-gray-500 uppercase">Material</th>
-                      <th className="px-2 py-2 sm:px-6 sm:py-3 text-right text-xs font-medium text-gray-500 uppercase">Qty Bongkar</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {pagedSJ.map(sj => (
-                      <tr key={sj.id} className="hover:bg-orange-50 transition">
-                        <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-medium text-blue-600">{sj.nomorSJ}</td>
-                        <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
-                          {new Date(sj.tanggalSJ).toLocaleDateString('id-ID')}
-                        </td>
-                        <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-green-700 font-semibold">
-                          {sj.tglTerkirim ? new Date(sj.tglTerkirim).toLocaleDateString('id-ID') : '-'}
-                        </td>
-                        <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">{sj.nomorPolisi}</td>
-                        <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">{sj.rute}</td>
-                        <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">{sj.material}</td>
-                        <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 text-right font-semibold">
-                          {sj.qtyBongkar || 0} {sj.satuan}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className="mb-4">
+                <SearchInput
+                  value={searchSJ}
+                  onChange={setSearchSJ}
+                  placeholder="Cari nomor SJ, nomor polisi, rute, atau material..."
+                />
               </div>
-              <Pagination total={filteredSJ.length} page={safeInvPage} onChange={setInvPage} />
+              {sortedSJ.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-sm text-gray-500">Tidak ada Surat Jalan yang cocok dengan pencarian.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <SortableHeader field="nomorSJ" label="Nomor SJ" sortConfig={sortConfig} onToggle={toggleSort} />
+                          <SortableHeader field="tanggalSJ" label="Tgl SJ" sortConfig={sortConfig} onToggle={toggleSort} />
+                          <SortableHeader field="tglTerkirim" label="Tgl Terkirim" sortConfig={sortConfig} onToggle={toggleSort} />
+                          <SortableHeader field="nomorPolisi" label="Nomor Polisi" sortConfig={sortConfig} onToggle={toggleSort} />
+                          <SortableHeader field="rute" label="Rute" sortConfig={sortConfig} onToggle={toggleSort} />
+                          <SortableHeader field="material" label="Material" sortConfig={sortConfig} onToggle={toggleSort} />
+                          <SortableHeader field="qtyBongkar" label="Qty Bongkar" sortConfig={sortConfig} onToggle={toggleSort} align="right" />
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {pagedSJ.map(sj => (
+                          <tr key={sj.id} className="hover:bg-orange-50 transition">
+                            <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm font-medium text-blue-600">{sj.nomorSJ}</td>
+                            <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
+                              {new Date(sj.tanggalSJ).toLocaleDateString('id-ID')}
+                            </td>
+                            <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-green-700 font-semibold">
+                              {sj.tglTerkirim ? new Date(sj.tglTerkirim).toLocaleDateString('id-ID') : '-'}
+                            </td>
+                            <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">{sj.nomorPolisi}</td>
+                            <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">{sj.rute}</td>
+                            <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">{sj.material}</td>
+                            <td className="px-2 py-2 sm:px-6 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900 text-right font-semibold">
+                              {sj.qtyBongkar || 0} {sj.satuan}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <Pagination total={sortedSJ.length} page={safeInvPage} onChange={setInvPage} />
+                </>
+              )}
             </>
           )}
         </div>
