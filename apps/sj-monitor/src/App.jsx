@@ -38,7 +38,7 @@ import {
 
 
 
-import { AlertCircle, Package, Truck, FileText, DollarSign, Users, Settings, Database, LogOut, Plus, Edit, Trash2, Eye, CheckCircle, XCircle, Clock, Search, RefreshCw } from 'lucide-react';
+import { AlertCircle, Package, FileText, DollarSign, Users, Settings, Database, LogOut, Plus, Edit, Trash2, Eye, CheckCircle, XCircle, Clock, Search, RefreshCw } from 'lucide-react';
 import TopBar from './components/TopBar.jsx';
 import OfflineIndicator from './components/OfflineIndicator.jsx';
 import DockNav from './components/DockNav.jsx';
@@ -1902,10 +1902,7 @@ try { unsubTransaksi(); } catch {}
     { tab: 'surat-jalan', icon: Package,     label: 'SJ',       roles: ['superadmin','admin_sj','admin_keuangan','admin_invoice','reader'] },
     { tab: 'keuangan',    icon: DollarSign,  label: 'Keuangan', roles: ['superadmin','admin_keuangan','reader'] },
     { tab: 'laporan-kas', icon: FileText,    label: 'Laporan',  roles: ['superadmin','admin_keuangan','admin_invoice','admin_sj','reader'] },
-    { tab: 'laporan-truk', icon: Truck,     label: 'Laporan Truk', roles: ['superadmin', 'admin_sj'] },
-    { tab: 'payslip',     icon: DollarSign,  label: 'Gaji',     roles: ['superadmin', 'admin_keuangan', 'reader'] },
     { tab: 'invoicing',   icon: FileText,    label: 'Invoice',  roles: ['superadmin','admin_invoice','reader'] },
-    { tab: 'uang-muka',   icon: DollarSign,  label: 'UM',       roles: ['superadmin','admin_invoice','reader'] },
     { tab: 'master-data', icon: Database,    label: 'Data',     roles: ['superadmin'] },
     { tab: 'users',       icon: Users,       label: 'Users',    roles: ['superadmin'] },
     { tab: 'settings',    icon: Settings,    label: 'Settings', roles: ['superadmin'] },
