@@ -10,6 +10,14 @@ export const useMasterData = () => {
   const [materialList, setMaterialList] = useState([]);
   const [tarifRuteList, setTarifRuteList] = useState([]);
 
+  // Varian tak-terfilter (termasuk item non-aktif) — khusus untuk halaman Master Data
+  // (superadmin-only) agar item yang di-nonaktifkan tetap terlihat untuk direview/diaktifkan lagi.
+  // Semua konsumen lain (dropdown SJ, dsb.) tetap pakai list di atas yang sudah difilter aktif-saja.
+  const [truckListAll, setTruckListAll] = useState([]);
+  const [supirListAll, setSupirListAll] = useState([]);
+  const [ruteListAll, setRuteListAll] = useState([]);
+  const [materialListAll, setMaterialListAll] = useState([]);
+
   useEffect(() => {
     const normalizeItem = (d) => {
       const row = d.data() || {};
@@ -20,16 +28,24 @@ export const useMasterData = () => {
 
     const noop = () => {};
     const unsubTrucks = onSnapshot(collection(db, 'trucks'), (snap) => {
-      setTruckList(snap.docs.map(normalizeItem).filter(activeOnly));
+      const all = snap.docs.map(normalizeItem);
+      setTruckList(all.filter(activeOnly));
+      setTruckListAll(all);
     }, noop);
     const unsubSupir = onSnapshot(collection(db, 'supir'), (snap) => {
-      setSupirList(snap.docs.map(normalizeItem).filter(activeOnly));
+      const all = snap.docs.map(normalizeItem);
+      setSupirList(all.filter(activeOnly));
+      setSupirListAll(all);
     }, noop);
     const unsubRute = onSnapshot(collection(db, 'rute'), (snap) => {
-      setRuteList(snap.docs.map(normalizeItem).filter(activeOnly));
+      const all = snap.docs.map(normalizeItem);
+      setRuteList(all.filter(activeOnly));
+      setRuteListAll(all);
     }, noop);
     const unsubMaterial = onSnapshot(collection(db, 'material'), (snap) => {
-      setMaterialList(snap.docs.map(normalizeItem).filter(activeOnly));
+      const all = snap.docs.map(normalizeItem);
+      setMaterialList(all.filter(activeOnly));
+      setMaterialListAll(all);
     }, noop);
     const unsubTarif = onSnapshot(collection(db, 'tarif_rute'), (snap) => {
       setTarifRuteList(snap.docs.map(normalizeItem).filter(activeOnly));
@@ -50,5 +66,6 @@ export const useMasterData = () => {
     ruteList, setRuteList,
     materialList, setMaterialList,
     tarifRuteList, setTarifRuteList,
+    truckListAll, supirListAll, ruteListAll, materialListAll,
   };
 };

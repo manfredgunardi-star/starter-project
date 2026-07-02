@@ -13,10 +13,10 @@ const MATERIAL_SEARCH_FIELDS = ['material', 'satuan'];
 
 export default function MasterDataManagement({
   truckList, supirList, ruteList, materialList, currentUser,
-  onAddTruck, onEditTruck, onDeleteTruck,
-  onAddSupir, onEditSupir, onDeleteSupir,
-  onAddRute, onEditRute, onDeleteRute,
-  onAddMaterial, onEditMaterial, onDeleteMaterial,
+  onAddTruck, onEditTruck, onDeleteTruck, onActivateTruck,
+  onAddSupir, onEditSupir, onDeleteSupir, onActivateSupir,
+  onAddRute, onEditRute, onDeleteRute, onActivateRute,
+  onAddMaterial, onEditMaterial, onDeleteMaterial, onActivateMaterial,
   onDownloadTemplate, onImportData,
   showRitasiBulkUpload, setShowRitasiBulkUpload,
   showTarifBulkUpload, setShowTarifBulkUpload,
@@ -109,7 +109,7 @@ export default function MasterDataManagement({
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-bold text-gray-800">Master Data Truck</h2>
-                <p className="text-sm text-gray-600">Total: {truckList.length} truck</p>
+                <p className="text-sm text-gray-600">Total: {truckList.length} truck ({truckList.filter(t => t.isActive).length} aktif)</p>
               </div>
               <div className="flex gap-2">
                 <button
@@ -185,13 +185,23 @@ export default function MasterDataManagement({
                         <Edit className="w-4 h-4" />
                         <span>Edit</span>
                       </button>
-                      <button
-                        onClick={() => onDeleteTruck(truck.id)}
-                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span>Hapus</span>
-                      </button>
+                      {truck.isActive ? (
+                        <button
+                          onClick={() => onDeleteTruck(truck.id)}
+                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Hapus</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => onActivateTruck(truck.id)}
+                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>Aktifkan</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -209,7 +219,7 @@ export default function MasterDataManagement({
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-bold text-gray-800">Master Data Supir</h2>
-                <p className="text-sm text-gray-600">Total: {supirList.length} supir</p>
+                <p className="text-sm text-gray-600">Total: {supirList.length} supir ({supirList.filter(s => s.isActive).length} aktif)</p>
               </div>
               <div className="flex gap-2">
                 <button
@@ -294,13 +304,23 @@ export default function MasterDataManagement({
                         <Edit className="w-4 h-4" />
                         <span>Edit</span>
                       </button>
-                      <button
-                        onClick={() => onDeleteSupir(supir.id)}
-                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span>Hapus</span>
-                      </button>
+                      {supir.isActive ? (
+                        <button
+                          onClick={() => onDeleteSupir(supir.id)}
+                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Hapus</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => onActivateSupir(supir.id)}
+                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>Aktifkan</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -318,7 +338,7 @@ export default function MasterDataManagement({
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-bold text-gray-800">Master Data Rute</h2>
-                <p className="text-sm text-gray-600">Total: {ruteList.length} rute</p>
+                <p className="text-sm text-gray-600">Total: {ruteList.length} rute ({ruteList.filter(r => r.isActive).length} aktif)</p>
               </div>
               <div className="flex gap-2">
                 <button
@@ -389,7 +409,14 @@ export default function MasterDataManagement({
                 <div key={rute.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="text-lg font-bold text-gray-800 mb-2">{rute.rute}</h3>
+                      <div className="flex items-center space-x-3 mb-2">
+                        <h3 className="text-lg font-bold text-gray-800">{rute.rute}</h3>
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          rute.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {rute.isActive ? 'Aktif' : 'Nonaktif'}
+                        </span>
+                      </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                         <div>
                           <p className="text-gray-600">Rute ID:</p>
@@ -430,13 +457,23 @@ export default function MasterDataManagement({
                         <Edit className="w-4 h-4" />
                         <span>Edit</span>
                       </button>
-                      <button
-                        onClick={() => onDeleteRute(rute.id)}
-                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span>Hapus</span>
-                      </button>
+                      {rute.isActive ? (
+                        <button
+                          onClick={() => onDeleteRute(rute.id)}
+                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Hapus</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => onActivateRute(rute.id)}
+                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>Aktifkan</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -454,7 +491,7 @@ export default function MasterDataManagement({
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-bold text-gray-800">Master Data Material</h2>
-                <p className="text-sm text-gray-600">Total: {materialList.length} material</p>
+                <p className="text-sm text-gray-600">Total: {materialList.length} material ({materialList.filter(m => m.isActive).length} aktif)</p>
               </div>
               <div className="flex gap-2">
                 <button
@@ -507,7 +544,14 @@ export default function MasterDataManagement({
                 <div key={material.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="text-lg font-bold text-gray-800 mb-2">{material.material}</h3>
+                      <div className="flex items-center space-x-3 mb-2">
+                        <h3 className="text-lg font-bold text-gray-800">{material.material}</h3>
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          material.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {material.isActive ? 'Aktif' : 'Nonaktif'}
+                        </span>
+                      </div>
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
                           <p className="text-gray-600">Material ID:</p>
@@ -532,13 +576,23 @@ export default function MasterDataManagement({
                         <Edit className="w-4 h-4" />
                         <span>Edit</span>
                       </button>
-                      <button
-                        onClick={() => onDeleteMaterial(material.id)}
-                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span>Hapus</span>
-                      </button>
+                      {material.isActive ? (
+                        <button
+                          onClick={() => onDeleteMaterial(material.id)}
+                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Hapus</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => onActivateMaterial(material.id)}
+                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>Aktifkan</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
