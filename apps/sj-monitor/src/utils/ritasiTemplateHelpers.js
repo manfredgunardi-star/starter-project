@@ -84,3 +84,40 @@ export function parseRitasiUpdates(data) {
 
   return updates;
 }
+
+/**
+ * Splits template rows into updates that reference a rute still present in
+ * Master Data ("validUpdates") and rows whose ID Rute is not found ("rejectedRows"),
+ * e.g. because the rute was deleted after the template was downloaded.
+ * Rows referencing a valid rute are still applied — only unmatched rows are rejected.
+ *
+ * Returns: { validUpdates: { [ruteId]: newRitasiValue }, rejectedRows: { baris, ruteId, namaRute, alasan }[] }
+ */
+export function partitionRitasiRowsByRuteExistence(data, ruteList) {
+  const knownIds = new Set((ruteList || []).map((r) => String(r.id).trim()));
+  const validUpdates = {};
+  const rejectedRows = [];
+
+  data.slice(1).forEach((row, index) => {
+    const rowNumber = index + 2; // +2: header + 0-index
+    const ruteId = (row[0] ?? '').toString().trim();
+    const namaRute = row[1] ?? '';
+    const ritasiValue = parseInt(row[6]) || 0;
+
+    if (!ruteId) return; // validateRitasiTemplate sudah menandai baris ini sebagai error
+
+    if (!knownIds.has(ruteId)) {
+      rejectedRows.push({
+        baris: rowNumber,
+        ruteId,
+        namaRute,
+        alasan: `ID Rute "${ruteId}" tidak ditemukan di Master Data (mungkin sudah dihapus)`,
+      });
+      return;
+    }
+
+    validUpdates[ruteId] = ritasiValue;
+  });
+
+  return { validUpdates, rejectedRows };
+}
