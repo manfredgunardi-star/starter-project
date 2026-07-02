@@ -90,7 +90,7 @@ const SuratJalanMonitor = () => {
   const [historyLog, setHistoryLog] = useState([]);
   const [invoiceList, setInvoiceList] = useState([]);
   const [uangMukaList, setUangMukaList] = useState([]);
-  const { truckList, setTruckList, supirList, setSupirList, ruteList, setRuteList, materialList, setMaterialList, tarifRuteList } = useMasterData();
+  const { truckList, setTruckList, supirList, setSupirList, ruteList, setRuteList, materialList, setMaterialList, tarifRuteList, truckListAll, supirListAll, ruteListAll, materialListAll } = useMasterData();
   const { usersList, setUsersList, addUser, updateUser, deleteUser: deleteUserFn, toggleUserActive } = useUsers({ currentUser, setAlertMessage });
   const deleteUser = (id) => deleteUserFn(id, setConfirmDialog);
   const [showModal, setShowModal] = useState(false);
@@ -276,7 +276,7 @@ const SuratJalanMonitor = () => {
   };
 
   const updateTruck = async (id, updates) => {
-    const payload = { id, ...updates, isActive: true, updatedAt: new Date().toISOString(), updatedBy: currentUser.name };
+    const payload = { id, isActive: true, ...updates, updatedAt: new Date().toISOString(), updatedBy: currentUser.name };
 
     setTruckList((prevList) => prevList.map((t) => (t.id === id ? { ...t, ...payload } : t)));
 
@@ -305,6 +305,15 @@ const SuratJalanMonitor = () => {
     });
   };
 
+  const activateTruck = async (id) => {
+    try {
+      await upsertItemToFirestore(db, "trucks", { id, isActive: true, deletedAt: null, deletedBy: null });
+    } catch (err) {
+      console.error('[activateTruck] Firestore error:', err);
+      setAlertMessage("⚠️ Gagal mengaktifkan truck. Cek koneksi / Console (F12).");
+    }
+  };
+
   // Master Data Supir Functions
 
   const addSupir = async (data) => {
@@ -326,12 +335,12 @@ const SuratJalanMonitor = () => {
   };
 
   const updateSupir = async (id, updates) => {
-    const payload = { id, ...updates, isActive: true, updatedAt: new Date().toISOString(), updatedBy: currentUser.name };
+    const payload = { id, isActive: true, ...updates, updatedAt: new Date().toISOString(), updatedBy: currentUser.name };
     setSupirList((prevList) =>
       prevList.map((s) => (s.id === id ? { ...s, ...payload } : s))
     );
     try {
-      await upsertItemToFirestore(db, "supir", { ...payload, isActive: true });
+      await upsertItemToFirestore(db, "supir", payload);
     } catch (err) {
       console.error("[updateSupir] Firestore error:", err);
       setAlertMessage("⚠️ Gagal update Supir ke Firebase. Cek koneksi / Console (F12).");
@@ -355,6 +364,15 @@ const SuratJalanMonitor = () => {
     });
   };
 
+  const activateSupir = async (id) => {
+    try {
+      await upsertItemToFirestore(db, "supir", { id, isActive: true, deletedAt: null, deletedBy: null });
+    } catch (err) {
+      console.error('[activateSupir] Firestore error:', err);
+      setAlertMessage("⚠️ Gagal mengaktifkan supir. Cek koneksi / Console (F12).");
+    }
+  };
+
   // Master Data Rute Functions
   const addRute = async (data) => {
     const newRute = {
@@ -375,7 +393,7 @@ const SuratJalanMonitor = () => {
   };
 
   const updateRute = async (id, updates) => {
-    const payload = { id, ...updates, isActive: true, updatedAt: new Date().toISOString(), updatedBy: currentUser.name };
+    const payload = { id, isActive: true, ...updates, updatedAt: new Date().toISOString(), updatedBy: currentUser.name };
     setRuteList((prevList) =>
       prevList.map(r => r.id === id ? { ...r, ...payload } : r)
     );
@@ -394,17 +412,23 @@ const SuratJalanMonitor = () => {
       onConfirm: async () => {
         try {
           await softDeleteItemInFirestore(db, "rute", id, currentUser?.name || "system");
+          setRuteList((prevList) => prevList.filter(r => r.id !== id));
         } catch (err) {
           console.error('Error soft-deleting rute:', err);
+          setAlertMessage("⚠️ Gagal menghapus rute. Cek koneksi / Console (F12).");
         }
-
-        setRuteList((prevList) => {
-      const newList = prevList.filter(r => r.id !== id);
-      return newList;
-    });
-setConfirmDialog({ show: false, message: '', onConfirm: null });
+        setConfirmDialog({ show: false, message: '', onConfirm: null });
       }
     });
+  };
+
+  const activateRute = async (id) => {
+    try {
+      await upsertItemToFirestore(db, "rute", { id, isActive: true, deletedAt: null, deletedBy: null });
+    } catch (err) {
+      console.error('[activateRute] Firestore error:', err);
+      setAlertMessage("⚠️ Gagal mengaktifkan rute. Cek koneksi / Console (F12).");
+    }
   };
 
   const loadRuteData = async () => {
@@ -441,7 +465,7 @@ setConfirmDialog({ show: false, message: '', onConfirm: null });
   };
 
   const updateMaterial = async (id, updates) => {
-    const payload = { id, ...updates, isActive: true, updatedAt: new Date().toISOString(), updatedBy: currentUser.name };
+    const payload = { id, isActive: true, ...updates, updatedAt: new Date().toISOString(), updatedBy: currentUser.name };
     setMaterialList((prevList) =>
       prevList.map(m => m.id === id ? { ...m, ...payload } : m)
     );
@@ -460,17 +484,23 @@ setConfirmDialog({ show: false, message: '', onConfirm: null });
       onConfirm: async () => {
         try {
           await softDeleteItemInFirestore(db, "material", id, currentUser?.name || "system");
+          setMaterialList((prevList) => prevList.filter(m => m.id !== id));
         } catch (err) {
           console.error('Error soft-deleting material:', err);
+          setAlertMessage("⚠️ Gagal menghapus material. Cek koneksi / Console (F12).");
         }
-
-        setMaterialList((prevList) => {
-      const newList = prevList.filter(m => m.id !== id);
-      return newList;
-    });
-setConfirmDialog({ show: false, message: '', onConfirm: null });
+        setConfirmDialog({ show: false, message: '', onConfirm: null });
       }
     });
+  };
+
+  const activateMaterial = async (id) => {
+    try {
+      await upsertItemToFirestore(db, "material", { id, isActive: true, deletedAt: null, deletedBy: null });
+    } catch (err) {
+      console.error('[activateMaterial] Firestore error:', err);
+      setAlertMessage("⚠️ Gagal mengaktifkan material. Cek koneksi / Console (F12).");
+    }
   };
 
   // Invoice Functions
@@ -1966,10 +1996,10 @@ try { unsubTransaksi(); } catch {}
         ) : activeTab === 'master-data' && effectiveRole === 'superadmin' ? (
           <Suspense fallback={<PageLoader />}>
           <MasterDataManagement
-            truckList={truckList}
-            supirList={supirList}
-            ruteList={ruteList}
-            materialList={materialList}
+            truckList={truckListAll}
+            supirList={supirListAll}
+            ruteList={ruteListAll}
+            materialList={materialListAll}
             currentUser={currentUser}
             onAddTruck={() => {
               setModalType('addTruck');
@@ -1982,6 +2012,7 @@ try { unsubTransaksi(); } catch {}
               setShowModal(true);
             }}
             onDeleteTruck={deleteTruck}
+            onActivateTruck={activateTruck}
             onAddSupir={() => {
               setModalType('addSupir');
               setSelectedItem(null);
@@ -1993,6 +2024,7 @@ try { unsubTransaksi(); } catch {}
               setShowModal(true);
             }}
             onDeleteSupir={deleteSupir}
+            onActivateSupir={activateSupir}
             onAddRute={() => {
               setModalType('addRute');
               setSelectedItem(null);
@@ -2004,6 +2036,7 @@ try { unsubTransaksi(); } catch {}
               setShowModal(true);
             }}
             onDeleteRute={deleteRute}
+            onActivateRute={activateRute}
             onAddMaterial={() => {
               setModalType('addMaterial');
               setSelectedItem(null);
@@ -2015,6 +2048,7 @@ try { unsubTransaksi(); } catch {}
               setShowModal(true);
             }}
             onDeleteMaterial={deleteMaterial}
+            onActivateMaterial={activateMaterial}
             onDownloadTemplate={downloadTemplate}
             onImportData={importData}
             showRitasiBulkUpload={showRitasiBulkUpload}
