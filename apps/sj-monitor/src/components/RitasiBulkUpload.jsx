@@ -2,14 +2,23 @@
 
 import React, { useState } from "react";
 import * as XLSX from "xlsx";
-import { generateRitasiTemplate, validateRitasiTemplate, parseRitasiUpdates } from "../utils/ritasiTemplateHelpers";
+import { generateRitasiTemplate, validateRitasiTemplate, partitionRitasiRowsByRuteExistence } from "../utils/ritasiTemplateHelpers";
 import { fetchAllRutes, bulkUpdateRitasi } from "../services/ritasiBulkService";
+import RejectionReport from "./RejectionReport.jsx";
+
+const RITASI_REJECTION_COLUMNS = [
+  { key: 'baris', label: 'Baris' },
+  { key: 'ruteId', label: 'ID Rute' },
+  { key: 'namaRute', label: 'Nama Rute' },
+  { key: 'alasan', label: 'Alasan Ditolak' },
+];
 
 export default function RitasiBulkUpload({ ruteList = [], onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [messageType, setMessageType] = useState(null); // 'success' or 'error'
   const [step, setStep] = useState("menu"); // menu, downloading, uploading, processing
+  const [rejectionReport, setRejectionReport] = useState(null); // { summary, rows } | null
 
   const handleDownloadTemplate = async () => {
     try {
@@ -109,15 +118,23 @@ export default function RitasiBulkUpload({ ruteList = [], onSuccess }) {
             return;
           }
 
-          // Parse updates
-          const updates = parseRitasiUpdates(arrayData);
-          const updateCount = Object.keys(updates).length;
+          // Pisahkan baris yang rute-nya masih terdaftar (validUpdates) dari yang
+          // ID Rute-nya sudah tidak ada di Master Data (rejectedRows) — baris yang
+          // ditolak TIDAK memblokir update baris lain yang valid.
+          const { validUpdates, rejectedRows } = partitionRitasiRowsByRuteExistence(arrayData, ruteList);
+          const updateCount = Object.keys(validUpdates).length;
 
           if (updateCount === 0) {
-            setMessage("✗ Tidak ada data untuk di-update");
+            setMessage("✗ Tidak ada data valid untuk di-update");
             setMessageType("error");
             setStep("menu");
             setLoading(false);
+            if (rejectedRows.length > 0) {
+              setRejectionReport({
+                summary: `Semua ${rejectedRows.length} baris ditolak karena ID Rute tidak ditemukan.`,
+                rows: rejectedRows,
+              });
+            }
             return;
           }
 
@@ -125,11 +142,21 @@ export default function RitasiBulkUpload({ ruteList = [], onSuccess }) {
           setStep("processing");
           setMessage(`Siap update ${updateCount} rute. Memproses...`);
 
-          const result = await bulkUpdateRitasi(updates);
+          const result = await bulkUpdateRitasi(validUpdates);
 
           if (result.success) {
-            setMessage(`✓ ${result.message}`);
+            setMessage(
+              rejectedRows.length > 0
+                ? `✓ ${result.message} (${rejectedRows.length} baris ditolak — lihat Laporan Data Ditolak)`
+                : `✓ ${result.message}`
+            );
             setMessageType("success");
+            if (rejectedRows.length > 0) {
+              setRejectionReport({
+                summary: `${updateCount} rute berhasil diupdate, ${rejectedRows.length} baris ditolak.`,
+                rows: rejectedRows,
+              });
+            }
             if (onSuccess) onSuccess();
           } else {
             setMessage(`✗ ${result.message}`);
@@ -211,6 +238,16 @@ export default function RitasiBulkUpload({ ruteList = [], onSuccess }) {
           </button>
         </div>
       </div>
+
+      <RejectionReport
+        open={!!rejectionReport}
+        onClose={() => setRejectionReport(null)}
+        title="Laporan Ritasi Ditolak"
+        summary={rejectionReport?.summary}
+        rows={rejectionReport?.rows || []}
+        columns={RITASI_REJECTION_COLUMNS}
+        filenamePrefix="laporan_penolakan_ritasi"
+      />
     </div>
   );
 }

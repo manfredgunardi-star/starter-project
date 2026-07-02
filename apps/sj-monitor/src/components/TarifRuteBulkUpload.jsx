@@ -12,6 +12,13 @@ import {
   commitBulkTarifUpdate,
 } from '../services/tarifRuteBulkService.js';
 import { formatCurrency } from '../utils/currency.js';
+import RejectionReport from './RejectionReport.jsx';
+
+const TARIF_RUTE_REJECTION_COLUMNS = [
+  { key: 'ruteId', label: 'ID Rute' },
+  { key: 'namaRute', label: 'Nama Rute' },
+  { key: 'alasan', label: 'Alasan Ditolak' },
+];
 
 export default function TarifRuteBulkUpload({ ruteList = [], currentUser, onSuccess }) {
   const [loading, setLoading] = useState(false);
@@ -19,6 +26,7 @@ export default function TarifRuteBulkUpload({ ruteList = [], currentUser, onSucc
   const [messageType, setMessageType] = useState(null);
   const [step, setStep] = useState('menu'); // menu | downloading | uploading | preview | processing | done
   const [previewData, setPreviewData] = useState(null); // { updates, effectiveDate, impact }
+  const [rejectionReport, setRejectionReport] = useState(null); // { rows } | null
 
   const reset = () => {
     setStep('menu');
@@ -79,10 +87,11 @@ export default function TarifRuteBulkUpload({ ruteList = [], currentUser, onSucc
             reset();
             return;
           }
-          const ruteErrs = validateRuteIds(parsed.updates, ruteList);
-          if (ruteErrs.length > 0) {
-            setMessage(`✗ Rute tidak valid:\n${ruteErrs.join('\n')}`);
+          const rejectedRutes = validateRuteIds(parsed.updates, ruteList);
+          if (rejectedRutes.length > 0) {
+            setMessage(`✗ ${rejectedRutes.length} rute tidak valid. Lihat "Laporan Data Ditolak" untuk detail & unduhan.`);
             setMessageType('error');
+            setRejectionReport({ rows: rejectedRutes });
             reset();
             return;
           }
@@ -276,6 +285,16 @@ export default function TarifRuteBulkUpload({ ruteList = [], currentUser, onSucc
           <p className="text-sm text-gray-500 mt-2">Anda bisa menutup modal ini.</p>
         </div>
       )}
+
+      <RejectionReport
+        open={!!rejectionReport}
+        onClose={() => setRejectionReport(null)}
+        title="Laporan Rute Ditolak"
+        summary="Seluruh file ditolak — perbaiki baris berikut lalu unggah ulang."
+        rows={rejectionReport?.rows || []}
+        columns={TARIF_RUTE_REJECTION_COLUMNS}
+        filenamePrefix="laporan_penolakan_tarif_rute"
+      />
     </div>
   );
 }

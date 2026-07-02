@@ -8,6 +8,7 @@ import { isSJBelumInvoice, mergeById } from './utils/sjHelpers.js';
 import { computeInvoiceTotals } from './utils/invoiceTotals.js';
 import { calculateSJPenalty } from './utils/payslipHelpers.js';
 import { downloadSJRecapToExcel } from './utils/excel.js';
+import { findMasterIdByField } from './utils/masterDataMatch.js';
 import { useAuth } from './hooks/useAuth.js';
 import { useMasterData } from './hooks/useMasterData.js';
 import { useUsers } from './hooks/useUsers.js';
@@ -18,6 +19,7 @@ import AlertBanner from './components/AlertBanner.jsx';
 import SuratJalanCard from './components/SuratJalanCard.jsx';
 import EditSJModal from './components/EditSJModal.jsx';
 import Pagination, { PAGE_SIZE, clampPage } from './components/Pagination.jsx';
+import RejectionReport from './components/RejectionReport.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 const LaporanKasPage   = React.lazy(() => import('./pages/LaporanKasPage.jsx'));
 const LaporanTrukPage  = React.lazy(() => import('./pages/LaporanTrukPage.jsx'));
@@ -73,6 +75,12 @@ const getQueryStartISO = () => {
 // Keep it disabled unless it is run from a manual, previewed admin flow.
 const ENABLE_AUTO_UANG_JALAN_RECONCILE = false;
 
+const IMPORT_SJ_REJECTION_COLUMNS = [
+  { key: 'baris', label: 'Baris' },
+  { key: 'nomorSJ', label: 'Nomor SJ' },
+  { key: 'alasan', label: 'Alasan Ditolak' },
+];
+
 // Compact status badge for table rows
 // Uang Muka Management Component
 const SuratJalanMonitor = () => {
@@ -97,6 +105,7 @@ const SuratJalanMonitor = () => {
   const [editSJTarget, setEditSJTarget] = useState(null);
   const [showRitasiBulkUpload, setShowRitasiBulkUpload] = useState(false);
   const [showTarifBulkUpload, setShowTarifBulkUpload] = useState(false);
+  const [importRejectionReport, setImportRejectionReport] = useState(null); // { title, summary, rows } | null
   const [tarifHistoryRute, setTarifHistoryRute] = useState(null);
   const [modalType, setModalType] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
@@ -950,13 +959,9 @@ try {
         let errorCount = 0;
         let errorDetails = [];
         const newItems = [];
+        const rejectedRows = []; // { baris, nomorSJ, alasan } — untuk Laporan Data Ditolak
 
         if (type === 'suratjalan') {
-          // Maps untuk track master data baru selama import (cegah duplikat & hindari N+1 writes)
-          const newTrucksMap = new Map();   // key: nomorPolisi
-          const newSupirsMap = new Map();   // key: namaSupir
-          const newRutesMap = new Map();    // key: rute
-          const newMaterialsMap = new Map(); // key: material
           // Helper function to parse date DD/MM/YYYY
           const parseDate = (dateStr) => {
             if (!dateStr || dateStr.trim() === '') return null;
@@ -988,13 +993,17 @@ try {
 
                 if (!tanggalSJ) {
                   errorCount++;
-                  errorDetails.push(`Baris ${i + 2}: Format tanggal tidak valid (gunakan DD/MM/YYYY)`);
+                  const reason = 'Format tanggal tidak valid (gunakan DD/MM/YYYY)';
+                  errorDetails.push(`Baris ${i + 2}: ${reason}`);
+                  rejectedRows.push({ baris: i + 2, nomorSJ, alasan: reason });
                   continue;
                 }
 
                 if (isNaN(qtyIsi)) {
                   errorCount++;
-                  errorDetails.push(`Baris ${i + 2}: Qty Isi harus berupa angka`);
+                  const reason = 'Qty Isi harus berupa angka';
+                  errorDetails.push(`Baris ${i + 2}: ${reason}`);
+                  rejectedRows.push({ baris: i + 2, nomorSJ, alasan: reason });
                   continue;
                 }
 
@@ -1002,82 +1011,25 @@ try {
                 const validStatus = ['pending', 'terkirim', 'gagal'];
                 const finalStatus = validStatus.includes(status) ? status : 'pending';
 
-                // Find atau create master data IDs
-                let truckId = truckList.find(t => t.nomorPolisi === nomorPolisi)?.id;
-                let supirId = supirList.find(s => s.namaSupir === namaSupir)?.id;
-                let ruteId = ruteList.find(r => r.rute === rute)?.id;
-                let materialId = materialList.find(m => m.material === material)?.id;
+                // Cari master data terdaftar (normalisasi longgar: trim + case-insensitive).
+                // TIDAK auto-create — baris ditolak jika referensinya belum terdaftar di Master Data.
+                const truckId = findMasterIdByField(truckList, 'nomorPolisi', nomorPolisi);
+                const supirId = findMasterIdByField(supirList, 'namaSupir', namaSupir);
+                const ruteId = findMasterIdByField(ruteList, 'rute', rute);
+                const materialId = findMasterIdByField(materialList, 'material', material);
 
-                // Jika tidak ada, buat data master baru — dikumpulkan ke Map, di-batch setelah loop
-                if (!truckId) {
-                  const cached = newTrucksMap.get(nomorPolisi);
-                  if (cached) {
-                    truckId = cached.id;
-                  } else {
-                    const newTruck = {
-                      id: 'TRK-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-                      nomorPolisi,
-                      isActive: true,
-                      createdAt: new Date().toISOString(),
-                      createdBy: 'Import'
-                    };
-                    newTrucksMap.set(nomorPolisi, newTruck);
-                    truckId = newTruck.id;
-                  }
-                }
+                const missingRefs = [];
+                if (!truckId) missingRefs.push(`Nomor Polisi "${nomorPolisi}"`);
+                if (!supirId) missingRefs.push(`Nama Supir "${namaSupir}"`);
+                if (!ruteId) missingRefs.push(`Rute "${rute}"`);
+                if (!materialId) missingRefs.push(`Material "${material}"`);
 
-                if (!supirId) {
-                  const cached = newSupirsMap.get(namaSupir);
-                  if (cached) {
-                    supirId = cached.id;
-                  } else {
-                    const newSupir = {
-                      id: 'SPR-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-                      namaSupir,
-                      pt: 'Import Data',
-                      isActive: true,
-                      createdAt: new Date().toISOString(),
-                      createdBy: 'Import'
-                    };
-                    newSupirsMap.set(namaSupir, newSupir);
-                    supirId = newSupir.id;
-                  }
-                }
-
-                if (!ruteId) {
-                  const cached = newRutesMap.get(rute);
-                  if (cached) {
-                    ruteId = cached.id;
-                  } else {
-                    const newRute = {
-                      id: 'RTE-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-                      rute,
-                      uangJalan: 0,
-                      isActive: true,
-                      createdAt: new Date().toISOString(),
-                      createdBy: 'Import'
-                    };
-                    newRutesMap.set(rute, newRute);
-                    ruteId = newRute.id;
-                  }
-                }
-
-                if (!materialId) {
-                  const cached = newMaterialsMap.get(material);
-                  if (cached) {
-                    materialId = cached.id;
-                  } else {
-                    const newMaterial = {
-                      id: 'MAT-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-                      material,
-                      satuan: 'Ton',
-                      isActive: true,
-                      createdAt: new Date().toISOString(),
-                      createdBy: 'Import'
-                    };
-                    newMaterialsMap.set(material, newMaterial);
-                    materialId = newMaterial.id;
-                  }
+                if (missingRefs.length > 0) {
+                  errorCount++;
+                  const reason = `Data master belum terdaftar: ${missingRefs.join(', ')}`;
+                  errorDetails.push(`Baris ${i + 2}: ${reason}`);
+                  rejectedRows.push({ baris: i + 2, nomorSJ, alasan: reason });
+                  continue;
                 }
 
                 // Buat Surat Jalan
@@ -1089,13 +1041,13 @@ try {
                   nomorPolisi,
                   supirId,
                   namaSupir,
-                  pt: supirList.find(s => s.id === supirId)?.pt || newSupirsMap.get(namaSupir)?.pt || 'Import Data',
+                  pt: supirList.find(s => s.id === supirId)?.pt || 'Import Data',
                   ruteId,
                   rute,
-                  uangJalan: ruteList.find(r => r.id === ruteId)?.uangJalan ?? newRutesMap.get(rute)?.uangJalan ?? 0,
+                  uangJalan: ruteList.find(r => r.id === ruteId)?.uangJalan ?? 0,
                   materialId,
                   material,
-                  satuan: materialList.find(m => m.id === materialId)?.satuan || newMaterialsMap.get(material)?.satuan || 'Ton',
+                  satuan: materialList.find(m => m.id === materialId)?.satuan || 'Ton',
                   qtyIsi,
                   status: finalStatus,
                   tglTerkirim,
@@ -1109,34 +1061,13 @@ try {
               } catch (error) {
                 errorCount++;
                 errorDetails.push(`Baris ${i + 2}: ${values[0]} - ${error.message}`);
+                rejectedRows.push({ baris: i + 2, nomorSJ: values[0], alasan: error.message });
               }
             } else {
               errorCount++;
-              errorDetails.push(`Baris ${i + 2}: Data tidak lengkap (minimal 7 kolom diperlukan)`);
-            }
-          }
-
-          // Batch write master data baru (trucks, supir, rute, material) — satu round-trip
-          const hasNewMasterData = newTrucksMap.size > 0 || newSupirsMap.size > 0
-                                 || newRutesMap.size > 0 || newMaterialsMap.size > 0;
-          if (hasNewMasterData) {
-            try {
-              const masterBatch = writeBatch(db);
-              newTrucksMap.forEach(truck => {
-                masterBatch.set(doc(db, "trucks", String(truck.id)), sanitizeForFirestore(truck), { merge: true });
-              });
-              newSupirsMap.forEach(supir => {
-                masterBatch.set(doc(db, "supir", String(supir.id)), sanitizeForFirestore(supir), { merge: true });
-              });
-              newRutesMap.forEach(rte => {
-                masterBatch.set(doc(db, "rute", String(rte.id)), sanitizeForFirestore(rte), { merge: true });
-              });
-              newMaterialsMap.forEach(mat => {
-                masterBatch.set(doc(db, "material", String(mat.id)), sanitizeForFirestore(mat), { merge: true });
-              });
-              await masterBatch.commit();
-            } catch (e) {
-              console.error("Import master data batch Firestore failed:", e);
+              const reason = 'Data tidak lengkap (minimal 7 kolom diperlukan)';
+              errorDetails.push(`Baris ${i + 2}: ${reason}`);
+              rejectedRows.push({ baris: i + 2, nomorSJ: values[0] || '(kosong)', alasan: reason });
             }
           }
 
@@ -1367,10 +1298,20 @@ if (newItems.length > 0) {
 }
 
         let message = `Import selesai!\n\nBerhasil: ${successCount} data\nGagal: ${errorCount} data`;
-        if (errorCount > 0 && errorDetails.length > 0) {
-          message += '\n\nDetail Error (5 pertama):\n' + errorDetails.slice(0, 5).join('\n');
+        if (type === 'suratjalan' && rejectedRows.length > 0) {
+          message += '\n\nLihat "Laporan Data Ditolak" untuk detail lengkap & unduhan.';
+          setAlertMessage(message);
+          setImportRejectionReport({
+            title: 'Laporan Import Surat Jalan Ditolak',
+            summary: `${successCount} baris berhasil diimport, ${rejectedRows.length} baris ditolak.`,
+            rows: rejectedRows,
+          });
+        } else {
+          if (errorCount > 0 && errorDetails.length > 0) {
+            message += '\n\nDetail Error (5 pertama):\n' + errorDetails.slice(0, 5).join('\n');
+          }
+          setAlertMessage(message);
         }
-        setAlertMessage(message);
       } catch (error) {
         setAlertMessage('Terjadi kesalahan saat import:\n' + error.message);
       }
@@ -2460,6 +2401,17 @@ try { unsubTransaksi(); } catch {}
           </div>
         </div>
       )}
+
+      {/* Laporan Data Ditolak (import) */}
+      <RejectionReport
+        open={!!importRejectionReport}
+        onClose={() => setImportRejectionReport(null)}
+        title={importRejectionReport?.title}
+        summary={importRejectionReport?.summary}
+        rows={importRejectionReport?.rows || []}
+        columns={IMPORT_SJ_REJECTION_COLUMNS}
+        filenamePrefix="laporan_penolakan_import_sj"
+      />
 
       {/* Confirm Dialog */}
       {confirmDialog.show && (
