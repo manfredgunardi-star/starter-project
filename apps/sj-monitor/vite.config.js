@@ -6,10 +6,9 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      // 2026-05-15: SW di-disable sementara untuk investigasi Firestore write quota.
-      // selfDestroying=true men-generate SW yang unregister dirinya & clear cache.
-      // Set false kembali setelah root cause ditemukan & diperbaiki.
-      selfDestroying: true,
+      // 2026-07: SW diaktifkan kembali — root cause write quota (auto-reconcile)
+      // sudah permanen disabled (ENABLE_AUTO_UANG_JALAN_RECONCILE = false).
+      selfDestroying: false,
       registerType: 'autoUpdate',
       includeAssets: [
         'favicon.ico',
