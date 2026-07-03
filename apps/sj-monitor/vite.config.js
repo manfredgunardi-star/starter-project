@@ -48,7 +48,11 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {
-            // Firebase Firestore REST API - NetworkFirst: coba jaringan, fallback cache
+            // Firebase Firestore REST API - NetworkFirst: coba jaringan, fallback cache.
+            // RISIKO STALENESS: di jaringan buruk, timeout 10 dtk membuat respons
+            // cache lama tersaji (status SJ/invoice bisa tampak basi). Dapat diterima
+            // karena listener onSnapshot auto-retry dan refresh me-refetch live.
+            // Jangan ubah handler/timeout tanpa mempertimbangkan alur logistik ini.
             urlPattern: /^https:\/\/firestore\.googleapis\.com\/.*/i,
             handler: 'NetworkFirst',
             options: {
