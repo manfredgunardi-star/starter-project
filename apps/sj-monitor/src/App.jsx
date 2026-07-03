@@ -3267,7 +3267,8 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
         rute: formData.rute,
         uangJalan: parseFloat(formData.uangJalan),
         ritasi: parseFloat(formData.ritasi) || 0,
-        uangMuka: parseFloat(formData.uangMuka) || 0
+        uangMuka: parseFloat(formData.uangMuka) || 0,
+        isActive: formData.isActive
       });
     } else if (type === 'addMaterial' || type === 'editMaterial') {
       if (!formData.material || !formData.satuan) {
@@ -3276,7 +3277,8 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
       }
       onSubmit({
         material: formData.material,
-        satuan: formData.satuan
+        satuan: formData.satuan,
+        isActive: formData.isActive
       });
     }
   };
