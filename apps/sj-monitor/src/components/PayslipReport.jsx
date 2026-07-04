@@ -24,6 +24,7 @@ export default function PayslipReport({ currentUser }) {
 
   useEffect(() => {
     if (!canView) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing: sets access-error state on mount when role check fails; behavioral change deferred, see lint triage notes
       setError("Anda tidak memiliki akses ke laporan gaji ini");
       setLoading(false);
       return;
@@ -35,6 +36,7 @@ export default function PayslipReport({ currentUser }) {
     setEndDate(ed.toISOString().split("T")[0]);
 
     // Load all drivers and initial payslip data
+    // eslint-disable-next-line react-hooks/immutability -- pre-existing: loadInitialData is a function declaration hoisted-in-closure pattern common in this codebase; reordering is deferred, see lint triage notes
     loadInitialData();
   }, []);
 

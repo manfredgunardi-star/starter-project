@@ -77,6 +77,7 @@ export default function InvoiceManagement({
   const { sorted: sortedSJ, sortConfig, toggleSort } = useSortableData(searchedSJ);
   const [invPage, setInvPage] = useState(1);
   const [invoicePage, setInvoicePage] = useState(1);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing: resets pagination to page 1 when filters change; behavioral change deferred, see lint triage notes
   useEffect(() => { setInvPage(1); setInvoicePage(1); }, [activeFilter, searchSJ]);
   const safeInvPage = clampPage(invPage, sortedSJ.length);
   const safeInvoicePage = clampPage(invoicePage, invoiceList.length);
@@ -254,7 +255,7 @@ export default function InvoiceManagement({
             <>
               <div className="mb-4 bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
                 <p className="text-sm text-blue-800">
-                  <strong>📋 Info:</strong> Pilih surat jalan di bawah untuk membuat invoice. Klik tombol "Buat Invoice Baru" di atas untuk memulai.
+                  <strong>📋 Info:</strong> Pilih surat jalan di bawah untuk membuat invoice. Klik tombol &quot;Buat Invoice Baru&quot; di atas untuk memulai.
                 </p>
               </div>
               <div className="mb-4">

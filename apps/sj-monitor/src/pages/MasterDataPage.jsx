@@ -35,15 +35,21 @@ export default function MasterDataManagement({
   const [searchMaterial, setSearchMaterial] = useState('');
 
   useEffect(() => {
+    /* eslint-disable react-hooks/set-state-in-effect -- pre-existing: resets all tab paginations to page 1 when the active master-data tab changes; behavioral change deferred, see lint triage notes */
     setTruckPage(1);
     setSupirPage(1);
     setRutePage(1);
     setMatPage(1);
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, [masterTab]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing: resets pagination to page 1 when search changes; behavioral change deferred, see lint triage notes
   useEffect(() => { setTruckPage(1); }, [searchTruck]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing: same pagination-reset pattern, see lint triage notes
   useEffect(() => { setSupirPage(1); }, [searchSupir]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing: same pagination-reset pattern, see lint triage notes
   useEffect(() => { setRutePage(1); }, [searchRute]);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing: same pagination-reset pattern, see lint triage notes
   useEffect(() => { setMatPage(1); }, [searchMaterial]);
 
   const filteredTruck = useSearchFilter(truckList, searchTruck, TRUCK_SEARCH_FIELDS);

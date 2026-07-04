@@ -1619,12 +1619,14 @@ setTransaksiList(prev => prev.filter(t => t.suratJalanId !== id));
     return icons[status] || <FileText className="w-4 h-4" />;
   }, []);
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization -- pre-existing: React Compiler flags setSelectedItem/setModalType/setShowModal (stable setState setters) as inferred deps; [] is correct since setState setters never change identity, see lint triage notes
   const handleSJCardUpdate = useCallback((sj) => {
     setSelectedItem(sj);
     setModalType('markTerkirim');
     setShowModal(true);
   }, []);
 
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization -- pre-existing: same stable-setState-setter false positive as handleSJCardUpdate above, see lint triage notes
   const handleSJCardEditTerkirim = useCallback((sj) => {
     setSelectedItem(sj);
     setModalType('editTerkirim');
@@ -1643,6 +1645,7 @@ setTransaksiList(prev => prev.filter(t => t.suratJalanId !== id));
     [suratJalanList, filter, searchNomorSJ, searchTanggal]
   );
   const [sjPage, setSJPage] = useState(1);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing: resets pagination to page 1 when filters change; behavioral change deferred, see lint triage notes
   useEffect(() => { setSJPage(1); }, [filter, searchNomorSJ, searchTanggal]);
   const safeSJPage = clampPage(sjPage, filteredSuratJalan.length);
   const pagedSJ = filteredSuratJalan.slice((safeSJPage - 1) * PAGE_SIZE, safeSJPage * PAGE_SIZE);
@@ -1794,12 +1797,12 @@ const unsubTransaksi = onSnapshot(
 
 
   return () => {
-try { unsubSuratJalan(); } catch {}
-try { unsubBiaya(); } catch {}
-try { unsubInvoice(); } catch {}
-try { unsubInvoiceLegacy(); } catch {}
-try { unsubUangMuka(); } catch {}
-try { unsubTransaksi(); } catch {}
+try { unsubSuratJalan(); } catch { /* ignore unsubscribe error */ }
+try { unsubBiaya(); } catch { /* ignore unsubscribe error */ }
+try { unsubInvoice(); } catch { /* ignore unsubscribe error */ }
+try { unsubInvoiceLegacy(); } catch { /* ignore unsubscribe error */ }
+try { unsubUangMuka(); } catch { /* ignore unsubscribe error */ }
+try { unsubTransaksi(); } catch { /* ignore unsubscribe error */ }
   };
 // IMPORTANT: depend on authReady, firebaseUser, currentUser?.id so subscriptions
 // start only after role is available, and restart if the logged-in user changes.
@@ -2550,6 +2553,7 @@ const SettingsManagement = ({ currentUser, appSettings, onUpdateSettings, forceL
 
   // Sync flConfig saat forceLogoutConfig dari Firestore berubah
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing: syncs local form state from Firestore-derived prop; behavioral change deferred, see lint triage notes
     setFlConfig({
       enabled:     forceLogoutConfig?.enabled ?? false,
       scheduledAt: isoToDatetimeLocal(forceLogoutConfig?.scheduledAt),
@@ -3420,7 +3424,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                 <ul className="text-xs text-blue-700 space-y-1">
                   <li>• Semua field bertanda (*) wajib diisi</li>
                   <li>• Uang Jalan akan otomatis dicatat sebagai pengeluaran</li>
-                  <li>• Status awal akan menjadi "Pending"</li>
+                  <li>• Status awal akan menjadi &quot;Pending&quot;</li>
                   <li>• Gunakan fitur search untuk mencari data lebih cepat</li>
                 </ul>
               </div>
@@ -3842,7 +3846,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
               {/* Info */}
               <div className="bg-blue-50 border-l-4 border-blue-500 p-3 rounded-lg">
                 <p className="text-sm text-blue-800">
-                  💡 <strong>Info:</strong> Pilih satu atau lebih Surat Jalan yang sudah terkirim untuk dibuatkan invoice. Setelah invoice dibuat, Surat Jalan akan berstatus "Terinvoice".
+                  💡 <strong>Info:</strong> Pilih satu atau lebih Surat Jalan yang sudah terkirim untuk dibuatkan invoice. Setelah invoice dibuat, Surat Jalan akan berstatus &quot;Terinvoice&quot;.
                 </p>
               </div>
             </>

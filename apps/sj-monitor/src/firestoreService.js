@@ -84,12 +84,12 @@ export const resolveSuratJalanDocRef = async (dbRef, sjId) => {
   try {
     const snap = await getDoc(directRef);
     if (snap.exists()) return directRef;
-  } catch {}
+  } catch { /* fall through to query lookup */ }
 
   try {
     const qs = await getDocs(query(collection(dbRef, 'surat_jalan'), where('id', '==', businessId)));
     if (!qs.empty) return qs.docs[0].ref;
-  } catch {}
+  } catch { /* not found */ }
 
   return null;
 };

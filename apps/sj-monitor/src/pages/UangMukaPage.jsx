@@ -39,6 +39,7 @@ export default function UangMukaManagement({
     [uangMukaList, searchUM]
   );
   const [umPage, setUmPage] = useState(1);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing: resets pagination to page 1 when search changes; behavioral change deferred, see lint triage notes
   useEffect(() => { setUmPage(1); }, [searchUM]);
   const safeUMPage = clampPage(umPage, filteredUM.length);
   const pagedUM = filteredUM.slice((safeUMPage - 1) * PAGE_SIZE, safeUMPage * PAGE_SIZE);

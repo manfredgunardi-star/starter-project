@@ -52,11 +52,11 @@ export const useMasterData = () => {
     }, noop);
 
     return () => {
-      try { unsubTrucks(); } catch {}
-      try { unsubSupir(); } catch {}
-      try { unsubRute(); } catch {}
-      try { unsubMaterial(); } catch {}
-      try { unsubTarif(); } catch {}
+      try { unsubTrucks(); } catch { /* ignore unsubscribe error */ }
+      try { unsubSupir(); } catch { /* ignore unsubscribe error */ }
+      try { unsubRute(); } catch { /* ignore unsubscribe error */ }
+      try { unsubMaterial(); } catch { /* ignore unsubscribe error */ }
+      try { unsubTarif(); } catch { /* ignore unsubscribe error */ }
     };
   }, []);
 

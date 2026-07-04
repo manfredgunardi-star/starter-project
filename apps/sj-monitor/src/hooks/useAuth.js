@@ -24,7 +24,7 @@ export const useAuth = () => {
 
     const unsubAuth = onAuthStateChanged(auth, async (user) => {
       if (typeof unsubUser === 'function') {
-        try { unsubUser(); } catch (_) {}
+        try { unsubUser(); } catch (_) { /* ignore unsubscribe error */ }
         unsubUser = null;
       }
 
@@ -129,7 +129,7 @@ export const useAuth = () => {
     });
 
     return () => {
-      try { if (typeof unsubUser === 'function') unsubUser(); } catch (_) {}
+      try { if (typeof unsubUser === 'function') unsubUser(); } catch (_) { /* ignore unsubscribe error */ }
       unsubAuth();
     };
   }, []);

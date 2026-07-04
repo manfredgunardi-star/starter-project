@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "test": "vitest run --passWithNoTests",
     "test:watch": "vitest",
-    "lint": "eslint src/utils/ src/services/",
+    "lint": "eslint src/",
     "emulator": "firebase emulators:start --only auth,firestore --import=./emulator-data --export-on-exit=./emulator-data",
     "build:staging": "vite build --mode staging",
     "deploy:staging": "npm run build:staging && firebase deploy --only hosting --project staging",
