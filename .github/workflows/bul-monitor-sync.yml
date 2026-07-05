@@ -49,6 +49,10 @@ jobs:
         working-directory: scripts/bul-monitor-sync
         run: npm ci
 
+      - name: Run unit tests
+        working-directory: scripts/bul-monitor-sync
+        run: npm test
+
       - name: Run sync
         working-directory: scripts/bul-monitor-sync
         env:
