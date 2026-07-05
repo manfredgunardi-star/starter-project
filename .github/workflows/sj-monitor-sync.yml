@@ -1,0 +1,62 @@
+name: SJ-Monitor Sheets Sync
+
+on:
+  schedule:
+    # Jam 17:00 UTC = 00:00 WIB (UTC+7) — full refresh data harian
+    - cron: '0 17 * * *'
+
+  # Manual trigger untuk testing atau re-sync darurat
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run — tampilkan data yang akan disync tanpa menulis ke Sheets'
+        required: false
+        type: boolean
+        default: false
+
+# Hanya satu sync berjalan sekaligus; jangan cancel yang sedang berjalan
+concurrency:
+  group: sj-monitor-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Sync sj-monitor → Google Sheets
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write   # Wajib untuk OIDC token GitHub (dipakai WIF)
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: scripts/sj-monitor-sync/package-lock.json
+
+      - name: Authenticate to Google Cloud (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Install dependencies
+        working-directory: scripts/sj-monitor-sync
+        run: npm ci
+
+      - name: Test sync
+        working-directory: scripts/sj-monitor-sync
+        run: npm test
+
+      - name: Run sync
+        working-directory: scripts/sj-monitor-sync
+        env:
+          FIREBASE_PROJECT_ID: ${{ secrets.SJ_MONITOR_FIREBASE_PROJECT_ID }}
+          GOOGLE_SPREADSHEET_ID: ${{ secrets.SJ_MONITOR_SPREADSHEET_ID }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+        run: node index.js
