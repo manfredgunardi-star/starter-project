@@ -4,7 +4,8 @@
   "description": "BUL-Monitor Firestore → Google Sheets daily full-refresh sync",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "test": "node --test test/row-builders.test.js"
   },
   "dependencies": {
     "@google-cloud/firestore": "^7.10.0",

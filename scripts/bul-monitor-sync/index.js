@@ -18,6 +18,20 @@
 const { Firestore } = require('@google-cloud/firestore')
 const { google } = require('googleapis')
 
+const {
+  SHEETS,
+  toWIBString,
+  toSortTime,
+  isActive,
+  buildSuratJalanRows,
+  buildInvoiceRows,
+  buildBiayaRows,
+  buildArmadaRows,
+  buildSupirRows,
+  buildRuteRows,
+  buildPelangganRows
+} = require('./lib/row-builders')
+
 // ─── Config ─────────────────────────────────────────────────────────────────
 
 const FIREBASE_PROJECT_ID = process.env.FIREBASE_PROJECT_ID
@@ -45,88 +59,7 @@ const auth = new google.auth.GoogleAuth({
 })
 const sheets = google.sheets({ version: 'v4', auth })
 
-// ─── Sheet Config ───────────────────────────────────────────────────────────
-
-const SHEETS = [
-  {
-    name: 'Surat Jalan',
-    headers: ['Tanggal SJ', 'Tanggal Terkirim', 'Nomor SJ', 'PT', 'Supir', 'Nomor Polisi', 'Rute', 'Material', 'Qty Bongkar', 'Satuan', 'Uang Jalan (Rp)', 'Status', 'Status Invoice', 'Waktu Sync (WIB)']
-  },
-  {
-    name: 'Invoice',
-    headers: ['No. Invoice', 'Tanggal Invoice', 'PT', 'Total Qty', 'Total Nilai (Rp)', 'Status', 'Jumlah SJ', 'Waktu Sync (WIB)']
-  },
-  {
-    name: 'Biaya Tambahan',
-    headers: ['Nomor SJ', 'Tanggal SJ', 'PT', 'Jenis Biaya', 'Nominal (Rp)', 'Keterangan', 'Waktu Sync (WIB)']
-  },
-  {
-    name: 'Armada',
-    headers: ['Plat Nomor', 'Nama']
-  },
-  {
-    name: 'Supir',
-    headers: ['Nama Supir']
-  },
-  {
-    name: 'Rute',
-    headers: ['Nama Rute']
-  },
-  {
-    name: 'Pelanggan',
-    headers: ['Nama PT', 'Alamat', 'NPWP']
-  },
-  {
-    name: '_sync_log',
-    headers: ['Tanggal Run (WIB)', 'Status', 'SJ', 'Invoice', 'Biaya', 'Armada', 'Supir', 'Rute', 'Pelanggan', 'Selesai Pada (WIB)']
-  }
-]
-
-const WIB_LOCALE_OPTIONS = { timeZone: 'Asia/Jakarta' }
-const WIB_DATE_OPTIONS   = { timeZone: 'Asia/Jakarta', day: '2-digit', month: '2-digit', year: 'numeric' }
-
-// ─── Timezone Helpers ───────────────────────────────────────────────────────
-
-function asDate(value) {
-  if (!value) return null
-  if (value instanceof Date) return value
-  if (typeof value.toDate === 'function') return value.toDate()
-
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return null
-  return date
-}
-
-function toDateStr(isoStr) {
-  if (!isoStr) return ''
-  const date = asDate(isoStr)
-  if (!date) return isoStr
-  return date.toLocaleDateString('id-ID', WIB_DATE_OPTIONS)
-}
-
-function toWIBString(isoStr) {
-  if (!isoStr) return ''
-  try {
-    return new Date(isoStr).toLocaleString('id-ID', WIB_LOCALE_OPTIONS)
-  } catch {
-    return isoStr
-  }
-}
-
-function toSortTime(value) {
-  const date = asDate(value)
-  return date ? date.getTime() : 0
-}
-
-function compareTextAsc(a, b) {
-  return String(a || '').localeCompare(String(b || ''), 'id-ID')
-}
-
 // ─── Firestore Queries ──────────────────────────────────────────────────────
-
-function isActive(row) {
-  return row.isActive !== false && !row.deletedAt
-}
 
 async function getCollectionRows(collectionName, filterFn = isActive) {
   const snapshot = await db.collection(collectionName).get()
@@ -155,96 +88,6 @@ async function getSuratJalanRows() {
   }
 
   return Array.from(merged.values())
-}
-
-// ─── Row Builders ───────────────────────────────────────────────────────────
-
-function buildSuratJalanRows(suratJalan, syncTimestamp) {
-  return [...suratJalan]
-    .sort((a, b) => toSortTime(b.tanggalSJ) - toSortTime(a.tanggalSJ))
-    .map(sj => [
-      toDateStr(sj.tanggalSJ),
-      toDateStr(sj.tglTerkirim),
-      sj.nomorSJ || '',
-      sj.pt || '',
-      sj.namaSupir || '',
-      sj.nomorPolisi || '',
-      sj.rute || '',
-      sj.material || '',
-      Number(sj.qtyBongkar) || 0,
-      sj.satuan || '',
-      Number(sj.uangJalan) || 0,
-      sj.status || '',
-      sj.statusInvoice || '',
-      syncTimestamp
-    ])
-}
-
-function buildInvoiceRows(invoices, syncTimestamp) {
-  return [...invoices]
-    .sort((a, b) => toSortTime(b.tglInvoice) - toSortTime(a.tglInvoice))
-    .map(inv => [
-      inv.noInvoice || '',
-      toDateStr(inv.tglInvoice),
-      inv.pt || '',
-      Number(inv.totalQty) || 0,
-      Number(inv.totalNilai) || 0,
-      inv.status || '',
-      (inv.suratJalanIds || []).length,
-      syncTimestamp
-    ])
-}
-
-function buildBiayaRows(biaya, sjMap, syncTimestamp) {
-  return [...biaya]
-    .sort((a, b) => {
-      const sjA = sjMap.get(a.suratJalanId)
-      const sjB = sjMap.get(b.suratJalanId)
-      return toSortTime(sjB?.tanggalSJ) - toSortTime(sjA?.tanggalSJ)
-    })
-    .map(b => {
-      const sj = sjMap.get(b.suratJalanId)
-      return [
-        sj?.nomorSJ || b.suratJalanId || '',
-        toDateStr(sj?.tanggalSJ),
-        sj?.pt || '',
-        b.jenisBiaya || '',
-        Number(b.nominal) || 0,
-        b.keteranganBiaya || '',
-        syncTimestamp
-      ]
-    })
-}
-
-function buildArmadaRows(trucks) {
-  return [...trucks]
-    .sort((a, b) => compareTextAsc(a.platNomor || a.nomorPolisi || a.name, b.platNomor || b.nomorPolisi || b.name))
-    .map(t => [
-      t.platNomor || t.nomorPolisi || t.name || '',
-      t.name || t.namaTruck || ''
-    ])
-}
-
-function buildSupirRows(supir) {
-  return [...supir]
-    .sort((a, b) => compareTextAsc(a.namaSupir || a.name, b.namaSupir || b.name))
-    .map(s => [s.namaSupir || s.name || ''])
-}
-
-function buildRuteRows(rute) {
-  return [...rute]
-    .sort((a, b) => compareTextAsc(a.rute || a.name, b.rute || b.name))
-    .map(r => [r.rute || r.name || ''])
-}
-
-function buildPelangganRows(pelanggan) {
-  return [...pelanggan]
-    .sort((a, b) => compareTextAsc(a.name, b.name))
-    .map(p => [
-      p.name || '',
-      p.address || '',
-      p.npwp || ''
-    ])
 }
 
 // ─── Sheet Operations ───────────────────────────────────────────────────────
