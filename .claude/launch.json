@@ -1,0 +1,33 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "sj-monitor",
+      "cwd": "apps/sj-monitor",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "--port", "5173"],
+      "port": 5173
+    },
+    {
+      "name": "bul-accounting",
+      "cwd": "apps/bul-accounting",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "--port", "5174"],
+      "port": 5174
+    },
+    {
+      "name": "bul-monitor",
+      "cwd": "apps/bul-monitor",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "--port", "5175"],
+      "port": 5175
+    },
+    {
+      "name": "erp-acc",
+      "cwd": "apps/erp-acc/erp-app",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--", "--port", "5176"],
+      "port": 5176
+    }
+  ]
+}
