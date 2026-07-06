@@ -12,20 +12,6 @@ const LaporanTrukPage = ({ suratJalanList = [], truckList = [], currentUser = {}
   const effectiveRole = (currentUser?.role === 'owner' ? 'reader' : currentUser?.role) || 'reader';
   const canViewReport = effectiveRole === 'superadmin' || effectiveRole === 'admin_sj';
 
-  if (!canViewReport) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50 p-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md text-center">
-          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Akses Ditolak</h2>
-          <p className="text-gray-600">
-            Anda tidak memiliki izin untuk mengakses halaman laporan kendaraan. Hubungi administrator untuk meminta akses.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   // ===== State Management =====
   const today = new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState(today);
@@ -46,6 +32,20 @@ const LaporanTrukPage = ({ suratJalanList = [], truckList = [], currentUser = {}
     () => getInactiveTrucks(allTrucks, suratJalanList, selectedDate),
     [allTrucks, suratJalanList, selectedDate]
   );
+
+  if (!canViewReport) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 p-4">
+        <div className="bg-white rounded-lg shadow-lg p-8 max-w-md text-center">
+          <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Akses Ditolak</h2>
+          <p className="text-gray-600">
+            Anda tidak memiliki izin untuk mengakses halaman laporan kendaraan. Hubungi administrator untuk meminta akses.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   // ===== Validation & Print Logic =====
   const validateAndPrint = () => {
