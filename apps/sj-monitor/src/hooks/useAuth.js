@@ -21,8 +21,14 @@ export const useAuth = () => {
 
   useEffect(() => {
     let unsubUser = null;
+    // Generation token guards against stale auth callbacks: if onAuthStateChanged
+    // fires again while a previous callback's async bootstrap is mid-flight,
+    // the older callback must abort before attaching its onSnapshot listener.
+    let authGeneration = 0;
 
     const unsubAuth = onAuthStateChanged(auth, async (user) => {
+      const myGeneration = ++authGeneration;
+
       if (typeof unsubUser === 'function') {
         try { unsubUser(); } catch (_) {}
         unsubUser = null;
@@ -41,6 +47,7 @@ export const useAuth = () => {
       try {
         const userRef = doc(db, 'users', user.uid);
         const snap = await getDoc(userRef);
+        if (myGeneration !== authGeneration) return;
 
         if (!snap.exists()) {
           const email = user.email || '';
@@ -54,6 +61,7 @@ export const useAuth = () => {
             createdAt: new Date().toISOString(),
             createdBy: 'self-bootstrap',
           }, { merge: true });
+          if (myGeneration !== authGeneration) return;
         }
 
         const sessionId = generateSessionId();
@@ -63,6 +71,7 @@ export const useAuth = () => {
           activeSessionAt: new Date().toISOString(),
           activeSessionUA: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
         }, { merge: true });
+        if (myGeneration !== authGeneration) return;
 
         let sawOurSessionOnce = false;
         unsubUser = onSnapshot(

@@ -56,6 +56,22 @@ export default function PayslipExport({ payslip }) {
         });
 
       const detailsSheet = XLSX.utils.aoa_to_sheet(detailsData);
+
+      // Apply currency format ("Rp"#,##0) to currency columns so Excel
+      // displays "Rp 1.234.000" — matching the PDF export — while keeping
+      // cell values as numbers for downstream accounting tools.
+      const RP_FMT = '"Rp"#,##0';
+      const currencyCols = [3, 4, 6, 7, 8]; // Uang Jalan, Ritasi, Penalti, Bonus, Total
+      for (let r = 1; r < detailsData.length; r++) {
+        currencyCols.forEach((c) => {
+          const ref = XLSX.utils.encode_cell({ r, c });
+          if (detailsSheet[ref]) {
+            detailsSheet[ref].t = 'n';
+            detailsSheet[ref].z = RP_FMT;
+          }
+        });
+      }
+
       XLSX.utils.book_append_sheet(workbook, detailsSheet, "Details");
 
       const filename = `Gaji_${payslip.driver.nama || "supir"}_${new Date().toISOString().split("T")[0]}.xlsx`;
