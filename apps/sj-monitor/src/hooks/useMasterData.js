@@ -26,30 +26,31 @@ export const useMasterData = () => {
     };
     const activeOnly = (x) => x?.isActive !== false && !x?.deletedAt;
 
-    const noop = () => {};
+    const onErr = (label) => (err) =>
+      console.warn(`[useMasterData] ${label} subscription error:`, err);
     const unsubTrucks = onSnapshot(collection(db, 'trucks'), (snap) => {
       const all = snap.docs.map(normalizeItem);
       setTruckList(all.filter(activeOnly));
       setTruckListAll(all);
-    }, noop);
+    }, onErr('trucks'));
     const unsubSupir = onSnapshot(collection(db, 'supir'), (snap) => {
       const all = snap.docs.map(normalizeItem);
       setSupirList(all.filter(activeOnly));
       setSupirListAll(all);
-    }, noop);
+    }, onErr('supir'));
     const unsubRute = onSnapshot(collection(db, 'rute'), (snap) => {
       const all = snap.docs.map(normalizeItem);
       setRuteList(all.filter(activeOnly));
       setRuteListAll(all);
-    }, noop);
+    }, onErr('rute'));
     const unsubMaterial = onSnapshot(collection(db, 'material'), (snap) => {
       const all = snap.docs.map(normalizeItem);
       setMaterialList(all.filter(activeOnly));
       setMaterialListAll(all);
-    }, noop);
+    }, onErr('material'));
     const unsubTarif = onSnapshot(collection(db, 'tarif_rute'), (snap) => {
       setTarifRuteList(snap.docs.map(normalizeItem).filter(activeOnly));
-    }, noop);
+    }, onErr('tarif_rute'));
 
     return () => {
       try { unsubTrucks(); } catch {}

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { validateRitasiTemplate, partitionRitasiRowsByRuteExistence } from '../ritasiTemplateHelpers.js';
+import { validateRitasiTemplate, parseRitasiUpdates, partitionRitasiRowsByRuteExistence } from '../ritasiTemplateHelpers.js';
 
 const headers = ['ID Rute', 'Nama Rute', 'Asal', 'Tujuan', 'Uang Jalan', 'Ritasi Saat Ini', 'Ritasi Baru'];
 const ruteList = [
@@ -11,6 +11,36 @@ describe('validateRitasiTemplate', () => {
   it('lolos untuk data yang valid', () => {
     const data = [headers, ['R1', 'Jakarta - Bandung', 'Jakarta', 'Bandung', 500000, 3, 5]];
     expect(validateRitasiTemplate(data)).toEqual({ isValid: true, errors: [] });
+  });
+
+  it('menoleransi header dengan trailing whitespace dan BOM', () => {
+    const dirtyHeaders = ['﻿ID Rute', 'Nama Rute ', ' Asal', 'Tujuan', 'Uang Jalan', 'Ritasi Saat Ini', 'Ritasi Baru '];
+    const data = [dirtyHeaders, ['R1', 'Jakarta - Bandung', 'Jakarta', 'Bandung', 500000, 3, 5]];
+    expect(validateRitasiTemplate(data)).toEqual({ isValid: true, errors: [] });
+  });
+
+  it('tetap menolak header yang benar-benar salah', () => {
+    const data = [['Kolom Salah'], ['R1', 'x', 'x', 'x', 0, 0, 1]];
+    const result = validateRitasiTemplate(data);
+    expect(result.isValid).toBe(false);
+    expect(result.errors[0]).toMatch(/Header kolom tidak sesuai/);
+  });
+});
+
+describe('parseRitasiUpdates', () => {
+  it('trim whitespace/BOM pada ID Rute dan parse angka', () => {
+    const data = [headers, ['﻿ R1 ', 'Jakarta - Bandung', 'Jakarta', 'Bandung', 500000, 3, ' 7 ']];
+    expect(parseRitasiUpdates(data)).toEqual({ R1: 7 });
+  });
+
+  it('nilai ritasi non-angka menjadi 0 (bukan NaN)', () => {
+    const data = [headers, ['R1', 'x', 'x', 'x', 0, 0, 'abc']];
+    expect(parseRitasiUpdates(data)).toEqual({ R1: 0 });
+  });
+
+  it('mengabaikan baris null/undefined tanpa crash', () => {
+    const data = [headers, null, ['R2', 'x', 'x', 'x', 0, 0, 4]];
+    expect(parseRitasiUpdates(data)).toEqual({ R2: 4 });
   });
 });
 

@@ -443,10 +443,12 @@ const SuratJalanMonitor = () => {
   const loadRuteData = async () => {
     try {
       const snapshot = await getDocs(collection(db, "rute"));
-      const routes = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      const routes = snapshot.docs
+        .map(doc => {
+          const data = doc.data() || {};
+          return { id: doc.id, ...data };
+        })
+        .filter((r) => r?.isActive !== false && !r?.deletedAt);
       setRuteList(routes);
     } catch (error) {
       console.error("Error loading rute data:", error);
@@ -1356,26 +1358,34 @@ if (newItems.length > 0) {
       createdBy: currentUser.name
     };
 
-    const newList = [...suratJalanList, newSJ];
-    setSuratJalanList(newList);
+    // Snapshot the previous list so we can roll back if Firestore write fails.
+    // Without this, an optimistic update leaves a phantom SJ in local state
+    // even when persistence fails — and the modal handler would happily close.
+    const previousList = suratJalanList;
+    setSuratJalanList([...previousList, newSJ]);
 
-    // Auto-create transaksi keuangan
-    await upsertItemToFirestore(db, "surat_jalan", { ...newSJ, isActive: true });
+    try {
+      await upsertItemToFirestore(db, "surat_jalan", { ...newSJ, isActive: true });
 
-    // Auto-create transaksi keuangan untuk Uang Jalan (persist ke Firestore via addTransaksi)
-if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0) {
-  await addTransaksi({
-    id: buildUangJalanTransaksiId(newSJ.id),
-    tipe: "pengeluaran",
-    nominal: Number(selectedRute.uangJalan || 0),
-    keterangan: `Uang Jalan - ${newSJ.nomorSJ} (${selectedRute.rute})`,
-    tanggal: data.tanggalSJ,
-    suratJalanId: newSJ.id,
-    pt: newSJ.pt,
-  });
-}
-
-
+      // Auto-create transaksi keuangan untuk Uang Jalan (persist ke Firestore via addTransaksi)
+      if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0) {
+        await addTransaksi({
+          id: buildUangJalanTransaksiId(newSJ.id),
+          tipe: "pengeluaran",
+          nominal: Number(selectedRute.uangJalan || 0),
+          keterangan: `Uang Jalan - ${newSJ.nomorSJ} (${selectedRute.rute})`,
+          tanggal: data.tanggalSJ,
+          suratJalanId: newSJ.id,
+          pt: newSJ.pt,
+        });
+      }
+    } catch (err) {
+      // Roll back optimistic state and rethrow so the caller (e.g. modal submit
+      // handler) can keep the modal open and surface the error to the user.
+      setSuratJalanList(previousList);
+      console.error('[addSuratJalan] gagal menyimpan SJ:', err);
+      throw err;
+    }
   };
 
   const updateSuratJalan = useCallback(async (id, updates) => {
@@ -1409,23 +1419,37 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
       patch.uangJalan = 0;
     }
 
+    // Snapshot the previous SJ list so we can roll back the optimistic update
+    // if the Firestore write fails.
+    const previousSJList = suratJalanList;
     setSuratJalanList((prev) =>
       prev.map((x) => String(x.id) === String(id) ? { ...x, ...patch } : x)
     );
 
-    // Persist ke Firestore
-    await updateDoc(doc(db, 'surat_jalan', String(id)), sanitizeForFirestore(patch));
+    // Persist SJ patch ke Firestore — rollback optimistic state on failure so
+    // local state never reflects a phantom write.
+    try {
+      await updateDoc(doc(db, 'surat_jalan', String(id)), sanitizeForFirestore(patch));
+    } catch (err) {
+      setSuratJalanList(previousSJList);
+      console.error('[updateSuratJalan] gagal update Firestore:', err);
+      throw err;
+    }
 
-    // Jika jadi GAGAL dan ada transaksi uang jalan terkait, soft delete transaksinya
+    // Jika jadi GAGAL dan ada transaksi uang jalan terkait, soft delete
+    // transaksinya. Hanya update state lokal SETELAH Firestore commit sukses
+    // — mencegah subscription re-emit menimpa (atau divergen dari) optimistic
+    // state, dan mencegah inkonsistensi saat soft-delete gagal.
     if (patch.status === 'gagal') {
-      try {
-        const trans = transaksiList.find((t) => String(t.suratJalanId) === String(id));
-        if (trans?.id) {
+      const trans = transaksiList.find((t) => String(t.suratJalanId) === String(id));
+      if (trans?.id) {
+        try {
           await softDeleteItemInFirestore(db, 'transaksi', trans.id, who);
           setTransaksiList((prev) => prev.map((t) => (t.id === trans.id ? { ...t, isActive: false } : t)));
+        } catch (e) {
+          console.error('[updateSuratJalan] soft delete transaksi gagal:', e);
+          setAlertMessage('⚠️ SJ ditandai gagal, tapi transaksi uang jalan terkait gagal dihapus. Refresh halaman atau hapus manual.');
         }
-      } catch (e) {
-        console.warn('Soft delete transaksi uang jalan gagal:', e);
       }
     }
   }, [suratJalanList, transaksiList, currentUser, buildUangJalanTransaksiId]);
@@ -1453,11 +1477,20 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
           deletedUangJalan // Simpan untuk restore
         });
 
-        // Hapus transaksi Uang Jalan yang terkait (Firestore + state)
-if (uangJalanTransaksi?.id) {
-  await softDeleteItemInFirestore(db, "transaksi", uangJalanTransaksi.id, currentUser?.name || "system").catch(() => {});
-}
-setTransaksiList(prev => prev.filter(t => t.suratJalanId !== id));
+        // Hapus transaksi Uang Jalan yang terkait (Firestore + state).
+        // Surface Firestore failures instead of swallowing them with .catch(() => {}):
+        // a silent failure left local state out of sync with the database.
+        if (uangJalanTransaksi?.id) {
+          try {
+            await softDeleteItemInFirestore(db, "transaksi", uangJalanTransaksi.id, currentUser?.name || "system");
+          } catch (err) {
+            console.error('[markAsGagal] gagal soft-delete transaksi terkait:', err);
+            setConfirmDialog({ show: false, message: '', onConfirm: null });
+            setAlertMessage('⚠️ SJ sudah ditandai gagal, tapi transaksi Uang Jalan gagal dihapus. Coba refresh atau hapus manual.');
+            return;
+          }
+        }
+        setTransaksiList(prev => prev.filter(t => t.suratJalanId !== id));
 // Add to history log
         await addHistoryLog('mark_gagal', id, sj?.nomorSJ, {
           previousStatus: sj?.status,
@@ -2303,66 +2336,76 @@ try { unsubTransaksi(); } catch {}
           uangMukaList={uangMukaList}
           onClose={() => setShowModal(false)}
           onSubmit={async (data) => {
-            if (modalType === 'addSJ') {
-              await addSuratJalan(data);
-              setShowModal(false);
-            } else if (modalType === 'markTerkirim' || modalType === 'editTerkirim') {
-              const qtyBongkar = parseFloat(data.qtyBongkar);
-              const qtyIsi = parseFloat(selectedItem.qtyIsi);
-              const quantityLoss = qtyIsi - qtyBongkar;
+            // Wrap the entire dispatch in try/catch so that any failed Firestore
+            // write keeps the modal open with an alert, instead of silently
+            // closing and leaving the user without feedback. addSuratJalan and
+            // updateSuratJalan rethrow on error so this catch sees the failure.
+            try {
+              if (modalType === 'addSJ') {
+                await addSuratJalan(data);
+                setShowModal(false);
+              } else if (modalType === 'markTerkirim' || modalType === 'editTerkirim') {
+                const qtyBongkar = parseFloat(data.qtyBongkar);
+                const qtyIsi = parseFloat(selectedItem.qtyIsi);
+                const quantityLoss = qtyIsi - qtyBongkar;
 
-              await updateSuratJalan(selectedItem.id, {
-                status: 'terkirim',
-                tglTerkirim: data.tglTerkirim,
-                qtyBongkar: qtyBongkar,
-                quantityLoss: Math.max(0, quantityLoss),
-                abolishPenalty: data.abolishPenalty || false
-              });
-              setShowModal(false);
-            } else if (modalType === 'addTransaksi') {
-              await addTransaksi(data);
-              setShowModal(false);
-            } else if (modalType === 'addUser') {
-              const success = await addUser(data);
-              if (success) {
+                await updateSuratJalan(selectedItem.id, {
+                  status: 'terkirim',
+                  tglTerkirim: data.tglTerkirim,
+                  qtyBongkar: qtyBongkar,
+                  quantityLoss: Math.max(0, quantityLoss),
+                  abolishPenalty: data.abolishPenalty || false
+                });
+                setShowModal(false);
+              } else if (modalType === 'addTransaksi') {
+                await addTransaksi(data);
+                setShowModal(false);
+              } else if (modalType === 'addUser') {
+                const success = await addUser(data);
+                if (success) {
+                  setShowModal(false);
+                }
+              } else if (modalType === 'editUser') {
+                await updateUser(selectedItem.id, data);
+                setShowModal(false);
+              } else if (modalType === 'addTruck') {
+                await addTruck(data);
+                setShowModal(false);
+              } else if (modalType === 'editTruck') {
+                await updateTruck(selectedItem.id, data);
+                setShowModal(false);
+              } else if (modalType === 'addSupir') {
+                await addSupir(data);
+                setShowModal(false);
+              } else if (modalType === 'editSupir') {
+                await updateSupir(selectedItem.id, data);
+                setShowModal(false);
+              } else if (modalType === 'addRute') {
+                await addRute(data);
+                setShowModal(false);
+              } else if (modalType === 'editRute') {
+                await updateRute(selectedItem.id, data);
+                setShowModal(false);
+              } else if (modalType === 'addMaterial') {
+                await addMaterial(data);
+                setShowModal(false);
+              } else if (modalType === 'editMaterial') {
+                await updateMaterial(selectedItem.id, data);
+                setShowModal(false);
+              } else if (modalType === 'addInvoice') {
+                await addInvoice(data);
+                setShowModal(false);
+              } else if (modalType === 'editInvoice') {
+                await editInvoice(selectedItem.id, data);
+                setShowModal(false);
+              } else if (modalType === 'addUangMuka') {
+                await addUangMuka(data);
                 setShowModal(false);
               }
-            } else if (modalType === 'editUser') {
-              await updateUser(selectedItem.id, data);
-              setShowModal(false);
-            } else if (modalType === 'addTruck') {
-              await addTruck(data);
-              setShowModal(false);
-            } else if (modalType === 'editTruck') {
-              await updateTruck(selectedItem.id, data);
-              setShowModal(false);
-            } else if (modalType === 'addSupir') {
-              await addSupir(data);
-              setShowModal(false);
-            } else if (modalType === 'editSupir') {
-              await updateSupir(selectedItem.id, data);
-              setShowModal(false);
-            } else if (modalType === 'addRute') {
-              await addRute(data);
-              setShowModal(false);
-            } else if (modalType === 'editRute') {
-              await updateRute(selectedItem.id, data);
-              setShowModal(false);
-            } else if (modalType === 'addMaterial') {
-              await addMaterial(data);
-              setShowModal(false);
-            } else if (modalType === 'editMaterial') {
-              await updateMaterial(selectedItem.id, data);
-              setShowModal(false);
-            } else if (modalType === 'addInvoice') {
-              await addInvoice(data);
-              setShowModal(false);
-            } else if (modalType === 'editInvoice') {
-              await editInvoice(selectedItem.id, data);
-              setShowModal(false);
-            } else if (modalType === 'addUangMuka') {
-              await addUangMuka(data);
-              setShowModal(false);
+            } catch (err) {
+              console.error('[modal onSubmit] gagal menyimpan:', err);
+              setAlertMessage(`⚠️ Gagal menyimpan: ${err?.message || 'Coba lagi.'}`);
+              // modal stays open intentionally so user can retry
             }
           }}
         />
