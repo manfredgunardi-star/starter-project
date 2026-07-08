@@ -1687,14 +1687,13 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
   };
 
   const updateSuratJalan = async (id, updates) => {
-    const sj = suratJalanList.find((x) => String(x.id) === String(id));
+    const sj = suratJalanListRef.current.find((x) => String(x.id) === String(id));
     const who = currentUser?.name || 'system';
     const patch = buildSJStatusPatch(sj, updates, who);
 
-    const updatedSJList = suratJalanList.map((x) =>
+    setSuratJalanList(prev => prev.map((x) =>
       String(x.id) === String(id) ? { ...x, ...patch } : x
-    );
-    setSuratJalanList(updatedSJList);
+    ));
 
     // Persist ke Firestore
     await updateDoc(doc(db, C("surat_jalan"), String(id)), sanitizeForFirestore(patch));
@@ -1702,7 +1701,7 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
     // Jika jadi GAGAL, nonaktifkan transaksi uang jalan terkait (best-effort, termasuk legacy)
     if (patch.status === 'gagal') {
       try {
-        const sjObj = suratJalanList.find((s) => String(s.id) === String(id)) || { id };
+        const sjObj = suratJalanListRef.current.find((s) => String(s.id) === String(id)) || { id };
         await deactivateUangJalanTransaksiForSJ(sjObj, who);
       } catch (e) {
         console.warn('Nonaktifkan transaksi uang jalan gagal:', e);
