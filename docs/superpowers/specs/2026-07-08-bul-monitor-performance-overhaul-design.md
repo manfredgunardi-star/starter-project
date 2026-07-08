@@ -47,10 +47,17 @@ query(collection(dbAccounting, 'integration_queue'),
 ```
 Callback memetakan `docId` (prefix `IQ-UJ-` / `IQ-INV-` / `IQ-TRX-`) ke entitas lokal dan menjalankan rekonsiliasi idempoten yang sama seperti sekarang. State lokal terkini dibaca via `useRef` yang di-sync dari state (bukan closure) — memperbaiki bug stale closure. Effect hanya depend pada `authReady`/`firebaseUser`; tidak pernah resubscribe karena perubahan list. SJ `terkunci` tidak lagi punya listener sendiri.
 
-*Prasyarat (verifikasi sebelum implementasi):*
-- Composite index `sourceProject + status` di project Firebase bul-accounting (dibuat via console/CLI oleh user bila belum ada; error index Firestore menyertakan link pembuatan).
-- `firestore.rules` bul-accounting harus mengizinkan bridge account melakukan **query list** pada `integration_queue` (saat ini hanya terverifikasi get per-doc). Sesuai guardrail keamanan: bila rules perlu diubah, **berhenti dan minta persetujuan user** — tidak diubah sepihak.
-- Fallback bila query tidak diizinkan/index bermasalah: pertahankan listener per-dokumen TETAPI (i) hanya untuk status `menunggu_review` (bukan `terkunci`), (ii) key resubscribe berupa string ID ter-join yang stabil, bukan referensi array. Ini saja sudah menghapus kebocoran listener permanen dan churn resubscribe.
+*Prasyarat (dikerjakan user secara manual sebelum implementasi Fase 2a — Opsi B, 2026-07-08):*
+- **Rules: sudah cukup, tidak perlu diubah.** `firestore.rules` bul-accounting baris 123, `match /integration_queue/{docId}`, sudah punya `allow read: if isAdminOrAbove() || isBridgeAccount();`. Di Firestore Rules, `read` adalah singkatan dari `get` + `list` — jadi akun bridge sudah diizinkan melakukan query koleksi, bukan cuma baca per-dokumen. Poin ini semula salah diasumsikan butuh perubahan rules; setelah membaca file aslinya, tidak ada perubahan yang diperlukan.
+- **Index: mungkin dibutuhkan, dibuat manual oleh user via Firebase Console** (bukan oleh Claude, karena ini perubahan infra production tanpa staging untuk bul-accounting):
+  1. Buka [Firebase Console](https://console.firebase.google.com/) → pilih project bul-accounting → **Firestore Database** → tab **Indexes** → **Composite** → **Add index**.
+  2. Collection ID: `integration_queue`.
+  3. Fields to index: `sourceProject` — Ascending, lalu `status` — Ascending.
+  4. Query scope: **Collection**.
+  5. Klik **Create**. Status akan "Building" selama beberapa menit lalu berubah jadi "Enabled".
+  - Index bersifat aditif dan tidak mengubah keamanan/data — aman dibuat kapan saja, termasuk sebelum kode yang memakainya di-deploy.
+  - Alternatif tanpa langkah manual di atas: jalankan dulu kode fase 2a di lingkungan dev/staging; jika Firestore memang butuh index ini, akan muncul error `FAILED_PRECONDITION` di console browser yang menyertakan **link langsung** untuk auto-membuat index persis yang dibutuhkan — tinggal klik link tersebut. Kedua jalur menghasilkan index yang sama.
+- Fallback bila index/rules ternyata bermasalah di lapangan: pertahankan listener per-dokumen TETAPI (i) hanya untuk status `menunggu_review` (bukan `terkunci`), (ii) key resubscribe berupa string ID ter-join yang stabil, bukan referensi array. Ini saja sudah menghapus kebocoran listener permanen dan churn resubscribe.
 
 **2b. Listener legacy `suratJalan` kondisional.** Saat pemasangan subscription, satu kali `getDocs(query(collection(db, C('suratJalan')), limit(1)))`; jika kosong → listener legacy tidak dipasang (log info). Jika berisi → tetap dipasang seperti sekarang; migrasi data menjadi tugas terpisah di luar spec ini. Tidak ada data dihapus.
 
