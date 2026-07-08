@@ -330,7 +330,7 @@ export async function kirimUangJalanKeAccounting(sj, currentUser, allInvoices = 
  * @param {Object}   currentUser    - User bul-monitor yang sedang login
  * @param {Object[]} biayaList      - Seluruh daftar biaya (untuk hitung WIP biaya lain)
  */
-export async function kirimInvoiceKeAccounting(invoice, allSuratJalan, currentUser, biayaList = []) {
+export async function kirimInvoiceKeAccounting(invoice, allSuratJalan, currentUser, biayaList = [], pelangganList = []) {
   assertBridgeAuthed();
 
   const docId = `IQ-INV-${invoice.id}`;
@@ -353,7 +353,12 @@ export async function kirimInvoiceKeAccounting(invoice, allSuratJalan, currentUs
     .reduce((sum, b) => sum + (Number(b.nominal) || 0), 0);
 
   const piutangNet = totalNilai - totalUJ;
-  const pelangganData = invoice.pelangganData || await fetchPelangganByName(pt);
+  const pelangganFromState = pelangganList.find(
+    p => (p.name || '').trim().toLowerCase() === pt.trim().toLowerCase()
+  );
+  const pelangganData = invoice.pelangganData
+    || (pelangganFromState ? { name: pelangganFromState.name, address: pelangganFromState.address || '', npwp: pelangganFromState.npwp || '' } : null)
+    || await fetchPelangganByName(pt);
 
   const hppLines = [
     // HPP Uang Jalan — clear WIP UJ ke HPP

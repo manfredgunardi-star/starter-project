@@ -1961,7 +1961,7 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
       onConfirm: async () => {
         setConfirmDialog({ show: false, message: '', onConfirm: null });
         try {
-          await kirimInvoiceKeAccounting(invoice, suratJalanList, currentUser, biayaList);
+          await kirimInvoiceKeAccounting(invoice, suratJalanList, currentUser, biayaList, pelangganList);
           const invRef = doc(db, C("invoices"), invoice.id);
           await updateDoc(invRef, sanitizeForFirestore({
             integrationStatus: 'menunggu_review',
@@ -2001,7 +2001,7 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
 
         for (const invoice of invoices) {
           try {
-            await kirimInvoiceKeAccounting(invoice, suratJalanList, currentUser, biayaList);
+            await kirimInvoiceKeAccounting(invoice, suratJalanList, currentUser, biayaList, pelangganList);
             const invRef = doc(db, C("invoices"), invoice.id);
             await updateDoc(invRef, sanitizeForFirestore({
               integrationStatus: 'menunggu_review',
