@@ -1,4 +1,4 @@
-import {collection, doc, writeBatch, onSnapshot, getDoc, getDocFromServer, setDoc, updateDoc, getDocs, query, where, limit} from "firebase/firestore";
+import {collection, doc, writeBatch, onSnapshot, getDoc, getDocFromServer, setDoc, updateDoc, getDocs, query, where, limit, orderBy, startAfter} from "firebase/firestore";
 import { db, auth, ensureAuthed, authUserCreator } from "./config/firebase-config";
 import {
   kirimUangJalanKeAccounting,
@@ -47,6 +47,8 @@ async function runWithConcurrencyLimit(items, limit, worker) {
   return results;
 }
 
+const HISTORY_LOG_PAGE_SIZE = 300;
+
 const SuratJalanMonitor = () => {
   const [currentUser, setCurrentUser] = useState(null);
   const effectiveRole = currentUser?.role === 'owner' ? 'reader' : currentUser?.role;
@@ -62,6 +64,9 @@ const SuratJalanMonitor = () => {
   const [biayaList, setBiayaList] = useState([]);
   const [transaksiList, setTransaksiList] = useState([]);
   const [historyLog, setHistoryLog] = useState([]);
+  const [historyLogHasMore, setHistoryLogHasMore] = useState(false);
+  const [historyLogLoadingMore, setHistoryLogLoadingMore] = useState(false);
+  const historyLogCursorRef = useRef(null);
   const [invoiceList, setInvoiceList] = useState([]);
   const [appSettings, setAppSettings] = useState({
     companyName: '',
@@ -2235,6 +2240,35 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
     await saveData(suratJalanList, newList);
   };
 
+  const loadMoreHistoryLog = async () => {
+    if (!historyLogCursorRef.current || historyLogLoadingMore) return;
+    setHistoryLogLoadingMore(true);
+    try {
+      const moreQ = query(
+        collection(db, C("history_log")),
+        orderBy("timestamp", "desc"),
+        startAfter(historyLogCursorRef.current),
+        limit(HISTORY_LOG_PAGE_SIZE)
+      );
+      const snap = await getDocs(moreQ);
+      const moreData = snap.docs
+        .map((d) => {
+          const row = d.data() || {};
+          return { ...row, id: row.id || d.id };
+        })
+        .filter((x) => !x?.deletedAt);
+      setHistoryLog(prev => {
+        const combined = [...prev, ...moreData];
+        combined.sort((a, b) => String(b?.timestamp || "").localeCompare(String(a?.timestamp || "")));
+        return combined;
+      });
+      historyLogCursorRef.current = snap.docs[snap.docs.length - 1] || historyLogCursorRef.current;
+      setHistoryLogHasMore(snap.docs.length === HISTORY_LOG_PAGE_SIZE);
+    } finally {
+      setHistoryLogLoadingMore(false);
+    }
+  };
+
   const deleteBiaya = async (id) => {
     setConfirmDialog({
       show: true,
@@ -2569,7 +2603,8 @@ const unsubBiaya = onSnapshot(collection(db, C("biaya")), (snap) => {
   setBiayaList(data);
 });
 
-const unsubHistory = onSnapshot(collection(db, C("history_log")), (snap) => {
+const historyLogQ = query(collection(db, C("history_log")), orderBy("timestamp", "desc"), limit(HISTORY_LOG_PAGE_SIZE));
+const unsubHistory = onSnapshot(historyLogQ, (snap) => {
   const data = snap.docs
     .map((d) => {
       const row = d.data() || {};
@@ -2580,6 +2615,8 @@ const unsubHistory = onSnapshot(collection(db, C("history_log")), (snap) => {
     .filter((x) => !x?.deletedAt);
   data.sort((a, b) => String(b?.timestamp || "").localeCompare(String(a?.timestamp || "")));
   setHistoryLog(data);
+  historyLogCursorRef.current = snap.docs[snap.docs.length - 1] || null;
+  setHistoryLogHasMore(snap.docs.length === HISTORY_LOG_PAGE_SIZE);
 });
 
 const unsubTransaksi = onSnapshot(collection(db, C("transaksi")), (snap) => {
