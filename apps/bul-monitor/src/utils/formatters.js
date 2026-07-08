@@ -53,72 +53,77 @@ export const formatTanggalID = (value) => {
 };
 
 export const downloadSJRecapToExcel = async (suratJalanList = [], options = {}) => {
-  const XLSX = await import('xlsx');
-  const { startDate = '', endDate = '', dateField = 'tanggalSJ' } = options || {};
+  try {
+    const XLSX = await import('xlsx');
+    const { startDate = '', endDate = '', dateField = 'tanggalSJ' } = options || {};
 
-  const normDate = (v) => {
-    if (!v) return '';
-    if (typeof v === 'string') return v.slice(0, 10);
-    try {
-      return new Date(v).toISOString().slice(0, 10);
-    } catch {
-      return '';
+    const normDate = (v) => {
+      if (!v) return '';
+      if (typeof v === 'string') return v.slice(0, 10);
+      try {
+        return new Date(v).toISOString().slice(0, 10);
+      } catch {
+        return '';
+      }
+    };
+
+    const start = normDate(startDate);
+    const end = normDate(endDate);
+
+    const filtered = (Array.isArray(suratJalanList) ? suratJalanList : []).filter((sj) => {
+      const d = normDate(sj?.[dateField]);
+      if (!d) return false;
+      if (start && d < start) return false;
+      if (end && d > end) return false;
+      return true;
+    });
+
+    const rows = filtered.map((sj, i) => ({
+      No: i + 1,
+      'Nomor SJ': sj?.nomorSJ || '',
+      'Tanggal SJ': normDate(sj?.tanggalSJ),
+      'Tanggal Terkirim': normDate(sj?.tglTerkirim),
+      PT: sj?.pt || '',
+      Supir: sj?.namaSupir || '',
+      'Nomor Polisi': sj?.nomorPolisi || '',
+      Rute: sj?.rute || '',
+      Material: sj?.material || '',
+      'Qty Isi': Number(sj?.qtyIsi || 0),
+      'Qty Bongkar': Number(sj?.qtyBongkar || 0),
+      Satuan: sj?.satuan || '',
+      'Uang Jalan': Number(sj?.uangJalan || 0),
+      Status: sj?.status || '',
+      'Status Invoice': sj?.statusInvoice || '',
+      'Dibuat Oleh': sj?.createdBy || '',
+      'Dibuat Tanggal': normDate(sj?.createdAt),
+      'Diupdate Oleh': sj?.updatedBy || '',
+      'Diupdate Tanggal': normDate(sj?.updatedAt),
+    }));
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(rows);
+
+    const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+    ws['!cols'] = [
+      { wch: 6 }, { wch: 18 }, { wch: 14 }, { wch: 16 }, { wch: 10 }, { wch: 24 },
+      { wch: 16 }, { wch: 24 }, { wch: 16 }, { wch: 10 }, { wch: 12 }, { wch: 10 },
+      { wch: 14 }, { wch: 12 }, { wch: 14 }, { wch: 16 }, { wch: 14 }, { wch: 16 }, { wch: 14 }
+    ];
+
+    for (let r = 1; r <= range.e.r; r++) {
+      const cell = ws[XLSX.utils.encode_cell({ r, c: 12 })];
+      if (cell && typeof cell.v === 'number') cell.z = '#,##0';
     }
-  };
 
-  const start = normDate(startDate);
-  const end = normDate(endDate);
-
-  const filtered = (Array.isArray(suratJalanList) ? suratJalanList : []).filter((sj) => {
-    const d = normDate(sj?.[dateField]);
-    if (!d) return false;
-    if (start && d < start) return false;
-    if (end && d > end) return false;
-    return true;
-  });
-
-  const rows = filtered.map((sj, i) => ({
-    No: i + 1,
-    'Nomor SJ': sj?.nomorSJ || '',
-    'Tanggal SJ': normDate(sj?.tanggalSJ),
-    'Tanggal Terkirim': normDate(sj?.tglTerkirim),
-    PT: sj?.pt || '',
-    Supir: sj?.namaSupir || '',
-    'Nomor Polisi': sj?.nomorPolisi || '',
-    Rute: sj?.rute || '',
-    Material: sj?.material || '',
-    'Qty Isi': Number(sj?.qtyIsi || 0),
-    'Qty Bongkar': Number(sj?.qtyBongkar || 0),
-    Satuan: sj?.satuan || '',
-    'Uang Jalan': Number(sj?.uangJalan || 0),
-    Status: sj?.status || '',
-    'Status Invoice': sj?.statusInvoice || '',
-    'Dibuat Oleh': sj?.createdBy || '',
-    'Dibuat Tanggal': normDate(sj?.createdAt),
-    'Diupdate Oleh': sj?.updatedBy || '',
-    'Diupdate Tanggal': normDate(sj?.updatedAt),
-  }));
-
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(rows);
-
-  const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
-  ws['!cols'] = [
-    { wch: 6 }, { wch: 18 }, { wch: 14 }, { wch: 16 }, { wch: 10 }, { wch: 24 },
-    { wch: 16 }, { wch: 24 }, { wch: 16 }, { wch: 10 }, { wch: 12 }, { wch: 10 },
-    { wch: 14 }, { wch: 12 }, { wch: 14 }, { wch: 16 }, { wch: 14 }, { wch: 16 }, { wch: 14 }
-  ];
-
-  for (let r = 1; r <= range.e.r; r++) {
-    const cell = ws[XLSX.utils.encode_cell({ r, c: 12 })];
-    if (cell && typeof cell.v === 'number') cell.z = '#,##0';
+    XLSX.utils.book_append_sheet(wb, ws, 'Rekapan SJ');
+    const startLabel = start || 'all';
+    const endLabel = end || 'all';
+    const fileName = `rekapan_surat_jalan_${dateField}_${startLabel}_${endLabel}.xlsx`;
+    XLSX.writeFile(wb, fileName);
+  } catch (err) {
+    console.error('Excel export failed:', err);
+    throw new Error(`Gagal export Excel: ${err?.message || 'Unknown error'}`);
   }
-
-  XLSX.utils.book_append_sheet(wb, ws, 'Rekapan SJ');
-  const startLabel = start || 'all';
-  const endLabel = end || 'all';
-  const fileName = `rekapan_surat_jalan_${dateField}_${startLabel}_${endLabel}.xlsx`;
-  XLSX.writeFile(wb, fileName);
 };
 
 // Remove undefined values recursively so Firestore doesn't reject the payload
