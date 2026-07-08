@@ -9,7 +9,7 @@ import {
   isBridgeReady,
 } from "./integrationService.js";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from "firebase/auth";
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import * as XLSX from 'xlsx';
 import StatCard from './components/StatCard.jsx';
 import UsersManagement from './components/UsersManagement.jsx';
@@ -48,6 +48,30 @@ async function runWithConcurrencyLimit(items, limit, worker) {
 }
 
 const HISTORY_LOG_PAGE_SIZE = 300;
+
+const EMPTY_BIAYA = [];
+
+const getStatusColor = (status) => {
+  const colors = {
+    pending: 'bg-yellow-100 text-yellow-800',
+    terkirim: 'bg-green-100 text-green-800',
+    gagal: 'bg-red-100 text-red-800',
+    menunggu_review: 'bg-blue-100 text-blue-800',
+    terkunci: 'bg-gray-200 text-gray-600',
+  };
+  return colors[status] || 'bg-gray-100 text-gray-800';
+};
+
+const getStatusIcon = (status) => {
+  const icons = {
+    pending: <Clock className="w-4 h-4" />,
+    terkirim: <CheckCircle className="w-4 h-4" />,
+    gagal: <XCircle className="w-4 h-4" />,
+    menunggu_review: <Send className="w-4 h-4" />,
+    terkunci: <Lock className="w-4 h-4" />,
+  };
+  return icons[status] || <FileText className="w-4 h-4" />;
+};
 
 const SuratJalanMonitor = () => {
   const [currentUser, setCurrentUser] = useState(null);
@@ -2290,33 +2314,19 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
     });
   };
 
-  const getTotalBiaya = (suratJalanId) => {
-    return biayaList
-      .filter(b => b.suratJalanId === suratJalanId)
-      .reduce((sum, b) => sum + parseFloat(b.nominal || 0), 0);
-  };
+  const biayaBySJ = useMemo(() => {
+    const map = new Map();
+    biayaList.forEach(b => {
+      if (!map.has(b.suratJalanId)) map.set(b.suratJalanId, []);
+      map.get(b.suratJalanId).push(b);
+    });
+    return map;
+  }, [biayaList]);
 
-  const getStatusColor = (status) => {
-    const colors = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      terkirim: 'bg-green-100 text-green-800',
-      gagal: 'bg-red-100 text-red-800',
-      menunggu_review: 'bg-blue-100 text-blue-800',
-      terkunci: 'bg-gray-200 text-gray-600',
-    };
-    return colors[status] || 'bg-gray-100 text-gray-800';
-  };
-
-  const getStatusIcon = (status) => {
-    const icons = {
-      pending: <Clock className="w-4 h-4" />,
-      terkirim: <CheckCircle className="w-4 h-4" />,
-      gagal: <XCircle className="w-4 h-4" />,
-      menunggu_review: <Send className="w-4 h-4" />,
-      terkunci: <Lock className="w-4 h-4" />,
-    };
-    return icons[status] || <FileText className="w-4 h-4" />;
-  };
+  const getTotalBiaya = useCallback((suratJalanId) => {
+    const items = biayaBySJ.get(suratJalanId) || EMPTY_BIAYA;
+    return items.reduce((sum, b) => sum + parseFloat(b.nominal || 0), 0);
+  }, [biayaBySJ]);
 
   const filteredSuratJalan = filter === 'gagal'
     ? gagalSuratJalanList
@@ -3373,7 +3383,7 @@ useEffect(() => {
               <SuratJalanCard
                 key={sj.id}
                 suratJalan={sj}
-                biayaList={biayaList.filter(b => b.suratJalanId === sj.id)}
+                biayaList={biayaBySJ.get(sj.id) || EMPTY_BIAYA}
                 totalBiaya={getTotalBiaya(sj.id)}
                 currentUser={currentUser}
                 onUpdate={(sj) => {

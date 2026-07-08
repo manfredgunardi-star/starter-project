@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { CheckCircle, Edit, XCircle, RefreshCw, Send, Lock, Eye } from 'lucide-react';
 
 const SuratJalanCard = ({
@@ -231,4 +231,4 @@ const SuratJalanCard = ({
   );
 };
 
-export default SuratJalanCard;
+export default React.memo(SuratJalanCard);
