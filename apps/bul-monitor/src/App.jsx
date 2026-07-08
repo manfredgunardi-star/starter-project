@@ -1858,11 +1858,12 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
       confirmVariant: 'danger',
       onConfirm: async () => {
         setConfirmDialog({ show: false, message: '', onConfirm: null });
-        let berhasil = 0, gagal = 0;
-        const gagalList = [];
+        try {
+          const who = currentUser?.name || 'system';
+          const nowIso = new Date().toISOString();
 
-        for (const sj of toCancel) {
-          try {
+          // Precompute patches + tx ids (pure, no I/O) so we can batch everything below.
+          const plans = toCancel.map(sj => {
             const uangJalanTransaksi = transaksiList.find(
               t => t.id === buildUangJalanTransaksiId(sj.id) || String(t.suratJalanId) === String(sj.id)
             );
@@ -1872,28 +1873,73 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
               tanggal: uangJalanTransaksi.tanggal,
               id: uangJalanTransaksi.id,
             } : null;
+            const patch = buildSJStatusPatch(sj, { status: 'gagal', statusLabel: 'gagal', deletedUangJalan }, who);
+            return { sj, patch, txId: buildUangJalanTransaksiId(sj.id) };
+          });
 
-            await updateSuratJalan(sj.id, {
-              status: 'gagal',
-              statusLabel: 'gagal',
-              deletedUangJalan,
+          // Prefetch tx existence in parallel (read-before-write, same rule as
+          // deactivateUangJalanTransaksiForSJ: only deactivate if it exists and is active).
+          const txSnaps = await Promise.all(plans.map(p => getDoc(doc(db, C("transaksi"), p.txId))));
+
+          const items = plans.map((p, i) => ({
+            ...p,
+            txSnap: txSnaps[i],
+          }));
+
+          await chunkedBatchWrite(db, items, (batch, { sj, patch, txId, txSnap }) => {
+            batch.update(doc(db, C("surat_jalan"), String(sj.id)), sanitizeForFirestore(patch));
+
+            if (txSnap.exists() && txSnap.data()?.isActive !== false) {
+              batch.update(doc(db, C("transaksi"), txId), {
+                isActive: false,
+                updatedAt: nowIso,
+                updatedBy: who,
+              });
+            }
+
+            batch.set(doc(db, C("history_log"), 'LOG-' + Date.now() + '-' + sj.id), {
+              id: 'LOG-' + Date.now() + '-' + sj.id,
+              action: 'mark_gagal',
+              suratJalanId: sj.id,
+              suratJalanNo: sj.nomorSJ,
+              details: { previousStatus: sj.status, uangJalanDeleted: patch.deletedUangJalan, bulkAction: true },
+              timestamp: nowIso,
+              user: currentUser.name,
+              userRole: currentUser.role,
+              isActive: false,
             });
-            await deactivateUangJalanTransaksiForSJ(sj, currentUser?.name || 'system').catch(() => {});
-            await addHistoryLog('mark_gagal', sj.id, sj.nomorSJ, {
-              previousStatus: sj.status,
-              uangJalanDeleted: deletedUangJalan,
-              bulkAction: true,
-            }, false);
-            berhasil++;
-          } catch (e) {
-            gagal++;
-            gagalList.push(sj.nomorSJ);
-          }
-        }
+          }, 150); // 3 writes/item (SJ + tx + history) => 150*3=450 ≤ 500/batch
 
-        setSelectedBatalSJIds(new Set());
-        const gagalText = gagal > 0 ? `\n❌ ${gagal} SJ gagal dibatalkan: ${gagalList.join(', ')}` : '';
-        setAlertMessage(`✅ ${berhasil} SJ berhasil dibatalkan.${gagalText}\n💰 Uang Jalan terkait telah dihapus dari keuangan.`);
+          const patchesById = new Map(items.map(({ sj, patch }) => [sj.id, patch]));
+          setSuratJalanList(prev => prev.map(sj =>
+            patchesById.has(sj.id) ? { ...sj, ...patchesById.get(sj.id) } : sj
+          ));
+          setTransaksiList(prev => prev.map(t => {
+            const match = items.find(({ sj }) =>
+              String(t?.suratJalanId) === String(sj.id) || String(t?.id) === String(buildUangJalanTransaksiId(sj.id))
+            );
+            if (!match) return t;
+            return { ...t, isActive: false, deletedAt: t?.deletedAt || nowIso, deletedBy: t?.deletedBy || who };
+          }));
+          setHistoryLog(prev => [
+            ...prev,
+            ...items.map(({ sj, patch }) => ({
+              id: 'LOG-' + Date.now() + '-' + sj.id,
+              action: 'mark_gagal',
+              suratJalanId: sj.id,
+              suratJalanNo: sj.nomorSJ,
+              details: { previousStatus: sj.status, uangJalanDeleted: patch.deletedUangJalan, bulkAction: true },
+              timestamp: nowIso,
+              user: currentUser.name,
+              userRole: currentUser.role,
+            })),
+          ]);
+
+          setSelectedBatalSJIds(new Set());
+          setAlertMessage(`✅ ${items.length} SJ berhasil dibatalkan.\n💰 Uang Jalan terkait telah dihapus dari keuangan.`);
+        } catch (e) {
+          setAlertMessage(`❌ Gagal membatalkan SJ secara massal: ${e.message}`);
+        }
       },
     });
   };
