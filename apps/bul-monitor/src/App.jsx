@@ -1,17 +1,15 @@
-import {collection, doc, writeBatch, onSnapshot, getDoc, getDocFromServer, setDoc, updateDoc, getDocs, query, where, limit} from "firebase/firestore";
+import {collection, doc, writeBatch, onSnapshot, getDoc, getDocFromServer, setDoc, updateDoc, getDocs, query, where, limit, orderBy, startAfter} from "firebase/firestore";
 import { db, auth, ensureAuthed, authUserCreator } from "./config/firebase-config";
 import {
   kirimUangJalanKeAccounting,
   kirimInvoiceKeAccounting,
   kirimTransaksiKasKeAccounting,
-  subscribeIntegrationStatusSJ,
-  subscribeIntegrationStatusInvoice,
-  subscribeIntegrationStatusTransaksi,
+  fetchAccountingMasterData,
+  subscribeIntegrationQueueUpdates,
   isBridgeReady,
 } from "./integrationService.js";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from "firebase/auth";
-import React, { useState, useEffect, useRef } from 'react';
-import * as XLSX from 'xlsx';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import StatCard from './components/StatCard.jsx';
 import UsersManagement from './components/UsersManagement.jsx';
 import SettingsManagement from './components/SettingsManagement.jsx';
@@ -23,13 +21,56 @@ import KeuanganManagement from './components/KeuanganManagement.jsx';
 import InvoiceManagement from './components/InvoiceManagement.jsx';
 import SuratJalanCard from './components/SuratJalanCard.jsx';
 import Modal from './components/Modal.jsx';
-import { C, softDeleteItemInFirestore, resolveSuratJalanDocRef, softDeactivateTransaksiInFirestore, deactivateUangJalanTransaksiForSJ, upsertItemToFirestore } from './services/firestoreWrites.js';
+import { C, softDeleteItemInFirestore, resolveSuratJalanDocRef, softDeactivateTransaksiInFirestore, deactivateUangJalanTransaksiForSJ, upsertItemToFirestore, chunkedBatchWrite } from './services/firestoreWrites.js';
 
 
 
 import { AlertCircle, Package, Truck, FileText, Users, LogOut, Plus, Edit, Trash2, CheckCircle, XCircle, Clock, Download, Send, Lock } from 'lucide-react';
 
 
+
+// Runs `worker` over `items` with at most `limit` in flight at once.
+// Used to parallelize bulk Firestore round-trips without opening hundreds of
+// simultaneous connections (which is what an unbounded Promise.all would do).
+async function runWithConcurrencyLimit(items, limit, worker) {
+  const results = new Array(items.length);
+  let nextIndex = 0;
+  async function runNext() {
+    while (nextIndex < items.length) {
+      const currentIndex = nextIndex++;
+      results[currentIndex] = await worker(items[currentIndex], currentIndex);
+    }
+  }
+  const poolSize = Math.min(limit, items.length);
+  await Promise.all(Array.from({ length: poolSize }, runNext));
+  return results;
+}
+
+const HISTORY_LOG_PAGE_SIZE = 300;
+
+const EMPTY_BIAYA = [];
+
+const getStatusColor = (status) => {
+  const colors = {
+    pending: 'bg-yellow-100 text-yellow-800',
+    terkirim: 'bg-green-100 text-green-800',
+    gagal: 'bg-red-100 text-red-800',
+    menunggu_review: 'bg-blue-100 text-blue-800',
+    terkunci: 'bg-gray-200 text-gray-600',
+  };
+  return colors[status] || 'bg-gray-100 text-gray-800';
+};
+
+const getStatusIcon = (status) => {
+  const icons = {
+    pending: <Clock className="w-4 h-4" />,
+    terkirim: <CheckCircle className="w-4 h-4" />,
+    gagal: <XCircle className="w-4 h-4" />,
+    menunggu_review: <Send className="w-4 h-4" />,
+    terkunci: <Lock className="w-4 h-4" />,
+  };
+  return icons[status] || <FileText className="w-4 h-4" />;
+};
 
 const SuratJalanMonitor = () => {
   const [currentUser, setCurrentUser] = useState(null);
@@ -46,6 +87,9 @@ const SuratJalanMonitor = () => {
   const [biayaList, setBiayaList] = useState([]);
   const [transaksiList, setTransaksiList] = useState([]);
   const [historyLog, setHistoryLog] = useState([]);
+  const [historyLogHasMore, setHistoryLogHasMore] = useState(false);
+  const [historyLogLoadingMore, setHistoryLogLoadingMore] = useState(false);
+  const historyLogCursorRef = useRef(null);
   const [invoiceList, setInvoiceList] = useState([]);
   const [appSettings, setAppSettings] = useState({
     companyName: '',
@@ -62,6 +106,8 @@ const SuratJalanMonitor = () => {
   const [modalType, setModalType] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
   const [filter, setFilter] = useState('all');
+  const [sjPage, setSjPage] = useState(1);
+  const SJ_PAGE_SIZE = 10;
   const [showSJRecapPanel, setShowSJRecapPanel] = useState(false);
   const [sjRecapDateField, setSjRecapDateField] = useState('tanggalSJ');
   const [sjRecapStartDate, setSjRecapStartDate] = useState('');
@@ -1165,6 +1211,7 @@ try {
         let successCount = 0;
         let errorCount = 0;
         let errorDetails = [];
+        let uangJalanTxWarning = '';
         const newItems = [];
 
         if (type === 'suratjalan') {
@@ -1275,11 +1322,9 @@ try {
           if (newItems.length > 0) {
             // Persist ke Firestore (batch)
             try {
-              const batch = writeBatch(db);
-              newItems.forEach((sj) => {
+              await chunkedBatchWrite(db, newItems, (batch, sj) => {
                 batch.set(doc(db, C("surat_jalan"), String(sj.id)), sanitizeForFirestore({ ...sj, isActive: true }), { merge: true });
               });
-              await batch.commit();
             } catch (e) {
               console.error("Import SJ batch Firestore failed:", e);
             }
@@ -1287,11 +1332,43 @@ try {
             // onSnapshot akan update setSuratJalanList secara otomatis setelah batch.commit()
             // Auto-create transaksi uang jalan untuk hasil import (agar menu Keuangan ikut terupdate)
             if (canWriteTransaksi) {
-              for (const sj of newItems) {
+              const eligibleForTx = newItems.filter(sj => {
+                if (sj.isActive === false) return false;
+                if (String(sj.status || '').toLowerCase() === 'gagal') return false;
+                return Number(sj.uangJalan || 0) > 0;
+              });
+
+              if (eligibleForTx.length > 0) {
+                const who = currentUser?.name || 'system';
+                const nowIsoTx = new Date().toISOString();
+                const txItems = eligibleForTx.map(sj => sanitizeForFirestore({
+                  id: buildUangJalanTransaksiId(sj.id),
+                  tipe: 'pengeluaran',
+                  nominal: Number(sj.uangJalan || 0),
+                  keterangan: `Uang Jalan - ${sj.nomorSJ} (${sj.rute || ''})`,
+                  tanggal: sj.tanggalSJ || nowIsoTx.slice(0, 10),
+                  pt: sj.pt || '',
+                  suratJalanId: sj.id,
+                  source: 'auto_sj',
+                  isActive: true,
+                  createdAt: nowIsoTx,
+                  createdBy: who,
+                  updatedAt: nowIsoTx,
+                  updatedBy: who,
+                }));
+
                 try {
-                  await upsertUangJalanTransaksiForSJ(sj);
+                  await chunkedBatchWrite(db, txItems, (batch, tx) => {
+                    batch.set(doc(db, C("transaksi"), tx.id), tx, { merge: true });
+                  });
+                  setTransaksiList(prev => {
+                    const map = new Map(prev.map(t => [t.id, t]));
+                    txItems.forEach(tx => map.set(tx.id, tx));
+                    return Array.from(map.values());
+                  });
                 } catch (e) {
-                  console.warn('Import SJ -> auto transaksi uang jalan gagal:', e);
+                  console.warn('Import SJ -> auto transaksi uang jalan (batch) gagal:', e);
+                  uangJalanTxWarning = `\n\n⚠️ Surat Jalan berhasil diimport, tapi gagal membuat transaksi Uang Jalan otomatis: ${e.message}\nSilakan cek menu Keuangan dan tambahkan manual jika perlu.`;
                 }
               }
             }
@@ -1328,11 +1405,9 @@ try {
 // Simpan ke Firestore (collection: trucks)
 if (newItems.length > 0) {
   try {
-    const batch = writeBatch(db);
-    newItems.forEach((t) => {
+    await chunkedBatchWrite(db, newItems, (batch, t) => {
       batch.set(doc(db, C("trucks"), t.id), t, { merge: true });
     });
-    await batch.commit();
 
     // Update UI state setelah sukses commit
     setTruckList((prevList) => {
@@ -1379,11 +1454,9 @@ if (newItems.length > 0) {
           // Simpan ke Firestore (collection: supir)
           if (newItems.length > 0) {
             try {
-              const batch = writeBatch(db);
-              newItems.forEach((s) => {
+              await chunkedBatchWrite(db, newItems, (batch, s) => {
                 batch.set(doc(db, C("supir"), s.id), s, { merge: true });
               });
-              await batch.commit();
               setSupirList((prevList) => [...prevList, ...newItems]);
             } catch (e) {
               console.error("Error writing supir to Firestore:", e);
@@ -1424,11 +1497,9 @@ if (newItems.length > 0) {
           // Simpan ke Firestore (collection: rute)
           if (newItems.length > 0) {
             try {
-              const batch = writeBatch(db);
-              newItems.forEach((r) => {
+              await chunkedBatchWrite(db, newItems, (batch, r) => {
                 batch.set(doc(db, C("rute"), r.id), r, { merge: true });
               });
-              await batch.commit();
               // onSnapshot handles state update automatically
             } catch (e) {
               console.error("Error writing rute to Firestore:", e);
@@ -1469,11 +1540,9 @@ if (newItems.length > 0) {
           // Simpan ke Firestore (collection: material)
           if (newItems.length > 0) {
             try {
-              const batch = writeBatch(db);
-              newItems.forEach((m) => {
+              await chunkedBatchWrite(db, newItems, (batch, m) => {
                 batch.set(doc(db, C("material"), m.id), m, { merge: true });
               });
-              await batch.commit();
               // onSnapshot handles state update automatically
             } catch (e) {
               console.error("Error writing material to Firestore:", e);
@@ -1521,11 +1590,9 @@ if (newItems.length > 0) {
 
           if (biayaItems.length > 0) {
             try {
-              const batch = writeBatch(db);
-              biayaItems.forEach(b => {
+              await chunkedBatchWrite(db, biayaItems, (batch, b) => {
                 batch.set(doc(db, C("biaya"), b.id), b, { merge: true });
               });
-              await batch.commit();
               // onSnapshot akan update setBiayaList secara otomatis
             } catch (e) {
               console.error("Import biaya batch Firestore failed:", e);
@@ -1552,6 +1619,9 @@ if (newItems.length > 0) {
           link.click();
           document.body.removeChild(link);
           message += `\n\nCSV laporan penolakan (${errorCount} baris) sudah otomatis didownload.\nSilahkan cek file "laporan_penolakan_import.csv".`;
+        }
+        if (uangJalanTxWarning) {
+          message += uangJalanTxWarning;
         }
         setAlertMessage(message);
       } catch (error) {
@@ -1616,23 +1686,19 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
     await saveData(newList, biayaList);
   };
 
-  const updateSuratJalan = async (id, updates) => {
-    const sj = suratJalanList.find((x) => String(x.id) === String(id));
+  // Pure: computes the Firestore patch for a status update, including the special
+  // "gagal" derived fields (uangJalan locked to 0, deletedUangJalan snapshot for restore).
+  // Extracted so the bulk-batalkan path can reuse it without duplicating the logic.
+  const buildSJStatusPatch = (sj, updates, who) => {
     const nowIso = new Date().toISOString();
-    const who = currentUser?.name || 'system';
-
     const patch = {
       ...(updates || {}),
       updatedAt: nowIso,
       updatedBy: who,
     };
 
-    // DATA-SIDE LOCK:
-    // Jika status menjadi 'gagal', uang jalan harus dianggap 0 untuk semua role.
-    // Nilai uang jalan asli disimpan di deletedUangJalan agar bisa dipulihkan.
     if (patch.status === 'gagal') {
       const originalUangJalan = Number(sj?.uangJalan || 0);
-      // Lock data: SJ gagal dianggap non-aktif (tidak boleh muncul di Laporan Kas)
       if (patch.isActive === undefined) patch.isActive = false;
 
       if (!patch.deletedUangJalan && originalUangJalan > 0) {
@@ -1647,10 +1713,17 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
       patch.uangJalan = 0;
     }
 
-    const updatedSJList = suratJalanList.map((x) =>
+    return patch;
+  };
+
+  const updateSuratJalan = async (id, updates) => {
+    const sj = suratJalanListRef.current.find((x) => String(x.id) === String(id));
+    const who = currentUserRef.current?.name || 'system';
+    const patch = buildSJStatusPatch(sj, updates, who);
+
+    setSuratJalanList(prev => prev.map((x) =>
       String(x.id) === String(id) ? { ...x, ...patch } : x
-    );
-    setSuratJalanList(updatedSJList);
+    ));
 
     // Persist ke Firestore
     await updateDoc(doc(db, C("surat_jalan"), String(id)), sanitizeForFirestore(patch));
@@ -1658,7 +1731,7 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
     // Jika jadi GAGAL, nonaktifkan transaksi uang jalan terkait (best-effort, termasuk legacy)
     if (patch.status === 'gagal') {
       try {
-        const sjObj = suratJalanList.find((s) => String(s.id) === String(id)) || { id };
+        const sjObj = suratJalanListRef.current.find((s) => String(s.id) === String(id)) || { id };
         await deactivateUangJalanTransaksiForSJ(sjObj, who);
       } catch (e) {
         console.warn('Nonaktifkan transaksi uang jalan gagal:', e);
@@ -1773,36 +1846,60 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
       confirmVariant: 'primary',
       onConfirm: async () => {
         setConfirmDialog({ show: false, message: '', onConfirm: null });
-        let berhasil = 0, gagal = 0;
-        const allWarnings = [];
-        const gagalList = [];
 
-        for (const sj of toSend) {
-          try {
-            const sjBiaya = biayaList.filter(b => b.suratJalanId === sj.id && b.isActive !== false && !b.deletedAt);
-            const { warnings } = await kirimUangJalanKeAccounting(sj, currentUser, invoiceList, sjBiaya);
-            await updateSuratJalan(sj.id, {
-              status: 'menunggu_review',
-              integrationQueueId: `IQ-UJ-${sj.id}`,
-              sentToAccountingAt: new Date().toISOString(),
-              sentToAccountingBy: currentUser?.name || currentUser?.username || 'unknown',
+        try {
+          const masterData = await fetchAccountingMasterData();
+          const allWarnings = [];
+          const succeeded = [];
+          const gagalList = [];
+
+          await runWithConcurrencyLimit(toSend, 5, async (sj) => {
+            try {
+              const sjBiaya = biayaList.filter(b => b.suratJalanId === sj.id && b.isActive !== false && !b.deletedAt);
+              const { warnings } = await kirimUangJalanKeAccounting(sj, currentUser, invoiceList, sjBiaya, masterData);
+              warnings.forEach(w => allWarnings.push(`[${sj.nomorSJ}] ${w.message}`));
+              succeeded.push(sj);
+            } catch (e) {
+              gagalList.push(sj.nomorSJ);
+            }
+          });
+
+          const nowIso = new Date().toISOString();
+          const who = currentUser?.name || currentUser?.username || 'unknown';
+          const patchesById = new Map(succeeded.map(sj => [sj.id, {
+            status: 'menunggu_review',
+            integrationQueueId: `IQ-UJ-${sj.id}`,
+            sentToAccountingAt: nowIso,
+            sentToAccountingBy: who,
+            updatedAt: nowIso,
+            updatedBy: who,
+          }]));
+
+          if (patchesById.size > 0) {
+            // Batch commit is atomic per-chunk: if it throws here, the integration_queue
+            // docs for `succeeded` items were already written in bul-accounting above, but
+            // bul-monitor's own surat_jalan status won't reflect menunggu_review yet — the
+            // catch below surfaces this explicitly instead of failing silently, and the
+            // send is idempotent to retry (kirimUangJalanKeAccounting keys off IQ-UJ-<id>).
+            await chunkedBatchWrite(db, Array.from(patchesById.entries()), (batch, [sjId, patch]) => {
+              batch.update(doc(db, C("surat_jalan"), String(sjId)), sanitizeForFirestore(patch));
             });
-            berhasil++;
-            warnings.forEach(w => allWarnings.push(`[${sj.nomorSJ}] ${w.message}`));
-          } catch (e) {
-            gagal++;
-            gagalList.push(sj.nomorSJ);
+            setSuratJalanList(prev => prev.map(sj =>
+              patchesById.has(sj.id) ? { ...sj, ...patchesById.get(sj.id) } : sj
+            ));
           }
-        }
 
-        setSelectedSJIds(new Set());
-        const warningText = allWarnings.length > 0
-          ? `\n\n⚠️ Peringatan Master Data:\n${allWarnings.map(w => `• ${w}`).join('\n')}`
-          : '';
-        const gagalText = gagal > 0
-          ? `\n❌ ${gagal} SJ gagal dikirim: ${gagalList.join(', ')}`
-          : '';
-        setAlertMessage(`✅ ${berhasil} SJ berhasil dikirim ke Accounting.${gagalText}${warningText}`);
+          setSelectedSJIds(new Set());
+          const warningText = allWarnings.length > 0
+            ? `\n\n⚠️ Peringatan Master Data:\n${allWarnings.map(w => `• ${w}`).join('\n')}`
+            : '';
+          const gagalText = gagalList.length > 0
+            ? `\n❌ ${gagalList.length} SJ gagal dikirim: ${gagalList.join(', ')}`
+            : '';
+          setAlertMessage(`✅ ${succeeded.length} SJ berhasil dikirim ke Accounting.${gagalText}${warningText}`);
+        } catch (e) {
+          setAlertMessage(`❌ Gagal mengirim SJ secara massal ke Accounting: ${e.message}`);
+        }
       },
     });
   };
@@ -1821,11 +1918,16 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
       confirmVariant: 'danger',
       onConfirm: async () => {
         setConfirmDialog({ show: false, message: '', onConfirm: null });
-        let berhasil = 0, gagal = 0;
-        const gagalList = [];
+        try {
+          // Batch commits are atomic per-chunk (see chunkedBatchWrite): on failure we
+          // intentionally surface one error instead of granular per-item success/fail
+          // counts, since a cancel/batalkan action is reversible (superadmin can restore)
+          // and chunk-level atomicity matters more here than partial-progress visibility.
+          const who = currentUser?.name || 'system';
+          const nowIso = new Date().toISOString();
 
-        for (const sj of toCancel) {
-          try {
+          // Precompute patches + tx ids (pure, no I/O) so we can batch everything below.
+          const plans = toCancel.map(sj => {
             const uangJalanTransaksi = transaksiList.find(
               t => t.id === buildUangJalanTransaksiId(sj.id) || String(t.suratJalanId) === String(sj.id)
             );
@@ -1835,28 +1937,73 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
               tanggal: uangJalanTransaksi.tanggal,
               id: uangJalanTransaksi.id,
             } : null;
+            const patch = buildSJStatusPatch(sj, { status: 'gagal', statusLabel: 'gagal', deletedUangJalan }, who);
+            return { sj, patch, txId: buildUangJalanTransaksiId(sj.id), logId: 'LOG-' + Date.now() + '-' + sj.id };
+          });
 
-            await updateSuratJalan(sj.id, {
-              status: 'gagal',
-              statusLabel: 'gagal',
-              deletedUangJalan,
-            });
-            await deactivateUangJalanTransaksiForSJ(sj, currentUser?.name || 'system').catch(() => {});
-            await addHistoryLog('mark_gagal', sj.id, sj.nomorSJ, {
-              previousStatus: sj.status,
-              uangJalanDeleted: deletedUangJalan,
-              bulkAction: true,
-            }, false);
-            berhasil++;
-          } catch (e) {
-            gagal++;
-            gagalList.push(sj.nomorSJ);
-          }
+          // Prefetch tx existence in parallel (read-before-write, same rule as
+          // deactivateUangJalanTransaksiForSJ: only deactivate if it exists and is active).
+          const txSnaps = await Promise.all(plans.map(p => getDoc(doc(db, C("transaksi"), p.txId))));
+
+          const items = plans.map((p, i) => ({
+            ...p,
+            txSnap: txSnaps[i],
+          }));
+
+          await chunkedBatchWrite(db, items, (batch, { sj, patch, txId, txSnap, logId }) => {
+            batch.update(doc(db, C("surat_jalan"), String(sj.id)), sanitizeForFirestore(patch));
+
+            if (txSnap.exists() && txSnap.data()?.isActive !== false) {
+              batch.update(doc(db, C("transaksi"), txId), {
+                isActive: false,
+                updatedAt: nowIso,
+                updatedBy: who,
+              });
+            }
+
+            batch.set(doc(db, C("history_log"), logId), sanitizeForFirestore({
+              id: logId,
+              action: 'mark_gagal',
+              suratJalanId: sj.id,
+              suratJalanNo: sj.nomorSJ,
+              details: { previousStatus: sj.status, uangJalanDeleted: patch.deletedUangJalan, bulkAction: true },
+              timestamp: nowIso,
+              user: currentUser.name,
+              userRole: currentUser.role,
+              isActive: false,
+            }));
+          }, 150, (committedChunk) => {
+            const chunkPatchesById = new Map(committedChunk.map(({ sj, patch }) => [sj.id, patch]));
+            setSuratJalanList(prev => prev.map(sj =>
+              chunkPatchesById.has(sj.id) ? { ...sj, ...chunkPatchesById.get(sj.id) } : sj
+            ));
+            setTransaksiList(prev => prev.map(t => {
+              const match = committedChunk.find(({ sj }) =>
+                String(t?.suratJalanId) === String(sj.id) || String(t?.id) === String(buildUangJalanTransaksiId(sj.id))
+              );
+              if (!match) return t;
+              return { ...t, isActive: false, updatedAt: t?.updatedAt || nowIso, updatedBy: t?.updatedBy || who };
+            }));
+            setHistoryLog(prev => [
+              ...prev,
+              ...committedChunk.map(({ sj, patch, logId }) => ({
+                id: logId,
+                action: 'mark_gagal',
+                suratJalanId: sj.id,
+                suratJalanNo: sj.nomorSJ,
+                details: { previousStatus: sj.status, uangJalanDeleted: patch.deletedUangJalan, bulkAction: true },
+                timestamp: nowIso,
+                user: currentUser.name,
+                userRole: currentUser.role,
+              })),
+            ]);
+          }); // 3 writes/item (SJ + tx + history) => 150*3=450 ≤ 500/batch
+
+          setSelectedBatalSJIds(new Set());
+          setAlertMessage(`✅ ${items.length} SJ berhasil dibatalkan.\n💰 Uang Jalan terkait telah dihapus dari keuangan.`);
+        } catch (e) {
+          setAlertMessage(`❌ Gagal membatalkan SJ secara massal: ${e.message}`);
         }
-
-        setSelectedBatalSJIds(new Set());
-        const gagalText = gagal > 0 ? `\n❌ ${gagal} SJ gagal dibatalkan: ${gagalList.join(', ')}` : '';
-        setAlertMessage(`✅ ${berhasil} SJ berhasil dibatalkan.${gagalText}\n💰 Uang Jalan terkait telah dihapus dari keuangan.`);
       },
     });
   };
@@ -1874,7 +2021,7 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
       onConfirm: async () => {
         setConfirmDialog({ show: false, message: '', onConfirm: null });
         try {
-          await kirimInvoiceKeAccounting(invoice, suratJalanList, currentUser, biayaList);
+          await kirimInvoiceKeAccounting(invoice, suratJalanList, currentUser, biayaList, pelangganList);
           const invRef = doc(db, C("invoices"), invoice.id);
           await updateDoc(invRef, sanitizeForFirestore({
             integrationStatus: 'menunggu_review',
@@ -1914,7 +2061,7 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
 
         for (const invoice of invoices) {
           try {
-            await kirimInvoiceKeAccounting(invoice, suratJalanList, currentUser, biayaList);
+            await kirimInvoiceKeAccounting(invoice, suratJalanList, currentUser, biayaList, pelangganList);
             const invRef = doc(db, C("invoices"), invoice.id);
             await updateDoc(invRef, sanitizeForFirestore({
               integrationStatus: 'menunggu_review',
@@ -2127,6 +2274,40 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
     await saveData(suratJalanList, newList);
   };
 
+  // NOTE: the live unsubHistory listener always overwrites `historyLog` with just the
+  // newest HISTORY_LOG_PAGE_SIZE docs whenever a new history_log write comes in — any
+  // pages accumulated here via loadMoreHistoryLog get silently discarded on the next
+  // live update. Harmless today (no UI calls this yet), but fix this interaction before
+  // wiring a "load more" button to it.
+  const loadMoreHistoryLog = async () => {
+    if (!historyLogCursorRef.current || historyLogLoadingMore) return;
+    setHistoryLogLoadingMore(true);
+    try {
+      const moreQ = query(
+        collection(db, C("history_log")),
+        orderBy("timestamp", "desc"),
+        startAfter(historyLogCursorRef.current),
+        limit(HISTORY_LOG_PAGE_SIZE)
+      );
+      const snap = await getDocs(moreQ);
+      const moreData = snap.docs
+        .map((d) => {
+          const row = d.data() || {};
+          return { ...row, id: row.id || d.id };
+        })
+        .filter((x) => !x?.deletedAt);
+      setHistoryLog(prev => {
+        const combined = [...prev, ...moreData];
+        combined.sort((a, b) => String(b?.timestamp || "").localeCompare(String(a?.timestamp || "")));
+        return combined;
+      });
+      historyLogCursorRef.current = snap.docs[snap.docs.length - 1] || historyLogCursorRef.current;
+      setHistoryLogHasMore(snap.docs.length === HISTORY_LOG_PAGE_SIZE);
+    } finally {
+      setHistoryLogLoadingMore(false);
+    }
+  };
+
   const deleteBiaya = async (id) => {
     setConfirmDialog({
       show: true,
@@ -2141,47 +2322,39 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
     });
   };
 
-  const getTotalBiaya = (suratJalanId) => {
-    return biayaList
-      .filter(b => b.suratJalanId === suratJalanId)
-      .reduce((sum, b) => sum + parseFloat(b.nominal || 0), 0);
-  };
+  const biayaBySJ = useMemo(() => {
+    const map = new Map();
+    biayaList.forEach(b => {
+      if (!map.has(b.suratJalanId)) map.set(b.suratJalanId, []);
+      map.get(b.suratJalanId).push(b);
+    });
+    return map;
+  }, [biayaList]);
 
-  const getStatusColor = (status) => {
-    const colors = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      terkirim: 'bg-green-100 text-green-800',
-      gagal: 'bg-red-100 text-red-800',
-      menunggu_review: 'bg-blue-100 text-blue-800',
-      terkunci: 'bg-gray-200 text-gray-600',
-    };
-    return colors[status] || 'bg-gray-100 text-gray-800';
-  };
+  const getTotalBiaya = useCallback((suratJalanId) => {
+    const items = biayaBySJ.get(suratJalanId) || EMPTY_BIAYA;
+    return items.reduce((sum, b) => sum + parseFloat(b.nominal || 0), 0);
+  }, [biayaBySJ]);
 
-  const getStatusIcon = (status) => {
-    const icons = {
-      pending: <Clock className="w-4 h-4" />,
-      terkirim: <CheckCircle className="w-4 h-4" />,
-      gagal: <XCircle className="w-4 h-4" />,
-      menunggu_review: <Send className="w-4 h-4" />,
-      terkunci: <Lock className="w-4 h-4" />,
-    };
-    return icons[status] || <FileText className="w-4 h-4" />;
-  };
+  const filteredSuratJalan = useMemo(() =>
+    filter === 'gagal'
+      ? gagalSuratJalanList
+      : suratJalanList.filter(sj => filter === 'all' || sj.status === filter),
+    [filter, gagalSuratJalanList, suratJalanList]);
 
-  const filteredSuratJalan = filter === 'gagal'
-    ? gagalSuratJalanList
-    : suratJalanList.filter(sj => filter === 'all' || sj.status === filter);
+  const sjTotalPages = Math.max(1, Math.ceil(filteredSuratJalan.length / SJ_PAGE_SIZE));
+  const sjPageClamped = Math.min(sjPage, sjTotalPages);
+  const paginatedSuratJalan = filteredSuratJalan.slice((sjPageClamped - 1) * SJ_PAGE_SIZE, sjPageClamped * SJ_PAGE_SIZE);
 
   const pendingReviewCount = suratJalanList.filter(sj => sj.status === 'menunggu_review').length;
 
   const [selectedSJIds, setSelectedSJIds] = useState(new Set());
 
-  const isSJEligibleForBulkKirim = (sj) =>
-    sj.status === 'terkirim' && Number(sj.uangJalan || 0) > 0;
+  const isSJEligibleForBulkKirim = useCallback((sj) =>
+    sj.status === 'terkirim' && Number(sj.uangJalan || 0) > 0, []);
 
-  const eligibleInView = filteredSuratJalan.filter(isSJEligibleForBulkKirim);
-  const selectedInView = eligibleInView.filter(sj => selectedSJIds.has(sj.id));
+  const eligibleInView = useMemo(() => filteredSuratJalan.filter(isSJEligibleForBulkKirim), [filteredSuratJalan, isSJEligibleForBulkKirim]);
+  const selectedInView = useMemo(() => eligibleInView.filter(sj => selectedSJIds.has(sj.id)), [eligibleInView, selectedSJIds]);
   const allInViewSelected = eligibleInView.length > 0 && selectedInView.length === eligibleInView.length;
 
   const toggleSelectSJ = (id) => {
@@ -2211,11 +2384,11 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
   // --- Bulk Batalkan SJ ---
   const [selectedBatalSJIds, setSelectedBatalSJIds] = useState(new Set());
 
-  const isSJEligibleForBulkBatalkan = (sj) =>
-    !['gagal', 'menunggu_review', 'terkunci'].includes(sj.status) && sj.isActive !== false;
+  const isSJEligibleForBulkBatalkan = useCallback((sj) =>
+    !['gagal', 'menunggu_review', 'terkunci'].includes(sj.status) && sj.isActive !== false, []);
 
-  const eligibleBatalInView = filteredSuratJalan.filter(isSJEligibleForBulkBatalkan);
-  const selectedBatalInView = eligibleBatalInView.filter(sj => selectedBatalSJIds.has(sj.id));
+  const eligibleBatalInView = useMemo(() => filteredSuratJalan.filter(isSJEligibleForBulkBatalkan), [filteredSuratJalan, isSJEligibleForBulkBatalkan]);
+  const selectedBatalInView = useMemo(() => eligibleBatalInView.filter(sj => selectedBatalSJIds.has(sj.id)), [eligibleBatalInView, selectedBatalSJIds]);
   const allBatalInViewSelected = eligibleBatalInView.length > 0 && selectedBatalInView.length === eligibleBatalInView.length;
 
   const toggleSelectBatalSJ = (id) => {
@@ -2431,10 +2604,24 @@ const unsubSuratJalan = onSnapshot(collection(db, C("surat_jalan")), (snap) => {
   applySJ();
 });
 
-const unsubSuratJalanLegacy = onSnapshot(collection(db, C("suratJalan")), (snap) => {
-  sjLegacy = snap.docs.map((d) => normalizeSJ(d.data() || {}, d.id));
-  applySJ();
-});
+// Legacy camelCase collection: only subscribe if it actually has data. Avoids an
+// always-on second full-collection listener for deployments where it's long empty.
+let unsubSuratJalanLegacy = () => {};
+(async () => {
+  try {
+    const legacyProbe = await getDocs(query(collection(db, C("suratJalan")), limit(1)));
+    if (!legacyProbe.empty) {
+      unsubSuratJalanLegacy = onSnapshot(collection(db, C("suratJalan")), (snap) => {
+        sjLegacy = snap.docs.map((d) => normalizeSJ(d.data() || {}, d.id));
+        applySJ();
+      });
+    } else {
+      console.info('[bul-monitor] Legacy bul_suratJalan kosong — listener tidak dipasang.');
+    }
+  } catch (e) {
+    console.warn('[bul-monitor] Gagal cek legacy bul_suratJalan, listener tidak dipasang:', e.message);
+  }
+})();
 
 const unsubBiaya = onSnapshot(collection(db, C("biaya")), (snap) => {
   const data = snap.docs
@@ -2447,7 +2634,8 @@ const unsubBiaya = onSnapshot(collection(db, C("biaya")), (snap) => {
   setBiayaList(data);
 });
 
-const unsubHistory = onSnapshot(collection(db, C("history_log")), (snap) => {
+const historyLogQ = query(collection(db, C("history_log")), orderBy("timestamp", "desc"), limit(HISTORY_LOG_PAGE_SIZE));
+const unsubHistory = onSnapshot(historyLogQ, (snap) => {
   const data = snap.docs
     .map((d) => {
       const row = d.data() || {};
@@ -2458,6 +2646,8 @@ const unsubHistory = onSnapshot(collection(db, C("history_log")), (snap) => {
     .filter((x) => !x?.deletedAt);
   data.sort((a, b) => String(b?.timestamp || "").localeCompare(String(a?.timestamp || "")));
   setHistoryLog(data);
+  historyLogCursorRef.current = snap.docs[snap.docs.length - 1] || null;
+  setHistoryLogHasMore(snap.docs.length === HISTORY_LOG_PAGE_SIZE);
 });
 
 const unsubTransaksi = onSnapshot(collection(db, C("transaksi")), (snap) => {
@@ -2503,15 +2693,28 @@ try { unsubTransaksi(); } catch {}
 // after login and after a hard refresh in production.
 }, [authReady, firebaseUser]);
 
-// Dengarkan perubahan status integrasi dari bul-accounting (approve/reject/cancel)
-// untuk setiap SJ yang sedang dalam status menunggu_review atau terkunci.
+// Ref-mirror of the three watched lists so the single persistent integration_queue
+// listener (below) always reads current state without needing to resubscribe
+// whenever suratJalanList/invoiceList/transaksiList changes.
+const suratJalanListRef = useRef(suratJalanList);
+useEffect(() => { suratJalanListRef.current = suratJalanList; }, [suratJalanList]);
+const invoiceListRef = useRef(invoiceList);
+useEffect(() => { invoiceListRef.current = invoiceList; }, [invoiceList]);
+const transaksiListRef = useRef(transaksiList);
+useEffect(() => { transaksiListRef.current = transaksiList; }, [transaksiList]);
+const currentUserRef = useRef(currentUser);
+useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
+
+// Dengarkan perubahan status integrasi (SJ/Invoice/Transaksi) dari bul-accounting
+// (approve/reject/cancel) — satu query listener untuk semuanya (lihat Design decision
+// di plan Task 8 untuk kenapa 'rejected' punya guard status eksplisit di sini).
 useEffect(() => {
   if (!authReady || !firebaseUser) return;
-  const watchedSJs = suratJalanList.filter(s => s.status === 'menunggu_review' || s.status === 'terkunci');
-  if (watchedSJs.length === 0) return;
 
-  const unsubs = watchedSJs.map(sj =>
-    subscribeIntegrationStatusSJ(sj.id, async (data) => {
+  const unsub = subscribeIntegrationQueueUpdates(async (docId, data) => {
+    if (data.type === 'uang_jalan') {
+      const sj = suratJalanListRef.current.find(s => s.id === data.sourceSjId);
+      if (!sj) return;
       if (data.status === 'approved' && sj.status !== 'terkunci') {
         await updateSuratJalan(sj.id, {
           status: 'terkunci',
@@ -2519,7 +2722,7 @@ useEffect(() => {
           accountingApprovedAt: data.updatedAt,
           accountingReviewedBy: data.reviewedBy,
         });
-      } else if (data.status === 'rejected') {
+      } else if (data.status === 'rejected' && sj.status === 'menunggu_review') {
         await updateSuratJalan(sj.id, {
           status: 'terkirim',
           integrationQueueId: null,
@@ -2541,19 +2744,9 @@ useEffect(() => {
         });
         setAlertMessage(`⚠️ Jurnal SJ ${sj.nomorSJ} dibatalkan oleh akuntan.\nAlasan: ${data.cancellationReason || '-'}\nData dapat diedit dan dikirim ulang.`);
       }
-    })
-  );
-  return () => unsubs.forEach(u => u());
-}, [authReady, firebaseUser, suratJalanList]);
-
-// Dengarkan perubahan status integrasi invoice dari bul-accounting (approve/reject/cancel)
-useEffect(() => {
-  if (!authReady || !firebaseUser) return;
-  const watchedInvoices = invoiceList.filter(inv => inv.integrationStatus === 'menunggu_review' || inv.integrationStatus === 'terkunci');
-  if (watchedInvoices.length === 0) return;
-
-  const unsubs = watchedInvoices.map(invoice =>
-    subscribeIntegrationStatusInvoice(invoice.id, async (data) => {
+    } else if (data.type === 'invoice') {
+      const invoice = invoiceListRef.current.find(inv => inv.id === data.sourceInvoiceId);
+      if (!invoice) return;
       const invRef = doc(db, C("invoices"), invoice.id);
       if (data.status === 'approved' && invoice.integrationStatus !== 'terkunci') {
         await updateDoc(invRef, sanitizeForFirestore({
@@ -2563,7 +2756,7 @@ useEffect(() => {
           accountingReviewedBy: data.reviewedBy,
           updatedAt: new Date().toISOString(),
         }));
-      } else if (data.status === 'rejected') {
+      } else if (data.status === 'rejected' && invoice.integrationStatus === 'menunggu_review') {
         await updateDoc(invRef, sanitizeForFirestore({
           integrationStatus: null,
           integrationQueueId: null,
@@ -2587,21 +2780,9 @@ useEffect(() => {
         }));
         setAlertMessage(`⚠️ Jurnal Invoice ${invoice.noInvoice} dibatalkan oleh akuntan.\nAlasan: ${data.cancellationReason || '-'}\nInvoice dapat dikirim ulang.`);
       }
-    })
-  );
-  return () => unsubs.forEach(u => u());
-}, [authReady, firebaseUser, invoiceList]);
-
-// Dengarkan perubahan status integrasi transaksi kas dari bul-accounting
-useEffect(() => {
-  if (!authReady || !firebaseUser) return;
-  const watched = transaksiList.filter(t =>
-    t.integrationStatus === 'menunggu_review' || t.integrationStatus === 'terkunci'
-  );
-  if (watched.length === 0) return;
-
-  const unsubs = watched.map(transaksi =>
-    subscribeIntegrationStatusTransaksi(transaksi.id, async (data) => {
+    } else if (data.type === 'transaksi_kas') {
+      const transaksi = transaksiListRef.current.find(t => t.id === data.sourceTransaksiId);
+      if (!transaksi) return;
       const trxRef = doc(db, C('transaksi'), transaksi.id);
       if (data.status === 'approved' && transaksi.integrationStatus !== 'terkunci') {
         await updateDoc(trxRef, {
@@ -2611,7 +2792,7 @@ useEffect(() => {
           accountingReviewedBy: data.reviewedBy,
           updatedAt: new Date().toISOString(),
         });
-      } else if (data.status === 'rejected') {
+      } else if (data.status === 'rejected' && transaksi.integrationStatus === 'menunggu_review') {
         await updateDoc(trxRef, {
           integrationStatus: null,
           integrationQueueId: null,
@@ -2634,10 +2815,11 @@ useEffect(() => {
         });
         setAlertMessage(`⚠️ Jurnal transaksi "${transaksi.keterangan}" dibatalkan oleh akuntan.\nAlasan: ${data.cancellationReason || '-'}`);
       }
-    })
-  );
-  return () => unsubs.forEach(u => u());
-}, [authReady, firebaseUser, transaksiList]);
+    }
+  });
+
+  return () => unsub();
+}, [authReady, firebaseUser]);
 
   // Reconcile/backfill transaksi uang jalan dari Surat Jalan yang sudah terlanjur ada (mis. hasil import lama)
   // Aman dijalankan berulang karena menggunakan deterministic ID dan pengecekan transaksi existing.
@@ -2981,7 +3163,13 @@ useEffect(() => {
                   <input type="date" value={sjRecapEndDate} onChange={(e) => setSjRecapEndDate(e.target.value)} className="w-full border rounded-lg px-3 py-2" />
                 </div>
                 <div className="flex items-end">
-                  <button onClick={() => downloadSJRecapToExcel(suratJalanList, { startDate: sjRecapStartDate, endDate: sjRecapEndDate, dateField: sjRecapDateField })} className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition">
+                  <button onClick={async () => {
+                    try {
+                      await downloadSJRecapToExcel(suratJalanList, { startDate: sjRecapStartDate, endDate: sjRecapEndDate, dateField: sjRecapDateField });
+                    } catch (err) {
+                      setAlertMessage(`❌ ${err.message}`);
+                    }
+                  }} className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition">
                     <Download className="w-4 h-4" />
                     <span>Download Excel</span>
                   </button>
@@ -3073,25 +3261,25 @@ useEffect(() => {
             </div>
             <div className="flex gap-2 flex-wrap">
               <button
-                onClick={() => { setFilter('all'); setSelectedBatalSJIds(new Set()); setSelectedSJIds(new Set()); }}
+                onClick={() => { setFilter('all'); setSjPage(1); setSelectedBatalSJIds(new Set()); setSelectedSJIds(new Set()); }}
                 className={`px-4 py-2 rounded-lg transition ${filter === 'all' ? 'bg-green-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
               >
                 Semua
               </button>
               <button
-                onClick={() => { setFilter('pending'); setSelectedBatalSJIds(new Set()); setSelectedSJIds(new Set()); }}
+                onClick={() => { setFilter('pending'); setSjPage(1); setSelectedBatalSJIds(new Set()); setSelectedSJIds(new Set()); }}
                 className={`px-4 py-2 rounded-lg transition ${filter === 'pending' ? 'bg-yellow-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
               >
                 Pending
               </button>
               <button
-                onClick={() => { setFilter('terkirim'); setSelectedBatalSJIds(new Set()); setSelectedSJIds(new Set()); }}
+                onClick={() => { setFilter('terkirim'); setSjPage(1); setSelectedBatalSJIds(new Set()); setSelectedSJIds(new Set()); }}
                 className={`px-4 py-2 rounded-lg transition ${filter === 'terkirim' ? 'bg-green-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
               >
                 Terkirim
               </button>
               <button
-                onClick={() => { setFilter('menunggu_review'); setSelectedBatalSJIds(new Set()); setSelectedSJIds(new Set()); }}
+                onClick={() => { setFilter('menunggu_review'); setSjPage(1); setSelectedBatalSJIds(new Set()); setSelectedSJIds(new Set()); }}
                 className={`px-4 py-2 rounded-lg transition flex items-center space-x-1 ${filter === 'menunggu_review' ? 'bg-blue-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
               >
                 <span>Menunggu Review</span>
@@ -3102,13 +3290,13 @@ useEffect(() => {
                 )}
               </button>
               <button
-                onClick={() => { setFilter('terkunci'); setSelectedBatalSJIds(new Set()); setSelectedSJIds(new Set()); }}
+                onClick={() => { setFilter('terkunci'); setSjPage(1); setSelectedBatalSJIds(new Set()); setSelectedSJIds(new Set()); }}
                 className={`px-4 py-2 rounded-lg transition ${filter === 'terkunci' ? 'bg-gray-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
               >
                 Terkunci
               </button>
               <button
-                onClick={() => { setFilter('gagal'); setSelectedBatalSJIds(new Set()); setSelectedSJIds(new Set()); }}
+                onClick={() => { setFilter('gagal'); setSjPage(1); setSelectedBatalSJIds(new Set()); setSelectedSJIds(new Set()); }}
                 className={`px-4 py-2 rounded-lg transition flex items-center space-x-1 ${filter === 'gagal' ? 'bg-red-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
               >
                 <span>Gagal</span>
@@ -3209,11 +3397,11 @@ useEffect(() => {
               )}
             </div>
           ) : (
-            filteredSuratJalan.map(sj => (
+            paginatedSuratJalan.map(sj => (
               <SuratJalanCard
                 key={sj.id}
                 suratJalan={sj}
-                biayaList={biayaList.filter(b => b.suratJalanId === sj.id)}
+                biayaList={biayaBySJ.get(sj.id) || EMPTY_BIAYA}
                 totalBiaya={getTotalBiaya(sj.id)}
                 currentUser={currentUser}
                 onUpdate={(sj) => {
@@ -3243,6 +3431,26 @@ useEffect(() => {
             ))
           )}
         </div>
+
+        {filteredSuratJalan.length > SJ_PAGE_SIZE && (
+          <div className="flex items-center justify-center space-x-3 mt-4">
+            <button
+              onClick={() => setSjPage(Math.max(1, sjPageClamped - 1))}
+              disabled={sjPageClamped <= 1}
+              className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm disabled:opacity-50"
+            >
+              Sebelumnya
+            </button>
+            <span className="text-sm text-gray-600">Halaman {sjPageClamped} / {sjTotalPages}</span>
+            <button
+              onClick={() => setSjPage(p => Math.min(sjTotalPages, p + 1))}
+              disabled={sjPageClamped >= sjTotalPages}
+              className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm disabled:opacity-50"
+            >
+              Berikutnya
+            </button>
+          </div>
+        )}
         </>
         )}
       </div>

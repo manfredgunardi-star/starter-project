@@ -5,7 +5,7 @@
  * using the secondary Firebase app (dbAccounting + authAccounting).
  */
 
-import { doc, setDoc, updateDoc, getDoc, getDocs, collection, onSnapshot, arrayUnion } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, getDoc, getDocs, collection, onSnapshot, arrayUnion, query, where } from 'firebase/firestore';
 import { db, dbAccounting, authAccounting } from './config/firebase-config.js';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -60,6 +60,18 @@ async function fetchAccountingKaryawan() {
     console.warn('[bridge] Gagal fetch karyawan dari accounting:', e.message);
     return [];
   }
+}
+
+/**
+ * Fetch truck + karyawan master data dari bul-accounting dalam satu Promise.all.
+ * Dipakai untuk prefetch sebelum loop bulk kirim (hindari fetch berulang per item).
+ */
+export async function fetchAccountingMasterData() {
+  const [accountingTrucks, accountingKaryawan] = await Promise.all([
+    fetchAccountingTrucks(),
+    fetchAccountingKaryawan(),
+  ]);
+  return { accountingTrucks, accountingKaryawan };
 }
 
 /**
@@ -150,14 +162,12 @@ async function fetchPelangganByName(ptName) {
  * @param {Object[]} biayaList   - Seluruh biaya tambahan (akan difilter per sjId)
  * @returns {{ warnings: Object[] }} Daftar warning master data mismatch
  */
-export async function kirimUangJalanKeAccounting(sj, currentUser, allInvoices = [], biayaList = []) {
+export async function kirimUangJalanKeAccounting(sj, currentUser, allInvoices = [], biayaList = [], prefetchedMasterData = null) {
   assertBridgeAuthed();
 
   // ── Validasi master data vs bul-accounting ──────────────────────────────
-  const [accountingTrucks, accountingKaryawan] = await Promise.all([
-    fetchAccountingTrucks(),
-    fetchAccountingKaryawan(),
-  ]);
+  const { accountingTrucks, accountingKaryawan } =
+    prefetchedMasterData || await fetchAccountingMasterData();
 
   const warnings = [];
 
@@ -320,7 +330,7 @@ export async function kirimUangJalanKeAccounting(sj, currentUser, allInvoices = 
  * @param {Object}   currentUser    - User bul-monitor yang sedang login
  * @param {Object[]} biayaList      - Seluruh daftar biaya (untuk hitung WIP biaya lain)
  */
-export async function kirimInvoiceKeAccounting(invoice, allSuratJalan, currentUser, biayaList = []) {
+export async function kirimInvoiceKeAccounting(invoice, allSuratJalan, currentUser, biayaList = [], pelangganList = []) {
   assertBridgeAuthed();
 
   const docId = `IQ-INV-${invoice.id}`;
@@ -343,7 +353,12 @@ export async function kirimInvoiceKeAccounting(invoice, allSuratJalan, currentUs
     .reduce((sum, b) => sum + (Number(b.nominal) || 0), 0);
 
   const piutangNet = totalNilai - totalUJ;
-  const pelangganData = invoice.pelangganData || await fetchPelangganByName(pt);
+  const pelangganFromState = pelangganList.find(
+    p => (p.name || '').trim().toLowerCase() === pt.trim().toLowerCase()
+  );
+  const pelangganData = invoice.pelangganData
+    || (pelangganFromState ? { name: pelangganFromState.name, address: pelangganFromState.address || '', npwp: pelangganFromState.npwp || '' } : null)
+    || await fetchPelangganByName(pt);
 
   const hppLines = [
     // HPP Uang Jalan — clear WIP UJ ke HPP
@@ -522,29 +537,28 @@ export async function kirimTransaksiKasKeAccounting(transaksi, currentUser) {
   });
 }
 
-// ─── Status Listeners ────────────────────────────────────────────────────────
+// ─── Status Listener (single query, replaces one-listener-per-document) ────
 
-/** Listen perubahan status antrian untuk sebuah Surat Jalan. */
-export function subscribeIntegrationStatusSJ(sjId, onChange) {
-  const ref = doc(dbAccounting, 'integration_queue', `IQ-UJ-${sjId}`);
-  return onSnapshot(ref, (snap) => {
-    if (snap.exists()) onChange(snap.data());
-  });
-}
-
-/** Listen perubahan status antrian untuk sebuah Invoice. */
-export function subscribeIntegrationStatusInvoice(invoiceId, onChange) {
-  const ref = doc(dbAccounting, 'integration_queue', `IQ-INV-${invoiceId}`);
-  return onSnapshot(ref, (snap) => {
-    if (snap.exists()) onChange(snap.data());
-  });
-}
-
-/** Listen perubahan status antrian untuk sebuah Transaksi Kas. */
-export function subscribeIntegrationStatusTransaksi(transaksiId, onChange) {
-  const ref = doc(dbAccounting, 'integration_queue', `IQ-TRX-${transaksiId}`);
-  return onSnapshot(ref, (snap) => {
-    if (snap.exists()) onChange(snap.data());
+/**
+ * Satu listener untuk semua perubahan status integration_queue milik bul-monitor
+ * yang sudah final (approved/rejected/cancelled). Menggantikan pola lama yang
+ * membuka satu onSnapshot per dokumen (SJ/invoice/transaksi) yang diawasi —
+ * termasuk yang berstatus 'terkunci' selamanya, sumber kebocoran listener.
+ *
+ * @param {(docId: string, data: Object) => void} onChange
+ * @returns {() => void} unsubscribe
+ */
+export function subscribeIntegrationQueueUpdates(onChange) {
+  const q = query(
+    collection(dbAccounting, 'integration_queue'),
+    where('sourceProject', '==', 'bul-monitor'),
+    where('status', 'in', ['approved', 'rejected', 'cancelled'])
+  );
+  return onSnapshot(q, (snap) => {
+    snap.docChanges().forEach((change) => {
+      if (change.type === 'removed') return; // integration_queue docs are never deleted (rules: allow delete: if false)
+      onChange(change.doc.id, change.doc.data());
+    });
   });
 }
 
