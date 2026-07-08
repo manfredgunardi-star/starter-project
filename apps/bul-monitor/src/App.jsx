@@ -5,9 +5,7 @@ import {
   kirimInvoiceKeAccounting,
   kirimTransaksiKasKeAccounting,
   fetchAccountingMasterData,
-  subscribeIntegrationStatusSJ,
-  subscribeIntegrationStatusInvoice,
-  subscribeIntegrationStatusTransaksi,
+  subscribeIntegrationQueueUpdates,
   isBridgeReady,
 } from "./integrationService.js";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from "firebase/auth";
@@ -2614,15 +2612,26 @@ try { unsubTransaksi(); } catch {}
 // after login and after a hard refresh in production.
 }, [authReady, firebaseUser]);
 
-// Dengarkan perubahan status integrasi dari bul-accounting (approve/reject/cancel)
-// untuk setiap SJ yang sedang dalam status menunggu_review atau terkunci.
+// Ref-mirror of the three watched lists so the single persistent integration_queue
+// listener (below) always reads current state without needing to resubscribe
+// whenever suratJalanList/invoiceList/transaksiList changes.
+const suratJalanListRef = useRef(suratJalanList);
+useEffect(() => { suratJalanListRef.current = suratJalanList; }, [suratJalanList]);
+const invoiceListRef = useRef(invoiceList);
+useEffect(() => { invoiceListRef.current = invoiceList; }, [invoiceList]);
+const transaksiListRef = useRef(transaksiList);
+useEffect(() => { transaksiListRef.current = transaksiList; }, [transaksiList]);
+
+// Dengarkan perubahan status integrasi (SJ/Invoice/Transaksi) dari bul-accounting
+// (approve/reject/cancel) — satu query listener untuk semuanya (lihat Design decision
+// di plan Task 8 untuk kenapa 'rejected' punya guard status eksplisit di sini).
 useEffect(() => {
   if (!authReady || !firebaseUser) return;
-  const watchedSJs = suratJalanList.filter(s => s.status === 'menunggu_review' || s.status === 'terkunci');
-  if (watchedSJs.length === 0) return;
 
-  const unsubs = watchedSJs.map(sj =>
-    subscribeIntegrationStatusSJ(sj.id, async (data) => {
+  const unsub = subscribeIntegrationQueueUpdates(async (docId, data) => {
+    if (data.type === 'uang_jalan') {
+      const sj = suratJalanListRef.current.find(s => s.id === data.sourceSjId);
+      if (!sj) return;
       if (data.status === 'approved' && sj.status !== 'terkunci') {
         await updateSuratJalan(sj.id, {
           status: 'terkunci',
@@ -2630,7 +2639,7 @@ useEffect(() => {
           accountingApprovedAt: data.updatedAt,
           accountingReviewedBy: data.reviewedBy,
         });
-      } else if (data.status === 'rejected') {
+      } else if (data.status === 'rejected' && sj.status === 'menunggu_review') {
         await updateSuratJalan(sj.id, {
           status: 'terkirim',
           integrationQueueId: null,
@@ -2652,19 +2661,9 @@ useEffect(() => {
         });
         setAlertMessage(`⚠️ Jurnal SJ ${sj.nomorSJ} dibatalkan oleh akuntan.\nAlasan: ${data.cancellationReason || '-'}\nData dapat diedit dan dikirim ulang.`);
       }
-    })
-  );
-  return () => unsubs.forEach(u => u());
-}, [authReady, firebaseUser, suratJalanList]);
-
-// Dengarkan perubahan status integrasi invoice dari bul-accounting (approve/reject/cancel)
-useEffect(() => {
-  if (!authReady || !firebaseUser) return;
-  const watchedInvoices = invoiceList.filter(inv => inv.integrationStatus === 'menunggu_review' || inv.integrationStatus === 'terkunci');
-  if (watchedInvoices.length === 0) return;
-
-  const unsubs = watchedInvoices.map(invoice =>
-    subscribeIntegrationStatusInvoice(invoice.id, async (data) => {
+    } else if (data.type === 'invoice') {
+      const invoice = invoiceListRef.current.find(inv => inv.id === data.sourceInvoiceId);
+      if (!invoice) return;
       const invRef = doc(db, C("invoices"), invoice.id);
       if (data.status === 'approved' && invoice.integrationStatus !== 'terkunci') {
         await updateDoc(invRef, sanitizeForFirestore({
@@ -2674,7 +2673,7 @@ useEffect(() => {
           accountingReviewedBy: data.reviewedBy,
           updatedAt: new Date().toISOString(),
         }));
-      } else if (data.status === 'rejected') {
+      } else if (data.status === 'rejected' && invoice.integrationStatus === 'menunggu_review') {
         await updateDoc(invRef, sanitizeForFirestore({
           integrationStatus: null,
           integrationQueueId: null,
@@ -2698,21 +2697,9 @@ useEffect(() => {
         }));
         setAlertMessage(`⚠️ Jurnal Invoice ${invoice.noInvoice} dibatalkan oleh akuntan.\nAlasan: ${data.cancellationReason || '-'}\nInvoice dapat dikirim ulang.`);
       }
-    })
-  );
-  return () => unsubs.forEach(u => u());
-}, [authReady, firebaseUser, invoiceList]);
-
-// Dengarkan perubahan status integrasi transaksi kas dari bul-accounting
-useEffect(() => {
-  if (!authReady || !firebaseUser) return;
-  const watched = transaksiList.filter(t =>
-    t.integrationStatus === 'menunggu_review' || t.integrationStatus === 'terkunci'
-  );
-  if (watched.length === 0) return;
-
-  const unsubs = watched.map(transaksi =>
-    subscribeIntegrationStatusTransaksi(transaksi.id, async (data) => {
+    } else if (data.type === 'transaksi_kas') {
+      const transaksi = transaksiListRef.current.find(t => t.id === data.sourceTransaksiId);
+      if (!transaksi) return;
       const trxRef = doc(db, C('transaksi'), transaksi.id);
       if (data.status === 'approved' && transaksi.integrationStatus !== 'terkunci') {
         await updateDoc(trxRef, {
@@ -2722,7 +2709,7 @@ useEffect(() => {
           accountingReviewedBy: data.reviewedBy,
           updatedAt: new Date().toISOString(),
         });
-      } else if (data.status === 'rejected') {
+      } else if (data.status === 'rejected' && transaksi.integrationStatus === 'menunggu_review') {
         await updateDoc(trxRef, {
           integrationStatus: null,
           integrationQueueId: null,
@@ -2745,10 +2732,11 @@ useEffect(() => {
         });
         setAlertMessage(`⚠️ Jurnal transaksi "${transaksi.keterangan}" dibatalkan oleh akuntan.\nAlasan: ${data.cancellationReason || '-'}`);
       }
-    })
-  );
-  return () => unsubs.forEach(u => u());
-}, [authReady, firebaseUser, transaksiList]);
+    }
+  });
+
+  return () => unsub();
+}, [authReady, firebaseUser]);
 
   // Reconcile/backfill transaksi uang jalan dari Surat Jalan yang sudah terlanjur ada (mis. hasil import lama)
   // Aman dijalankan berulang karena menggunakan deterministic ID dan pengecekan transaksi existing.

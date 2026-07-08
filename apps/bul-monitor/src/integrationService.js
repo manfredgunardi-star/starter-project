@@ -5,7 +5,7 @@
  * using the secondary Firebase app (dbAccounting + authAccounting).
  */
 
-import { doc, setDoc, updateDoc, getDoc, getDocs, collection, onSnapshot, arrayUnion } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, getDoc, getDocs, collection, onSnapshot, arrayUnion, query, where } from 'firebase/firestore';
 import { db, dbAccounting, authAccounting } from './config/firebase-config.js';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -537,29 +537,28 @@ export async function kirimTransaksiKasKeAccounting(transaksi, currentUser) {
   });
 }
 
-// ─── Status Listeners ────────────────────────────────────────────────────────
+// ─── Status Listener (single query, replaces one-listener-per-document) ────
 
-/** Listen perubahan status antrian untuk sebuah Surat Jalan. */
-export function subscribeIntegrationStatusSJ(sjId, onChange) {
-  const ref = doc(dbAccounting, 'integration_queue', `IQ-UJ-${sjId}`);
-  return onSnapshot(ref, (snap) => {
-    if (snap.exists()) onChange(snap.data());
-  });
-}
-
-/** Listen perubahan status antrian untuk sebuah Invoice. */
-export function subscribeIntegrationStatusInvoice(invoiceId, onChange) {
-  const ref = doc(dbAccounting, 'integration_queue', `IQ-INV-${invoiceId}`);
-  return onSnapshot(ref, (snap) => {
-    if (snap.exists()) onChange(snap.data());
-  });
-}
-
-/** Listen perubahan status antrian untuk sebuah Transaksi Kas. */
-export function subscribeIntegrationStatusTransaksi(transaksiId, onChange) {
-  const ref = doc(dbAccounting, 'integration_queue', `IQ-TRX-${transaksiId}`);
-  return onSnapshot(ref, (snap) => {
-    if (snap.exists()) onChange(snap.data());
+/**
+ * Satu listener untuk semua perubahan status integration_queue milik bul-monitor
+ * yang sudah final (approved/rejected/cancelled). Menggantikan pola lama yang
+ * membuka satu onSnapshot per dokumen (SJ/invoice/transaksi) yang diawasi —
+ * termasuk yang berstatus 'terkunci' selamanya, sumber kebocoran listener.
+ *
+ * @param {(docId: string, data: Object) => void} onChange
+ * @returns {() => void} unsubscribe
+ */
+export function subscribeIntegrationQueueUpdates(onChange) {
+  const q = query(
+    collection(dbAccounting, 'integration_queue'),
+    where('sourceProject', '==', 'bul-monitor'),
+    where('status', 'in', ['approved', 'rejected', 'cancelled'])
+  );
+  return onSnapshot(q, (snap) => {
+    snap.docChanges().forEach((change) => {
+      if (change.type === 'removed') return; // integration_queue docs are never deleted (rules: allow delete: if false)
+      onChange(change.doc.id, change.doc.data());
+    });
   });
 }
 
