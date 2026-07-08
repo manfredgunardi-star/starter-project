@@ -3,7 +3,7 @@
 // PURE STRUCTURAL MOVE — function bodies are byte-identical to the previous inline versions.
 // FINANCIAL/DATA-SAFETY SENSITIVE: these helpers perform soft-delete / deactivate / upsert
 // writes to the PRODUCTION Firestore. Do not change logic without human/accountant review.
-import { collection, doc, setDoc, updateDoc, getDoc, getDocs, query, where, limit } from "firebase/firestore";
+import { collection, doc, setDoc, updateDoc, getDoc, getDocs, query, where, limit, writeBatch } from "firebase/firestore";
 import { db, ensureAuthed } from "../config/firebase-config";
 import { buildUangJalanTransaksiId, sanitizeForFirestore } from "../utils/formatters.js";
 
@@ -144,4 +144,16 @@ export const upsertItemToFirestore = async (dbRef, collectionName, item) => {
   const payload = sanitizeForFirestore(item);
   await setDoc(doc(dbRef, C(collectionName), id), payload, { merge: true });
   return id;
+};
+
+// Firestore writeBatch caps at 500 ops/commit. This chunks any list of items into
+// batches of at most `chunkSize` ops so bulk actions (import, bulk kirim, bulk batalkan)
+// never silently fail past 500 rows/items.
+export const chunkedBatchWrite = async (dbRef, items, applyFn, chunkSize = 450) => {
+  for (let i = 0; i < items.length; i += chunkSize) {
+    const chunk = items.slice(i, i + chunkSize);
+    const batch = writeBatch(dbRef);
+    chunk.forEach((item) => applyFn(batch, item));
+    await batch.commit();
+  }
 };
