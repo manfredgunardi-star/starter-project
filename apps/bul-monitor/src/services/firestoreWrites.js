@@ -149,11 +149,12 @@ export const upsertItemToFirestore = async (dbRef, collectionName, item) => {
 // Firestore writeBatch caps at 500 ops/commit. This chunks any list of items into
 // batches of at most `chunkSize` ops so bulk actions (import, bulk kirim, bulk batalkan)
 // never silently fail past 500 rows/items.
-export const chunkedBatchWrite = async (dbRef, items, applyFn, chunkSize = 450) => {
+export const chunkedBatchWrite = async (dbRef, items, applyFn, chunkSize = 450, onChunkCommitted) => {
   for (let i = 0; i < items.length; i += chunkSize) {
     const chunk = items.slice(i, i + chunkSize);
     const batch = writeBatch(dbRef);
     chunk.forEach((item) => applyFn(batch, item));
     await batch.commit();
+    if (onChunkCommitted) await onChunkCommitted(chunk);
   }
 };

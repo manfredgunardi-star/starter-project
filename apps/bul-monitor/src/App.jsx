@@ -1859,6 +1859,10 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
       onConfirm: async () => {
         setConfirmDialog({ show: false, message: '', onConfirm: null });
         try {
+          // Batch commits are atomic per-chunk (see chunkedBatchWrite): on failure we
+          // intentionally surface one error instead of granular per-item success/fail
+          // counts, since a cancel/batalkan action is reversible (superadmin can restore)
+          // and chunk-level atomicity matters more here than partial-progress visibility.
           const who = currentUser?.name || 'system';
           const nowIso = new Date().toISOString();
 
@@ -1897,7 +1901,7 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
               });
             }
 
-            batch.set(doc(db, C("history_log"), logId), {
+            batch.set(doc(db, C("history_log"), logId), sanitizeForFirestore({
               id: logId,
               action: 'mark_gagal',
               suratJalanId: sj.id,
@@ -1907,33 +1911,33 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
               user: currentUser.name,
               userRole: currentUser.role,
               isActive: false,
-            });
-          }, 150); // 3 writes/item (SJ + tx + history) => 150*3=450 ≤ 500/batch
-
-          const patchesById = new Map(items.map(({ sj, patch }) => [sj.id, patch]));
-          setSuratJalanList(prev => prev.map(sj =>
-            patchesById.has(sj.id) ? { ...sj, ...patchesById.get(sj.id) } : sj
-          ));
-          setTransaksiList(prev => prev.map(t => {
-            const match = items.find(({ sj }) =>
-              String(t?.suratJalanId) === String(sj.id) || String(t?.id) === String(buildUangJalanTransaksiId(sj.id))
-            );
-            if (!match) return t;
-            return { ...t, isActive: false, deletedAt: t?.deletedAt || nowIso, deletedBy: t?.deletedBy || who };
-          }));
-          setHistoryLog(prev => [
-            ...prev,
-            ...items.map(({ sj, patch, logId }) => ({
-              id: logId,
-              action: 'mark_gagal',
-              suratJalanId: sj.id,
-              suratJalanNo: sj.nomorSJ,
-              details: { previousStatus: sj.status, uangJalanDeleted: patch.deletedUangJalan, bulkAction: true },
-              timestamp: nowIso,
-              user: currentUser.name,
-              userRole: currentUser.role,
-            })),
-          ]);
+            }));
+          }, 150, (committedChunk) => {
+            const chunkPatchesById = new Map(committedChunk.map(({ sj, patch }) => [sj.id, patch]));
+            setSuratJalanList(prev => prev.map(sj =>
+              chunkPatchesById.has(sj.id) ? { ...sj, ...chunkPatchesById.get(sj.id) } : sj
+            ));
+            setTransaksiList(prev => prev.map(t => {
+              const match = committedChunk.find(({ sj }) =>
+                String(t?.suratJalanId) === String(sj.id) || String(t?.id) === String(buildUangJalanTransaksiId(sj.id))
+              );
+              if (!match) return t;
+              return { ...t, isActive: false, updatedAt: t?.updatedAt || nowIso, updatedBy: t?.updatedBy || who };
+            }));
+            setHistoryLog(prev => [
+              ...prev,
+              ...committedChunk.map(({ sj, patch, logId }) => ({
+                id: logId,
+                action: 'mark_gagal',
+                suratJalanId: sj.id,
+                suratJalanNo: sj.nomorSJ,
+                details: { previousStatus: sj.status, uangJalanDeleted: patch.deletedUangJalan, bulkAction: true },
+                timestamp: nowIso,
+                user: currentUser.name,
+                userRole: currentUser.role,
+              })),
+            ]);
+          }); // 3 writes/item (SJ + tx + history) => 150*3=450 ≤ 500/batch
 
           setSelectedBatalSJIds(new Set());
           setAlertMessage(`✅ ${items.length} SJ berhasil dibatalkan.\n💰 Uang Jalan terkait telah dihapus dari keuangan.`);
