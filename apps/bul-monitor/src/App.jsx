@@ -2328,9 +2328,11 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
     return items.reduce((sum, b) => sum + parseFloat(b.nominal || 0), 0);
   }, [biayaBySJ]);
 
-  const filteredSuratJalan = filter === 'gagal'
-    ? gagalSuratJalanList
-    : suratJalanList.filter(sj => filter === 'all' || sj.status === filter);
+  const filteredSuratJalan = useMemo(() =>
+    filter === 'gagal'
+      ? gagalSuratJalanList
+      : suratJalanList.filter(sj => filter === 'all' || sj.status === filter),
+    [filter, gagalSuratJalanList, suratJalanList]);
 
   const sjTotalPages = Math.max(1, Math.ceil(filteredSuratJalan.length / SJ_PAGE_SIZE));
   const sjPageClamped = Math.min(sjPage, sjTotalPages);
@@ -2340,11 +2342,11 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
 
   const [selectedSJIds, setSelectedSJIds] = useState(new Set());
 
-  const isSJEligibleForBulkKirim = (sj) =>
-    sj.status === 'terkirim' && Number(sj.uangJalan || 0) > 0;
+  const isSJEligibleForBulkKirim = useCallback((sj) =>
+    sj.status === 'terkirim' && Number(sj.uangJalan || 0) > 0, []);
 
-  const eligibleInView = filteredSuratJalan.filter(isSJEligibleForBulkKirim);
-  const selectedInView = eligibleInView.filter(sj => selectedSJIds.has(sj.id));
+  const eligibleInView = useMemo(() => filteredSuratJalan.filter(isSJEligibleForBulkKirim), [filteredSuratJalan, isSJEligibleForBulkKirim]);
+  const selectedInView = useMemo(() => eligibleInView.filter(sj => selectedSJIds.has(sj.id)), [eligibleInView, selectedSJIds]);
   const allInViewSelected = eligibleInView.length > 0 && selectedInView.length === eligibleInView.length;
 
   const toggleSelectSJ = (id) => {
@@ -2374,11 +2376,11 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
   // --- Bulk Batalkan SJ ---
   const [selectedBatalSJIds, setSelectedBatalSJIds] = useState(new Set());
 
-  const isSJEligibleForBulkBatalkan = (sj) =>
-    !['gagal', 'menunggu_review', 'terkunci'].includes(sj.status) && sj.isActive !== false;
+  const isSJEligibleForBulkBatalkan = useCallback((sj) =>
+    !['gagal', 'menunggu_review', 'terkunci'].includes(sj.status) && sj.isActive !== false, []);
 
-  const eligibleBatalInView = filteredSuratJalan.filter(isSJEligibleForBulkBatalkan);
-  const selectedBatalInView = eligibleBatalInView.filter(sj => selectedBatalSJIds.has(sj.id));
+  const eligibleBatalInView = useMemo(() => filteredSuratJalan.filter(isSJEligibleForBulkBatalkan), [filteredSuratJalan, isSJEligibleForBulkBatalkan]);
+  const selectedBatalInView = useMemo(() => eligibleBatalInView.filter(sj => selectedBatalSJIds.has(sj.id)), [eligibleBatalInView, selectedBatalSJIds]);
   const allBatalInViewSelected = eligibleBatalInView.length > 0 && selectedBatalInView.length === eligibleBatalInView.length;
 
   const toggleSelectBatalSJ = (id) => {
