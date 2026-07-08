@@ -1303,11 +1303,42 @@ try {
             // onSnapshot akan update setSuratJalanList secara otomatis setelah batch.commit()
             // Auto-create transaksi uang jalan untuk hasil import (agar menu Keuangan ikut terupdate)
             if (canWriteTransaksi) {
-              for (const sj of newItems) {
+              const eligibleForTx = newItems.filter(sj => {
+                if (sj.isActive === false) return false;
+                if (String(sj.status || '').toLowerCase() === 'gagal') return false;
+                return Number(sj.uangJalan || 0) > 0;
+              });
+
+              if (eligibleForTx.length > 0) {
+                const who = currentUser?.name || 'system';
+                const nowIsoTx = new Date().toISOString();
+                const txItems = eligibleForTx.map(sj => sanitizeForFirestore({
+                  id: buildUangJalanTransaksiId(sj.id),
+                  tipe: 'pengeluaran',
+                  nominal: Number(sj.uangJalan || 0),
+                  keterangan: `Uang Jalan - ${sj.nomorSJ} (${sj.rute || ''})`,
+                  tanggal: sj.tanggalSJ || nowIsoTx.slice(0, 10),
+                  pt: sj.pt || '',
+                  suratJalanId: sj.id,
+                  source: 'auto_sj',
+                  isActive: true,
+                  createdAt: nowIsoTx,
+                  createdBy: who,
+                  updatedAt: nowIsoTx,
+                  updatedBy: who,
+                }));
+
                 try {
-                  await upsertUangJalanTransaksiForSJ(sj);
+                  await chunkedBatchWrite(db, txItems, (batch, tx) => {
+                    batch.set(doc(db, C("transaksi"), tx.id), tx, { merge: true });
+                  });
+                  setTransaksiList(prev => {
+                    const map = new Map(prev.map(t => [t.id, t]));
+                    txItems.forEach(tx => map.set(tx.id, tx));
+                    return Array.from(map.values());
+                  });
                 } catch (e) {
-                  console.warn('Import SJ -> auto transaksi uang jalan gagal:', e);
+                  console.warn('Import SJ -> auto transaksi uang jalan (batch) gagal:', e);
                 }
               }
             }
