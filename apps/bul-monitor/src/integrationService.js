@@ -63,6 +63,18 @@ async function fetchAccountingKaryawan() {
 }
 
 /**
+ * Fetch truck + karyawan master data dari bul-accounting dalam satu Promise.all.
+ * Dipakai untuk prefetch sebelum loop bulk kirim (hindari fetch berulang per item).
+ */
+export async function fetchAccountingMasterData() {
+  const [accountingTrucks, accountingKaryawan] = await Promise.all([
+    fetchAccountingTrucks(),
+    fetchAccountingKaryawan(),
+  ]);
+  return { accountingTrucks, accountingKaryawan };
+}
+
+/**
  * Create atau update dokumen integration_queue dengan menjaga audit trail.
  * - Dokumen baru: setDoc (create)
  * - Kirim ulang setelah rejected/cancelled: updateDoc + simpan riwayat penolakan ke rejectionHistory
@@ -150,14 +162,12 @@ async function fetchPelangganByName(ptName) {
  * @param {Object[]} biayaList   - Seluruh biaya tambahan (akan difilter per sjId)
  * @returns {{ warnings: Object[] }} Daftar warning master data mismatch
  */
-export async function kirimUangJalanKeAccounting(sj, currentUser, allInvoices = [], biayaList = []) {
+export async function kirimUangJalanKeAccounting(sj, currentUser, allInvoices = [], biayaList = [], prefetchedMasterData = null) {
   assertBridgeAuthed();
 
   // ── Validasi master data vs bul-accounting ──────────────────────────────
-  const [accountingTrucks, accountingKaryawan] = await Promise.all([
-    fetchAccountingTrucks(),
-    fetchAccountingKaryawan(),
-  ]);
+  const { accountingTrucks, accountingKaryawan } =
+    prefetchedMasterData || await fetchAccountingMasterData();
 
   const warnings = [];
 

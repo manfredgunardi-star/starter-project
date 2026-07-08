@@ -4,6 +4,7 @@ import {
   kirimUangJalanKeAccounting,
   kirimInvoiceKeAccounting,
   kirimTransaksiKasKeAccounting,
+  fetchAccountingMasterData,
   subscribeIntegrationStatusSJ,
   subscribeIntegrationStatusInvoice,
   subscribeIntegrationStatusTransaksi,
@@ -23,13 +24,30 @@ import KeuanganManagement from './components/KeuanganManagement.jsx';
 import InvoiceManagement from './components/InvoiceManagement.jsx';
 import SuratJalanCard from './components/SuratJalanCard.jsx';
 import Modal from './components/Modal.jsx';
-import { C, softDeleteItemInFirestore, resolveSuratJalanDocRef, softDeactivateTransaksiInFirestore, deactivateUangJalanTransaksiForSJ, upsertItemToFirestore } from './services/firestoreWrites.js';
+import { C, softDeleteItemInFirestore, resolveSuratJalanDocRef, softDeactivateTransaksiInFirestore, deactivateUangJalanTransaksiForSJ, upsertItemToFirestore, chunkedBatchWrite } from './services/firestoreWrites.js';
 
 
 
 import { AlertCircle, Package, Truck, FileText, Users, LogOut, Plus, Edit, Trash2, CheckCircle, XCircle, Clock, Download, Send, Lock } from 'lucide-react';
 
 
+
+// Runs `worker` over `items` with at most `limit` in flight at once.
+// Used to parallelize bulk Firestore round-trips without opening hundreds of
+// simultaneous connections (which is what an unbounded Promise.all would do).
+async function runWithConcurrencyLimit(items, limit, worker) {
+  const results = new Array(items.length);
+  let nextIndex = 0;
+  async function runNext() {
+    while (nextIndex < items.length) {
+      const currentIndex = nextIndex++;
+      results[currentIndex] = await worker(items[currentIndex], currentIndex);
+    }
+  }
+  const poolSize = Math.min(limit, items.length);
+  await Promise.all(Array.from({ length: poolSize }, runNext));
+  return results;
+}
 
 const SuratJalanMonitor = () => {
   const [currentUser, setCurrentUser] = useState(null);
@@ -1773,36 +1791,51 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
       confirmVariant: 'primary',
       onConfirm: async () => {
         setConfirmDialog({ show: false, message: '', onConfirm: null });
-        let berhasil = 0, gagal = 0;
+
+        const masterData = await fetchAccountingMasterData();
         const allWarnings = [];
+        const succeeded = [];
         const gagalList = [];
 
-        for (const sj of toSend) {
+        await runWithConcurrencyLimit(toSend, 5, async (sj) => {
           try {
             const sjBiaya = biayaList.filter(b => b.suratJalanId === sj.id && b.isActive !== false && !b.deletedAt);
-            const { warnings } = await kirimUangJalanKeAccounting(sj, currentUser, invoiceList, sjBiaya);
-            await updateSuratJalan(sj.id, {
-              status: 'menunggu_review',
-              integrationQueueId: `IQ-UJ-${sj.id}`,
-              sentToAccountingAt: new Date().toISOString(),
-              sentToAccountingBy: currentUser?.name || currentUser?.username || 'unknown',
-            });
-            berhasil++;
+            const { warnings } = await kirimUangJalanKeAccounting(sj, currentUser, invoiceList, sjBiaya, masterData);
             warnings.forEach(w => allWarnings.push(`[${sj.nomorSJ}] ${w.message}`));
+            succeeded.push(sj);
           } catch (e) {
-            gagal++;
             gagalList.push(sj.nomorSJ);
           }
+        });
+
+        const nowIso = new Date().toISOString();
+        const who = currentUser?.name || currentUser?.username || 'unknown';
+        const patchesById = new Map(succeeded.map(sj => [sj.id, {
+          status: 'menunggu_review',
+          integrationQueueId: `IQ-UJ-${sj.id}`,
+          sentToAccountingAt: nowIso,
+          sentToAccountingBy: who,
+          updatedAt: nowIso,
+          updatedBy: who,
+        }]));
+
+        if (patchesById.size > 0) {
+          await chunkedBatchWrite(db, Array.from(patchesById.entries()), (batch, [sjId, patch]) => {
+            batch.update(doc(db, C("surat_jalan"), String(sjId)), patch);
+          });
+          setSuratJalanList(prev => prev.map(sj =>
+            patchesById.has(sj.id) ? { ...sj, ...patchesById.get(sj.id) } : sj
+          ));
         }
 
         setSelectedSJIds(new Set());
         const warningText = allWarnings.length > 0
           ? `\n\n⚠️ Peringatan Master Data:\n${allWarnings.map(w => `• ${w}`).join('\n')}`
           : '';
-        const gagalText = gagal > 0
-          ? `\n❌ ${gagal} SJ gagal dikirim: ${gagalList.join(', ')}`
+        const gagalText = gagalList.length > 0
+          ? `\n❌ ${gagalList.length} SJ gagal dikirim: ${gagalList.join(', ')}`
           : '';
-        setAlertMessage(`✅ ${berhasil} SJ berhasil dikirim ke Accounting.${gagalText}${warningText}`);
+        setAlertMessage(`✅ ${succeeded.length} SJ berhasil dikirim ke Accounting.${gagalText}${warningText}`);
       },
     });
   };
