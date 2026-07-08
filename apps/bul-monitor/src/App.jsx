@@ -1293,11 +1293,9 @@ try {
           if (newItems.length > 0) {
             // Persist ke Firestore (batch)
             try {
-              const batch = writeBatch(db);
-              newItems.forEach((sj) => {
+              await chunkedBatchWrite(db, newItems, (batch, sj) => {
                 batch.set(doc(db, C("surat_jalan"), String(sj.id)), sanitizeForFirestore({ ...sj, isActive: true }), { merge: true });
               });
-              await batch.commit();
             } catch (e) {
               console.error("Import SJ batch Firestore failed:", e);
             }
@@ -1346,11 +1344,9 @@ try {
 // Simpan ke Firestore (collection: trucks)
 if (newItems.length > 0) {
   try {
-    const batch = writeBatch(db);
-    newItems.forEach((t) => {
+    await chunkedBatchWrite(db, newItems, (batch, t) => {
       batch.set(doc(db, C("trucks"), t.id), t, { merge: true });
     });
-    await batch.commit();
 
     // Update UI state setelah sukses commit
     setTruckList((prevList) => {
@@ -1397,11 +1393,9 @@ if (newItems.length > 0) {
           // Simpan ke Firestore (collection: supir)
           if (newItems.length > 0) {
             try {
-              const batch = writeBatch(db);
-              newItems.forEach((s) => {
+              await chunkedBatchWrite(db, newItems, (batch, s) => {
                 batch.set(doc(db, C("supir"), s.id), s, { merge: true });
               });
-              await batch.commit();
               setSupirList((prevList) => [...prevList, ...newItems]);
             } catch (e) {
               console.error("Error writing supir to Firestore:", e);
@@ -1442,11 +1436,9 @@ if (newItems.length > 0) {
           // Simpan ke Firestore (collection: rute)
           if (newItems.length > 0) {
             try {
-              const batch = writeBatch(db);
-              newItems.forEach((r) => {
+              await chunkedBatchWrite(db, newItems, (batch, r) => {
                 batch.set(doc(db, C("rute"), r.id), r, { merge: true });
               });
-              await batch.commit();
               // onSnapshot handles state update automatically
             } catch (e) {
               console.error("Error writing rute to Firestore:", e);
@@ -1487,11 +1479,9 @@ if (newItems.length > 0) {
           // Simpan ke Firestore (collection: material)
           if (newItems.length > 0) {
             try {
-              const batch = writeBatch(db);
-              newItems.forEach((m) => {
+              await chunkedBatchWrite(db, newItems, (batch, m) => {
                 batch.set(doc(db, C("material"), m.id), m, { merge: true });
               });
-              await batch.commit();
               // onSnapshot handles state update automatically
             } catch (e) {
               console.error("Error writing material to Firestore:", e);
@@ -1539,11 +1529,9 @@ if (newItems.length > 0) {
 
           if (biayaItems.length > 0) {
             try {
-              const batch = writeBatch(db);
-              biayaItems.forEach(b => {
+              await chunkedBatchWrite(db, biayaItems, (batch, b) => {
                 batch.set(doc(db, C("biaya"), b.id), b, { merge: true });
               });
-              await batch.commit();
               // onSnapshot akan update setBiayaList secara otomatis
             } catch (e) {
               console.error("Import biaya batch Firestore failed:", e);
