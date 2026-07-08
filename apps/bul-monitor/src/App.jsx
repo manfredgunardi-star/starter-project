@@ -83,6 +83,8 @@ const SuratJalanMonitor = () => {
   const [modalType, setModalType] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
   const [filter, setFilter] = useState('all');
+  const [sjPage, setSjPage] = useState(1);
+  const SJ_PAGE_SIZE = 10;
   const [showSJRecapPanel, setShowSJRecapPanel] = useState(false);
   const [sjRecapDateField, setSjRecapDateField] = useState('tanggalSJ');
   const [sjRecapStartDate, setSjRecapStartDate] = useState('');
@@ -2320,6 +2322,10 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
     ? gagalSuratJalanList
     : suratJalanList.filter(sj => filter === 'all' || sj.status === filter);
 
+  const sjTotalPages = Math.max(1, Math.ceil(filteredSuratJalan.length / SJ_PAGE_SIZE));
+  const sjPageClamped = Math.min(sjPage, sjTotalPages);
+  const paginatedSuratJalan = filteredSuratJalan.slice((sjPageClamped - 1) * SJ_PAGE_SIZE, sjPageClamped * SJ_PAGE_SIZE);
+
   const pendingReviewCount = suratJalanList.filter(sj => sj.status === 'menunggu_review').length;
 
   const [selectedSJIds, setSelectedSJIds] = useState(new Set());
@@ -3227,25 +3233,25 @@ useEffect(() => {
             </div>
             <div className="flex gap-2 flex-wrap">
               <button
-                onClick={() => { setFilter('all'); setSelectedBatalSJIds(new Set()); setSelectedSJIds(new Set()); }}
+                onClick={() => { setFilter('all'); setSjPage(1); setSelectedBatalSJIds(new Set()); setSelectedSJIds(new Set()); }}
                 className={`px-4 py-2 rounded-lg transition ${filter === 'all' ? 'bg-green-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
               >
                 Semua
               </button>
               <button
-                onClick={() => { setFilter('pending'); setSelectedBatalSJIds(new Set()); setSelectedSJIds(new Set()); }}
+                onClick={() => { setFilter('pending'); setSjPage(1); setSelectedBatalSJIds(new Set()); setSelectedSJIds(new Set()); }}
                 className={`px-4 py-2 rounded-lg transition ${filter === 'pending' ? 'bg-yellow-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
               >
                 Pending
               </button>
               <button
-                onClick={() => { setFilter('terkirim'); setSelectedBatalSJIds(new Set()); setSelectedSJIds(new Set()); }}
+                onClick={() => { setFilter('terkirim'); setSjPage(1); setSelectedBatalSJIds(new Set()); setSelectedSJIds(new Set()); }}
                 className={`px-4 py-2 rounded-lg transition ${filter === 'terkirim' ? 'bg-green-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
               >
                 Terkirim
               </button>
               <button
-                onClick={() => { setFilter('menunggu_review'); setSelectedBatalSJIds(new Set()); setSelectedSJIds(new Set()); }}
+                onClick={() => { setFilter('menunggu_review'); setSjPage(1); setSelectedBatalSJIds(new Set()); setSelectedSJIds(new Set()); }}
                 className={`px-4 py-2 rounded-lg transition flex items-center space-x-1 ${filter === 'menunggu_review' ? 'bg-blue-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
               >
                 <span>Menunggu Review</span>
@@ -3256,13 +3262,13 @@ useEffect(() => {
                 )}
               </button>
               <button
-                onClick={() => { setFilter('terkunci'); setSelectedBatalSJIds(new Set()); setSelectedSJIds(new Set()); }}
+                onClick={() => { setFilter('terkunci'); setSjPage(1); setSelectedBatalSJIds(new Set()); setSelectedSJIds(new Set()); }}
                 className={`px-4 py-2 rounded-lg transition ${filter === 'terkunci' ? 'bg-gray-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
               >
                 Terkunci
               </button>
               <button
-                onClick={() => { setFilter('gagal'); setSelectedBatalSJIds(new Set()); setSelectedSJIds(new Set()); }}
+                onClick={() => { setFilter('gagal'); setSjPage(1); setSelectedBatalSJIds(new Set()); setSelectedSJIds(new Set()); }}
                 className={`px-4 py-2 rounded-lg transition flex items-center space-x-1 ${filter === 'gagal' ? 'bg-red-600 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
               >
                 <span>Gagal</span>
@@ -3363,7 +3369,7 @@ useEffect(() => {
               )}
             </div>
           ) : (
-            filteredSuratJalan.map(sj => (
+            paginatedSuratJalan.map(sj => (
               <SuratJalanCard
                 key={sj.id}
                 suratJalan={sj}
@@ -3397,6 +3403,26 @@ useEffect(() => {
             ))
           )}
         </div>
+
+        {filteredSuratJalan.length > SJ_PAGE_SIZE && (
+          <div className="flex items-center justify-center space-x-3 mt-4">
+            <button
+              onClick={() => setSjPage(p => Math.max(1, p - 1))}
+              disabled={sjPageClamped <= 1}
+              className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm disabled:opacity-50"
+            >
+              Sebelumnya
+            </button>
+            <span className="text-sm text-gray-600">Halaman {sjPageClamped} / {sjTotalPages}</span>
+            <button
+              onClick={() => setSjPage(p => Math.min(sjTotalPages, p + 1))}
+              disabled={sjPageClamped >= sjTotalPages}
+              className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm disabled:opacity-50"
+            >
+              Berikutnya
+            </button>
+          </div>
+        )}
         </>
         )}
       </div>
