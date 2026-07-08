@@ -2240,6 +2240,11 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
     await saveData(suratJalanList, newList);
   };
 
+  // NOTE: the live unsubHistory listener always overwrites `historyLog` with just the
+  // newest HISTORY_LOG_PAGE_SIZE docs whenever a new history_log write comes in — any
+  // pages accumulated here via loadMoreHistoryLog get silently discarded on the next
+  // live update. Harmless today (no UI calls this yet), but fix this interaction before
+  // wiring a "load more" button to it.
   const loadMoreHistoryLog = async () => {
     if (!historyLogCursorRef.current || historyLogLoadingMore) return;
     setHistoryLogLoadingMore(true);
