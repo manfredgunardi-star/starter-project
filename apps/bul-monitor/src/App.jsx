@@ -1718,7 +1718,7 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
 
   const updateSuratJalan = async (id, updates) => {
     const sj = suratJalanListRef.current.find((x) => String(x.id) === String(id));
-    const who = currentUser?.name || 'system';
+    const who = currentUserRef.current?.name || 'system';
     const patch = buildSJStatusPatch(sj, updates, who);
 
     setSuratJalanList(prev => prev.map((x) =>
@@ -2693,6 +2693,8 @@ const invoiceListRef = useRef(invoiceList);
 useEffect(() => { invoiceListRef.current = invoiceList; }, [invoiceList]);
 const transaksiListRef = useRef(transaksiList);
 useEffect(() => { transaksiListRef.current = transaksiList; }, [transaksiList]);
+const currentUserRef = useRef(currentUser);
+useEffect(() => { currentUserRef.current = currentUser; }, [currentUser]);
 
 // Dengarkan perubahan status integrasi (SJ/Invoice/Transaksi) dari bul-accounting
 // (approve/reject/cancel) — satu query listener untuk semuanya (lihat Design decision
