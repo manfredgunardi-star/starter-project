@@ -231,4 +231,11 @@ const SuratJalanCard = ({
   );
 };
 
+// NOTE: React.memo currently has no effect — the parent passes several inline arrow
+// props (onUpdate, onEditTerkirim, onToggleSelect, onToggleBatalSelect) plus handlers
+// that aren't wrapped in useCallback (onMarkGagal, onRestore, onKirimKeAccounting,
+// onDeleteBiaya), so at least one prop reference always changes and the shallow
+// comparison never bails out. Left in place as low-cost future-proofing (harmless at
+// the current 10-item page size) — wrapping those handlers in useCallback would be
+// required before this actually skips a re-render.
 export default React.memo(SuratJalanCard);
