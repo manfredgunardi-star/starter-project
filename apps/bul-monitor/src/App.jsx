@@ -1847,50 +1847,59 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
       onConfirm: async () => {
         setConfirmDialog({ show: false, message: '', onConfirm: null });
 
-        const masterData = await fetchAccountingMasterData();
-        const allWarnings = [];
-        const succeeded = [];
-        const gagalList = [];
+        try {
+          const masterData = await fetchAccountingMasterData();
+          const allWarnings = [];
+          const succeeded = [];
+          const gagalList = [];
 
-        await runWithConcurrencyLimit(toSend, 5, async (sj) => {
-          try {
-            const sjBiaya = biayaList.filter(b => b.suratJalanId === sj.id && b.isActive !== false && !b.deletedAt);
-            const { warnings } = await kirimUangJalanKeAccounting(sj, currentUser, invoiceList, sjBiaya, masterData);
-            warnings.forEach(w => allWarnings.push(`[${sj.nomorSJ}] ${w.message}`));
-            succeeded.push(sj);
-          } catch (e) {
-            gagalList.push(sj.nomorSJ);
-          }
-        });
-
-        const nowIso = new Date().toISOString();
-        const who = currentUser?.name || currentUser?.username || 'unknown';
-        const patchesById = new Map(succeeded.map(sj => [sj.id, {
-          status: 'menunggu_review',
-          integrationQueueId: `IQ-UJ-${sj.id}`,
-          sentToAccountingAt: nowIso,
-          sentToAccountingBy: who,
-          updatedAt: nowIso,
-          updatedBy: who,
-        }]));
-
-        if (patchesById.size > 0) {
-          await chunkedBatchWrite(db, Array.from(patchesById.entries()), (batch, [sjId, patch]) => {
-            batch.update(doc(db, C("surat_jalan"), String(sjId)), patch);
+          await runWithConcurrencyLimit(toSend, 5, async (sj) => {
+            try {
+              const sjBiaya = biayaList.filter(b => b.suratJalanId === sj.id && b.isActive !== false && !b.deletedAt);
+              const { warnings } = await kirimUangJalanKeAccounting(sj, currentUser, invoiceList, sjBiaya, masterData);
+              warnings.forEach(w => allWarnings.push(`[${sj.nomorSJ}] ${w.message}`));
+              succeeded.push(sj);
+            } catch (e) {
+              gagalList.push(sj.nomorSJ);
+            }
           });
-          setSuratJalanList(prev => prev.map(sj =>
-            patchesById.has(sj.id) ? { ...sj, ...patchesById.get(sj.id) } : sj
-          ));
-        }
 
-        setSelectedSJIds(new Set());
-        const warningText = allWarnings.length > 0
-          ? `\n\n⚠️ Peringatan Master Data:\n${allWarnings.map(w => `• ${w}`).join('\n')}`
-          : '';
-        const gagalText = gagalList.length > 0
-          ? `\n❌ ${gagalList.length} SJ gagal dikirim: ${gagalList.join(', ')}`
-          : '';
-        setAlertMessage(`✅ ${succeeded.length} SJ berhasil dikirim ke Accounting.${gagalText}${warningText}`);
+          const nowIso = new Date().toISOString();
+          const who = currentUser?.name || currentUser?.username || 'unknown';
+          const patchesById = new Map(succeeded.map(sj => [sj.id, {
+            status: 'menunggu_review',
+            integrationQueueId: `IQ-UJ-${sj.id}`,
+            sentToAccountingAt: nowIso,
+            sentToAccountingBy: who,
+            updatedAt: nowIso,
+            updatedBy: who,
+          }]));
+
+          if (patchesById.size > 0) {
+            // Batch commit is atomic per-chunk: if it throws here, the integration_queue
+            // docs for `succeeded` items were already written in bul-accounting above, but
+            // bul-monitor's own surat_jalan status won't reflect menunggu_review yet — the
+            // catch below surfaces this explicitly instead of failing silently, and the
+            // send is idempotent to retry (kirimUangJalanKeAccounting keys off IQ-UJ-<id>).
+            await chunkedBatchWrite(db, Array.from(patchesById.entries()), (batch, [sjId, patch]) => {
+              batch.update(doc(db, C("surat_jalan"), String(sjId)), sanitizeForFirestore(patch));
+            });
+            setSuratJalanList(prev => prev.map(sj =>
+              patchesById.has(sj.id) ? { ...sj, ...patchesById.get(sj.id) } : sj
+            ));
+          }
+
+          setSelectedSJIds(new Set());
+          const warningText = allWarnings.length > 0
+            ? `\n\n⚠️ Peringatan Master Data:\n${allWarnings.map(w => `• ${w}`).join('\n')}`
+            : '';
+          const gagalText = gagalList.length > 0
+            ? `\n❌ ${gagalList.length} SJ gagal dikirim: ${gagalList.join(', ')}`
+            : '';
+          setAlertMessage(`✅ ${succeeded.length} SJ berhasil dikirim ke Accounting.${gagalText}${warningText}`);
+        } catch (e) {
+          setAlertMessage(`❌ Gagal mengirim SJ secara massal ke Accounting: ${e.message}`);
+        }
       },
     });
   };
