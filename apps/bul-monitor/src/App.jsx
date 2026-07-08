@@ -3407,7 +3407,7 @@ useEffect(() => {
         {filteredSuratJalan.length > SJ_PAGE_SIZE && (
           <div className="flex items-center justify-center space-x-3 mt-4">
             <button
-              onClick={() => setSjPage(p => Math.max(1, p - 1))}
+              onClick={() => setSjPage(Math.max(1, sjPageClamped - 1))}
               disabled={sjPageClamped <= 1}
               className="px-4 py-2 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm disabled:opacity-50"
             >
