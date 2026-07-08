@@ -1634,23 +1634,19 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
     await saveData(newList, biayaList);
   };
 
-  const updateSuratJalan = async (id, updates) => {
-    const sj = suratJalanList.find((x) => String(x.id) === String(id));
+  // Pure: computes the Firestore patch for a status update, including the special
+  // "gagal" derived fields (uangJalan locked to 0, deletedUangJalan snapshot for restore).
+  // Extracted so the bulk-batalkan path can reuse it without duplicating the logic.
+  const buildSJStatusPatch = (sj, updates, who) => {
     const nowIso = new Date().toISOString();
-    const who = currentUser?.name || 'system';
-
     const patch = {
       ...(updates || {}),
       updatedAt: nowIso,
       updatedBy: who,
     };
 
-    // DATA-SIDE LOCK:
-    // Jika status menjadi 'gagal', uang jalan harus dianggap 0 untuk semua role.
-    // Nilai uang jalan asli disimpan di deletedUangJalan agar bisa dipulihkan.
     if (patch.status === 'gagal') {
       const originalUangJalan = Number(sj?.uangJalan || 0);
-      // Lock data: SJ gagal dianggap non-aktif (tidak boleh muncul di Laporan Kas)
       if (patch.isActive === undefined) patch.isActive = false;
 
       if (!patch.deletedUangJalan && originalUangJalan > 0) {
@@ -1664,6 +1660,14 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
       }
       patch.uangJalan = 0;
     }
+
+    return patch;
+  };
+
+  const updateSuratJalan = async (id, updates) => {
+    const sj = suratJalanList.find((x) => String(x.id) === String(id));
+    const who = currentUser?.name || 'system';
+    const patch = buildSJStatusPatch(sj, updates, who);
 
     const updatedSJList = suratJalanList.map((x) =>
       String(x.id) === String(id) ? { ...x, ...patch } : x
