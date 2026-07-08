@@ -1183,6 +1183,7 @@ try {
         let successCount = 0;
         let errorCount = 0;
         let errorDetails = [];
+        let uangJalanTxWarning = '';
         const newItems = [];
 
         if (type === 'suratjalan') {
@@ -1339,6 +1340,7 @@ try {
                   });
                 } catch (e) {
                   console.warn('Import SJ -> auto transaksi uang jalan (batch) gagal:', e);
+                  uangJalanTxWarning = `\n\n⚠️ Surat Jalan berhasil diimport, tapi gagal membuat transaksi Uang Jalan otomatis: ${e.message}\nSilakan cek menu Keuangan dan tambahkan manual jika perlu.`;
                 }
               }
             }
@@ -1589,6 +1591,9 @@ if (newItems.length > 0) {
           link.click();
           document.body.removeChild(link);
           message += `\n\nCSV laporan penolakan (${errorCount} baris) sudah otomatis didownload.\nSilahkan cek file "laporan_penolakan_import.csv".`;
+        }
+        if (uangJalanTxWarning) {
+          message += uangJalanTxWarning;
         }
         setAlertMessage(message);
       } catch (error) {
