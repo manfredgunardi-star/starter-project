@@ -10,7 +10,6 @@ import {
 } from "./integrationService.js";
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from "firebase/auth";
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import * as XLSX from 'xlsx';
 import StatCard from './components/StatCard.jsx';
 import UsersManagement from './components/UsersManagement.jsx';
 import SettingsManagement from './components/SettingsManagement.jsx';
@@ -3153,7 +3152,7 @@ useEffect(() => {
                   <input type="date" value={sjRecapEndDate} onChange={(e) => setSjRecapEndDate(e.target.value)} className="w-full border rounded-lg px-3 py-2" />
                 </div>
                 <div className="flex items-end">
-                  <button onClick={() => downloadSJRecapToExcel(suratJalanList, { startDate: sjRecapStartDate, endDate: sjRecapEndDate, dateField: sjRecapDateField })} className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition">
+                  <button onClick={async () => await downloadSJRecapToExcel(suratJalanList, { startDate: sjRecapStartDate, endDate: sjRecapEndDate, dateField: sjRecapDateField })} className="w-full bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 transition">
                     <Download className="w-4 h-4" />
                     <span>Download Excel</span>
                   </button>

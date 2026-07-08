@@ -1,7 +1,6 @@
 // Pure helper cluster extracted from App.jsx (monolith-refactor unit U12a).
 // Byte-identical relocation — no logic changes. Firestore-write helpers stay in
 // App.jsx (unit U12b) pending human/accountant review.
-import * as XLSX from 'xlsx';
 
 // ===== Auto Transaksi Uang Jalan (derived from Surat Jalan) =====
 // Deterministic ID -> idempotent (tidak dobel meskipun sync dijalankan berkali-kali)
@@ -53,7 +52,8 @@ export const formatTanggalID = (value) => {
   }
 };
 
-export const downloadSJRecapToExcel = (suratJalanList = [], options = {}) => {
+export const downloadSJRecapToExcel = async (suratJalanList = [], options = {}) => {
+  const XLSX = await import('xlsx');
   const { startDate = '', endDate = '', dateField = 'tanggalSJ' } = options || {};
 
   const normDate = (v) => {
