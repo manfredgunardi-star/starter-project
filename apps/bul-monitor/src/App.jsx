@@ -1874,7 +1874,7 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
               id: uangJalanTransaksi.id,
             } : null;
             const patch = buildSJStatusPatch(sj, { status: 'gagal', statusLabel: 'gagal', deletedUangJalan }, who);
-            return { sj, patch, txId: buildUangJalanTransaksiId(sj.id) };
+            return { sj, patch, txId: buildUangJalanTransaksiId(sj.id), logId: 'LOG-' + Date.now() + '-' + sj.id };
           });
 
           // Prefetch tx existence in parallel (read-before-write, same rule as
@@ -1886,7 +1886,7 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
             txSnap: txSnaps[i],
           }));
 
-          await chunkedBatchWrite(db, items, (batch, { sj, patch, txId, txSnap }) => {
+          await chunkedBatchWrite(db, items, (batch, { sj, patch, txId, txSnap, logId }) => {
             batch.update(doc(db, C("surat_jalan"), String(sj.id)), sanitizeForFirestore(patch));
 
             if (txSnap.exists() && txSnap.data()?.isActive !== false) {
@@ -1897,8 +1897,8 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
               });
             }
 
-            batch.set(doc(db, C("history_log"), 'LOG-' + Date.now() + '-' + sj.id), {
-              id: 'LOG-' + Date.now() + '-' + sj.id,
+            batch.set(doc(db, C("history_log"), logId), {
+              id: logId,
               action: 'mark_gagal',
               suratJalanId: sj.id,
               suratJalanNo: sj.nomorSJ,
@@ -1923,8 +1923,8 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
           }));
           setHistoryLog(prev => [
             ...prev,
-            ...items.map(({ sj, patch }) => ({
-              id: 'LOG-' + Date.now() + '-' + sj.id,
+            ...items.map(({ sj, patch, logId }) => ({
+              id: logId,
               action: 'mark_gagal',
               suratJalanId: sj.id,
               suratJalanNo: sj.nomorSJ,
