@@ -2539,10 +2539,24 @@ const unsubSuratJalan = onSnapshot(collection(db, C("surat_jalan")), (snap) => {
   applySJ();
 });
 
-const unsubSuratJalanLegacy = onSnapshot(collection(db, C("suratJalan")), (snap) => {
-  sjLegacy = snap.docs.map((d) => normalizeSJ(d.data() || {}, d.id));
-  applySJ();
-});
+// Legacy camelCase collection: only subscribe if it actually has data. Avoids an
+// always-on second full-collection listener for deployments where it's long empty.
+let unsubSuratJalanLegacy = () => {};
+(async () => {
+  try {
+    const legacyProbe = await getDocs(query(collection(db, C("suratJalan")), limit(1)));
+    if (!legacyProbe.empty) {
+      unsubSuratJalanLegacy = onSnapshot(collection(db, C("suratJalan")), (snap) => {
+        sjLegacy = snap.docs.map((d) => normalizeSJ(d.data() || {}, d.id));
+        applySJ();
+      });
+    } else {
+      console.info('[bul-monitor] Legacy bul_suratJalan kosong — listener tidak dipasang.');
+    }
+  } catch (e) {
+    console.warn('[bul-monitor] Gagal cek legacy bul_suratJalan, listener tidak dipasang:', e.message);
+  }
+})();
 
 const unsubBiaya = onSnapshot(collection(db, C("biaya")), (snap) => {
   const data = snap.docs
