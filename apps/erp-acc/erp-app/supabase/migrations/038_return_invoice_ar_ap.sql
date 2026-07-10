@@ -623,3 +623,227 @@ begin
   update sales_returns set status = 'posted' where id = p_sr_id;
 end;
 $$;
+
+-- ============================================================
+-- post_purchase_return: preserves the existing Persediaan reversal
+-- block verbatim (unconditional, mirrors legacy live behavior), adds
+-- AP-reduction block after it (only when this return is linked to an
+-- invoice). Mirror image of post_sales_return above.
+-- ============================================================
+create or replace function post_purchase_return(p_pr_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_pr record;
+  v_item record;
+  v_avg_cost numeric;
+  v_journal_id uuid;
+  v_total_cost numeric := 0;
+  v_coa_persediaan uuid;
+  v_coa_hutang_gl uuid;
+  v_coa_hutang uuid;
+  v_coa_ppn_in uuid;
+  v_coa_selisih uuid;
+  v_inv record;
+  v_outstanding numeric;
+  v_return_credit numeric;
+  v_excess numeric;
+  v_returnable numeric;
+  v_selisih numeric;
+begin
+  perform _ensure_can_post();
+
+  select * into v_pr from purchase_returns where id = p_pr_id for update;
+
+  if v_pr is null then
+    raise exception 'Purchase return tidak ditemukan';
+  end if;
+
+  if v_pr.status <> 'draft' then
+    raise exception 'Purchase return sudah diposting';
+  end if;
+
+  perform _ensure_period_open(v_pr.date);
+
+  select id into v_coa_persediaan from coa where code = '1-14000';
+  select id into v_coa_hutang_gl from coa where code = '2-11100';
+
+  if v_coa_persediaan is null or v_coa_hutang_gl is null then
+    raise exception 'COA retur pembelian tidak lengkap';
+  end if;
+
+  -- Lock the linked invoice up front (before the qty re-validation loop and
+  -- before the inventory-reversal loop) so that any two returns posted
+  -- concurrently against the same invoice — whether or not they target the
+  -- same line — fully serialize on this row lock. Locking it later (e.g.
+  -- only inside the AP block) would let two concurrent posts both pass the
+  -- qty check before either commits, over-consuming the returnable qty.
+  if v_pr.invoice_id is not null then
+    select * into v_inv from invoices where id = v_pr.invoice_id for update;
+  end if;
+
+  -- Re-validate qty under row lock (race-safe: two concurrent returns on
+  -- the same invoice line cannot both slip through the save-time soft check).
+  -- Ownership check first: confirm invoice_item_id actually belongs to this
+  -- return's invoice_id before trusting it (defends against a tampered /
+  -- foreign invoice_item_id submitted directly to the RPC).
+  if v_pr.invoice_id is not null then
+    for v_item in select * from purchase_return_items where purchase_return_id = p_pr_id loop
+      if not exists (
+        select 1 from invoice_items
+         where id = v_item.invoice_item_id
+           and invoice_id = v_pr.invoice_id
+      ) then
+        raise exception 'baris invoice tidak ditemukan pada invoice asal';
+      end if;
+      select purchase_returnable_qty(v_item.invoice_item_id) into v_returnable;
+      if v_item.quantity_base > coalesce(v_returnable, 0) then
+        raise exception 'qty retur item % melebihi sisa yang bisa diretur (%)',
+          v_item.product_id, v_returnable;
+      end if;
+    end loop;
+  end if;
+
+  -- Inventory reversal (unchanged from the original implementation).
+  for v_item in
+    select * from purchase_return_items where purchase_return_id = p_pr_id
+  loop
+    v_avg_cost := public.inventory_stock_out(
+      v_item.product_id, v_item.quantity_base,
+      v_item.unit_id, v_item.quantity,
+      'purchase_return', p_pr_id, v_pr.date
+    );
+
+    v_total_cost := v_total_cost + (v_item.quantity_base * v_avg_cost);
+  end loop;
+
+  if v_total_cost > 0 then
+    v_journal_id := gen_random_uuid();
+
+    insert into journals (
+      id, journal_number, date, description, source,
+      reference_type, reference_id, supplier_id, is_posted, created_by
+    ) values (
+      v_journal_id, generate_number('JRN'), v_pr.date,
+      'Retur Pembelian ' || v_pr.pr_number, 'auto',
+      'purchase_return', p_pr_id, v_pr.supplier_id, true, v_pr.created_by
+    );
+
+    insert into journal_items (journal_id, coa_id, debit, description)
+      values (
+        v_journal_id, v_coa_hutang_gl, v_total_cost,
+        'Hutang berkurang retur - ' || v_pr.pr_number
+      );
+
+    insert into journal_items (journal_id, coa_id, credit, description)
+      values (
+        v_journal_id, v_coa_persediaan, v_total_cost,
+        'Persediaan keluar retur - ' || v_pr.pr_number
+      );
+  end if;
+
+  -- AP reduction (only when this return is linked to an invoice).
+  if v_pr.invoice_id is not null then
+    select id into v_coa_hutang from coa where code = '2-11000';
+    select id into v_coa_ppn_in from coa where code = '1-15000';
+    select id into v_coa_selisih from coa where code = '5-19000';
+
+    if v_coa_hutang is null or v_coa_selisih is null then
+      raise exception 'COA hutang/selisih harga tidak lengkap';
+    end if;
+
+    -- v_inv was already locked ("for update") earlier, right after the COA
+    -- checks and before the qty re-validation loop — the row lock has been
+    -- held continuously since then, so its columns are still current here;
+    -- no need to re-select.
+
+    v_outstanding := v_inv.total - v_inv.amount_paid - v_inv.credit_applied_amount
+                      - v_inv.return_credit_amount;
+    v_return_credit := least(v_pr.total, greatest(v_outstanding, 0));
+    v_excess := v_pr.total - v_return_credit;
+
+    -- Guard against an unbalanced journal if purchase_returns.total doesn't
+    -- equal subtotal + tax_amount (save_purchase_return recomputes
+    -- subtotal/tax_amount from items but trusts client-sent total verbatim).
+    if abs(v_pr.total - (v_pr.subtotal + v_pr.tax_amount)) > 0.01 then
+      raise exception 'retur tidak konsisten: total (%) tidak sama dengan subtotal + pajak (%)',
+        v_pr.total, v_pr.subtotal + v_pr.tax_amount;
+    end if;
+
+    v_journal_id := gen_random_uuid();
+    insert into journals (
+      id, journal_number, date, description, source,
+      reference_type, reference_id, supplier_id, is_posted, created_by
+    ) values (
+      v_journal_id, generate_number('JRN'), v_pr.date,
+      'Retur Pembelian (Hutang) ' || v_pr.pr_number, 'auto',
+      'purchase_return_ap', p_pr_id, v_pr.supplier_id, true, v_pr.created_by
+    );
+
+    insert into journal_items (journal_id, coa_id, debit, description)
+      values (v_journal_id, v_coa_hutang, v_pr.total,
+              'Hutang usaha berkurang - ' || v_pr.pr_number);
+
+    if v_pr.tax_amount > 0 then
+      if v_coa_ppn_in is null then
+        raise exception 'COA PPN Masukan tidak ditemukan';
+      end if;
+      insert into journal_items (journal_id, coa_id, credit, description)
+        values (v_journal_id, v_coa_ppn_in, v_pr.tax_amount,
+                'PPN Masukan reverse - ' || v_pr.pr_number);
+    end if;
+
+    insert into journal_items (journal_id, coa_id, credit, description)
+      values (v_journal_id, v_coa_persediaan, v_total_cost,
+              'Persediaan keluar (invoice-linked) - ' || v_pr.pr_number);
+
+    -- Selisih antara harga invoice (subtotal) vs avg-cost inventory-out.
+    -- NOTE: this is the OPPOSITE debit/credit convention from the
+    -- superficially-similar variance line in post_purchase_invoice
+    -- (migration 016). There, Hutang-Barang-Diterima is debited and Hutang
+    -- Usaha is credited, so a positive (subtotal > gr_total) variance is
+    -- booked as a DEBIT to close the gap. Here the entry is a reversal:
+    -- Hutang Usaha is debited (v_pr.total) and Persediaan is credited
+    -- (v_total_cost), i.e. the two sides that carried the variance in the
+    -- original entry have swapped sides. Copying the same debit-on-positive
+    -- convention verbatim would double the imbalance instead of closing it
+    -- (e.g. subtotal=100, tax=10, total_cost=80 => selisih=+20: debit
+    -- would give debit=130/credit=90, a 40 gap). Crediting on positive
+    -- variance and debiting on negative variance is what actually balances
+    -- this journal (same example => debit=110/credit=110).
+    v_selisih := v_pr.subtotal - v_total_cost;
+    if v_selisih > 0 then
+      insert into journal_items (journal_id, coa_id, credit, description)
+        values (v_journal_id, v_coa_selisih, v_selisih, 'Selisih harga retur - ' || v_pr.pr_number);
+    elsif v_selisih < 0 then
+      insert into journal_items (journal_id, coa_id, debit, description)
+        values (v_journal_id, v_coa_selisih, abs(v_selisih), 'Selisih harga retur - ' || v_pr.pr_number);
+    end if;
+
+    update purchase_returns
+       set return_credit_amount = v_return_credit,
+           excess_credit_amount = v_excess
+     where id = p_pr_id;
+
+    update invoices
+       set return_credit_amount = return_credit_amount + v_return_credit,
+           status = case
+             when amount_paid + credit_applied_amount + return_credit_amount
+                    + v_return_credit >= total - 0.01
+             then 'paid'
+             else 'partial'
+           end
+     where id = v_pr.invoice_id;
+
+    if v_excess > 0 then
+      insert into credit_notes (party_type, party_id, source_type, source_id, amount, remaining, status)
+        values ('supplier', v_pr.supplier_id, 'purchase_return', p_pr_id, v_excess, v_excess, 'open');
+    end if;
+  end if;
+
+  update purchase_returns set status = 'posted' where id = p_pr_id;
+end;
+$$;
