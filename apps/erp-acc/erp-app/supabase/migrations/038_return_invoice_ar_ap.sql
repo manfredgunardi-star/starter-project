@@ -208,6 +208,13 @@ begin
       if nullif(v_item->>'invoice_item_id', '') is null then
         raise exception 'setiap item retur wajib invoice_item_id jika retur link ke invoice';
       end if;
+      if not exists (
+        select 1 from invoice_items
+         where id = (v_item->>'invoice_item_id')::uuid
+           and invoice_id = v_invoice_id
+      ) then
+        raise exception 'baris invoice tidak ditemukan pada invoice asal';
+      end if;
       select sales_returnable_qty((v_item->>'invoice_item_id')::uuid) into v_returnable;
       if coalesce((v_item->>'quantity_base')::numeric, (v_item->>'quantity')::numeric)
            > coalesce(v_returnable, 0) then
@@ -332,6 +339,13 @@ begin
     if v_invoice_id is not null then
       if nullif(v_item->>'invoice_item_id', '') is null then
         raise exception 'setiap item retur wajib invoice_item_id jika retur link ke invoice';
+      end if;
+      if not exists (
+        select 1 from invoice_items
+         where id = (v_item->>'invoice_item_id')::uuid
+           and invoice_id = v_invoice_id
+      ) then
+        raise exception 'baris invoice tidak ditemukan pada invoice asal';
       end if;
       select purchase_returnable_qty((v_item->>'invoice_item_id')::uuid) into v_returnable;
       if coalesce((v_item->>'quantity_base')::numeric, (v_item->>'quantity')::numeric)
