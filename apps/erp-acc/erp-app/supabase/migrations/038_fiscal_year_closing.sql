@@ -57,20 +57,25 @@ begin
     c.name,
     c.type,
     case c.normal_balance
-      when 'debit' then coalesce(sum(ji.debit), 0) - coalesce(sum(ji.credit), 0)
-      when 'credit' then coalesce(sum(ji.credit), 0) - coalesce(sum(ji.debit), 0)
+      when 'debit' then
+        coalesce(sum(case when j.is_posted = true and j.date between make_date(p_year, 1, 1) and make_date(p_year, 12, 31) and coalesce(j.reference_type, '') not in ('fiscal_year_closing', 'fiscal_year_closing_reversal') then ji.debit else 0 end), 0)
+        - coalesce(sum(case when j.is_posted = true and j.date between make_date(p_year, 1, 1) and make_date(p_year, 12, 31) and coalesce(j.reference_type, '') not in ('fiscal_year_closing', 'fiscal_year_closing_reversal') then ji.credit else 0 end), 0)
+      when 'credit' then
+        coalesce(sum(case when j.is_posted = true and j.date between make_date(p_year, 1, 1) and make_date(p_year, 12, 31) and coalesce(j.reference_type, '') not in ('fiscal_year_closing', 'fiscal_year_closing_reversal') then ji.credit else 0 end), 0)
+        - coalesce(sum(case when j.is_posted = true and j.date between make_date(p_year, 1, 1) and make_date(p_year, 12, 31) and coalesce(j.reference_type, '') not in ('fiscal_year_closing', 'fiscal_year_closing_reversal') then ji.debit else 0 end), 0)
     end as balance
   from coa c
   left join journal_items ji on ji.coa_id = c.id
   left join journals j on ji.journal_id = j.id
-    and j.is_posted = true
-    and j.date between make_date(p_year, 1, 1) and make_date(p_year, 12, 31)
-    and coalesce(j.reference_type, '') not in ('fiscal_year_closing', 'fiscal_year_closing_reversal')
   where c.type in ('revenue', 'expense') and c.is_active = true
   group by c.id, c.code, c.name, c.type, c.normal_balance
   having case c.normal_balance
-      when 'debit' then coalesce(sum(ji.debit), 0) - coalesce(sum(ji.credit), 0)
-      when 'credit' then coalesce(sum(ji.credit), 0) - coalesce(sum(ji.debit), 0)
+      when 'debit' then
+        coalesce(sum(case when j.is_posted = true and j.date between make_date(p_year, 1, 1) and make_date(p_year, 12, 31) and coalesce(j.reference_type, '') not in ('fiscal_year_closing', 'fiscal_year_closing_reversal') then ji.debit else 0 end), 0)
+        - coalesce(sum(case when j.is_posted = true and j.date between make_date(p_year, 1, 1) and make_date(p_year, 12, 31) and coalesce(j.reference_type, '') not in ('fiscal_year_closing', 'fiscal_year_closing_reversal') then ji.credit else 0 end), 0)
+      when 'credit' then
+        coalesce(sum(case when j.is_posted = true and j.date between make_date(p_year, 1, 1) and make_date(p_year, 12, 31) and coalesce(j.reference_type, '') not in ('fiscal_year_closing', 'fiscal_year_closing_reversal') then ji.credit else 0 end), 0)
+        - coalesce(sum(case when j.is_posted = true and j.date between make_date(p_year, 1, 1) and make_date(p_year, 12, 31) and coalesce(j.reference_type, '') not in ('fiscal_year_closing', 'fiscal_year_closing_reversal') then ji.debit else 0 end), 0)
     end != 0
   order by c.code;
 end;
@@ -186,15 +191,16 @@ begin
       c.id as coa_id,
       c.type,
       case c.normal_balance
-        when 'debit' then coalesce(sum(ji.debit), 0) - coalesce(sum(ji.credit), 0)
-        when 'credit' then coalesce(sum(ji.credit), 0) - coalesce(sum(ji.debit), 0)
+        when 'debit' then
+          coalesce(sum(case when j.is_posted = true and j.date between make_date(p_year, 1, 1) and make_date(p_year, 12, 31) and coalesce(j.reference_type, '') not in ('fiscal_year_closing', 'fiscal_year_closing_reversal') then ji.debit else 0 end), 0)
+          - coalesce(sum(case when j.is_posted = true and j.date between make_date(p_year, 1, 1) and make_date(p_year, 12, 31) and coalesce(j.reference_type, '') not in ('fiscal_year_closing', 'fiscal_year_closing_reversal') then ji.credit else 0 end), 0)
+        when 'credit' then
+          coalesce(sum(case when j.is_posted = true and j.date between make_date(p_year, 1, 1) and make_date(p_year, 12, 31) and coalesce(j.reference_type, '') not in ('fiscal_year_closing', 'fiscal_year_closing_reversal') then ji.credit else 0 end), 0)
+          - coalesce(sum(case when j.is_posted = true and j.date between make_date(p_year, 1, 1) and make_date(p_year, 12, 31) and coalesce(j.reference_type, '') not in ('fiscal_year_closing', 'fiscal_year_closing_reversal') then ji.debit else 0 end), 0)
       end as balance
     from coa c
     left join journal_items ji on ji.coa_id = c.id
     left join journals j on ji.journal_id = j.id
-      and j.is_posted = true
-      and j.date between make_date(p_year, 1, 1) and make_date(p_year, 12, 31)
-      and coalesce(j.reference_type, '') not in ('fiscal_year_closing', 'fiscal_year_closing_reversal')
     where c.type in ('revenue', 'expense') and c.is_active = true
     group by c.id, c.type, c.normal_balance
   loop
