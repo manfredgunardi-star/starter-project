@@ -130,6 +130,13 @@ export default function PurchaseReturnFormPage() {
   function handleInvoiceChange(invoiceId) {
     setHeader(h => ({ ...h, invoice_id: invoiceId }))
     setItems([])
+    setReturnableItems([])
+  }
+
+  function handleSupplierChange(supplierId) {
+    setHeader(h => ({ ...h, supplier_id: supplierId, invoice_id: '' }))
+    setItems([])
+    setReturnableItems([])
   }
 
   // Pre-fill from GR (shortcut from GoodsReceiptFormPage)
@@ -236,7 +243,7 @@ export default function PurchaseReturnFormPage() {
         status={isNew ? null : header.status}
         partyLabel="Supplier"
         partyId={header.supplier_id}
-        onPartyChange={v => setHeader(h => ({ ...h, supplier_id: v, invoice_id: '' }))}
+        onPartyChange={handleSupplierChange}
         partyOptions={supplierOptions}
         notes={header.notes}
         onNotesChange={v => setHeader(h => ({ ...h, notes: v }))}

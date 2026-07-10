@@ -131,6 +131,13 @@ export default function SalesReturnFormPage() {
   function handleInvoiceChange(invoiceId) {
     setHeader(h => ({ ...h, invoice_id: invoiceId }))
     setItems([])
+    setReturnableItems([])
+  }
+
+  function handleCustomerChange(customerId) {
+    setHeader(h => ({ ...h, customer_id: customerId, invoice_id: '' }))
+    setItems([])
+    setReturnableItems([])
   }
 
   // Pre-fill from GD (shortcut from GoodsDeliveryFormPage)
@@ -243,7 +250,7 @@ export default function SalesReturnFormPage() {
         status={isNew ? null : header.status}
         partyLabel="Customer"
         partyId={header.customer_id}
-        onPartyChange={v => setHeader(h => ({ ...h, customer_id: v, invoice_id: '' }))}
+        onPartyChange={handleCustomerChange}
         partyOptions={customerOptions}
         notes={header.notes}
         onNotesChange={v => setHeader(h => ({ ...h, notes: v }))}
