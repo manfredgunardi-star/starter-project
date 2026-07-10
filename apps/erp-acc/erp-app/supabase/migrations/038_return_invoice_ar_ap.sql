@@ -472,6 +472,16 @@ begin
     raise exception 'COA retur penjualan tidak lengkap';
   end if;
 
+  -- Lock the linked invoice up front (before the qty re-validation loop and
+  -- before the inventory-reversal loop) so that any two returns posted
+  -- concurrently against the same invoice — whether or not they target the
+  -- same line — fully serialize on this row lock. Locking it later (e.g.
+  -- only inside the AR block) would let two concurrent posts both pass the
+  -- qty check before either commits, over-consuming the returnable qty.
+  if v_sr.invoice_id is not null then
+    select * into v_inv from invoices where id = v_sr.invoice_id for update;
+  end if;
+
   -- Re-validate qty under row lock (race-safe: two concurrent returns on
   -- the same invoice line cannot both slip through the save-time soft check).
   -- Ownership check first: confirm invoice_item_id actually belongs to this
@@ -547,12 +557,20 @@ begin
       raise exception 'COA piutang/retur penjualan tidak lengkap';
     end if;
 
-    select * into v_inv from invoices where id = v_sr.invoice_id for update;
+    -- v_inv was already locked ("for update") earlier, right after the v_sr
+    -- lock and before the qty re-validation loop — the row lock has been
+    -- held continuously since then, so its columns are still current here;
+    -- no need to re-select.
 
     v_outstanding := v_inv.total - v_inv.amount_paid - v_inv.advance_deduction_amount
                       - v_inv.credit_applied_amount - v_inv.return_credit_amount;
     v_return_credit := least(v_sr.total, greatest(v_outstanding, 0));
     v_excess := v_sr.total - v_return_credit;
+
+    if abs(v_sr.total - (v_sr.subtotal + v_sr.tax_amount)) > 0.01 then
+      raise exception 'retur tidak konsisten: total (%) tidak sama dengan subtotal + pajak (%)',
+        v_sr.total, v_sr.subtotal + v_sr.tax_amount;
+    end if;
 
     v_journal_id := gen_random_uuid();
     insert into journals (
