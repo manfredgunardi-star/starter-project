@@ -153,3 +153,258 @@ on conflict (code) do nothing;
 
 update coa set parent_id = (select id from coa where code = '4-00000')
  where code = '4-13000';
+
+-- ============================================================
+-- save_sales_return: accept optional invoice_id / invoice_item_id,
+-- validate party match + returnable qty (soft check; hard check
+-- happens again at post time under row lock).
+-- ============================================================
+create or replace function save_sales_return(
+  p_sr jsonb,
+  p_items jsonb[]
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_id uuid;
+  v_item jsonb;
+  v_subtotal numeric := 0;
+  v_tax_amount numeric := 0;
+  v_total numeric := 0;
+  v_invoice_id uuid;
+  v_customer_id uuid;
+  v_inv_customer_id uuid;
+  v_inv_status text;
+  v_returnable numeric;
+begin
+  if not is_admin_or_staff() then
+    raise exception 'permission denied';
+  end if;
+
+  perform _ensure_period_open((p_sr->>'date')::date);
+
+  v_invoice_id := nullif(p_sr->>'invoice_id', '')::uuid;
+  v_customer_id := (p_sr->>'customer_id')::uuid;
+
+  if v_invoice_id is not null then
+    select customer_id, status into v_inv_customer_id, v_inv_status
+      from invoices where id = v_invoice_id and type = 'sales';
+    if v_inv_customer_id is null then
+      raise exception 'invoice asal tidak ditemukan atau bukan sales invoice';
+    end if;
+    if v_inv_customer_id <> v_customer_id then
+      raise exception 'customer retur harus sama dengan customer invoice asal';
+    end if;
+    if v_inv_status not in ('posted', 'partial', 'paid') then
+      raise exception 'invoice asal harus berstatus posted/partial/paid, saat ini: %', v_inv_status;
+    end if;
+  end if;
+
+  foreach v_item in array p_items loop
+    if v_invoice_id is not null then
+      if nullif(v_item->>'invoice_item_id', '') is null then
+        raise exception 'setiap item retur wajib invoice_item_id jika retur link ke invoice';
+      end if;
+      select sales_returnable_qty((v_item->>'invoice_item_id')::uuid) into v_returnable;
+      if coalesce((v_item->>'quantity_base')::numeric, (v_item->>'quantity')::numeric)
+           > coalesce(v_returnable, 0) then
+        raise exception 'qty retur melebihi sisa yang bisa diretur (%)', v_returnable;
+      end if;
+    end if;
+    v_subtotal := v_subtotal
+      + coalesce((v_item->>'unit_price')::numeric, 0)
+        * coalesce((v_item->>'quantity')::numeric, 0);
+    v_tax_amount := v_tax_amount + coalesce((v_item->>'tax_amount')::numeric, 0);
+    v_total := v_total + coalesce((v_item->>'total')::numeric, 0);
+  end loop;
+
+  if (p_sr->>'id') is null or (p_sr->>'id') = '' then
+    v_id := gen_random_uuid();
+
+    insert into sales_returns (
+      id, sr_number, date, customer_id, sales_order_id, invoice_id, warehouse_id,
+      status, subtotal, tax_amount, total, notes, created_by
+    ) values (
+      v_id,
+      generate_number('SRN'),
+      (p_sr->>'date')::date,
+      v_customer_id,
+      nullif(p_sr->>'sales_order_id', '')::uuid,
+      v_invoice_id,
+      nullif(p_sr->>'warehouse_id', '')::uuid,
+      coalesce(nullif(p_sr->>'status', ''), 'draft'),
+      v_subtotal, v_tax_amount, v_total,
+      nullif(p_sr->>'notes', ''),
+      auth.uid()
+    );
+  else
+    v_id := (p_sr->>'id')::uuid;
+
+    update sales_returns
+       set date           = (p_sr->>'date')::date,
+           customer_id    = v_customer_id,
+           sales_order_id = nullif(p_sr->>'sales_order_id', '')::uuid,
+           invoice_id     = v_invoice_id,
+           warehouse_id   = nullif(p_sr->>'warehouse_id', '')::uuid,
+           notes          = nullif(p_sr->>'notes', ''),
+           subtotal       = v_subtotal,
+           tax_amount     = v_tax_amount,
+           total          = v_total
+     where id = v_id
+       and status = 'draft';
+
+    if not found then
+      raise exception 'Sales return tidak ditemukan atau sudah diposting';
+    end if;
+  end if;
+
+  delete from sales_return_items where sales_return_id = v_id;
+
+  foreach v_item in array p_items loop
+    insert into sales_return_items (
+      sales_return_id, invoice_item_id, product_id, unit_id,
+      quantity, quantity_base, unit_price, tax_amount, total
+    ) values (
+      v_id,
+      nullif(v_item->>'invoice_item_id', '')::uuid,
+      (v_item->>'product_id')::uuid,
+      (v_item->>'unit_id')::uuid,
+      (v_item->>'quantity')::numeric,
+      (v_item->>'quantity_base')::numeric,
+      coalesce((v_item->>'unit_price')::numeric, 0),
+      coalesce((v_item->>'tax_amount')::numeric, 0),
+      coalesce((v_item->>'total')::numeric, 0)
+    );
+  end loop;
+
+  return v_id;
+end;
+$$;
+
+create or replace function save_purchase_return(
+  p_pr jsonb,
+  p_items jsonb[]
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_id uuid;
+  v_item jsonb;
+  v_subtotal numeric := 0;
+  v_tax_amount numeric := 0;
+  v_total numeric := 0;
+  v_invoice_id uuid;
+  v_supplier_id uuid;
+  v_inv_supplier_id uuid;
+  v_inv_status text;
+  v_returnable numeric;
+begin
+  if not is_admin_or_staff() then
+    raise exception 'permission denied';
+  end if;
+
+  perform _ensure_period_open((p_pr->>'date')::date);
+
+  v_invoice_id := nullif(p_pr->>'invoice_id', '')::uuid;
+  v_supplier_id := (p_pr->>'supplier_id')::uuid;
+
+  if v_invoice_id is not null then
+    select supplier_id, status into v_inv_supplier_id, v_inv_status
+      from invoices where id = v_invoice_id and type = 'purchase';
+    if v_inv_supplier_id is null then
+      raise exception 'invoice asal tidak ditemukan atau bukan purchase invoice';
+    end if;
+    if v_inv_supplier_id <> v_supplier_id then
+      raise exception 'supplier retur harus sama dengan supplier invoice asal';
+    end if;
+    if v_inv_status not in ('posted', 'partial', 'paid') then
+      raise exception 'invoice asal harus berstatus posted/partial/paid, saat ini: %', v_inv_status;
+    end if;
+  end if;
+
+  foreach v_item in array p_items loop
+    if v_invoice_id is not null then
+      if nullif(v_item->>'invoice_item_id', '') is null then
+        raise exception 'setiap item retur wajib invoice_item_id jika retur link ke invoice';
+      end if;
+      select purchase_returnable_qty((v_item->>'invoice_item_id')::uuid) into v_returnable;
+      if coalesce((v_item->>'quantity_base')::numeric, (v_item->>'quantity')::numeric)
+           > coalesce(v_returnable, 0) then
+        raise exception 'qty retur melebihi sisa yang bisa diretur (%)', v_returnable;
+      end if;
+    end if;
+    v_subtotal := v_subtotal
+      + coalesce((v_item->>'unit_price')::numeric, 0)
+        * coalesce((v_item->>'quantity')::numeric, 0);
+    v_tax_amount := v_tax_amount + coalesce((v_item->>'tax_amount')::numeric, 0);
+    v_total := v_total + coalesce((v_item->>'total')::numeric, 0);
+  end loop;
+
+  if (p_pr->>'id') is null or (p_pr->>'id') = '' then
+    v_id := gen_random_uuid();
+
+    insert into purchase_returns (
+      id, pr_number, date, supplier_id, purchase_order_id, invoice_id, warehouse_id,
+      status, subtotal, tax_amount, total, notes, created_by
+    ) values (
+      v_id,
+      generate_number('PRN'),
+      (p_pr->>'date')::date,
+      v_supplier_id,
+      nullif(p_pr->>'purchase_order_id', '')::uuid,
+      v_invoice_id,
+      nullif(p_pr->>'warehouse_id', '')::uuid,
+      coalesce(nullif(p_pr->>'status', ''), 'draft'),
+      v_subtotal, v_tax_amount, v_total,
+      nullif(p_pr->>'notes', ''),
+      auth.uid()
+    );
+  else
+    v_id := (p_pr->>'id')::uuid;
+
+    update purchase_returns
+       set date              = (p_pr->>'date')::date,
+           supplier_id       = v_supplier_id,
+           purchase_order_id = nullif(p_pr->>'purchase_order_id', '')::uuid,
+           invoice_id        = v_invoice_id,
+           warehouse_id      = nullif(p_pr->>'warehouse_id', '')::uuid,
+           notes             = nullif(p_pr->>'notes', ''),
+           subtotal          = v_subtotal,
+           tax_amount        = v_tax_amount,
+           total             = v_total
+     where id = v_id
+       and status = 'draft';
+
+    if not found then
+      raise exception 'Purchase return tidak ditemukan atau sudah diposting';
+    end if;
+  end if;
+
+  delete from purchase_return_items where purchase_return_id = v_id;
+
+  foreach v_item in array p_items loop
+    insert into purchase_return_items (
+      purchase_return_id, invoice_item_id, product_id, unit_id,
+      quantity, quantity_base, unit_price, tax_amount, total
+    ) values (
+      v_id,
+      nullif(v_item->>'invoice_item_id', '')::uuid,
+      (v_item->>'product_id')::uuid,
+      (v_item->>'unit_id')::uuid,
+      (v_item->>'quantity')::numeric,
+      (v_item->>'quantity_base')::numeric,
+      coalesce((v_item->>'unit_price')::numeric, 0),
+      coalesce((v_item->>'tax_amount')::numeric, 0),
+      coalesce((v_item->>'total')::numeric, 0)
+    );
+  end loop;
+
+  return v_id;
+end;
+$$;
