@@ -796,11 +796,23 @@ begin
                 'PPN Masukan reverse - ' || v_pr.pr_number);
     end if;
 
+    -- Deliberate SECOND credit to Persediaan, not a duplicate of the one in
+    -- the unconditional inventory-reversal journal above (~line 743). That
+    -- earlier journal is a self-contained Hutang-Barang-Diterima <-> Persediaan
+    -- entry that runs for every return regardless of invoice link (it's how
+    -- stock actually moves). This journal is a separate, additional entry
+    -- that exists only to record the AP-side effect for invoice-linked
+    -- returns (Debit Hutang Usaha, matched by Credit Persediaan + Credit PPN
+    -- Masukan + Selisih). Two independently-balanced journals — do not merge.
     insert into journal_items (journal_id, coa_id, credit, description)
       values (v_journal_id, v_coa_persediaan, v_total_cost,
               'Persediaan keluar (invoice-linked) - ' || v_pr.pr_number);
 
     -- Selisih antara harga invoice (subtotal) vs avg-cost inventory-out.
+    -- A variance is expected: avg_cost is a moving average that drifts from
+    -- the original invoiced unit price by the time the return is posted, so
+    -- subtotal (invoice price) and v_total_cost (current avg-cost-based
+    -- inventory value) don't line up.
     -- NOTE: this is the OPPOSITE debit/credit convention from the
     -- superficially-similar variance line in post_purchase_invoice
     -- (migration 016). There, Hutang-Barang-Diterima is debited and Hutang
