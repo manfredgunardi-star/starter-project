@@ -78,6 +78,7 @@ as $$
   select ii.id, ii.product_id, p.name, ii.unit_id, u.name,
          ii.quantity_base, ii.unit_price, sales_returnable_qty(ii.id)
     from invoice_items ii
+    join invoices i on i.id = ii.invoice_id and i.type = 'sales'
     join products p on p.id = ii.product_id
     join units u on u.id = ii.unit_id
    where ii.invoice_id = p_invoice_id;
@@ -93,6 +94,7 @@ as $$
   select ii.id, ii.product_id, p.name, ii.unit_id, u.name,
          ii.quantity_base, ii.unit_price, purchase_returnable_qty(ii.id)
     from invoice_items ii
+    join invoices i on i.id = ii.invoice_id and i.type = 'purchase'
     join products p on p.id = ii.product_id
     join units u on u.id = ii.unit_id
    where ii.invoice_id = p_invoice_id;
@@ -130,22 +132,24 @@ create index idx_credit_note_applications_note on credit_note_applications(credi
 alter table credit_notes enable row level security;
 create policy "credit_notes_select" on credit_notes
   for select to authenticated using (true);
-create policy "credit_notes_write" on credit_notes
-  for all to authenticated using (is_admin_or_staff()) with check (is_admin_or_staff());
+create policy "credit_notes_insert" on credit_notes
+  for insert to authenticated with check (is_admin_or_staff());
+create policy "credit_notes_update" on credit_notes
+  for update to authenticated using (is_admin_or_staff()) with check (is_admin_or_staff());
 
 alter table credit_note_applications enable row level security;
 create policy "credit_note_applications_select" on credit_note_applications
   for select to authenticated using (true);
-create policy "credit_note_applications_write" on credit_note_applications
-  for all to authenticated using (is_admin_or_staff()) with check (is_admin_or_staff());
+create policy "credit_note_applications_insert" on credit_note_applications
+  for insert to authenticated with check (is_admin_or_staff());
 
 -- 6) New COA account for the sales-side contra-revenue entry. The purchase
 --    side reuses the existing "Selisih Harga" account (5-19000) exactly
 --    like post_purchase_invoice already does for GR/invoice price
 --    variance — no new purchase-side account needed.
 insert into coa (code, name, type, normal_balance)
-select '4-13000', 'Retur Penjualan', 'revenue', 'debit'
-where not exists (select 1 from coa where code = '4-13000');
+values ('4-13000', 'Retur Penjualan', 'revenue', 'debit')
+on conflict (code) do nothing;
 
 update coa set parent_id = (select id from coa where code = '4-00000')
  where code = '4-13000';
