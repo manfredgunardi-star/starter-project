@@ -113,6 +113,7 @@ const menuGroups = [
       { label: 'Laba Rugi', path: '/reports/income-statement' },
       { label: 'Arus Kas', path: '/reports/cash-flow' },
       { label: 'AR/AP Aging', path: '/reports/ar-ap-aging' },
+      { label: 'Saldo Kredit', path: '/credit-notes' },
       { label: 'Neraca Saldo', path: '/reports/trial-balance' },
       { label: 'Laporan Penjualan', path: '/reports/sales' },
       { label: 'Laporan Pembelian', path: '/reports/purchases' },
