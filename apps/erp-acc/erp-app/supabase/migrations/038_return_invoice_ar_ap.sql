@@ -901,9 +901,11 @@ begin
   end if;
 
   select coalesce(sum(remaining), 0) into v_available
-    from credit_notes
-   where party_type = v_party_type and party_id = v_party_id and status = 'open'
-   for update;
+    from (
+      select remaining from credit_notes
+       where party_type = v_party_type and party_id = v_party_id and status = 'open'
+       for update
+    ) locked;
 
   if v_inv.credit_applied_amount > v_available + 0.01 then
     raise exception 'saldo kredit tidak cukup: diminta %, tersedia %',
@@ -931,6 +933,10 @@ begin
 
     v_remaining_to_allocate := v_remaining_to_allocate - v_allocate;
   end loop;
+
+  if v_remaining_to_allocate > 0.01 then
+    raise exception 'internal error: gagal alokasi kredit sepenuhnya (sisa %)', v_remaining_to_allocate;
+  end if;
 end;
 $$;
 
