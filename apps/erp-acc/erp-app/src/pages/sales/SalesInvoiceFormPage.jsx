@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useProducts, useCustomers, useCOA } from '../../hooks/useMasterData'
 import { getSalesInvoice, saveSalesInvoice, postSalesInvoice, getGoodsDelivery } from '../../services/salesService'
+import { getAvailableCredit } from '../../services/creditNoteService'
 import { createRecurringTemplate } from '../../services/recurringService'
 import { getPaymentTerms } from '../../services/paymentTermService'
 import { today } from '../../utils/date'
@@ -48,6 +49,7 @@ export default function SalesInvoiceFormPage() {
     notes: '',
     advance_deduction_amount: 0,
     advance_deduction_coa_id: '',
+    credit_applied_amount: 0,
   })
   const [items, setItems] = useState([LineItemsTable.emptyRow()])
   const [gdRaw, setGdRaw] = useState(null) // raw GD awaiting products master to compute price + PPN
@@ -81,6 +83,7 @@ export default function SalesInvoiceFormPage() {
             notes: inv.notes || '',
             advance_deduction_amount: inv.advance_deduction_amount || 0,
             advance_deduction_coa_id: inv.advance_deduction_coa_id || '',
+            credit_applied_amount: inv.credit_applied_amount || 0,
             amount_paid: inv.amount_paid,
             total: inv.total,
           })
@@ -137,6 +140,17 @@ export default function SalesInvoiceFormPage() {
     )
   }, [gdRaw, products])
 
+  const [availableCredit, setAvailableCredit] = useState(0)
+
+  useEffect(() => {
+    let cancelled = false
+    if (!header.customer_id) { setAvailableCredit(0); return }
+    getAvailableCredit('customer', header.customer_id)
+      .then(v => { if (!cancelled) setAvailableCredit(v) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [header.customer_id])
+
   const readOnly = !isNew && header.status !== 'draft'
 
   function handleDateChange(d) {
@@ -167,6 +181,9 @@ export default function SalesInvoiceFormPage() {
     if (advance < 0) { toast.error('Potongan uang muka tidak boleh negatif'); return }
     if (advance > clientTotal + 0.01) { toast.error('Potongan uang muka melebihi total invoice'); return }
     if (advance > 0 && !header.advance_deduction_coa_id) { toast.error('Pilih akun COA uang muka'); return }
+    const creditApplied = Number(header.credit_applied_amount) || 0
+    if (creditApplied < 0) { toast.error('Kredit yang diterapkan tidak boleh negatif'); return }
+    if (creditApplied > availableCredit + 0.01) { toast.error('Kredit yang diterapkan melebihi saldo kredit tersedia'); return }
     if (makeRecurring && !recurStart) {
       toast.error('Tanggal mulai untuk template berulang wajib diisi')
       return
@@ -248,7 +265,8 @@ export default function SalesInvoiceFormPage() {
   }, 0)
   const invoiceTotal = header.total || clientTotal
   const advance = Number(header.advance_deduction_amount) || 0
-  const remaining = invoiceTotal - advance - (header.amount_paid || 0)
+  const creditApplied = Number(header.credit_applied_amount) || 0
+  const remaining = invoiceTotal - advance - creditApplied - (header.amount_paid || 0)
 
   if (loading) return <LoadingSpinner message="Memuat invoice..." />
 
@@ -279,6 +297,11 @@ export default function SalesInvoiceFormPage() {
               Terima Pembayaran
             </Button>
           )}
+          {!isNew && ['posted', 'partial', 'paid'].includes(header.status) && (
+            <Button variant="secondary" onClick={() => navigate(`/sales/returns/new?from_invoice=${id}`)}>
+              Buat Retur
+            </Button>
+          )}
           {!isNew && (
             <>
               <Button variant="secondary" onClick={() => triggerPrint(id)} loading={isPrinting} disabled={isPrinting}>
@@ -299,7 +322,7 @@ export default function SalesInvoiceFormPage() {
         status={isNew ? null : header.status}
         partyLabel="Customer"
         partyId={header.customer_id}
-        onPartyChange={v => setHeader(h => ({ ...h, customer_id: v }))}
+        onPartyChange={v => setHeader(h => ({ ...h, customer_id: v, credit_applied_amount: 0 }))}
         partyOptions={customerOptions}
         dueDate={header.due_date}
         onDueDateChange={d => setHeader(h => ({ ...h, due_date: d }))}
@@ -359,6 +382,22 @@ export default function SalesInvoiceFormPage() {
                 />
               </Col>
             )}
+            <Col xs={24} md={8}>
+              <div style={{ marginBottom: 4, fontSize: 13, fontWeight: 500 }}>
+                Terapkan dari Saldo Kredit (Tersedia: {formatCurrency(availableCredit)})
+              </div>
+              <InputNumber
+                style={{ width: '100%' }}
+                min={0}
+                max={Math.max(availableCredit, Number(header.credit_applied_amount) || 0)}
+                value={header.credit_applied_amount || 0}
+                onChange={v => setHeader(h => ({ ...h, credit_applied_amount: v || 0 }))}
+                formatter={val => `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
+                parser={val => val.replace(/\./g, '')}
+                placeholder="0"
+                disabled={availableCredit <= 0}
+              />
+            </Col>
           </Row>
         </Card>
       )}
@@ -455,6 +494,12 @@ export default function SalesInvoiceFormPage() {
             <Col span={6}>
               <Typography.Text type="danger" style={{ display: 'block' }}>Sisa Tagih</Typography.Text>
               <Typography.Text strong type="danger" style={{ fontSize: 16 }}>{formatCurrency(remaining)}</Typography.Text>
+            </Col>
+          </Row>
+          <Row gutter={16} style={{ marginTop: 12 }}>
+            <Col span={6}>
+              <Typography.Text style={{ color: '#0958d9', display: 'block' }}>Kredit Diterapkan</Typography.Text>
+              <Typography.Text strong style={{ color: '#003eb3', fontSize: 16 }}>{formatCurrency(header.credit_applied_amount || 0)}</Typography.Text>
             </Col>
           </Row>
         </Card>

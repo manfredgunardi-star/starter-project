@@ -102,6 +102,7 @@ export async function savePurchaseInvoice(invoice, items) {
       payment_term_id:   invoice.payment_term_id   || null,
       status:            invoice.status            || 'draft',
       notes:             invoice.notes             || null,
+      credit_applied_amount: Number(invoice.credit_applied_amount) || 0,
     },
     p_items: items.map(i => ({
       product_id:    i.product_id,
