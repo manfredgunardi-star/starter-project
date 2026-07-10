@@ -9,6 +9,15 @@ export async function getAccountBalances(startDate, endDate) {
   return data
 }
 
+export async function getIncomeStatementBalances(startDate, endDate) {
+  const { data, error } = await supabase.rpc('get_income_statement_balances', {
+    p_start_date: startDate,
+    p_end_date: endDate,
+  })
+  if (error) throw error
+  return data
+}
+
 export async function getLedger(coaId, startDate, endDate) {
   const { data, error } = await supabase.rpc('get_ledger', {
     p_coa_id: coaId,
