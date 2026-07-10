@@ -859,3 +859,775 @@ begin
   update purchase_returns set status = 'posted' where id = p_pr_id;
 end;
 $$;
+
+-- ============================================================
+-- apply_credit_note_to_invoice: FIFO allocator, bookkeeping-only.
+-- The originating return's journal already reduced Piutang/Hutang for
+-- the excess (post_sales_return / post_purchase_return above). Applying
+-- that credit to a later invoice does not need a second journal entry —
+-- it only needs to (a) prevent the same credit being used twice and
+-- (b) let the invoice's own status calculation account for it.
+-- ============================================================
+create or replace function apply_credit_note_to_invoice(p_invoice_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_inv record;
+  v_party_type text;
+  v_party_id uuid;
+  v_remaining_to_allocate numeric;
+  v_note record;
+  v_allocate numeric;
+  v_available numeric;
+begin
+  select * into v_inv from invoices where id = p_invoice_id for update;
+  if v_inv is null then
+    raise exception 'invoice tidak ditemukan';
+  end if;
+
+  if v_inv.credit_applied_amount <= 0 then
+    return;
+  end if;
+
+  if v_inv.type = 'sales' then
+    v_party_type := 'customer';
+    v_party_id := v_inv.customer_id;
+  else
+    v_party_type := 'supplier';
+    v_party_id := v_inv.supplier_id;
+  end if;
+
+  select coalesce(sum(remaining), 0) into v_available
+    from credit_notes
+   where party_type = v_party_type and party_id = v_party_id and status = 'open'
+   for update;
+
+  if v_inv.credit_applied_amount > v_available + 0.01 then
+    raise exception 'saldo kredit tidak cukup: diminta %, tersedia %',
+      v_inv.credit_applied_amount, v_available;
+  end if;
+
+  v_remaining_to_allocate := v_inv.credit_applied_amount;
+
+  for v_note in
+    select * from credit_notes
+     where party_type = v_party_type and party_id = v_party_id and status = 'open'
+     order by created_at
+     for update
+  loop
+    exit when v_remaining_to_allocate <= 0;
+    v_allocate := least(v_note.remaining, v_remaining_to_allocate);
+
+    insert into credit_note_applications (credit_note_id, invoice_id, amount, applied_by)
+      values (v_note.id, p_invoice_id, v_allocate, auth.uid());
+
+    update credit_notes
+       set remaining = remaining - v_allocate,
+           status = case when remaining - v_allocate <= 0.01 then 'applied' else status end
+     where id = v_note.id;
+
+    v_remaining_to_allocate := v_remaining_to_allocate - v_allocate;
+  end loop;
+end;
+$$;
+
+-- ============================================================
+-- save_sales_invoice: extended (migration 037 base) with
+-- credit_applied_amount accept + soft-validate.
+-- ============================================================
+create or replace function save_sales_invoice(
+  p_invoice jsonb,
+  p_items   jsonb
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_inv_id     uuid;
+  v_number     text;
+  v_subtotal   numeric := 0;
+  v_tax        numeric := 0;
+  v_total      numeric := 0;
+  v_adv_amount numeric := 0;
+  v_adv_coa    uuid;
+  v_credit_applied numeric := 0;
+  v_available_credit numeric;
+begin
+  if not is_admin_or_staff() then
+    raise exception 'permission denied';
+  end if;
+  perform _ensure_period_open((p_invoice->>'date')::date);
+
+  select coalesce(sum(line_subtotal), 0), coalesce(sum(line_tax), 0)
+  into v_subtotal, v_tax
+  from (
+    select
+      qty * price as line_subtotal,
+      case when p.is_taxable
+           then round(qty * price * coalesce(nullif(p.tax_rate, 0), 11) / 100, 2)
+           else 0 end as line_tax
+    from jsonb_array_elements(p_items) as i
+    join products p on p.id = (i->>'product_id')::uuid
+    cross join lateral (
+      select coalesce((i->>'quantity')::numeric, 0)   as qty,
+             coalesce((i->>'unit_price')::numeric, 0)  as price
+    ) v
+  ) lines;
+  v_total := v_subtotal + v_tax;
+
+  v_adv_amount := coalesce((p_invoice->>'advance_deduction_amount')::numeric, 0);
+  v_adv_coa    := nullif(p_invoice->>'advance_deduction_coa_id', '')::uuid;
+  if v_adv_amount < 0 then
+    raise exception 'potongan uang muka tidak boleh negatif';
+  end if;
+  if v_adv_amount > v_total + 0.01 then
+    raise exception 'potongan uang muka (%) melebihi total invoice (%)', v_adv_amount, v_total;
+  end if;
+  if v_adv_amount > 0 and v_adv_coa is null then
+    raise exception 'akun COA uang muka wajib dipilih jika potongan uang muka > 0';
+  end if;
+
+  v_credit_applied := coalesce((p_invoice->>'credit_applied_amount')::numeric, 0);
+  if v_credit_applied < 0 then
+    raise exception 'kredit yang diterapkan tidak boleh negatif';
+  end if;
+  if v_credit_applied > 0 then
+    select coalesce(sum(remaining), 0) into v_available_credit
+      from credit_notes
+     where party_type = 'customer'
+       and party_id = (p_invoice->>'customer_id')::uuid
+       and status = 'open';
+    if v_credit_applied > v_available_credit + 0.01 then
+      raise exception 'kredit yang diterapkan (%) melebihi saldo kredit tersedia (%)',
+        v_credit_applied, v_available_credit;
+    end if;
+  end if;
+
+  v_inv_id := nullif(p_invoice->>'id', '')::uuid;
+
+  if v_inv_id is null then
+    v_number := generate_number('INV');
+    v_inv_id  := gen_random_uuid();
+    insert into invoices (
+      id, invoice_number, date, due_date, type, customer_id,
+      sales_order_id, goods_delivery_id, payment_term_id,
+      status, subtotal, tax_amount, total,
+      advance_deduction_amount, advance_deduction_coa_id,
+      credit_applied_amount,
+      notes, created_by
+    ) values (
+      v_inv_id, v_number,
+      (p_invoice->>'date')::date,
+      nullif(p_invoice->>'due_date', '')::date,
+      'sales',
+      (p_invoice->>'customer_id')::uuid,
+      nullif(p_invoice->>'sales_order_id',    '')::uuid,
+      nullif(p_invoice->>'goods_delivery_id', '')::uuid,
+      nullif(p_invoice->>'payment_term_id',   '')::uuid,
+      coalesce(p_invoice->>'status', 'draft'),
+      v_subtotal, v_tax, v_total,
+      v_adv_amount, v_adv_coa,
+      v_credit_applied,
+      nullif(p_invoice->>'notes', ''),
+      auth.uid()
+    );
+  else
+    update invoices
+       set date                     = (p_invoice->>'date')::date,
+           due_date                 = nullif(p_invoice->>'due_date', '')::date,
+           customer_id              = (p_invoice->>'customer_id')::uuid,
+           sales_order_id           = nullif(p_invoice->>'sales_order_id',    '')::uuid,
+           goods_delivery_id        = nullif(p_invoice->>'goods_delivery_id', '')::uuid,
+           payment_term_id          = nullif(p_invoice->>'payment_term_id',   '')::uuid,
+           subtotal                 = v_subtotal,
+           tax_amount               = v_tax,
+           total                    = v_total,
+           advance_deduction_amount = v_adv_amount,
+           advance_deduction_coa_id = v_adv_coa,
+           credit_applied_amount    = v_credit_applied,
+           notes                    = nullif(p_invoice->>'notes', '')
+     where id = v_inv_id and status = 'draft' and type = 'sales';
+    if not found then
+      raise exception 'sales invoice tidak dapat diubah (sudah diposting atau tidak ditemukan)';
+    end if;
+    delete from invoice_items where invoice_id = v_inv_id;
+  end if;
+
+  insert into invoice_items (
+    invoice_id, product_id, unit_id,
+    quantity, quantity_base, unit_price, tax_amount, total
+  )
+  select
+    v_inv_id,
+    (i->>'product_id')::uuid,
+    (i->>'unit_id')::uuid,
+    v.qty,
+    coalesce((i->>'quantity_base')::numeric, v.qty),
+    v.price,
+    t.line_tax,
+    v.qty * v.price + t.line_tax
+  from jsonb_array_elements(p_items) as i
+  join products p on p.id = (i->>'product_id')::uuid
+  cross join lateral (
+    select coalesce((i->>'quantity')::numeric, 0)  as qty,
+           coalesce((i->>'unit_price')::numeric, 0) as price
+  ) v
+  cross join lateral (
+    select case when p.is_taxable
+                then round(v.qty * v.price * coalesce(nullif(p.tax_rate, 0), 11) / 100, 2)
+                else 0 end as line_tax
+  ) t;
+
+  return v_inv_id;
+end $$;
+
+-- ============================================================
+-- post_sales_invoice: extended (migration 037 base) — hard-validate
+-- credit, call the allocator, extend the 'paid' status threshold.
+-- ============================================================
+create or replace function post_sales_invoice(p_invoice_id uuid)
+returns uuid as $$
+declare
+  v_inv record;
+  v_item record;
+  v_journal_id uuid;
+  v_hpp_journal_id uuid;
+  v_coa_piutang uuid;
+  v_coa_pendapatan uuid;
+  v_coa_ppn_out uuid;
+  v_coa_hpp uuid;
+  v_coa_persediaan uuid;
+  v_has_gd boolean;
+  v_avg_cost numeric;
+  v_total_hpp numeric := 0;
+  v_piutang numeric;
+  v_available_credit numeric;
+begin
+  perform _ensure_can_post();
+
+  select * into v_inv from invoices where id = p_invoice_id for update;
+  if v_inv is null then raise exception 'invoice not found'; end if;
+  if v_inv.status != 'draft' then
+    raise exception 'Invoice already posted';
+  end if;
+  if v_inv.type != 'sales' then
+    raise exception 'Not a sales invoice';
+  end if;
+
+  if v_inv.advance_deduction_amount > 0 and v_inv.advance_deduction_coa_id is null then
+    raise exception 'akun COA uang muka wajib dipilih jika potongan uang muka > 0';
+  end if;
+  if v_inv.advance_deduction_amount > v_inv.total + 0.01 then
+    raise exception 'potongan uang muka melebihi total invoice';
+  end if;
+
+  if v_inv.credit_applied_amount > 0 then
+    select coalesce(sum(remaining), 0) into v_available_credit
+      from credit_notes
+     where party_type = 'customer' and party_id = v_inv.customer_id and status = 'open';
+    if v_inv.credit_applied_amount > v_available_credit + 0.01 then
+      raise exception 'kredit yang diterapkan (%) melebihi saldo kredit tersedia (%)',
+        v_inv.credit_applied_amount, v_available_credit;
+    end if;
+  end if;
+
+  perform _ensure_period_open(v_inv.date);
+
+  select id into v_coa_piutang from coa where code = '1-13000';
+  select id into v_coa_pendapatan from coa where code = '4-11000';
+  select id into v_coa_ppn_out from coa where code = '2-12000';
+  select id into v_coa_hpp from coa where code = '5-11000';
+  select id into v_coa_persediaan from coa where code = '1-14000';
+
+  v_journal_id := gen_random_uuid();
+  insert into journals (id, journal_number, date, description, source, reference_type, reference_id, customer_id, is_posted, created_by)
+    values (v_journal_id, generate_number('JRN'), v_inv.date,
+      'Penjualan ' || v_inv.invoice_number, 'auto', 'sales_invoice', p_invoice_id,
+      v_inv.customer_id, true, v_inv.created_by);
+
+  v_piutang := v_inv.total - v_inv.advance_deduction_amount;
+  if v_piutang > 0 then
+    insert into journal_items (journal_id, coa_id, debit, description)
+      values (v_journal_id, v_coa_piutang, v_piutang, 'Piutang - ' || v_inv.invoice_number);
+  end if;
+
+  if v_inv.advance_deduction_amount > 0 then
+    insert into journal_items (journal_id, coa_id, debit, description)
+      values (v_journal_id, v_inv.advance_deduction_coa_id, v_inv.advance_deduction_amount,
+              'Potongan uang muka - ' || v_inv.invoice_number);
+  end if;
+
+  insert into journal_items (journal_id, coa_id, credit, description)
+    values (v_journal_id, v_coa_pendapatan, v_inv.subtotal, 'Pendapatan - ' || v_inv.invoice_number);
+
+  if v_inv.tax_amount > 0 then
+    insert into journal_items (journal_id, coa_id, credit, description)
+      values (v_journal_id, v_coa_ppn_out, v_inv.tax_amount, 'PPN Keluaran - ' || v_inv.invoice_number);
+  end if;
+
+  select exists(
+    select 1 from goods_deliveries
+      where sales_order_id = v_inv.sales_order_id
+        and status = 'posted'
+  ) into v_has_gd;
+
+  if not v_has_gd then
+    for v_item in select * from invoice_items where invoice_id = p_invoice_id
+    loop
+      v_avg_cost := inventory_stock_out(
+        v_item.product_id, v_item.quantity_base,
+        v_item.unit_id, v_item.quantity, 'sales_invoice', p_invoice_id, v_inv.date
+      );
+      v_total_hpp := v_total_hpp + (v_item.quantity_base * v_avg_cost);
+    end loop;
+
+    if v_total_hpp > 0 then
+      v_hpp_journal_id := gen_random_uuid();
+      insert into journals (id, journal_number, date, description, source, reference_type, reference_id, customer_id, is_posted, created_by)
+        values (v_hpp_journal_id, generate_number('JRN'), v_inv.date,
+          'HPP Penjualan ' || v_inv.invoice_number, 'auto', 'sales_invoice_hpp', p_invoice_id,
+          v_inv.customer_id, true, v_inv.created_by);
+      insert into journal_items (journal_id, coa_id, debit, description)
+        values (v_hpp_journal_id, v_coa_hpp, v_total_hpp, 'HPP - ' || v_inv.invoice_number);
+      insert into journal_items (journal_id, coa_id, credit, description)
+        values (v_hpp_journal_id, v_coa_persediaan, v_total_hpp, 'Persediaan keluar - ' || v_inv.invoice_number);
+    end if;
+  end if;
+
+  update invoices
+     set status = case
+           when advance_deduction_amount + credit_applied_amount >= total - 0.01 then 'paid'
+           else 'posted'
+         end
+   where id = p_invoice_id;
+  if v_inv.sales_order_id is not null then
+    update sales_orders set status = 'invoiced' where id = v_inv.sales_order_id;
+  end if;
+
+  if v_inv.credit_applied_amount > 0 then
+    perform apply_credit_note_to_invoice(p_invoice_id);
+  end if;
+
+  return v_journal_id;
+end;
+$$ language plpgsql security definer set search_path = public;
+
+-- ============================================================
+-- save_purchase_invoice: extended (migration 035 base) with
+-- credit_applied_amount accept + soft-validate.
+-- ============================================================
+create or replace function save_purchase_invoice(
+  p_invoice jsonb,
+  p_items   jsonb
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_inv_id   uuid;
+  v_number   text;
+  v_subtotal numeric := 0;
+  v_tax      numeric := 0;
+  v_total    numeric := 0;
+  v_credit_applied numeric := 0;
+  v_available_credit numeric;
+begin
+  if not is_admin_or_staff() then
+    raise exception 'permission denied';
+  end if;
+  perform _ensure_period_open((p_invoice->>'date')::date);
+
+  select
+    coalesce(sum(line_subtotal), 0),
+    coalesce(sum(line_tax), 0)
+  into v_subtotal, v_tax
+  from (
+    select
+      qty * price as line_subtotal,
+      case when p.is_taxable
+           then round(qty * price * coalesce(nullif(p.tax_rate, 0), 11) / 100, 2)
+           else 0 end as line_tax
+    from jsonb_array_elements(p_items) as i
+    join products p on p.id = (i->>'product_id')::uuid
+    cross join lateral (
+      select coalesce((i->>'quantity')::numeric, 0)   as qty,
+             coalesce((i->>'unit_price')::numeric, 0)  as price
+    ) v
+  ) lines;
+  v_total := v_subtotal + v_tax;
+
+  v_credit_applied := coalesce((p_invoice->>'credit_applied_amount')::numeric, 0);
+  if v_credit_applied < 0 then
+    raise exception 'kredit yang diterapkan tidak boleh negatif';
+  end if;
+  if v_credit_applied > 0 then
+    select coalesce(sum(remaining), 0) into v_available_credit
+      from credit_notes
+     where party_type = 'supplier'
+       and party_id = (p_invoice->>'supplier_id')::uuid
+       and status = 'open';
+    if v_credit_applied > v_available_credit + 0.01 then
+      raise exception 'kredit yang diterapkan (%) melebihi saldo kredit tersedia (%)',
+        v_credit_applied, v_available_credit;
+    end if;
+  end if;
+
+  v_inv_id := nullif(p_invoice->>'id', '')::uuid;
+
+  if v_inv_id is null then
+    v_number := generate_number('PINV');
+    v_inv_id  := gen_random_uuid();
+    insert into invoices (
+      id, invoice_number, date, due_date, type, supplier_id,
+      purchase_order_id, goods_receipt_id, status, subtotal, tax_amount, total,
+      credit_applied_amount,
+      notes, created_by
+    ) values (
+      v_inv_id, v_number,
+      (p_invoice->>'date')::date,
+      nullif(p_invoice->>'due_date', '')::date,
+      'purchase',
+      (p_invoice->>'supplier_id')::uuid,
+      nullif(p_invoice->>'purchase_order_id', '')::uuid,
+      nullif(p_invoice->>'goods_receipt_id',  '')::uuid,
+      coalesce(p_invoice->>'status', 'draft'),
+      v_subtotal, v_tax, v_total,
+      v_credit_applied,
+      nullif(p_invoice->>'notes', ''),
+      auth.uid()
+    );
+  else
+    update invoices
+       set date              = (p_invoice->>'date')::date,
+           due_date          = nullif(p_invoice->>'due_date', '')::date,
+           supplier_id       = (p_invoice->>'supplier_id')::uuid,
+           purchase_order_id = nullif(p_invoice->>'purchase_order_id', '')::uuid,
+           goods_receipt_id  = nullif(p_invoice->>'goods_receipt_id',  '')::uuid,
+           subtotal          = v_subtotal,
+           tax_amount        = v_tax,
+           total             = v_total,
+           credit_applied_amount = v_credit_applied,
+           notes             = nullif(p_invoice->>'notes', '')
+     where id = v_inv_id and status = 'draft' and type = 'purchase';
+    if not found then
+      raise exception 'purchase invoice tidak dapat diubah (sudah diposting atau tidak ditemukan)';
+    end if;
+    delete from invoice_items where invoice_id = v_inv_id;
+  end if;
+
+  insert into invoice_items (
+    invoice_id, product_id, unit_id,
+    quantity, quantity_base, unit_price, tax_amount, total
+  )
+  select
+    v_inv_id,
+    (i->>'product_id')::uuid,
+    (i->>'unit_id')::uuid,
+    v.qty,
+    coalesce((i->>'quantity_base')::numeric, v.qty),
+    v.price,
+    line_tax,
+    v.qty * v.price + line_tax
+  from jsonb_array_elements(p_items) as i
+  join products p on p.id = (i->>'product_id')::uuid
+  cross join lateral (
+    select coalesce((i->>'quantity')::numeric, 0)  as qty,
+           coalesce((i->>'unit_price')::numeric, 0) as price
+  ) v
+  cross join lateral (
+    select case when p.is_taxable
+                then round(v.qty * v.price * coalesce(nullif(p.tax_rate, 0), 11) / 100, 2)
+                else 0 end as line_tax
+  ) t;
+
+  return v_inv_id;
+end $$;
+
+-- ============================================================
+-- post_purchase_invoice: extended (migration 016 base) — hard-validate
+-- credit, call the allocator, extend the 'paid' status threshold.
+-- ============================================================
+create or replace function post_purchase_invoice(p_invoice_id uuid)
+returns uuid as $$
+declare
+  v_inv record;
+  v_item record;
+  v_journal_id uuid;
+  v_coa_persediaan uuid;
+  v_coa_ppn_in uuid;
+  v_coa_hutang uuid;
+  v_coa_hutang_barang uuid;
+  v_coa_selisih uuid;
+  v_has_gr boolean;
+  v_gr_total numeric := 0;
+  v_selisih numeric;
+  v_available_credit numeric;
+begin
+  perform _ensure_can_post();
+
+  select * into v_inv from invoices where id = p_invoice_id for update;
+  if v_inv is null then raise exception 'invoice not found'; end if;
+  if v_inv.status != 'draft' then
+    raise exception 'Invoice already posted';
+  end if;
+  if v_inv.type != 'purchase' then
+    raise exception 'Not a purchase invoice';
+  end if;
+
+  if v_inv.credit_applied_amount > 0 then
+    select coalesce(sum(remaining), 0) into v_available_credit
+      from credit_notes
+     where party_type = 'supplier' and party_id = v_inv.supplier_id and status = 'open';
+    if v_inv.credit_applied_amount > v_available_credit + 0.01 then
+      raise exception 'kredit yang diterapkan (%) melebihi saldo kredit tersedia (%)',
+        v_inv.credit_applied_amount, v_available_credit;
+    end if;
+  end if;
+
+  perform _ensure_period_open(v_inv.date);
+
+  select id into v_coa_persediaan from coa where code = '1-14000';
+  select id into v_coa_ppn_in from coa where code = '1-15000';
+  select id into v_coa_hutang from coa where code = '2-11000';
+  select id into v_coa_hutang_barang from coa where code = '2-11100';
+  select id into v_coa_selisih from coa where code = '5-19000';
+
+  v_journal_id := gen_random_uuid();
+  insert into journals (id, journal_number, date, description, source, reference_type, reference_id, supplier_id, is_posted, created_by)
+    values (v_journal_id, generate_number('JRN'), v_inv.date,
+      'Pembelian ' || v_inv.invoice_number, 'auto', 'purchase_invoice', p_invoice_id,
+      v_inv.supplier_id, true, v_inv.created_by);
+
+  select exists(
+    select 1 from goods_receipts
+      where purchase_order_id = v_inv.purchase_order_id
+        and status = 'posted'
+  ) into v_has_gr;
+
+  if v_has_gr then
+    select coalesce(sum(gri.quantity_base * gri.unit_price), 0) into v_gr_total
+      from goods_receipt_items gri
+      join goods_receipts gr on gri.goods_receipt_id = gr.id
+      where gr.purchase_order_id = v_inv.purchase_order_id and gr.status = 'posted';
+
+    insert into journal_items (journal_id, coa_id, debit, description)
+      values (v_journal_id, v_coa_hutang_barang, v_gr_total, 'Clear accrual - ' || v_inv.invoice_number);
+    insert into journal_items (journal_id, coa_id, credit, description)
+      values (v_journal_id, v_coa_hutang, v_inv.total, 'Hutang usaha - ' || v_inv.invoice_number);
+
+    if v_inv.tax_amount > 0 then
+      insert into journal_items (journal_id, coa_id, debit, description)
+        values (v_journal_id, v_coa_ppn_in, v_inv.tax_amount, 'PPN Masukan - ' || v_inv.invoice_number);
+    end if;
+
+    v_selisih := v_inv.subtotal - v_gr_total;
+    if v_selisih > 0 then
+      insert into journal_items (journal_id, coa_id, debit, description)
+        values (v_journal_id, v_coa_selisih, v_selisih, 'Selisih harga - ' || v_inv.invoice_number);
+    elsif v_selisih < 0 then
+      insert into journal_items (journal_id, coa_id, credit, description)
+        values (v_journal_id, v_coa_selisih, abs(v_selisih), 'Selisih harga - ' || v_inv.invoice_number);
+    end if;
+
+  else
+    for v_item in select * from invoice_items where invoice_id = p_invoice_id
+    loop
+      perform inventory_stock_in(
+        v_item.product_id, v_item.quantity_base, v_item.unit_price,
+        v_item.unit_id, v_item.quantity, 'purchase_invoice', p_invoice_id, v_inv.date
+      );
+    end loop;
+
+    insert into journal_items (journal_id, coa_id, debit, description)
+      values (v_journal_id, v_coa_persediaan, v_inv.subtotal, 'Persediaan masuk - ' || v_inv.invoice_number);
+
+    if v_inv.tax_amount > 0 then
+      insert into journal_items (journal_id, coa_id, debit, description)
+        values (v_journal_id, v_coa_ppn_in, v_inv.tax_amount, 'PPN Masukan - ' || v_inv.invoice_number);
+    end if;
+
+    insert into journal_items (journal_id, coa_id, credit, description)
+      values (v_journal_id, v_coa_hutang, v_inv.total, 'Hutang usaha - ' || v_inv.invoice_number);
+  end if;
+
+  update invoices
+     set status = case
+           when credit_applied_amount >= total - 0.01 then 'paid'
+           else 'posted'
+         end
+   where id = p_invoice_id;
+  if v_inv.purchase_order_id is not null then
+    update purchase_orders set status = 'done' where id = v_inv.purchase_order_id;
+  end if;
+
+  if v_inv.credit_applied_amount > 0 then
+    perform apply_credit_note_to_invoice(p_invoice_id);
+  end if;
+
+  return v_journal_id;
+end;
+$$ language plpgsql security definer set search_path = public;
+
+-- ============================================================
+-- post_payment: extended (migration 037 base) — the 'paid' threshold
+-- must also account for credit_applied_amount and return_credit_amount,
+-- not just advance_deduction_amount.
+-- ============================================================
+create or replace function post_payment(p_payment_id uuid)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_pay           record;
+  v_journal_id    uuid;
+  v_coa_piutang   uuid;
+  v_coa_hutang    uuid;
+  v_effective     numeric;
+begin
+  perform _ensure_can_post();
+
+  select p.*, a.coa_id as account_coa_id
+    into v_pay
+    from payments p
+    join accounts a on p.account_id = a.id
+   where p.id = p_payment_id
+     for update of p;
+
+  if v_pay is null then
+    raise exception 'payment % not found', p_payment_id;
+  end if;
+
+  if v_pay.is_posted then
+    return v_pay.posted_journal_id;
+  end if;
+
+  perform _ensure_period_open(v_pay.date);
+
+  select id into v_coa_piutang from coa where code = '1-13000';
+  select id into v_coa_hutang  from coa where code = '2-11000';
+
+  v_effective := v_pay.amount + v_pay.discount_amount + v_pay.rounding_amount;
+
+  v_journal_id := gen_random_uuid();
+  insert into journals (
+    id, journal_number, date, description, source,
+    reference_type, reference_id, customer_id, supplier_id,
+    is_posted, created_by
+  ) values (
+    v_journal_id, generate_number('JRN'), v_pay.date,
+    'Pembayaran ' || v_pay.payment_number, 'auto', 'payment', p_payment_id,
+    v_pay.customer_id, v_pay.supplier_id, true, v_pay.created_by
+  );
+
+  if v_pay.type = 'incoming' then
+    insert into journal_items (journal_id, coa_id, debit, description)
+      values (v_journal_id, v_pay.account_coa_id, v_pay.amount,
+              'Terima pembayaran - ' || v_pay.payment_number);
+
+    if v_pay.discount_amount > 0 then
+      if v_pay.discount_coa_id is null then
+        raise exception 'COA diskon wajib diisi jika discount_amount > 0';
+      end if;
+      insert into journal_items (journal_id, coa_id, debit, description)
+        values (v_journal_id, v_pay.discount_coa_id, v_pay.discount_amount,
+                'Diskon penjualan - ' || v_pay.payment_number);
+    end if;
+
+    if v_pay.rounding_amount != 0 then
+      if v_pay.rounding_coa_id is null then
+        raise exception 'COA pembulatan wajib diisi jika rounding_amount != 0';
+      end if;
+      if v_pay.rounding_amount > 0 then
+        insert into journal_items (journal_id, coa_id, debit, description)
+          values (v_journal_id, v_pay.rounding_coa_id, v_pay.rounding_amount,
+                  'Selisih pembulatan - ' || v_pay.payment_number);
+      else
+        insert into journal_items (journal_id, coa_id, credit, description)
+          values (v_journal_id, v_pay.rounding_coa_id, abs(v_pay.rounding_amount),
+                  'Selisih pembulatan - ' || v_pay.payment_number);
+      end if;
+    end if;
+
+    insert into journal_items (journal_id, coa_id, credit, description)
+      values (v_journal_id, v_coa_piutang, v_effective,
+              'Pelunasan piutang - ' || v_pay.payment_number);
+
+    update accounts set balance = balance + v_pay.amount
+     where id = v_pay.account_id;
+
+  elsif v_pay.type = 'outgoing' then
+    insert into journal_items (journal_id, coa_id, debit, description)
+      values (v_journal_id, v_coa_hutang, v_effective,
+              'Pelunasan hutang - ' || v_pay.payment_number);
+
+    if v_pay.fee_amount > 0 then
+      if v_pay.fee_coa_id is null then
+        raise exception 'COA biaya bank wajib diisi jika fee_amount > 0';
+      end if;
+      insert into journal_items (journal_id, coa_id, debit, description)
+        values (v_journal_id, v_pay.fee_coa_id, v_pay.fee_amount,
+                'Biaya transfer - ' || v_pay.payment_number);
+    end if;
+
+    insert into journal_items (journal_id, coa_id, credit, description)
+      values (v_journal_id, v_pay.account_coa_id, v_pay.amount + v_pay.fee_amount,
+              'Bayar supplier - ' || v_pay.payment_number);
+
+    if v_pay.discount_amount > 0 then
+      if v_pay.discount_coa_id is null then
+        raise exception 'COA diskon wajib diisi jika discount_amount > 0';
+      end if;
+      insert into journal_items (journal_id, coa_id, credit, description)
+        values (v_journal_id, v_pay.discount_coa_id, v_pay.discount_amount,
+                'Diskon pembelian - ' || v_pay.payment_number);
+    end if;
+
+    if v_pay.rounding_amount != 0 then
+      if v_pay.rounding_coa_id is null then
+        raise exception 'COA pembulatan wajib diisi jika rounding_amount != 0';
+      end if;
+      if v_pay.rounding_amount > 0 then
+        insert into journal_items (journal_id, coa_id, credit, description)
+          values (v_journal_id, v_pay.rounding_coa_id, v_pay.rounding_amount,
+                  'Selisih pembulatan - ' || v_pay.payment_number);
+      else
+        insert into journal_items (journal_id, coa_id, debit, description)
+          values (v_journal_id, v_pay.rounding_coa_id, abs(v_pay.rounding_amount),
+                  'Selisih pembulatan - ' || v_pay.payment_number);
+      end if;
+    end if;
+
+    update accounts set balance = balance - (v_pay.amount + v_pay.fee_amount)
+     where id = v_pay.account_id;
+  end if;
+
+  -- Ambang 'paid' kini juga memperhitungkan return_credit_amount dan
+  -- credit_applied_amount, selain advance_deduction_amount (migration 037).
+  if v_pay.invoice_id is not null then
+    update invoices
+       set amount_paid = amount_paid + v_effective,
+           status = case
+             when amount_paid + v_effective + advance_deduction_amount
+                    + credit_applied_amount + return_credit_amount >= total - 0.01 then 'paid'
+             else 'partial'
+           end
+     where id = v_pay.invoice_id;
+  end if;
+
+  update payments
+     set is_posted         = true,
+         posted_journal_id = v_journal_id,
+         posted_at         = now()
+   where id = p_payment_id;
+
+  return v_journal_id;
+end $$;
