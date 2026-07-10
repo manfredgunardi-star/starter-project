@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 export async function getSalesReturns() {
   const { data, error } = await supabase
     .from('sales_returns')
-    .select('*, customer:customers(name), sales_order:sales_orders(so_number)')
+    .select('*, customer:customers(name), sales_order:sales_orders(so_number), invoice:invoices(invoice_number)')
     .order('date', { ascending: false })
   if (error) throw error
   return data
@@ -16,14 +16,37 @@ export async function getSalesReturn(id) {
       *,
       customer:customers(id, name),
       sales_order:sales_orders(id, so_number),
+      invoice:invoices(id, invoice_number),
       items:sales_return_items(
-        id, product_id, unit_id, quantity, quantity_base, unit_price, tax_amount, total,
+        id, invoice_item_id, product_id, unit_id, quantity, quantity_base, unit_price, tax_amount, total,
         product:products(id, name, sku, is_taxable, tax_rate, sell_price),
         unit:units(id, name)
       )
     `)
     .eq('id', id)
     .single()
+  if (error) throw error
+  return data
+}
+
+// Sales invoices eligible as a return's origin: same customer, posted/partial/paid.
+export async function getReturnableSalesInvoices(customerId) {
+  const { data, error } = await supabase
+    .from('invoices')
+    .select('id, invoice_number, date, total')
+    .eq('type', 'sales')
+    .eq('customer_id', customerId)
+    .in('status', ['posted', 'partial', 'paid'])
+    .order('date', { ascending: false })
+  if (error) throw error
+  return data
+}
+
+// Line items of one invoice with their remaining returnable qty.
+export async function getReturnableSalesInvoiceItems(invoiceId) {
+  const { data, error } = await supabase.rpc('get_returnable_sales_invoice_items', {
+    p_invoice_id: invoiceId,
+  })
   if (error) throw error
   return data
 }
@@ -35,11 +58,13 @@ export async function saveSalesReturn(sr, items) {
       date:           sr.date,
       customer_id:    sr.customer_id,
       sales_order_id: sr.sales_order_id || null,
+      invoice_id:     sr.invoice_id     || null,
       warehouse_id:   sr.warehouse_id   || null,
       status:         sr.status         || 'draft',
       notes:          sr.notes          || null,
     },
     p_items: items.map(i => ({
+      invoice_item_id: i.invoice_item_id || null,
       product_id:    i.product_id,
       unit_id:       i.unit_id,
       quantity:      Number(i.quantity),
