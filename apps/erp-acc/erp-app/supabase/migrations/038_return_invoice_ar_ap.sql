@@ -422,3 +422,186 @@ begin
   return v_id;
 end;
 $$;
+
+-- ============================================================
+-- post_sales_return: preserves the existing Persediaan/HPP reversal
+-- block verbatim, adds AR-reduction block after it (only when this
+-- return is linked to an invoice).
+-- ============================================================
+create or replace function post_sales_return(p_sr_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_sr record;
+  v_item record;
+  v_avg_cost numeric;
+  v_journal_id uuid;
+  v_total_cost numeric := 0;
+  v_coa_persediaan uuid;
+  v_coa_hpp uuid;
+  v_coa_piutang uuid;
+  v_coa_retur_penjualan uuid;
+  v_coa_ppn_out uuid;
+  v_inv record;
+  v_outstanding numeric;
+  v_return_credit numeric;
+  v_excess numeric;
+  v_returnable numeric;
+begin
+  perform _ensure_can_post();
+
+  select * into v_sr from sales_returns where id = p_sr_id for update;
+
+  if v_sr is null then
+    raise exception 'Sales return tidak ditemukan';
+  end if;
+
+  if v_sr.status <> 'draft' then
+    raise exception 'Sales return sudah diposting';
+  end if;
+
+  perform _ensure_period_open(v_sr.date);
+
+  select id into v_coa_persediaan from coa where code = '1-14000';
+  select id into v_coa_hpp from coa where code = '5-11000';
+
+  if v_coa_persediaan is null or v_coa_hpp is null then
+    raise exception 'COA retur penjualan tidak lengkap';
+  end if;
+
+  -- Re-validate qty under row lock (race-safe: two concurrent returns on
+  -- the same invoice line cannot both slip through the save-time soft check).
+  -- Ownership check first: confirm invoice_item_id actually belongs to this
+  -- return's invoice_id before trusting it (defends against a tampered /
+  -- foreign invoice_item_id submitted directly to the RPC).
+  if v_sr.invoice_id is not null then
+    for v_item in select * from sales_return_items where sales_return_id = p_sr_id loop
+      if not exists (
+        select 1 from invoice_items
+         where id = v_item.invoice_item_id
+           and invoice_id = v_sr.invoice_id
+      ) then
+        raise exception 'baris invoice tidak ditemukan pada invoice asal';
+      end if;
+      select sales_returnable_qty(v_item.invoice_item_id) into v_returnable;
+      if v_item.quantity_base > coalesce(v_returnable, 0) then
+        raise exception 'qty retur item % melebihi sisa yang bisa diretur (%)',
+          v_item.product_id, v_returnable;
+      end if;
+    end loop;
+  end if;
+
+  -- Inventory reversal (unchanged from the original implementation).
+  for v_item in
+    select * from sales_return_items where sales_return_id = p_sr_id
+  loop
+    v_avg_cost := coalesce(
+      (select avg_cost from inventory_stock where product_id = v_item.product_id),
+      0
+    );
+
+    perform inventory_stock_in(
+      v_item.product_id, v_item.quantity_base, v_avg_cost,
+      v_item.unit_id, v_item.quantity,
+      'sales_return', p_sr_id, v_sr.date
+    );
+
+    v_total_cost := v_total_cost + (v_item.quantity_base * v_avg_cost);
+  end loop;
+
+  if v_total_cost > 0 then
+    v_journal_id := gen_random_uuid();
+
+    insert into journals (
+      id, journal_number, date, description, source,
+      reference_type, reference_id, customer_id, is_posted, created_by
+    ) values (
+      v_journal_id, generate_number('JRN'), v_sr.date,
+      'Retur Penjualan ' || v_sr.sr_number, 'auto',
+      'sales_return', p_sr_id, v_sr.customer_id, true, v_sr.created_by
+    );
+
+    insert into journal_items (journal_id, coa_id, debit, description)
+      values (
+        v_journal_id, v_coa_persediaan, v_total_cost,
+        'Persediaan masuk retur - ' || v_sr.sr_number
+      );
+
+    insert into journal_items (journal_id, coa_id, credit, description)
+      values (
+        v_journal_id, v_coa_hpp, v_total_cost,
+        'Reversal HPP retur - ' || v_sr.sr_number
+      );
+  end if;
+
+  -- AR reduction (only when this return is linked to an invoice).
+  if v_sr.invoice_id is not null then
+    select id into v_coa_piutang from coa where code = '1-13000';
+    select id into v_coa_retur_penjualan from coa where code = '4-13000';
+    select id into v_coa_ppn_out from coa where code = '2-12000';
+
+    if v_coa_piutang is null or v_coa_retur_penjualan is null then
+      raise exception 'COA piutang/retur penjualan tidak lengkap';
+    end if;
+
+    select * into v_inv from invoices where id = v_sr.invoice_id for update;
+
+    v_outstanding := v_inv.total - v_inv.amount_paid - v_inv.advance_deduction_amount
+                      - v_inv.credit_applied_amount - v_inv.return_credit_amount;
+    v_return_credit := least(v_sr.total, greatest(v_outstanding, 0));
+    v_excess := v_sr.total - v_return_credit;
+
+    v_journal_id := gen_random_uuid();
+    insert into journals (
+      id, journal_number, date, description, source,
+      reference_type, reference_id, customer_id, is_posted, created_by
+    ) values (
+      v_journal_id, generate_number('JRN'), v_sr.date,
+      'Retur Penjualan (Piutang) ' || v_sr.sr_number, 'auto',
+      'sales_return_ar', p_sr_id, v_sr.customer_id, true, v_sr.created_by
+    );
+
+    insert into journal_items (journal_id, coa_id, debit, description)
+      values (v_journal_id, v_coa_retur_penjualan, v_sr.subtotal,
+              'Retur Penjualan - ' || v_sr.sr_number);
+
+    if v_sr.tax_amount > 0 then
+      if v_coa_ppn_out is null then
+        raise exception 'COA PPN Keluaran tidak ditemukan';
+      end if;
+      insert into journal_items (journal_id, coa_id, debit, description)
+        values (v_journal_id, v_coa_ppn_out, v_sr.tax_amount,
+                'PPN Keluaran reverse - ' || v_sr.sr_number);
+    end if;
+
+    insert into journal_items (journal_id, coa_id, credit, description)
+      values (v_journal_id, v_coa_piutang, v_sr.total,
+              'Piutang berkurang - ' || v_sr.sr_number);
+
+    update sales_returns
+       set return_credit_amount = v_return_credit,
+           excess_credit_amount = v_excess
+     where id = p_sr_id;
+
+    update invoices
+       set return_credit_amount = return_credit_amount + v_return_credit,
+           status = case
+             when amount_paid + advance_deduction_amount + credit_applied_amount
+                    + return_credit_amount + v_return_credit >= total - 0.01
+             then 'paid'
+             else 'partial'
+           end
+     where id = v_sr.invoice_id;
+
+    if v_excess > 0 then
+      insert into credit_notes (party_type, party_id, source_type, source_id, amount, remaining, status)
+        values ('customer', v_sr.customer_id, 'sales_return', p_sr_id, v_excess, v_excess, 'open');
+    end if;
+  end if;
+
+  update sales_returns set status = 'posted' where id = p_sr_id;
+end;
+$$;
