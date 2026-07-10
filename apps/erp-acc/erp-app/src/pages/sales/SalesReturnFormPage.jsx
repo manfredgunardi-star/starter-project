@@ -4,7 +4,10 @@ import { Space, Flex, Typography, Col, Alert } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useProducts, useCustomers } from '../../hooks/useMasterData'
-import { getSalesReturn, saveSalesReturn, postSalesReturn } from '../../services/salesReturnService'
+import {
+  getSalesReturn, saveSalesReturn, postSalesReturn,
+  getReturnableSalesInvoices, getReturnableSalesInvoiceItems,
+} from '../../services/salesReturnService'
 import { getGoodsDelivery } from '../../services/salesService'
 import { getWarehouses, getDefaultWarehouse } from '../../services/warehouseService'
 import { today } from '../../utils/date'
@@ -12,6 +15,7 @@ import Button from '../../components/ui/Button'
 import Select from '../../components/ui/Select'
 import DocumentHeader from '../../components/shared/DocumentHeader'
 import LineItemsTable from '../../components/shared/LineItemsTable'
+import InvoiceReturnItemsPicker from '../../components/shared/InvoiceReturnItemsPicker'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { ArrowLeft, Save, Send } from 'lucide-react'
 
@@ -35,12 +39,15 @@ export default function SalesReturnFormPage() {
     date: today(),
     customer_id: '',
     sales_order_id: '',
+    invoice_id: '',
     warehouse_id: '',
     status: 'draft',
     notes: '',
   })
   const [items, setItems] = useState([LineItemsTable.emptyRow()])
   const [warehouses, setWarehouses] = useState([])
+  const [invoiceOptionsList, setInvoiceOptionsList] = useState([])
+  const [returnableItems, setReturnableItems] = useState([])
 
   useEffect(() => { toastRef.current = toast }, [toast])
 
@@ -77,12 +84,14 @@ export default function SalesReturnFormPage() {
             date: sr.date,
             customer_id: sr.customer_id,
             sales_order_id: sr.sales_order_id || '',
+            invoice_id: sr.invoice_id || '',
             warehouse_id: sr.warehouse_id || '',
             status: sr.status,
             notes: sr.notes || '',
           })
           setItems(sr.items.map(i => ({
             _key: i.id,
+            invoice_item_id: i.invoice_item_id || null,
             product_id: i.product_id,
             unit_id: i.unit_id,
             quantity: i.quantity,
@@ -96,6 +105,33 @@ export default function SalesReturnFormPage() {
         .finally(() => setLoading(false))
     }
   }, [id, isNew])
+
+  // Invoice-linked return: load this customer's eligible invoices whenever
+  // customer changes (cleared when customer is empty).
+  useEffect(() => {
+    let cancelled = false
+    if (!header.customer_id) { setInvoiceOptionsList([]); return }
+    getReturnableSalesInvoices(header.customer_id)
+      .then(list => { if (!cancelled) setInvoiceOptionsList(list) })
+      .catch(err => toastRef.current.error(err.message))
+    return () => { cancelled = true }
+  }, [header.customer_id])
+
+  // Load the selected invoice's returnable lines. Switching invoice clears
+  // any items already picked (they belonged to the previous invoice).
+  useEffect(() => {
+    let cancelled = false
+    if (!header.invoice_id) { setReturnableItems([]); return }
+    getReturnableSalesInvoiceItems(header.invoice_id)
+      .then(list => { if (!cancelled) setReturnableItems(list) })
+      .catch(err => toastRef.current.error(err.message))
+    return () => { cancelled = true }
+  }, [header.invoice_id])
+
+  function handleInvoiceChange(invoiceId) {
+    setHeader(h => ({ ...h, invoice_id: invoiceId }))
+    setItems([])
+  }
 
   // Pre-fill from GD (shortcut from GoodsDeliveryFormPage)
   // Wait for products to load before running so sell_price is available
@@ -207,7 +243,7 @@ export default function SalesReturnFormPage() {
         status={isNew ? null : header.status}
         partyLabel="Customer"
         partyId={header.customer_id}
-        onPartyChange={v => setHeader(h => ({ ...h, customer_id: v }))}
+        onPartyChange={v => setHeader(h => ({ ...h, customer_id: v, invoice_id: '' }))}
         partyOptions={customerOptions}
         notes={header.notes}
         onNotesChange={v => setHeader(h => ({ ...h, notes: v }))}
@@ -223,18 +259,40 @@ export default function SalesReturnFormPage() {
             disabled={readOnly}
           />
         </Col>
+        <Col span={12} style={{ marginTop: 16 }}>
+          <Select
+            label="Invoice Asal (opsional)"
+            options={invoiceOptionsList.map(i => ({ value: i.id, label: `${i.invoice_number} — ${i.date}` }))}
+            value={header.invoice_id || ''}
+            onChange={e => handleInvoiceChange(e.target.value)}
+            placeholder="Tanpa invoice (retur stok saja)..."
+            disabled={readOnly || !header.customer_id}
+          />
+        </Col>
       </DocumentHeader>
 
       <Space direction="vertical" style={{ width: '100%' }} size={8}>
         <Typography.Title level={5} style={{ margin: 0 }}>Item Retur</Typography.Title>
-        <LineItemsTable
-          items={items}
-          onItemsChange={setItems}
-          products={products}
-          priceField="sell_price"
-          readOnly={readOnly}
-          showTax
-        />
+        {header.invoice_id ? (
+          <InvoiceReturnItemsPicker
+            returnableItems={returnableItems}
+            items={items}
+            onItemsChange={setItems}
+            readOnly={readOnly}
+            showTax
+            isTaxable={pid => products.find(p => p.id === pid)?.is_taxable}
+            taxRate={pid => products.find(p => p.id === pid)?.tax_rate || 11}
+          />
+        ) : (
+          <LineItemsTable
+            items={items}
+            onItemsChange={setItems}
+            products={products}
+            priceField="sell_price"
+            readOnly={readOnly}
+            showTax
+          />
+        )}
       </Space>
 
       {header.status === 'posted' && (
