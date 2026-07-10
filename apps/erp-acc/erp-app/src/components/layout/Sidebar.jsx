@@ -133,6 +133,7 @@ const menuGroups = [
       { label: 'Users', path: '/settings/users', minRole: 'admin' },
       { label: 'Audit Log', path: '/settings/audit-log', minRole: 'admin' },
       { label: 'Closing Period', path: '/settings/closing-period', minRole: 'admin' },
+      { label: 'Tutup Tahun Buku', path: '/settings/fiscal-year-closing', minRole: 'admin' },
     ]
   }
 ]

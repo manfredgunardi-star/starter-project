@@ -79,9 +79,17 @@ export default function BalanceSheetPage() {
 
   const byType = (type) => (data || []).filter(a => a.type === type && a.balance !== 0)
 
+  const totalPendapatan = (data || []).filter(a => a.type === 'revenue').reduce((s, a) => s + (Number(a.balance) || 0), 0)
+  const totalBeban = (data || []).filter(a => a.type === 'expense').reduce((s, a) => s + (Number(a.balance) || 0), 0)
+  const labaBerjalan = totalPendapatan - totalBeban
+
+  const equityAccounts = labaBerjalan !== 0
+    ? [...byType('equity'), { coa_id: '__laba_berjalan__', code: '', name: 'Laba (Rugi) Berjalan', balance: labaBerjalan }]
+    : byType('equity')
+
   const totalAset = byType('asset').reduce((s, a) => s + a.balance, 0)
   const totalKewajiban = byType('liability').reduce((s, a) => s + a.balance, 0)
-  const totalModal = byType('equity').reduce((s, a) => s + a.balance, 0)
+  const totalModal = equityAccounts.reduce((s, a) => s + a.balance, 0)
   const selisih = Math.abs(totalAset - totalKewajiban - totalModal)
 
   const exportPDF = () => {
@@ -114,7 +122,7 @@ export default function BalanceSheetPage() {
 
     addSection('ASET', byType('asset'), totalAset)
     addSection('KEWAJIBAN', byType('liability'), totalKewajiban)
-    addSection('MODAL / EKUITAS', byType('equity'), totalModal)
+    addSection('MODAL / EKUITAS', equityAccounts, totalModal)
 
     doc.setFontSize(10)
     doc.text(`Status: ${selisih < 0.01 ? 'Seimbang' : `Selisih ${formatCurrency(selisih)}`}`, 14, y)
@@ -138,7 +146,7 @@ export default function BalanceSheetPage() {
 
     addSection('ASET', byType('asset'), totalAset)
     addSection('KEWAJIBAN', byType('liability'), totalKewajiban)
-    addSection('MODAL / EKUITAS', byType('equity'), totalModal)
+    addSection('MODAL / EKUITAS', equityAccounts, totalModal)
     rows.push(['Status', selisih < 0.01 ? 'Seimbang' : `Selisih ${selisih}`])
 
     const ws = XLSX.utils.aoa_to_sheet(rows)
@@ -183,7 +191,7 @@ export default function BalanceSheetPage() {
             <Col xs={24} md={12}>
               <Space direction="vertical" style={{ width: '100%' }}>
                 <Section title="KEWAJIBAN" accounts={byType('liability')} />
-                <Section title="MODAL / EKUITAS" accounts={byType('equity')} />
+                <Section title="MODAL / EKUITAS" accounts={equityAccounts} />
               </Space>
             </Col>
           </Row>

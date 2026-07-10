@@ -3,7 +3,7 @@ import { jsPDF } from 'jspdf'
 import { applyPlugin } from 'jspdf-autotable'
 applyPlugin(jsPDF)
 import * as XLSX from 'xlsx'
-import { getAccountBalances } from '../../services/reportService'
+import { getIncomeStatementBalances } from '../../services/reportService'
 import { formatCurrency } from '../../utils/currency'
 import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
@@ -54,7 +54,7 @@ export default function IncomeStatementPage() {
     setLoading(true)
     setError(null)
     try {
-      const balances = await getAccountBalances(startDate, endDate)
+      const balances = await getIncomeStatementBalances(startDate, endDate)
       setData(balances || [])
     } catch (err) {
       setError(err.message)

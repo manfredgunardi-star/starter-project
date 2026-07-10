@@ -99,6 +99,7 @@ const AuditLogPage = lazy(() => import('./pages/settings/AuditLogPage'))
 const UsersPage = lazy(() => import('./pages/settings/UsersPage'))
 const CompanySettingsPage = lazy(() => import('./pages/settings/CompanySettingsPage'))
 const ClosingPeriodPage = lazy(() => import('./pages/settings/ClosingPeriodPage'))
+const FiscalYearClosingPage = lazy(() => import('./pages/settings/FiscalYearClosingPage'))
 
 
 function AppContent() {
@@ -232,6 +233,7 @@ function AppContent() {
           <Route path="settings/users" element={<RoleGuard require="isAdmin"><UsersPage /></RoleGuard>} />
           <Route path="settings/audit-log" element={<RoleGuard require="isAdmin"><AuditLogPage /></RoleGuard>} />
           <Route path="settings/closing-period" element={<RoleGuard require="canPost"><ClosingPeriodPage /></RoleGuard>} />
+          <Route path="settings/fiscal-year-closing" element={<RoleGuard require="canPost"><FiscalYearClosingPage /></RoleGuard>} />
 
           {/* Default */}
           <Route index element={<DashboardPage />} />
