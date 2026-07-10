@@ -19,7 +19,8 @@ create table fiscal_year_closings (
   closed_by uuid references auth.users(id),
   reversed_at timestamptz,
   reversed_by uuid references auth.users(id),
-  reversal_journal_id uuid references journals(id)
+  reversal_journal_id uuid references journals(id),
+  locked_period_keys jsonb not null default '[]'::jsonb
 );
 
 alter table fiscal_year_closings enable row level security;
@@ -64,6 +65,7 @@ begin
   left join journals j on ji.journal_id = j.id
     and j.is_posted = true
     and j.date between make_date(p_year, 1, 1) and make_date(p_year, 12, 31)
+    and coalesce(j.reference_type, '') not in ('fiscal_year_closing', 'fiscal_year_closing_reversal')
   where c.type in ('revenue', 'expense') and c.is_active = true
   group by c.id, c.code, c.name, c.type, c.normal_balance
   having case c.normal_balance
@@ -136,6 +138,7 @@ declare
   v_closed jsonb;
   v_month int;
   v_key text;
+  v_locked_keys jsonb := '[]'::jsonb;
 begin
   if not is_admin() then
     raise exception 'permission denied: hanya admin yang bisa menutup tahun buku';
@@ -191,6 +194,7 @@ begin
     left join journals j on ji.journal_id = j.id
       and j.is_posted = true
       and j.date between make_date(p_year, 1, 1) and make_date(p_year, 12, 31)
+      and coalesce(j.reference_type, '') not in ('fiscal_year_closing', 'fiscal_year_closing_reversal')
     where c.type in ('revenue', 'expense') and c.is_active = true
     group by c.id, c.type, c.normal_balance
   loop
@@ -200,12 +204,28 @@ begin
     v_has_lines := true;
     if v_row.type = 'revenue' then
       v_total_revenue := v_total_revenue + v_row.balance;
-      insert into journal_items (journal_id, coa_id, debit, credit, description)
-        values (v_journal_id, v_row.coa_id, v_row.balance, 0, 'Tutup saldo pendapatan ' || p_year);
+      -- Revenue is normally credit-normal (balance >= 0): debit it to zero it out.
+      -- An abnormal debit balance (balance < 0) must be credited instead, since
+      -- journal_items has debit >= 0 / credit >= 0 check constraints.
+      if v_row.balance >= 0 then
+        insert into journal_items (journal_id, coa_id, debit, credit, description)
+          values (v_journal_id, v_row.coa_id, v_row.balance, 0, 'Tutup saldo pendapatan ' || p_year);
+      else
+        insert into journal_items (journal_id, coa_id, debit, credit, description)
+          values (v_journal_id, v_row.coa_id, 0, -v_row.balance, 'Tutup saldo pendapatan ' || p_year);
+      end if;
     else
       v_total_expense := v_total_expense + v_row.balance;
-      insert into journal_items (journal_id, coa_id, debit, credit, description)
-        values (v_journal_id, v_row.coa_id, 0, v_row.balance, 'Tutup saldo beban ' || p_year);
+      -- Expense is normally debit-normal (balance >= 0): credit it to zero it out.
+      -- An abnormal credit balance (balance < 0) must be debited instead, since
+      -- journal_items has debit >= 0 / credit >= 0 check constraints.
+      if v_row.balance >= 0 then
+        insert into journal_items (journal_id, coa_id, debit, credit, description)
+          values (v_journal_id, v_row.coa_id, 0, v_row.balance, 'Tutup saldo beban ' || p_year);
+      else
+        insert into journal_items (journal_id, coa_id, debit, credit, description)
+          values (v_journal_id, v_row.coa_id, -v_row.balance, 0, 'Tutup saldo beban ' || p_year);
+      end if;
     end if;
   end loop;
 
@@ -227,17 +247,22 @@ begin
   select id, coalesce(closed_periods, '[]'::jsonb) into v_settings_id, v_closed
     from company_settings limit 1;
 
+  if v_settings_id is null then
+    raise exception 'company_settings belum ada baris — tidak bisa mengunci periode';
+  end if;
+
   for v_month in 1..12 loop
     v_key := to_char(make_date(p_year, v_month, 1), 'YYYY-MM');
     if not (v_closed ? v_key) then
       v_closed := v_closed || to_jsonb(v_key);
+      v_locked_keys := v_locked_keys || to_jsonb(v_key);
     end if;
   end loop;
 
   update company_settings set closed_periods = v_closed, updated_at = now() where id = v_settings_id;
 
-  insert into fiscal_year_closings (fiscal_year, closing_journal_id, total_revenue, total_expense, net_income, status, closed_by)
-    values (p_year, v_journal_id, v_total_revenue, v_total_expense, v_net, 'closed', auth.uid());
+  insert into fiscal_year_closings (fiscal_year, closing_journal_id, total_revenue, total_expense, net_income, status, closed_by, locked_period_keys)
+    values (p_year, v_journal_id, v_total_revenue, v_total_expense, v_net, 'closed', auth.uid(), v_locked_keys);
 
   return v_journal_id;
 end;
@@ -294,7 +319,9 @@ begin
 
   select coalesce(jsonb_agg(elem), '[]'::jsonb) into v_closed
     from jsonb_array_elements_text(v_closed) as elem
-    where elem not like (p_year::text || '-%');
+    where elem not in (
+      select lk from jsonb_array_elements_text(coalesce(v_closing.locked_period_keys, '[]'::jsonb)) as lk
+    );
 
   update company_settings set closed_periods = v_closed, updated_at = now() where id = v_settings_id;
 
