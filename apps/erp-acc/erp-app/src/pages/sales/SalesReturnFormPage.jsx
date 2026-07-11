@@ -8,7 +8,7 @@ import {
   getSalesReturn, saveSalesReturn, postSalesReturn,
   getReturnableSalesInvoices, getReturnableSalesInvoiceItems,
 } from '../../services/salesReturnService'
-import { getGoodsDelivery } from '../../services/salesService'
+import { getGoodsDelivery, getSalesInvoice } from '../../services/salesService'
 import { getWarehouses, getDefaultWarehouse } from '../../services/warehouseService'
 import { today } from '../../utils/date'
 import Button from '../../components/ui/Button'
@@ -139,6 +139,20 @@ export default function SalesReturnFormPage() {
     setItems([])
     setReturnableItems([])
   }
+
+  // Pre-fill from Invoice (shortcut "Buat Retur" button on SalesInvoiceDetailPage)
+  // Only sets header customer_id + invoice_id — the existing invoice-linked
+  // cascade (invoiceOptionsList / returnableItems effects above) takes over
+  // from there, same as if the user had picked the invoice manually.
+  useEffect(() => {
+    const fromInvoiceId = searchParams.get('from_invoice')
+    if (!fromInvoiceId || !isNew) return
+    getSalesInvoice(fromInvoiceId)
+      .then(inv => {
+        setHeader(h => ({ ...h, customer_id: inv.customer_id, invoice_id: fromInvoiceId }))
+      })
+      .catch(err => toastRef.current.error('Gagal load invoice: ' + err.message))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Pre-fill from GD (shortcut from GoodsDeliveryFormPage)
   // Wait for products to load before running so sell_price is available

@@ -8,7 +8,7 @@ import {
   getPurchaseReturn, savePurchaseReturn, postPurchaseReturn,
   getReturnablePurchaseInvoices, getReturnablePurchaseInvoiceItems,
 } from '../../services/purchaseReturnService'
-import { getGoodsReceipt } from '../../services/purchaseService'
+import { getGoodsReceipt, getPurchaseInvoice } from '../../services/purchaseService'
 import { getWarehouses, getDefaultWarehouse } from '../../services/warehouseService'
 import { today } from '../../utils/date'
 import Button from '../../components/ui/Button'
@@ -138,6 +138,20 @@ export default function PurchaseReturnFormPage() {
     setItems([])
     setReturnableItems([])
   }
+
+  // Pre-fill from Invoice (shortcut "Buat Retur" button on PurchaseInvoiceDetailPage)
+  // Only sets header supplier_id + invoice_id — the existing invoice-linked
+  // cascade (invoiceOptionsList / returnableItems effects above) takes over
+  // from there, same as if the user had picked the invoice manually.
+  useEffect(() => {
+    const fromInvoiceId = searchParams.get('from_invoice')
+    if (!fromInvoiceId || !isNew) return
+    getPurchaseInvoice(fromInvoiceId)
+      .then(inv => {
+        setHeader(h => ({ ...h, supplier_id: inv.supplier_id, invoice_id: fromInvoiceId }))
+      })
+      .catch(err => toastRef.current.error('Gagal load invoice: ' + err.message))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Pre-fill from GR (shortcut from GoodsReceiptFormPage)
   useEffect(() => {
