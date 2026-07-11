@@ -5,6 +5,13 @@ import dotenv from 'dotenv'
 
 dotenv.config({ path: '.env.test' })
 
+// NOTE: this spec exercises a real "Post Retur" against the live ERP-MG database.
+// Because `sales_returns` has no delete RLS policy (immutable by design, any status)
+// and `invoices` has no soft-delete columns, every successful run permanently leaves
+// one tagged invoice + sales_return + journal row behind — see the longer explanation
+// in afterAll below. Don't wire this spec into a routine full-suite CI sweep without
+// accounting for that (each run adds one more permanent row).
+
 const supabase = createClient(
   process.env.VITE_SUPABASE_URL,
   process.env.VITE_SUPABASE_ANON_KEY
@@ -117,29 +124,46 @@ test.describe('Retur Penjualan mengurangi Piutang Invoice', () => {
     }, null, 2))
   })
 
-  // IMPORTANT — once the test posts the return, full hard-delete cleanup is
-  // impossible by design, not by accident:
-  //   - `sales_returns` has NO delete RLS policy at all (verified directly against
-  //     ERP-MG's pg_policies: sr_select/sr_insert/sr_update exist, no sr_delete) —
-  //     posted returns are permanently immutable audit records, matching this repo's
-  //     "always soft delete, never hard-delete business data" rule applied to the max.
-  //   - That undeletable sales_returns row FK-blocks deleting the invoice; the
-  //     invoice (plus the journal `post_sales_return` posted) FK-blocks deleting the
-  //     customer; inventory_movements from the stock-in reversal FK-blocks the product.
-  // So this afterAll does the best a client with only an authenticated (non-service-role)
-  // key can do: best-effort hard-delete every row in FK-safe order (works fully for a
-  // run that fails before Post Retur), and falls back to the app's own soft-delete
-  // convention (is_active: false, deleted_at) for customer/product when the hard
-  // delete is blocked — so the test fixtures at least disappear from every normal
-  // app screen even though the posted invoice/return/journal remain as permanent,
-  // clearly-tagged (name prefix + notes: '__PLAYWRIGHT_TEST__') audit-trail rows.
+  // IMPORTANT — full hard-delete cleanup is only possible for a run that fails
+  // before "Simpan Draft" is ever clicked (i.e. no sales_returns row was created
+  // at all). Once a sales_returns row exists — draft OR posted, status makes no
+  // difference — it can never be hard-deleted by this (or any authenticated,
+  // non-service-role) client: re-verified directly against ERP-MG's pg_policies
+  // (`select policyname, cmd, roles, qual, with_check from pg_policies where
+  // tablename = 'sales_returns'`) that the {authenticated} role has sr_select /
+  // sr_insert / sr_update policies but NO delete policy whatsoever — not one
+  // scoped to status='posted', just entirely absent, so RLS default-denies DELETE
+  // for every row regardless of status. That undeletable row then FK-blocks
+  // deleting the invoice; the invoice (plus, once posted, the journal
+  // `post_sales_return` writes) FK-blocks deleting the customer;
+  // inventory_movements from the posting's stock-in reversal FK-blocks the product.
+  //
+  // So this afterAll does the best a client with only an authenticated
+  // (non-service-role) key can do: best-effort hard-delete every row in FK-safe
+  // order (this fully succeeds only when the test never got far enough to create a
+  // sales_returns row), and falls back to the app's own soft-delete convention
+  // (is_active: false, deleted_at) for customer/product when the hard delete is
+  // blocked — so the test fixtures at least disappear from every normal app
+  // screen. `invoices` has no such soft-delete column, so once a return has been
+  // saved against it, the invoice + sales_return (+ journal, once posted) remain
+  // as permanent, clearly-tagged (name prefix + notes: '__PLAYWRIGHT_TEST__')
+  // audit-trail rows in the live database — this is inherent to exercising the
+  // real posting flow, not a gap in this cleanup logic.
   test.afterAll(async () => {
     if (createdReturnId) {
-      await supabase.from('sales_return_items').delete().eq('sales_return_id', createdReturnId)
-      await supabase.from('sales_returns').delete().eq('id', createdReturnId)
+      const { error: sriErr } = await supabase.from('sales_return_items').delete().eq('sales_return_id', createdReturnId)
+      if (sriErr) console.warn('cleanup: gagal hapus sales_return_items (expected — no delete policy on this table):', sriErr.message)
+      const { error: srErr } = await supabase.from('sales_returns').delete().eq('id', createdReturnId)
+      if (srErr) console.warn('cleanup: gagal hapus sales_returns (expected — no delete policy on this table):', srErr.message)
     }
-    if (testInvoiceItemId) await supabase.from('invoice_items').delete().eq('id', testInvoiceItemId)
-    if (testInvoiceId) await supabase.from('invoices').delete().eq('id', testInvoiceId)
+    if (testInvoiceItemId) {
+      const { error: iiErr } = await supabase.from('invoice_items').delete().eq('id', testInvoiceItemId)
+      if (iiErr) console.warn('cleanup: gagal hapus invoice_items:', iiErr.message)
+    }
+    if (testInvoiceId) {
+      const { error: invErr } = await supabase.from('invoices').delete().eq('id', testInvoiceId)
+      if (invErr) console.warn('cleanup: gagal hapus invoices (expected if a linked sales_return still exists):', invErr.message)
+    }
 
     if (testProductId) {
       const { error } = await supabase.from('products').delete().eq('id', testProductId)
@@ -177,9 +201,18 @@ test.describe('Retur Penjualan mengurangi Piutang Invoice', () => {
     await expect(itemRow.locator('td').nth(2)).toHaveText('10')
 
     const qtyInput = itemRow.locator('input[type="number"]')
+
+    // Exercise the actual returnable-qty clamp (InvoiceReturnItemsPicker.jsx:19 —
+    // Math.min(Math.max(Number(qty) || 0, 0), Number(row.returnable))): enter well
+    // above the returnable cap of 10 and confirm the input snaps back to 10, with
+    // the row's total reflecting the clamped qty (10 * 100.000 = 1.000.000), not
+    // the raw input value. Without this, a broken clamp would still pass the test.
+    await qtyInput.fill('99')
+    await expect(qtyInput).toHaveValue('10')
+    await expect(itemRow).toContainText('1.000.000')
+
+    // Now set the qty we actually want to submit for the rest of the flow.
     await qtyInput.fill('3')
-    // qty input is capped client-side at row.returnable via setQty(); confirm total column
-    // reacts (3 * 100.000 = 300.000) as a sanity check before saving.
     await expect(itemRow).toContainText('300.000')
 
     await page.getByRole('button', { name: /Simpan Draft/i }).click()
