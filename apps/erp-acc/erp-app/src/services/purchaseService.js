@@ -127,7 +127,7 @@ export async function postPurchaseInvoice(id) {
 export async function getOutstandingPurchaseInvoicesBySupplier(supplierId) {
   const { data, error } = await supabase
     .from('invoices')
-    .select('id, invoice_number, date, total, amount_paid, status')
+    .select('id, invoice_number, date, total, amount_paid, credit_applied_amount, return_credit_amount, status')
     .eq('type', 'purchase')
     .eq('supplier_id', supplierId)
     .in('status', ['posted', 'partial'])

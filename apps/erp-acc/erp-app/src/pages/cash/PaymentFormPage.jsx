@@ -88,13 +88,21 @@ export default function PaymentFormPage() {
     if (!form.invoice_id) return
     const inv = invoices.find(i => i.id === form.invoice_id)
     if (inv) {
-      const remaining = inv.total - inv.amount_paid - (inv.advance_deduction_amount || 0)
+      const remaining = inv.total - inv.amount_paid
+        - (inv.advance_deduction_amount || 0)
+        - (inv.credit_applied_amount || 0)
+        - (inv.return_credit_amount || 0)
       field('amount', remaining > 0 ? remaining : '')
     }
   }, [form.invoice_id, invoices])
 
   const selectedInvoice = invoices.find(i => i.id === form.invoice_id)
-  const remaining = selectedInvoice ? selectedInvoice.total - selectedInvoice.amount_paid - (selectedInvoice.advance_deduction_amount || 0) : null
+  const remaining = selectedInvoice
+    ? selectedInvoice.total - selectedInvoice.amount_paid
+      - (selectedInvoice.advance_deduction_amount || 0)
+      - (selectedInvoice.credit_applied_amount || 0)
+      - (selectedInvoice.return_credit_amount || 0)
+    : null
 
   const validate = () => {
     if (!form.date) { toast.error('Tanggal wajib diisi'); return false }
@@ -146,7 +154,10 @@ export default function PaymentFormPage() {
   const accountOptions = accounts.map(a => ({ value: a.id, label: `${a.name} (${formatCurrency(a.balance)})` }))
   const invoiceOptions = invoices.map(i => ({
     value: i.id,
-    label: `${i.invoice_number} — Sisa: ${formatCurrency(i.total - i.amount_paid - (i.advance_deduction_amount || 0))}`
+    label: `${i.invoice_number} — Sisa: ${formatCurrency(
+      i.total - i.amount_paid - (i.advance_deduction_amount || 0)
+        - (i.credit_applied_amount || 0) - (i.return_credit_amount || 0)
+    )}`
   }))
   const coaOptions = coa.map(c => ({ value: c.id, label: `${c.code} — ${c.name}` }))
 
