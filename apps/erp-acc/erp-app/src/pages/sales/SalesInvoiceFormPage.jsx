@@ -50,6 +50,7 @@ export default function SalesInvoiceFormPage() {
     advance_deduction_amount: 0,
     advance_deduction_coa_id: '',
     credit_applied_amount: 0,
+    return_credit_amount: 0,
   })
   const [items, setItems] = useState([LineItemsTable.emptyRow()])
   const [gdRaw, setGdRaw] = useState(null) // raw GD awaiting products master to compute price + PPN
@@ -84,6 +85,7 @@ export default function SalesInvoiceFormPage() {
             advance_deduction_amount: inv.advance_deduction_amount || 0,
             advance_deduction_coa_id: inv.advance_deduction_coa_id || '',
             credit_applied_amount: inv.credit_applied_amount || 0,
+            return_credit_amount: inv.return_credit_amount || 0,
             amount_paid: inv.amount_paid,
             total: inv.total,
           })
@@ -267,7 +269,8 @@ export default function SalesInvoiceFormPage() {
   const invoiceTotal = header.total || clientTotal
   const advance = Number(header.advance_deduction_amount) || 0
   const creditApplied = Number(header.credit_applied_amount) || 0
-  const remaining = invoiceTotal - advance - creditApplied - (header.amount_paid || 0)
+  const returnCredit = Number(header.return_credit_amount) || 0
+  const remaining = invoiceTotal - advance - creditApplied - returnCredit - (header.amount_paid || 0)
 
   if (loading) return <LoadingSpinner message="Memuat invoice..." />
 

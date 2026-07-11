@@ -42,6 +42,7 @@ export default function PurchaseInvoiceFormPage() {
     notes: '',
     payment_term_id: '',
     credit_applied_amount: 0,
+    return_credit_amount: 0,
   })
   const [items, setItems] = useState([LineItemsTable.emptyRow()])
   const [grRaw, setGrRaw] = useState(null) // raw GR awaiting products master to compute PPN
@@ -70,6 +71,7 @@ export default function PurchaseInvoiceFormPage() {
             total: inv.total,
             payment_term_id: inv.payment_term_id || '',
             credit_applied_amount: inv.credit_applied_amount || 0,
+            return_credit_amount: inv.return_credit_amount || 0,
           })
           setItems(inv.items.map(i => ({
             _key: i.id,
@@ -192,7 +194,8 @@ export default function PurchaseInvoiceFormPage() {
 
   const supplierOptions = suppliers.map(s => ({ value: s.id, label: s.name }))
   const creditApplied = Number(header.credit_applied_amount) || 0
-  const remaining = (header.total || 0) - creditApplied - (header.amount_paid || 0)
+  const returnCredit = Number(header.return_credit_amount) || 0
+  const remaining = (header.total || 0) - creditApplied - returnCredit - (header.amount_paid || 0)
 
   if (loading) return <LoadingSpinner message="Memuat invoice pembelian..." />
 
