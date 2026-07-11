@@ -4,14 +4,18 @@ import { Space, Flex, Typography, Col, Alert } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useProducts, useSuppliers } from '../../hooks/useMasterData'
-import { getPurchaseReturn, savePurchaseReturn, postPurchaseReturn } from '../../services/purchaseReturnService'
-import { getGoodsReceipt } from '../../services/purchaseService'
+import {
+  getPurchaseReturn, savePurchaseReturn, postPurchaseReturn,
+  getReturnablePurchaseInvoices, getReturnablePurchaseInvoiceItems,
+} from '../../services/purchaseReturnService'
+import { getGoodsReceipt, getPurchaseInvoice } from '../../services/purchaseService'
 import { getWarehouses, getDefaultWarehouse } from '../../services/warehouseService'
 import { today } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import Select from '../../components/ui/Select'
 import DocumentHeader from '../../components/shared/DocumentHeader'
 import LineItemsTable from '../../components/shared/LineItemsTable'
+import InvoiceReturnItemsPicker from '../../components/shared/InvoiceReturnItemsPicker'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { ArrowLeft, Save, Send } from 'lucide-react'
 
@@ -34,12 +38,15 @@ export default function PurchaseReturnFormPage() {
     date: today(),
     supplier_id: '',
     purchase_order_id: '',
+    invoice_id: '',
     warehouse_id: '',
     status: 'draft',
     notes: '',
   })
   const [items, setItems] = useState([LineItemsTable.emptyRow()])
   const [warehouses, setWarehouses] = useState([])
+  const [invoiceOptionsList, setInvoiceOptionsList] = useState([])
+  const [returnableItems, setReturnableItems] = useState([])
 
   useEffect(() => { toastRef.current = toast }, [toast])
 
@@ -76,18 +83,20 @@ export default function PurchaseReturnFormPage() {
             date: pr.date,
             supplier_id: pr.supplier_id,
             purchase_order_id: pr.purchase_order_id || '',
+            invoice_id: pr.invoice_id || '',
             warehouse_id: pr.warehouse_id || '',
             status: pr.status,
             notes: pr.notes || '',
           })
           setItems(pr.items.map(i => ({
             _key: i.id,
+            invoice_item_id: i.invoice_item_id || null,
             product_id: i.product_id,
             unit_id: i.unit_id,
             quantity: i.quantity,
             quantity_base: i.quantity_base,
             unit_price: i.unit_price,
-            tax_amount: 0,
+            tax_amount: i.tax_amount || 0,
             total: i.total,
           })))
         })
@@ -95,6 +104,54 @@ export default function PurchaseReturnFormPage() {
         .finally(() => setLoading(false))
     }
   }, [id, isNew])
+
+  // Invoice-linked return: load this supplier's eligible invoices whenever
+  // supplier changes (cleared when supplier is empty).
+  useEffect(() => {
+    let cancelled = false
+    if (!header.supplier_id) { setInvoiceOptionsList([]); return }
+    getReturnablePurchaseInvoices(header.supplier_id)
+      .then(list => { if (!cancelled) setInvoiceOptionsList(list) })
+      .catch(err => toastRef.current.error(err.message))
+    return () => { cancelled = true }
+  }, [header.supplier_id])
+
+  // Load the selected invoice's returnable lines. Switching invoice clears
+  // any items already picked (they belonged to the previous invoice).
+  useEffect(() => {
+    let cancelled = false
+    if (!header.invoice_id) { setReturnableItems([]); return }
+    getReturnablePurchaseInvoiceItems(header.invoice_id)
+      .then(list => { if (!cancelled) setReturnableItems(list) })
+      .catch(err => toastRef.current.error(err.message))
+    return () => { cancelled = true }
+  }, [header.invoice_id])
+
+  function handleInvoiceChange(invoiceId) {
+    setHeader(h => ({ ...h, invoice_id: invoiceId }))
+    setItems([])
+    setReturnableItems([])
+  }
+
+  function handleSupplierChange(supplierId) {
+    setHeader(h => ({ ...h, supplier_id: supplierId, invoice_id: '' }))
+    setItems([])
+    setReturnableItems([])
+  }
+
+  // Pre-fill from Invoice (shortcut "Buat Retur" button on PurchaseInvoiceDetailPage)
+  // Only sets header supplier_id + invoice_id — the existing invoice-linked
+  // cascade (invoiceOptionsList / returnableItems effects above) takes over
+  // from there, same as if the user had picked the invoice manually.
+  useEffect(() => {
+    const fromInvoiceId = searchParams.get('from_invoice')
+    if (!fromInvoiceId || !isNew) return
+    getPurchaseInvoice(fromInvoiceId)
+      .then(inv => {
+        setHeader(h => ({ ...h, supplier_id: inv.supplier_id, invoice_id: fromInvoiceId }))
+      })
+      .catch(err => toastRef.current.error('Gagal load invoice: ' + err.message))
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Pre-fill from GR (shortcut from GoodsReceiptFormPage)
   useEffect(() => {
@@ -200,7 +257,7 @@ export default function PurchaseReturnFormPage() {
         status={isNew ? null : header.status}
         partyLabel="Supplier"
         partyId={header.supplier_id}
-        onPartyChange={v => setHeader(h => ({ ...h, supplier_id: v }))}
+        onPartyChange={handleSupplierChange}
         partyOptions={supplierOptions}
         notes={header.notes}
         onNotesChange={v => setHeader(h => ({ ...h, notes: v }))}
@@ -216,18 +273,40 @@ export default function PurchaseReturnFormPage() {
             disabled={readOnly}
           />
         </Col>
+        <Col span={12} style={{ marginTop: 16 }}>
+          <Select
+            label="Invoice Asal (opsional)"
+            options={invoiceOptionsList.map(i => ({ value: i.id, label: `${i.invoice_number} — ${i.date}` }))}
+            value={header.invoice_id || ''}
+            onChange={e => handleInvoiceChange(e.target.value)}
+            placeholder="Tanpa invoice (retur stok saja)..."
+            disabled={readOnly || !header.supplier_id}
+          />
+        </Col>
       </DocumentHeader>
 
       <Space direction="vertical" style={{ width: '100%' }} size={8}>
         <Typography.Title level={5} style={{ margin: 0 }}>Item Retur</Typography.Title>
-        <LineItemsTable
-          items={items}
-          onItemsChange={setItems}
-          products={products}
-          priceField="buy_price"
-          readOnly={readOnly}
-          showTax={false}
-        />
+        {header.invoice_id ? (
+          <InvoiceReturnItemsPicker
+            returnableItems={returnableItems}
+            items={items}
+            onItemsChange={setItems}
+            readOnly={readOnly}
+            showTax
+            isTaxable={pid => products.find(p => p.id === pid)?.is_taxable}
+            taxRate={pid => products.find(p => p.id === pid)?.tax_rate || 11}
+          />
+        ) : (
+          <LineItemsTable
+            items={items}
+            onItemsChange={setItems}
+            products={products}
+            priceField="buy_price"
+            readOnly={readOnly}
+            showTax
+          />
+        )}
       </Space>
 
       {header.status === 'posted' && (

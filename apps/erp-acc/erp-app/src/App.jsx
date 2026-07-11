@@ -79,6 +79,9 @@ const PLByCostCenterPage = lazy(() => import('./pages/reports/PLByCostCenterPage
 // Dashboard
 const DashboardPage = lazy(() => import('./pages/DashboardPage'))
 
+// Shared (cross-cutting AR/AP)
+const CreditNotesPage = lazy(() => import('./pages/shared/CreditNotesPage'))
+
 // Fixed Assets
 const AssetsPage = lazy(() => import('./pages/assets/AssetsPage'))
 const AssetCategoriesPage = lazy(() => import('./pages/assets/AssetCategoriesPage'))
@@ -217,6 +220,9 @@ function AppContent() {
           <Route path="reports/depreciation-period" element={<DepreciationPeriodReportPage />} />
           <Route path="reports/asset-disposals" element={<AssetDisposalsReportPage />} />
           <Route path="reports/assets-summary" element={<AssetsSummaryReportPage />} />
+
+          {/* Credit Notes (cross-cutting AR/AP) */}
+          <Route path="credit-notes" element={<CreditNotesPage />} />
 
           {/* Fixed Assets */}
           <Route path="assets" element={<AssetsPage />} />

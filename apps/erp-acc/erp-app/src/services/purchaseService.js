@@ -102,6 +102,7 @@ export async function savePurchaseInvoice(invoice, items) {
       payment_term_id:   invoice.payment_term_id   || null,
       status:            invoice.status            || 'draft',
       notes:             invoice.notes             || null,
+      credit_applied_amount: Number(invoice.credit_applied_amount) || 0,
     },
     p_items: items.map(i => ({
       product_id:    i.product_id,
@@ -126,7 +127,7 @@ export async function postPurchaseInvoice(id) {
 export async function getOutstandingPurchaseInvoicesBySupplier(supplierId) {
   const { data, error } = await supabase
     .from('invoices')
-    .select('id, invoice_number, date, total, amount_paid, status')
+    .select('id, invoice_number, date, total, amount_paid, credit_applied_amount, return_credit_amount, status')
     .eq('type', 'purchase')
     .eq('supplier_id', supplierId)
     .in('status', ['posted', 'partial'])
