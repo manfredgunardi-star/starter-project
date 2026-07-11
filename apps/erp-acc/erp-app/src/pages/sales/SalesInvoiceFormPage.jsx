@@ -147,7 +147,7 @@ export default function SalesInvoiceFormPage() {
     if (!header.customer_id) { setAvailableCredit(0); return }
     getAvailableCredit('customer', header.customer_id)
       .then(v => { if (!cancelled) setAvailableCredit(v) })
-      .catch(() => {})
+      .catch(err => toast.error('Gagal memuat saldo kredit: ' + err.message))
     return () => { cancelled = true }
   }, [header.customer_id])
 
@@ -184,6 +184,7 @@ export default function SalesInvoiceFormPage() {
     const creditApplied = Number(header.credit_applied_amount) || 0
     if (creditApplied < 0) { toast.error('Kredit yang diterapkan tidak boleh negatif'); return }
     if (creditApplied > availableCredit + 0.01) { toast.error('Kredit yang diterapkan melebihi saldo kredit tersedia'); return }
+    if (advance + creditApplied > clientTotal + 0.01) { toast.error('Potongan uang muka + kredit yang diterapkan melebihi total invoice'); return }
     if (makeRecurring && !recurStart) {
       toast.error('Tanggal mulai untuk template berulang wajib diisi')
       return

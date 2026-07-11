@@ -130,7 +130,7 @@ export default function PurchaseInvoiceFormPage() {
     if (!header.supplier_id) { setAvailableCredit(0); return }
     getAvailableCredit('supplier', header.supplier_id)
       .then(v => { if (!cancelled) setAvailableCredit(v) })
-      .catch(() => {})
+      .catch(err => toast.error('Gagal memuat saldo kredit: ' + err.message))
     return () => { cancelled = true }
   }, [header.supplier_id])
 
