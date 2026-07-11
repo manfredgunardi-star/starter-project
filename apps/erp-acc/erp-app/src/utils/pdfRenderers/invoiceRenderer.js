@@ -257,23 +257,48 @@ export async function renderInvoicePdf(invoice, company) {
   doc.text(`${currency} ${formatCurrency(total)}`, rightX, y, { align: 'right' })
   y += 16
 
-  // Potongan Uang Muka + Sisa Tagih (jika ada potongan uang muka)
+  // Potongan Uang Muka + Potongan Retur + Kredit Diterapkan + Sisa Tagih (jika ada potongan)
   const advanceDeduction = Number(invoice?.advance_deduction_amount) || 0
-  if (advanceDeduction > 0) {
+  const returnCredit = Number(invoice?.return_credit_amount) || 0
+  const creditApplied = Number(invoice?.credit_applied_amount) || 0
+  const totalDeductions = advanceDeduction + returnCredit + creditApplied
+  if (totalDeductions > 0) {
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(FONT.totalLabel)
     doc.setTextColor(...COLOR.textSecondary)
-    doc.text('Potongan Uang Muka', totalsLeftX, y)
-    doc.setFontSize(FONT.totalValue)
-    doc.setTextColor(...COLOR.textPrimary)
-    doc.text(`${currency} (${formatCurrency(advanceDeduction)})`, rightX, y, { align: 'right' })
-    y += 14
+    if (advanceDeduction > 0) {
+      doc.text('Potongan Uang Muka', totalsLeftX, y)
+      doc.setFontSize(FONT.totalValue)
+      doc.setTextColor(...COLOR.textPrimary)
+      doc.text(`${currency} (${formatCurrency(advanceDeduction)})`, rightX, y, { align: 'right' })
+      y += 14
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(FONT.totalLabel)
+      doc.setTextColor(...COLOR.textSecondary)
+    }
+    if (returnCredit > 0) {
+      doc.text('Potongan Retur', totalsLeftX, y)
+      doc.setFontSize(FONT.totalValue)
+      doc.setTextColor(...COLOR.textPrimary)
+      doc.text(`${currency} (${formatCurrency(returnCredit)})`, rightX, y, { align: 'right' })
+      y += 14
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(FONT.totalLabel)
+      doc.setTextColor(...COLOR.textSecondary)
+    }
+    if (creditApplied > 0) {
+      doc.text('Kredit Diterapkan', totalsLeftX, y)
+      doc.setFontSize(FONT.totalValue)
+      doc.setTextColor(...COLOR.textPrimary)
+      doc.text(`${currency} (${formatCurrency(creditApplied)})`, rightX, y, { align: 'right' })
+      y += 14
+    }
 
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(FONT.totalLabel)
     doc.setTextColor(...COLOR.textPrimary)
     doc.text('Sisa Tagih', totalsLeftX, y)
-    doc.text(`${currency} ${formatCurrency(total - advanceDeduction)}`, rightX, y, { align: 'right' })
+    doc.text(`${currency} ${formatCurrency(total - totalDeductions)}`, rightX, y, { align: 'right' })
     y += 16
   }
 
