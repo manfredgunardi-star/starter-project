@@ -1,11 +1,15 @@
-import { useState } from 'react'
-import { getAccountBalances } from '../../services/reportService'
+﻿import { useState } from 'react'
+import { jsPDF } from 'jspdf'
+import { applyPlugin } from 'jspdf-autotable'
+applyPlugin(jsPDF)
+import * as XLSX from 'xlsx'
+import { getIncomeStatementBalances } from '../../services/reportService'
 import { formatCurrency } from '../../utils/currency'
 import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import DateInput from '../../components/ui/DateInput'
-import { Search } from 'lucide-react'
-import { Space, Card, Row, Col, Typography, Alert, Statistic, Divider } from 'antd'
+import { Download, FileText, Search } from 'lucide-react'
+import { Button as AntButton, Space, Card, Row, Col, Typography, Alert, Statistic, Divider } from 'antd'
 
 const { Title, Text } = Typography
 
@@ -25,11 +29,11 @@ function Section({ title, accounts, totalLabel, totalType }) {
       </Text>
       {accounts.map(a => (
         <Row key={a.coa_id} justify="space-between">
-          <Col><Text style={{ paddingLeft: 16 }}>{a.code} — {a.name}</Text></Col>
+          <Col><Text style={{ paddingLeft: 16 }}>{a.code} â€” {a.name}</Text></Col>
           <Col><Text strong>{formatCurrency(a.balance)}</Text></Col>
         </Row>
       ))}
-      {accounts.length === 0 && <Text type="secondary" style={{ paddingLeft: 16 }}>—</Text>}
+      {accounts.length === 0 && <Text type="secondary" style={{ paddingLeft: 16 }}>â€”</Text>}
       <Divider style={{ margin: '4px 0' }} />
       <Row justify="space-between">
         <Col><Text strong>{totalLabel}</Text></Col>
@@ -50,7 +54,7 @@ export default function IncomeStatementPage() {
     setLoading(true)
     setError(null)
     try {
-      const balances = await getAccountBalances(startDate, endDate)
+      const balances = await getIncomeStatementBalances(startDate, endDate)
       setData(balances || [])
     } catch (err) {
       setError(err.message)
@@ -64,6 +68,67 @@ export default function IncomeStatementPage() {
   const totalRevenue = byType('revenue').reduce((s, a) => s + a.balance, 0)
   const totalExpense = byType('expense').reduce((s, a) => s + a.balance, 0)
   const netIncome = totalRevenue - totalExpense
+
+  const exportPDF = () => {
+    const doc = new jsPDF()
+    doc.setFontSize(16)
+    doc.text('Laba Rugi (Income Statement)', 14, 15)
+    doc.setFontSize(10)
+    doc.text(`Periode: ${startDate} s/d ${endDate}`, 14, 23)
+
+    let y = 32
+    const addSection = (title, accounts, totalLabel, total) => {
+      doc.setFontSize(12)
+      doc.text(title, 14, y)
+      y += 5
+      doc.autoTable({
+        startY: y,
+        head: [['Kode', 'Nama Akun', 'Jumlah']],
+        body: accounts.map(account => [
+          account.code,
+          account.name,
+          formatCurrency(account.balance),
+        ]),
+        foot: [['', totalLabel, formatCurrency(total)]],
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [52, 73, 94] },
+        footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+      })
+      y = doc.lastAutoTable.finalY + 10
+    }
+
+    addSection('Pendapatan', byType('revenue'), 'Total Pendapatan', totalRevenue)
+    addSection('Beban', byType('expense'), 'Total Beban', totalExpense)
+
+    doc.setFontSize(12)
+    doc.text(`${netIncome >= 0 ? 'Laba Bersih' : 'Rugi Bersih'}: ${formatCurrency(Math.abs(netIncome))}`, 14, y)
+    doc.save(`laba-rugi-${startDate}-${endDate}.pdf`)
+  }
+
+  const exportExcel = () => {
+    const rows = [
+      ['Laba Rugi (Income Statement)'],
+      [`Periode: ${startDate} s/d ${endDate}`],
+      [],
+    ]
+
+    const addSection = (title, accounts, totalLabel, total) => {
+      rows.push([title])
+      rows.push(['Kode', 'Nama Akun', 'Jumlah'])
+      accounts.forEach(account => rows.push([account.code, account.name, account.balance]))
+      rows.push(['', totalLabel, total])
+      rows.push([])
+    }
+
+    addSection('Pendapatan', byType('revenue'), 'Total Pendapatan', totalRevenue)
+    addSection('Beban', byType('expense'), 'Total Beban', totalExpense)
+    rows.push([netIncome >= 0 ? 'Laba Bersih' : 'Rugi Bersih', Math.abs(netIncome)])
+
+    const ws = XLSX.utils.aoa_to_sheet(rows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Laba Rugi')
+    XLSX.writeFile(wb, `laba-rugi-${startDate}-${endDate}.xlsx`)
+  }
 
   return (
     <Space direction="vertical" style={{ width: '100%' }}>
@@ -91,6 +156,15 @@ export default function IncomeStatementPage() {
       {data && !loading && (
         <Card style={{ maxWidth: 640 }}>
           <Space direction="vertical" style={{ width: '100%' }}>
+            <Space>
+              <AntButton icon={<FileText size={14} />} onClick={exportPDF}>
+                Export PDF
+              </AntButton>
+              <AntButton icon={<Download size={14} />} onClick={exportExcel}>
+                Export Excel
+              </AntButton>
+            </Space>
+
             <Section
               title="Pendapatan"
               accounts={byType('revenue')}

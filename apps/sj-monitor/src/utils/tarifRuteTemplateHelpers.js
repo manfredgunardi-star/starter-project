@@ -100,15 +100,19 @@ export function parseTarifRuteTemplate(data) {
 
 /**
  * Validate that all ruteIds in updates exist in ruteList.
- * Returns array of error strings (empty = all good).
+ * Returns array of { ruteId, namaRute, alasan } (empty = all good).
  */
 export function validateRuteIds(updates, ruteList) {
   const known = new Set((ruteList || []).map((r) => String(r.id)));
-  const errors = [];
+  const rejected = [];
   updates.forEach((u) => {
     if (!known.has(String(u.ruteId))) {
-      errors.push(`Rute tidak ditemukan: "${u.ruteId}" (${u.namaRute || ''})`);
+      rejected.push({
+        ruteId: u.ruteId,
+        namaRute: u.namaRute || '',
+        alasan: `Rute dengan ID "${u.ruteId}" tidak ditemukan di Master Data (mungkin sudah dihapus)`,
+      });
     }
   });
-  return errors;
+  return rejected;
 }

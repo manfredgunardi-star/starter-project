@@ -6,10 +6,9 @@ import {
   formatCurrency, formatDate, getTrucks
 } from '../utils/accounting'
 import { getAccountName, getDetailAccounts } from '../data/chartOfAccounts'
-import {
-  exportNeracaToExcel, exportLabaRugiToExcel,
-  exportNeracaToPDF, exportLabaRugiToPDF, exportJournalsToExcel
-} from '../utils/exportUtils'
+import { exportReportToExcel, exportReportToPdf } from '../utils/reportRenderers'
+import { buildNeraca, buildLabaRugi, buildArusKas, buildSaldoAkun, buildBukuBesar, buildGLArmada } from '../utils/reportModel'
+import DownloadAllPanel from '../components/DownloadAllPanel'
 import DateFilterBar from '../components/DateFilterBar'
 import {
   RefreshCw, FileSpreadsheet, FileDown, TrendingUp, TrendingDown,
@@ -68,10 +67,10 @@ function NeracaTab() {
         </button>
         {data && (
           <>
-            <button onClick={() => exportNeracaToExcel(data, endDate)} className="btn-secondary flex items-center gap-2">
+            <button onClick={async () => exportReportToExcel(await buildNeraca({ journals: await getJournals({ endDate }), trucks: [], endDate, startDate: endDate }))} className="btn-secondary flex items-center gap-2">
               <FileSpreadsheet className="w-4 h-4" /> Excel
             </button>
-            <button onClick={() => exportNeracaToPDF(data, endDate)} className="btn-secondary flex items-center gap-2">
+            <button onClick={async () => exportReportToPdf(await buildNeraca({ journals: await getJournals({ endDate }), trucks: [], endDate, startDate: endDate }))} className="btn-secondary flex items-center gap-2">
               <FileDown className="w-4 h-4" /> PDF
             </button>
           </>
@@ -207,10 +206,10 @@ function LabaRugiTab() {
         </button>
         {data && (
           <>
-            <button onClick={() => exportLabaRugiToExcel(data, startDate, endDate)} className="btn-secondary flex items-center gap-2">
+            <button onClick={async () => exportReportToExcel(await buildLabaRugi({ journals: await getJournals({ endDate }), trucks: [], startDate, endDate }))} className="btn-secondary flex items-center gap-2">
               <FileSpreadsheet className="w-4 h-4" /> Excel
             </button>
-            <button onClick={() => exportLabaRugiToPDF(data, startDate, endDate)} className="btn-secondary flex items-center gap-2">
+            <button onClick={async () => exportReportToPdf(await buildLabaRugi({ journals: await getJournals({ endDate }), trucks: [], startDate, endDate }))} className="btn-secondary flex items-center gap-2">
               <FileDown className="w-4 h-4" /> PDF
             </button>
           </>
@@ -284,6 +283,12 @@ function ArusKasTab() {
     finally { setLoading(false) }
   }, [startDate, endDate])
 
+  const handleExport = async (fmt) => {
+    const ds = { journals: await getJournals({ endDate }), trucks: await getTrucks(), startDate, endDate }
+    const model = await buildArusKas(ds)
+    fmt === 'excel' ? exportReportToExcel(model) : exportReportToPdf(model)
+  }
+
   const Row = ({ label, value, bold }) => (
     <tr className={bold ? 'border-t border-gray-200' : 'hover:bg-gray-50'}>
       <td className={`py-2 pl-4 text-sm ${bold ? 'font-semibold text-gray-800' : 'text-gray-600 pl-8'}`}>{label}</td>
@@ -301,6 +306,16 @@ function ArusKasTab() {
           {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <DollarSign className="w-4 h-4" />}
           Generate
         </button>
+        {data && (
+          <>
+            <button onClick={() => handleExport('excel')} className="btn-secondary flex items-center gap-2">
+              <FileSpreadsheet className="w-4 h-4" /> Excel
+            </button>
+            <button onClick={() => handleExport('pdf')} className="btn-secondary flex items-center gap-2">
+              <FileDown className="w-4 h-4" /> PDF
+            </button>
+          </>
+        )}
       </div>
 
       {!data && !loading && <div className="card text-center py-16 text-gray-400 text-sm">Klik "Generate" untuk melihat laporan arus kas</div>}
@@ -369,6 +384,12 @@ function SaldoTab() {
     finally { setLoading(false) }
   }, [endDate, startDate])
 
+  const handleExport = async (fmt) => {
+    const ds = { journals: await getJournals({ endDate }), trucks: await getTrucks(), startDate: startDate || endDate, endDate }
+    const model = await buildSaldoAkun(ds)
+    fmt === 'excel' ? exportReportToExcel(model) : exportReportToPdf(model)
+  }
+
   const rows = data
     ? Object.entries(data)
         .filter(([code]) => {
@@ -397,8 +418,16 @@ function SaldoTab() {
           Generate
         </button>
         {data && (
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari akun..."
-            className="ml-auto border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none w-44" />
+          <>
+            <button onClick={() => handleExport('excel')} className="btn-secondary flex items-center gap-2">
+              <FileSpreadsheet className="w-4 h-4" /> Excel
+            </button>
+            <button onClick={() => handleExport('pdf')} className="btn-secondary flex items-center gap-2">
+              <FileDown className="w-4 h-4" /> PDF
+            </button>
+            <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Cari akun..."
+              className="ml-auto border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none w-44" />
+          </>
         )}
       </div>
 
@@ -458,6 +487,12 @@ function BukuBesarTab() {
     } finally { setLoading(false) }
   }, [startDate, endDate, selectedAccount])
 
+  const handleExport = async (fmt) => {
+    const ds = { journals: await getJournals({ endDate }), trucks: await getTrucks(), startDate, endDate }
+    const model = await buildBukuBesar(ds, { accountCode: selectedAccount })
+    fmt === 'excel' ? exportReportToExcel(model) : exportReportToPdf(model)
+  }
+
   // Build ledger rows
   const ledgerRows = []
   let runningBalance = 0
@@ -486,6 +521,16 @@ function BukuBesarTab() {
           {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <BookOpen className="w-4 h-4" />}
           Tampilkan
         </button>
+        {journals.length > 0 && (
+          <>
+            <button onClick={() => handleExport('excel')} className="btn-secondary flex items-center gap-2">
+              <FileSpreadsheet className="w-4 h-4" /> Excel
+            </button>
+            <button onClick={() => handleExport('pdf')} className="btn-secondary flex items-center gap-2">
+              <FileDown className="w-4 h-4" /> PDF
+            </button>
+          </>
+        )}
       </div>
 
       {!selectedAccount && <div className="card text-center py-16 text-gray-400 text-sm">Pilih akun untuk melihat buku besar</div>}
@@ -551,6 +596,12 @@ function GLCostCenterTab() {
     } finally { setLoading(false) }
   }, [startDate, endDate])
 
+  const handleExport = async (fmt) => {
+    const ds = { journals: await getJournals({ endDate }), trucks: await getTrucks(), startDate, endDate }
+    const model = await buildGLArmada(ds)
+    fmt === 'excel' ? exportReportToExcel(model) : exportReportToPdf(model)
+  }
+
   // Group journals by truckId
   const byTruck = {}
   journals.forEach(j => {
@@ -573,6 +624,16 @@ function GLCostCenterTab() {
           {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Truck className="w-4 h-4" />}
           Generate
         </button>
+        {journals.length > 0 && (
+          <>
+            <button onClick={() => handleExport('excel')} className="btn-secondary flex items-center gap-2">
+              <FileSpreadsheet className="w-4 h-4" /> Excel
+            </button>
+            <button onClick={() => handleExport('pdf')} className="btn-secondary flex items-center gap-2">
+              <FileDown className="w-4 h-4" /> PDF
+            </button>
+          </>
+        )}
       </div>
 
       {!loading && journals.length === 0 && (
@@ -656,6 +717,9 @@ export default function LaporanPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-800">Laporan Keuangan</h1>
         <p className="text-sm text-gray-500 mt-0.5">Neraca, Laba Rugi, Arus Kas, dan Analisis Akun</p>
+        <DownloadAllPanel
+          defaultStart={`${new Date().toISOString().slice(0, 7)}-01`}
+          defaultEnd={new Date().toISOString().slice(0, 10)} />
       </div>
 
       {/* Tab navigation */}

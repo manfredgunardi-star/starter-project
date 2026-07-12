@@ -1,12 +1,16 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
+import { jsPDF } from 'jspdf'
+import { applyPlugin } from 'jspdf-autotable'
+applyPlugin(jsPDF)
+import * as XLSX from 'xlsx'
 import { getCashFlowData } from '../../services/reportService'
 import { formatCurrency } from '../../utils/currency'
 import { formatDate } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import DateInput from '../../components/ui/DateInput'
-import { Search } from 'lucide-react'
-import { Space, Row, Col, Card, Typography, Alert, Statistic, Table } from 'antd'
+import { Download, FileText, Search } from 'lucide-react'
+import { Button as AntButton, Space, Row, Col, Card, Typography, Alert, Statistic, Table } from 'antd'
 
 const { Title, Text } = Typography
 
@@ -43,11 +47,80 @@ export default function CashFlowPage() {
   const totalOut = outgoing.reduce((s, p) => s + Number(p.amount), 0)
   const netCash = totalIn - totalOut
 
+  const exportPDF = () => {
+    const doc = new jsPDF()
+    doc.setFontSize(16)
+    doc.text('Arus Kas (Cash Flow)', 14, 15)
+    doc.setFontSize(10)
+    doc.text(`Periode: ${startDate} s/d ${endDate}`, 14, 23)
+
+    let y = 32
+    const addSection = (title, rows, total) => {
+      doc.setFontSize(12)
+      doc.text(title, 14, y)
+      y += 5
+      doc.autoTable({
+        startY: y,
+        head: [['Tanggal', 'Pihak', 'Akun', 'Ref. Invoice', 'Jumlah']],
+        body: rows.map(row => [
+          formatDate(row.date),
+          row.customer?.name || row.supplier?.name || '-',
+          row.account?.name || '-',
+          row.invoice?.invoice_number || '-',
+          formatCurrency(row.amount),
+        ]),
+        foot: [['', '', '', 'Total', formatCurrency(total)]],
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [52, 73, 94] },
+        footStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontStyle: 'bold' },
+      })
+      y = doc.lastAutoTable.finalY + 10
+    }
+
+    addSection('Kas Masuk', incoming, totalIn)
+    addSection('Kas Keluar', outgoing, totalOut)
+
+    doc.setFontSize(12)
+    doc.text(`Arus Kas Bersih: ${formatCurrency(netCash)}`, 14, y)
+    doc.save(`arus-kas-${startDate}-${endDate}.pdf`)
+  }
+
+  const exportExcel = () => {
+    const rows = [
+      ['Arus Kas (Cash Flow)'],
+      [`Periode: ${startDate} s/d ${endDate}`],
+      [],
+    ]
+
+    const addSection = (title, items, total) => {
+      rows.push([title])
+      rows.push(['Tanggal', 'Pihak', 'Akun', 'Ref. Invoice', 'Jumlah'])
+      items.forEach(item => rows.push([
+        item.date,
+        item.customer?.name || item.supplier?.name || '-',
+        item.account?.name || '-',
+        item.invoice?.invoice_number || '-',
+        Number(item.amount),
+      ]))
+      rows.push(['', '', '', 'Total', total])
+      rows.push([])
+    }
+
+    addSection('Kas Masuk', incoming, totalIn)
+    addSection('Kas Keluar', outgoing, totalOut)
+    rows.push(['Arus Kas Bersih', netCash])
+
+    const ws = XLSX.utils.aoa_to_sheet(rows)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, 'Arus Kas')
+    XLSX.writeFile(wb, `arus-kas-${startDate}-${endDate}.xlsx`)
+  }
+
   const incomingColumns = [
     { title: 'Tanggal', dataIndex: 'date', key: 'date', width: 110, render: v => formatDate(v) },
-    { title: 'Customer', dataIndex: 'customer', key: 'customer', render: v => v?.name || '—' },
-    { title: 'Akun', dataIndex: 'account', key: 'account', render: v => v?.name || '—' },
-    { title: 'Ref. Invoice', dataIndex: 'invoice', key: 'invoice', render: v => <Text code>{v?.invoice_number || '—'}</Text> },
+    { title: 'Customer', dataIndex: 'customer', key: 'customer', render: v => v?.name || 'â€”' },
+    { title: 'Akun', dataIndex: 'account', key: 'account', render: v => v?.name || 'â€”' },
+    { title: 'Ref. Invoice', dataIndex: 'invoice', key: 'invoice', render: v => <Text code>{v?.invoice_number || 'â€”'}</Text> },
     {
       title: 'Jumlah',
       dataIndex: 'amount',
@@ -59,9 +132,9 @@ export default function CashFlowPage() {
 
   const outgoingColumns = [
     { title: 'Tanggal', dataIndex: 'date', key: 'date', width: 110, render: v => formatDate(v) },
-    { title: 'Supplier', dataIndex: 'supplier', key: 'supplier', render: v => v?.name || '—' },
-    { title: 'Akun', dataIndex: 'account', key: 'account', render: v => v?.name || '—' },
-    { title: 'Ref. Invoice', dataIndex: 'invoice', key: 'invoice', render: v => <Text code>{v?.invoice_number || '—'}</Text> },
+    { title: 'Supplier', dataIndex: 'supplier', key: 'supplier', render: v => v?.name || 'â€”' },
+    { title: 'Akun', dataIndex: 'account', key: 'account', render: v => v?.name || 'â€”' },
+    { title: 'Ref. Invoice', dataIndex: 'invoice', key: 'invoice', render: v => <Text code>{v?.invoice_number || 'â€”'}</Text> },
     {
       title: 'Jumlah',
       dataIndex: 'amount',
@@ -96,6 +169,15 @@ export default function CashFlowPage() {
 
       {data && !loading && (
         <Space direction="vertical" style={{ width: '100%' }}>
+          <Space>
+            <AntButton icon={<FileText size={14} />} onClick={exportPDF}>
+              Export PDF
+            </AntButton>
+            <AntButton icon={<Download size={14} />} onClick={exportExcel}>
+              Export Excel
+            </AntButton>
+          </Space>
+
           <Row gutter={16}>
             <Col span={8}>
               <Statistic
@@ -126,7 +208,7 @@ export default function CashFlowPage() {
           <Card
             title={
               <Text strong style={{ color: '#166534' }}>
-                Kas Masuk (dari Customer) — {incoming.length} transaksi
+                Kas Masuk (dari Customer) â€” {incoming.length} transaksi
               </Text>
             }
             size="small"
@@ -155,7 +237,7 @@ export default function CashFlowPage() {
           <Card
             title={
               <Text strong style={{ color: '#991b1b' }}>
-                Kas Keluar (ke Supplier) — {outgoing.length} transaksi
+                Kas Keluar (ke Supplier) â€” {outgoing.length} transaksi
               </Text>
             }
             size="small"

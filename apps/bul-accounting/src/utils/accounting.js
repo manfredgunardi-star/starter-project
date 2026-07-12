@@ -1,6 +1,6 @@
 import { db } from '../firebase'
 import {
-  collection, addDoc, updateDoc, deleteDoc, doc, getDocs, getDoc,
+  collection, addDoc, updateDoc, doc, getDocs, getDoc,
   query, where, orderBy, Timestamp, writeBatch, limit, setDoc
 } from 'firebase/firestore'
 import { COA, getNormalBalance } from '../data/chartOfAccounts'
@@ -92,9 +92,8 @@ export async function deleteJournal(id, deletedBy) {
   await writeAuditLog(id, 'delete', deletedBy)
 }
 
-export async function hardDeleteJournal(id) {
-  await deleteDoc(doc(db, 'journals', id))
-}
+// Catatan: fungsi hardDeleteJournal dihapus — melanggar aturan soft-delete (Data Safety Rule #1).
+// Penghapusan jurnal harus selalu lewat deleteJournal() yang menyetel status 'deleted'.
 
 // ===== FETCH JOURNALS =====
 export async function getJournals(filters = {}) {
@@ -123,16 +122,27 @@ export async function getJournals(filters = {}) {
   return results.sort((a, b) => (a.date > b.date ? -1 : 1))
 }
 
+// Pure date/type/truck/account filter mirroring getJournals' client-side logic.
+// Used to derive per-report views from a single pre-fetched journal set.
+export function filterJournalsByDate(journals, startDate, endDate) {
+  let r = journals
+  if (startDate) r = r.filter(j => j.date >= startDate)
+  if (endDate) r = r.filter(j => j.date <= endDate)
+  return r.slice().sort((a, b) => (a.date > b.date ? -1 : 1))
+}
+
 // ===== ACCOUNT BALANCES =====
-export async function getAccountBalances(endDate, startDate = null, truckId = 'all') {
-  const journals = await getJournals({
-    startDate: startDate || '1900-01-01',
-    endDate
-  })
+export async function getAccountBalances(endDate, startDate = null, truckId = 'all', journals = null) {
+  const src = journals
+    ? filterJournalsByDate(journals, startDate || '1900-01-01', endDate)
+    : await getJournals({
+        startDate: startDate || '1900-01-01',
+        endDate
+      })
 
   const balances = {}
 
-  journals.forEach(j => {
+  src.forEach(j => {
     if (truckId !== 'all' && j.truckId && j.truckId !== truckId) return
 
     j.lines?.forEach(line => {
@@ -162,8 +172,8 @@ export async function getAccountBalances(endDate, startDate = null, truckId = 'a
 }
 
 // ===== FINANCIAL REPORTS =====
-export async function generateNeracaData(endDate, truckId = 'all') {
-  const balances = await getAccountBalances(endDate, null, truckId)
+export async function generateNeracaData(endDate, truckId = 'all', journals = null) {
+  const balances = await getAccountBalances(endDate, null, truckId, journals)
   const detailAccounts = COA.filter(a => a.type === 'detail')
 
   const getBalance = (code) => {
@@ -198,8 +208,8 @@ export async function generateNeracaData(endDate, truckId = 'all') {
   }
 }
 
-export async function generateLabaRugiData(startDate, endDate, truckId = 'all') {
-  const balances = await getAccountBalances(endDate, startDate, truckId)
+export async function generateLabaRugiData(startDate, endDate, truckId = 'all', journals = null) {
+  const balances = await getAccountBalances(endDate, startDate, truckId, journals)
 
   const getBalance = (code) => {
     if (!balances[code]) return 0
@@ -238,13 +248,15 @@ export async function generateLabaRugiData(startDate, endDate, truckId = 'all') 
   }
 }
 
-export async function generateArusKasData(startDate, endDate, truckId = 'all') {
-  const journals = await getJournals({ startDate, endDate })
+export async function generateArusKasData(startDate, endDate, truckId = 'all', journals = null) {
+  const src = journals
+    ? filterJournalsByDate(journals, startDate, endDate)
+    : await getJournals({ startDate, endDate })
   const kasAccounts = ['1111', '1112', '1113', '1114']
 
   let operasional = 0, investasi = 0, pendanaan = 0
 
-  journals.forEach(j => {
+  src.forEach(j => {
     if (truckId !== 'all' && j.truckId && j.truckId !== truckId) return
 
     const hasKas = j.lines?.some(l => kasAccounts.includes(l.accountCode))
@@ -268,9 +280,18 @@ export async function generateArusKasData(startDate, endDate, truckId = 'all') {
     else operasional += kasFlow
   })
 
-  // Get beginning and ending cash balances
-  const beginBalances = await getAccountBalances(startDate, null, truckId)
-  const endBalances = await getAccountBalances(endDate, null, truckId)
+  // Get beginning and ending cash balances.
+  // Saldo awal harus EKSKLUSIF terhadap startDate (saldo akhir periode sebelumnya),
+  // karena arus periode (operasional/investasi/pendanaan) sudah mencakup transaksi
+  // bertanggal startDate. Memakai startDate inklusif membuat transaksi hari pertama
+  // terhitung dua kali → saldoAwal + totalPerubahan ≠ saldoAkhir.
+  const startExclusive = (() => {
+    const d = new Date(`${startDate}T00:00:00Z`)
+    d.setUTCDate(d.getUTCDate() - 1)
+    return d.toISOString().slice(0, 10)
+  })()
+  const beginBalances = await getAccountBalances(startExclusive, null, truckId, journals)
+  const endBalances = await getAccountBalances(endDate, null, truckId, journals)
 
   const beginCash = kasAccounts.reduce((s, code) => {
     const b = beginBalances[code]
@@ -450,7 +471,7 @@ export async function updateRecurringTemplateNextRunDate(id, nextRunDate) {
 // ===== TRUCKS (Cost Center) =====
 export async function getTrucks() {
   const snap = await getDocs(collection(db, 'trucks'))
-  return snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => a.name?.localeCompare(b.name))
+  return snap.docs.map(d => ({ id: d.id, ...d.data() })).filter(t => t.status !== 'deleted').sort((a, b) => a.name?.localeCompare(b.name))
 }
 
 export async function saveTruck(truckData) {
@@ -464,7 +485,7 @@ export async function updateTruck(id, data) {
 }
 
 export async function deleteTruck(id) {
-  await deleteDoc(doc(db, 'trucks', id))
+  await updateDoc(doc(db, 'trucks', id), { status: 'deleted', deletedAt: new Date().toISOString() })
 }
 
 // ===== ASSETS =====
@@ -522,7 +543,9 @@ export async function addInvoicePayment(invoiceId, payment) {
   const inv = snap.data()
   const payments = [...(inv.payments || []), { ...payment, createdAt: new Date().toISOString() }]
   const totalPaid = payments.reduce((s, p) => s + (p.jumlahBayar || 0), 0)
-  const status = totalPaid >= inv.amount ? 'paid' : 'partial'
+  // Pakai pembulatan yang sama dengan removeInvoicePayment agar penentuan status konsisten
+  // (hindari selisih floating-point yang membuat invoice lunas tampil 'partial').
+  const status = Math.round(totalPaid) >= Math.round(inv.amount) ? 'paid' : (totalPaid > 0 ? 'partial' : 'unpaid')
   await updateDoc(doc(db, 'invoices', invoiceId), {
     payments, totalPaid, status, updatedAt: new Date().toISOString(),
   })

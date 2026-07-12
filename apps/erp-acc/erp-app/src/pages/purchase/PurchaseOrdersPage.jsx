@@ -9,13 +9,25 @@ import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { Plus, Search, Printer, FileDown } from 'lucide-react'
 import { usePrintPO } from '../../hooks/usePrintPO'
+import SortableHeader from '../../components/ui/SortableHeader'
+import { useSortableData } from '../../hooks/useSortableData'
 
 const STATUS_COLOR = {
-  draft: 'default',
+  draft:     'default',
   confirmed: 'blue',
-  received: 'gold',
-  done: 'success',
+  received:  'gold',
+  done:      'success',
+  closed:    'default',
+  cancelled: 'error',
 }
+
+const SORT_CONFIG = {
+  number: { accessor: po => po.po_number,       type: 'string' },
+  date:   { accessor: po => po.date,            type: 'date'   },
+  party:  { accessor: po => po.supplier?.name,  type: 'string' },
+  total:  { accessor: po => po.total,           type: 'number' },
+}
+const DEFAULT_SORT = { key: 'date', direction: 'desc' }
 
 export default function PurchaseOrdersPage() {
   const navigate = useNavigate()
@@ -34,6 +46,8 @@ export default function PurchaseOrdersPage() {
       return matchSearch && matchStatus
     })
   }, [purchaseOrders, search, statusFilter])
+
+  const { sorted, sortKey, sortDirection, requestSort } = useSortableData(filtered, SORT_CONFIG, DEFAULT_SORT)
 
   if (loading) return <LoadingSpinner message="Memuat PO..." />
   if (error) return <Typography.Text type="danger">{error}</Typography.Text>
@@ -70,6 +84,8 @@ export default function PurchaseOrdersPage() {
           <option value="confirmed">Confirmed</option>
           <option value="received">Received</option>
           <option value="done">Done</option>
+          <option value="closed">Closed</option>
+          <option value="cancelled">Cancelled</option>
         </select>
       </Space>
 
@@ -77,23 +93,23 @@ export default function PurchaseOrdersPage() {
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead style={{ background: '#f3f4f6', borderBottom: '1px solid #e5e7eb' }}>
             <tr>
-              <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>No. PO</th>
-              <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Tanggal</th>
-              <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Supplier</th>
+              <SortableHeader label="No. PO" sortKey="number" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+              <SortableHeader label="Tanggal" sortKey="date" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
+              <SortableHeader label="Supplier" sortKey="party" activeKey={sortKey} direction={sortDirection} onSort={requestSort} />
               <th style={{ padding: '12px 24px', textAlign: 'left', fontSize: 14, fontWeight: 500 }}>Status</th>
-              <th style={{ padding: '12px 24px', textAlign: 'right', fontSize: 14, fontWeight: 500 }}>Total</th>
+              <SortableHeader label="Total" sortKey="total" activeKey={sortKey} direction={sortDirection} onSort={requestSort} align="right" />
               <th style={{ padding: '12px 16px', textAlign: 'center', fontSize: 14, fontWeight: 500 }}>Aksi</th>
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 ? (
+            {sorted.length === 0 ? (
               <tr>
                 <td colSpan={6} style={{ padding: '32px 24px', textAlign: 'center', fontSize: 14, color: '#6b7280' }}>
                   Belum ada data PO
                 </td>
               </tr>
             ) : (
-              filtered.map(po => (
+              sorted.map(po => (
                 <tr
                   key={po.id}
                   style={{ borderBottom: '1px solid #e5e7eb', cursor: 'pointer' }}

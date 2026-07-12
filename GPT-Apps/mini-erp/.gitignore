@@ -1,9 +1,0 @@
-node_modules
-dist
-.env
-.env.local
-.firebase
-firebase-debug.log
-npm-debug.log*
-playwright-report
-test-results

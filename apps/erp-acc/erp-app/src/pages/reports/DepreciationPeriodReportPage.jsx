@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react'
+﻿import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { listCategories } from '../../services/assetCategoryService'
 import { formatCurrency } from '../../utils/currency'
 import { jsPDF } from 'jspdf'
-import 'jspdf-autotable'
+import { applyPlugin } from 'jspdf-autotable'
+applyPlugin(jsPDF)
 import * as XLSX from 'xlsx'
 import { Download, FileText } from 'lucide-react'
 import { Space, Card, Typography, Alert, Table, Select, Button } from 'antd'
@@ -52,8 +53,8 @@ export default function DepreciationPeriodReportPage() {
         if (!grouped[key]) {
           grouped[key] = {
             period: d.period,
-            categoryCode: d.asset.category?.code || '—',
-            categoryName: d.asset.category?.name || '—',
+            categoryCode: d.asset.category?.code || 'â€”',
+            categoryName: d.asset.category?.name || 'â€”',
             count: 0,
             total: 0,
           }

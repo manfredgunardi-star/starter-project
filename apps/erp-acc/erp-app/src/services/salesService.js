@@ -52,31 +52,7 @@ export async function saveSalesOrder(so, items) {
     })),
   })
   if (error) throw error
-
-  const soId = data
-  const hasPaymentTerm = Object.prototype.hasOwnProperty.call(so, 'payment_term_id')
-  const hasWarehouse = Object.prototype.hasOwnProperty.call(so, 'warehouse_id')
-
-  if (hasPaymentTerm || hasWarehouse) {
-    const updatePayload = {}
-
-    if (hasPaymentTerm) {
-      updatePayload.payment_term_id = so.payment_term_id || null
-    }
-
-    if (hasWarehouse) {
-      updatePayload.warehouse_id = so.warehouse_id || null
-    }
-
-    const { error: updateError } = await supabase
-      .from('sales_orders')
-      .update(updatePayload)
-      .eq('id', soId)
-
-    if (updateError) throw updateError
-  }
-
-  return soId
+  return data
 }
 
 export async function confirmSalesOrder(id) {
@@ -135,17 +111,7 @@ export async function saveGoodsDelivery(gd, items) {
     })),
   })
   if (error) throw error
-
-  const gdId = data
-  if (Object.prototype.hasOwnProperty.call(gd, 'warehouse_id')) {
-    const { error: warehouseError } = await supabase
-      .from('goods_deliveries')
-      .update({ warehouse_id: gd.warehouse_id || null })
-      .eq('id', gdId)
-    if (warehouseError) throw warehouseError
-  }
-
-  return gdId
+  return data
 }
 
 export async function postGoodsDelivery(id) {
@@ -193,8 +159,12 @@ export async function saveSalesInvoice(invoice, items) {
       customer_id:      invoice.customer_id,
       sales_order_id:   invoice.sales_order_id   || null,
       goods_delivery_id: invoice.goods_delivery_id || null,
+      payment_term_id:  invoice.payment_term_id  || null,
       status:           invoice.status           || 'draft',
       notes:            invoice.notes            || null,
+      advance_deduction_amount: Number(invoice.advance_deduction_amount) || 0,
+      advance_deduction_coa_id: invoice.advance_deduction_coa_id || null,
+      credit_applied_amount: Number(invoice.credit_applied_amount) || 0,
     },
     p_items: items.map(i => ({
       product_id:    i.product_id,
@@ -207,16 +177,6 @@ export async function saveSalesInvoice(invoice, items) {
     })),
   })
   if (error) throw error
-
-  // Persist payment_term_id — not handled by save_sales_invoice RPC (adds nullable FK column)
-  if (invoice.payment_term_id) {
-    const { error: ptErr } = await supabase
-      .from('invoices')
-      .update({ payment_term_id: invoice.payment_term_id })
-      .eq('id', data)
-    if (ptErr) throw ptErr
-  }
-
   return data
 }
 
@@ -237,4 +197,14 @@ export async function getOutstandingInvoices(customerId) {
     .order('date')
   if (error) throw error
   return data
+}
+
+export async function closeSalesOrder(id) {
+  const { error } = await supabase.rpc('close_sales_order', { p_so_id: id })
+  if (error) throw error
+}
+
+export async function cancelSalesOrder(id) {
+  const { error } = await supabase.rpc('cancel_sales_order', { p_so_id: id })
+  if (error) throw error
 }

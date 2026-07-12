@@ -43,7 +43,14 @@ export const db = initializeFirestore(app, {
 //
 // Emulator berjalan di localhost — 0 write ke production Firestore.
 // ⚠️  Emulator butuh Java 11+. Install dari: https://adoptium.net/
-const USE_EMULATOR = import.meta.env.VITE_USE_EMULATOR === 'true';
+// Emulator HANYA aktif saat MODE === 'development' (npm run dev).
+//   MODE='development' → npm run dev          ✅ emulator boleh aktif
+//   MODE='test'        → npm test (vitest)    ❌ emulator off (mock-friendly)
+//   MODE='staging'     → npm run build:staging ❌ emulator off
+//   MODE='production'  → npm run build         ❌ emulator off
+// Dengan ini, .env.local boleh berisi VITE_USE_EMULATOR=true tanpa merusak
+// build produksi/staging maupun test suite.
+const USE_EMULATOR = import.meta.env.VITE_USE_EMULATOR === 'true' && import.meta.env.MODE === 'development';
 
 if (USE_EMULATOR) {
   connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: false });

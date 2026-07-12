@@ -7,6 +7,7 @@ import {
   COLOR,
   FONT,
   formatCurrency,
+  formatQuantity,
   formatDate,
   formatDiscount,
   safeText,
@@ -152,7 +153,7 @@ export async function renderInvoicePdf(invoice, company) {
     return [
       String(idx + 1).padStart(2, '0'),
       descLines.join('\n'),
-      formatCurrency(item?.quantity),
+      formatQuantity(item?.quantity),
       safeText(item?.unit?.name, ''),
       formatCurrency(item?.unit_price),
       formatDiscount(item?.discount_percent),
@@ -166,14 +167,15 @@ export async function renderInvoicePdf(invoice, company) {
     startY: y,
     margin: { left: MARGIN.left, right: MARGIN.right, top: MARGIN.top + 56, bottom: MARGIN.bottom + 24 },
     theme: 'plain',
+    styles: { cellPadding: { top: 4, right: 4, bottom: 4, left: 4 }, overflow: 'visible' },
     columnStyles: {
-      0: { cellWidth: 24, halign: 'left' },
-      1: { cellWidth: 'auto' },
-      2: { cellWidth: 38, halign: 'right' },
-      3: { cellWidth: 36, halign: 'left' },
-      4: { cellWidth: 64, halign: 'right' },
-      5: { cellWidth: 32, halign: 'center', textColor: COLOR.textDisabled },
-      6: { cellWidth: 80, halign: 'right' },
+      0: { cellWidth: 22, halign: 'left' },
+      1: { cellWidth: 'auto', overflow: 'linebreak' },
+      2: { cellWidth: 52, halign: 'right' },
+      3: { cellWidth: 30, halign: 'left' },
+      4: { cellWidth: 62, halign: 'right' },
+      5: { cellWidth: 28, halign: 'center', textColor: COLOR.textDisabled },
+      6: { cellWidth: 84, halign: 'right' },
     },
     headStyles: {
       fontSize: FONT.tableHeader,
@@ -254,6 +256,51 @@ export async function renderInvoicePdf(invoice, company) {
   doc.text('Total', totalsLeftX, y)
   doc.text(`${currency} ${formatCurrency(total)}`, rightX, y, { align: 'right' })
   y += 16
+
+  // Potongan Uang Muka + Potongan Retur + Kredit Diterapkan + Sisa Tagih (jika ada potongan)
+  const advanceDeduction = Number(invoice?.advance_deduction_amount) || 0
+  const returnCredit = Number(invoice?.return_credit_amount) || 0
+  const creditApplied = Number(invoice?.credit_applied_amount) || 0
+  const totalDeductions = advanceDeduction + returnCredit + creditApplied
+  if (totalDeductions > 0) {
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(FONT.totalLabel)
+    doc.setTextColor(...COLOR.textSecondary)
+    if (advanceDeduction > 0) {
+      doc.text('Potongan Uang Muka', totalsLeftX, y)
+      doc.setFontSize(FONT.totalValue)
+      doc.setTextColor(...COLOR.textPrimary)
+      doc.text(`${currency} (${formatCurrency(advanceDeduction)})`, rightX, y, { align: 'right' })
+      y += 14
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(FONT.totalLabel)
+      doc.setTextColor(...COLOR.textSecondary)
+    }
+    if (returnCredit > 0) {
+      doc.text('Potongan Retur', totalsLeftX, y)
+      doc.setFontSize(FONT.totalValue)
+      doc.setTextColor(...COLOR.textPrimary)
+      doc.text(`${currency} (${formatCurrency(returnCredit)})`, rightX, y, { align: 'right' })
+      y += 14
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(FONT.totalLabel)
+      doc.setTextColor(...COLOR.textSecondary)
+    }
+    if (creditApplied > 0) {
+      doc.text('Kredit Diterapkan', totalsLeftX, y)
+      doc.setFontSize(FONT.totalValue)
+      doc.setTextColor(...COLOR.textPrimary)
+      doc.text(`${currency} (${formatCurrency(creditApplied)})`, rightX, y, { align: 'right' })
+      y += 14
+    }
+
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(FONT.totalLabel)
+    doc.setTextColor(...COLOR.textPrimary)
+    doc.text('Sisa Tagih', totalsLeftX, y)
+    doc.text(`${currency} ${formatCurrency(total - totalDeductions)}`, rightX, y, { align: 'right' })
+    y += 16
+  }
 
   // ---------------------------------------------------------------------------
   // Payment Info + Terms & Conditions + Signatures

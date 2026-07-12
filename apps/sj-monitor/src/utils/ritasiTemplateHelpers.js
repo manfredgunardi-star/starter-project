@@ -22,6 +22,10 @@ export function generateRitasiTemplate(ruteList) {
  * Checks: required columns, data types, values are non-negative
  * Returns: { isValid: boolean, errors: string[] }
  */
+// Normalize a cell value: coerce to string, strip BOM, trim whitespace.
+// Tolerates null/undefined and Windows Excel BOM-prefixed first-column cells.
+const normCell = (s) => String(s ?? '').replace(/^\uFEFF/, '').trim();
+
 export function validateRitasiTemplate(data) {
   const errors = [];
 
@@ -30,11 +34,15 @@ export function validateRitasiTemplate(data) {
     return { isValid: false, errors };
   }
 
-  const headers = data[0];
+  const rawHeaders = data[0] || [];
+  const headers = rawHeaders.map(normCell);
   const expectedHeaders = ['ID Rute', 'Nama Rute', 'Asal', 'Tujuan', 'Uang Jalan', 'Ritasi Saat Ini', 'Ritasi Baru'];
 
-  // Check headers
-  if (JSON.stringify(headers) !== JSON.stringify(expectedHeaders)) {
+  // Check headers — tolerate trailing whitespace / BOM from copy-paste
+  const headerOk =
+    headers.length >= expectedHeaders.length &&
+    expectedHeaders.every((h, i) => headers[i] === h);
+  if (!headerOk) {
     errors.push('Header kolom tidak sesuai. Pastikan menggunakan template yang benar.');
     return { isValid: false, errors };
   }
@@ -74,8 +82,10 @@ export function parseRitasiUpdates(data) {
 
   // Skip header row (index 0)
   data.slice(1).forEach(row => {
-    const ruteId = row[0].toString().trim();
-    const ritasiValue = parseInt(row[6]) || 0;
+    if (!row) return;
+    const ruteId = normCell(row[0]);
+    const ritasiRaw = parseInt(normCell(row[6]), 10);
+    const ritasiValue = Number.isFinite(ritasiRaw) ? ritasiRaw : 0;
 
     if (ruteId) {
       updates[ruteId] = ritasiValue;
@@ -83,4 +93,43 @@ export function parseRitasiUpdates(data) {
   });
 
   return updates;
+}
+
+/**
+ * Splits template rows into updates that reference a rute still present in
+ * Master Data ("validUpdates") and rows whose ID Rute is not found ("rejectedRows"),
+ * e.g. because the rute was deleted after the template was downloaded.
+ * Rows referencing a valid rute are still applied — only unmatched rows are rejected.
+ *
+ * Returns: { validUpdates: { [ruteId]: newRitasiValue }, rejectedRows: { baris, ruteId, namaRute, alasan }[] }
+ */
+export function partitionRitasiRowsByRuteExistence(data, ruteList) {
+  const knownIds = new Set((ruteList || []).map((r) => String(r.id).trim()));
+  const validUpdates = {};
+  const rejectedRows = [];
+
+  data.slice(1).forEach((row, index) => {
+    if (!row) return;
+    const rowNumber = index + 2; // +2: header + 0-index
+    const ruteId = normCell(row[0]);
+    const namaRute = row[1] ?? '';
+    const ritasiRaw = parseInt(normCell(row[6]), 10);
+    const ritasiValue = Number.isFinite(ritasiRaw) ? ritasiRaw : 0;
+
+    if (!ruteId) return; // validateRitasiTemplate sudah menandai baris ini sebagai error
+
+    if (!knownIds.has(ruteId)) {
+      rejectedRows.push({
+        baris: rowNumber,
+        ruteId,
+        namaRute,
+        alasan: `ID Rute "${ruteId}" tidak ditemukan di Master Data (mungkin sudah dihapus)`,
+      });
+      return;
+    }
+
+    validUpdates[ruteId] = ritasiValue;
+  });
+
+  return { validUpdates, rejectedRows };
 }

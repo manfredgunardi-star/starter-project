@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { Space, Flex, Typography, Row, Col, Card, Select as AntdSelect } from 'antd'
+import { Space, Flex, Typography, Row, Col, Card, Select as AntdSelect, InputNumber } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useProducts, useSuppliers } from '../../hooks/useMasterData'
 import { getPurchaseInvoice, savePurchaseInvoice, postPurchaseInvoice, getGoodsReceipt } from '../../services/purchaseService'
+import { getAvailableCredit } from '../../services/creditNoteService'
 import dayjs from 'dayjs'
 import { getPaymentTerms } from '../../services/paymentTermService'
 import { today } from '../../utils/date'
@@ -12,6 +13,7 @@ import { formatCurrency } from '../../utils/currency'
 import Button from '../../components/ui/Button'
 import DocumentHeader from '../../components/shared/DocumentHeader'
 import LineItemsTable from '../../components/shared/LineItemsTable'
+import { rowTotals } from '../../utils/lineItemTotals'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { ArrowLeft, Save, Send } from 'lucide-react'
 
@@ -39,8 +41,11 @@ export default function PurchaseInvoiceFormPage() {
     status: 'draft',
     notes: '',
     payment_term_id: '',
+    credit_applied_amount: 0,
+    return_credit_amount: 0,
   })
   const [items, setItems] = useState([LineItemsTable.emptyRow()])
+  const [grRaw, setGrRaw] = useState(null) // raw GR awaiting products master to compute PPN
 
   useEffect(() => {
     getPaymentTerms()
@@ -65,6 +70,8 @@ export default function PurchaseInvoiceFormPage() {
             amount_paid: inv.amount_paid,
             total: inv.total,
             payment_term_id: inv.payment_term_id || '',
+            credit_applied_amount: inv.credit_applied_amount || 0,
+            return_credit_amount: inv.return_credit_amount || 0,
           })
           setItems(inv.items.map(i => ({
             _key: i.id,
@@ -93,21 +100,41 @@ export default function PurchaseInvoiceFormPage() {
           purchase_order_id: gr.purchase_order_id || '',
           goods_receipt_id: gr.id,
         }))
-        setItems(
-          (gr.items || []).map(i => ({
-            _key: i.id,
-            product_id: i.product_id,
-            unit_id: i.unit_id,
-            quantity: i.quantity,
-            quantity_base: i.quantity_base,
-            unit_price: i.unit_price,
-            tax_amount: 0,
-            total: 0,
-          }))
-        )
+        setGrRaw(gr)
       })
       .catch(err => toast.error('Gagal load GR: ' + err.message))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Map GR items to invoice lines once the products master is loaded, so PPN
+  // (is_taxable / tax_rate) can be computed instead of left at 0.
+  useEffect(() => {
+    if (!grRaw || products.length === 0) return
+    setItems(
+      (grRaw.items || []).map(i => {
+        const prod = products.find(p => p.id === i.product_id)
+        const row = {
+          _key: i.id,
+          product_id: i.product_id,
+          unit_id: i.unit_id,
+          quantity: i.quantity,
+          quantity_base: i.quantity_base,
+          unit_price: i.unit_price,
+        }
+        return { ...row, ...rowTotals(row, prod) }
+      })
+    )
+  }, [grRaw, products])
+
+  const [availableCredit, setAvailableCredit] = useState(0)
+
+  useEffect(() => {
+    let cancelled = false
+    if (!header.supplier_id) { setAvailableCredit(0); return }
+    getAvailableCredit('supplier', header.supplier_id)
+      .then(v => { if (!cancelled) setAvailableCredit(v) })
+      .catch(err => toast.error('Gagal memuat saldo kredit: ' + err.message))
+    return () => { cancelled = true }
+  }, [header.supplier_id])
 
   const readOnly = !isNew && header.status !== 'draft'
 
@@ -136,6 +163,9 @@ export default function PurchaseInvoiceFormPage() {
     if (!header.date) { toast.error('Tanggal wajib diisi'); return }
     const validItems = items.filter(i => i.product_id && Number(i.quantity) > 0)
     if (validItems.length === 0) { toast.error('Minimal satu item'); return }
+    const creditApplied = Number(header.credit_applied_amount) || 0
+    if (creditApplied < 0) { toast.error('Kredit yang diterapkan tidak boleh negatif'); return }
+    if (creditApplied > availableCredit + 0.01) { toast.error('Kredit yang diterapkan melebihi saldo kredit tersedia'); return }
 
     setSubmitting(true)
     try {
@@ -163,7 +193,9 @@ export default function PurchaseInvoiceFormPage() {
   }
 
   const supplierOptions = suppliers.map(s => ({ value: s.id, label: s.name }))
-  const remaining = (header.total || 0) - (header.amount_paid || 0)
+  const creditApplied = Number(header.credit_applied_amount) || 0
+  const returnCredit = Number(header.return_credit_amount) || 0
+  const remaining = (header.total || 0) - creditApplied - returnCredit - (header.amount_paid || 0)
 
   if (loading) return <LoadingSpinner message="Memuat invoice pembelian..." />
 
@@ -194,6 +226,11 @@ export default function PurchaseInvoiceFormPage() {
               Bayar Hutang
             </Button>
           )}
+          {!isNew && ['posted', 'partial', 'paid'].includes(header.status) && (
+            <Button variant="secondary" onClick={() => navigate(`/purchase/returns/new?from_invoice=${id}`)}>
+              Buat Retur
+            </Button>
+          )}
         </Space>
       </Flex>
 
@@ -204,7 +241,7 @@ export default function PurchaseInvoiceFormPage() {
         status={isNew ? null : header.status}
         partyLabel="Supplier"
         partyId={header.supplier_id}
-        onPartyChange={v => setHeader(h => ({ ...h, supplier_id: v }))}
+        onPartyChange={v => setHeader(h => ({ ...h, supplier_id: v, credit_applied_amount: 0 }))}
         partyOptions={supplierOptions}
         dueDate={header.due_date}
         onDueDateChange={d => setHeader(h => ({ ...h, due_date: d }))}
@@ -235,6 +272,29 @@ export default function PurchaseInvoiceFormPage() {
         </Row>
       </Card>
 
+      {!readOnly && (
+        <Card size="small">
+          <Row gutter={16}>
+            <Col xs={24} md={8}>
+              <div style={{ marginBottom: 4, fontSize: 13, fontWeight: 500 }}>
+                Terapkan dari Saldo Kredit (Tersedia: {formatCurrency(availableCredit)})
+              </div>
+              <InputNumber
+                style={{ width: '100%' }}
+                min={0}
+                max={Math.max(availableCredit, Number(header.credit_applied_amount) || 0)}
+                value={header.credit_applied_amount || 0}
+                onChange={v => setHeader(h => ({ ...h, credit_applied_amount: v || 0 }))}
+                formatter={val => `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
+                parser={val => val.replace(/\./g, '')}
+                placeholder="0"
+                disabled={availableCredit <= 0}
+              />
+            </Col>
+          </Row>
+        </Card>
+      )}
+
       <Space direction="vertical" style={{ width: '100%' }} size={8}>
         <Typography.Title level={5} style={{ margin: 0 }}>Item Invoice</Typography.Title>
         <LineItemsTable
@@ -262,6 +322,12 @@ export default function PurchaseInvoiceFormPage() {
             <Col span={8}>
               <Typography.Text type="danger" style={{ display: 'block' }}>Sisa Hutang</Typography.Text>
               <Typography.Text strong type="danger" style={{ fontSize: 16 }}>{formatCurrency(remaining)}</Typography.Text>
+            </Col>
+          </Row>
+          <Row gutter={16} style={{ marginTop: 12 }}>
+            <Col span={8}>
+              <Typography.Text style={{ color: '#d46b08', display: 'block' }}>Kredit Diterapkan</Typography.Text>
+              <Typography.Text strong style={{ color: '#873800', fontSize: 16 }}>{formatCurrency(header.credit_applied_amount || 0)}</Typography.Text>
             </Col>
           </Row>
         </Card>

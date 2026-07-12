@@ -10,7 +10,7 @@ import { today } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import DocumentHeader from '../../components/shared/DocumentHeader'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
-import { ArrowLeft, Save, Send, Trash2, Plus, FileText } from 'lucide-react'
+import { ArrowLeft, Save, Send, Trash2, Plus, FileText, RotateCcw } from 'lucide-react'
 
 export default function GoodsDeliveryFormPage() {
   const { id } = useParams()
@@ -222,6 +222,11 @@ export default function GoodsDeliveryFormPage() {
           {!isNew && header.status === 'posted' && canWrite && (
             <Button variant="secondary" onClick={() => navigate(`/sales/invoices/new?from_gd=${id}`)}>
               <FileText size={18} /> Buat SI dari GD ini
+            </Button>
+          )}
+          {!isNew && header.status === 'posted' && canWrite && (
+            <Button variant="secondary" onClick={() => navigate(`/sales/returns/new?from_gd=${id}`)}>
+              <RotateCcw size={18} /> Buat Retur
             </Button>
           )}
         </Space>

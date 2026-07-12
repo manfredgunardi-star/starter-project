@@ -5,8 +5,10 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, Suspense } fr
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatCurrency } from './utils/currency.js';
 import { isSJBelumInvoice, mergeById } from './utils/sjHelpers.js';
+import { computeInvoiceTotals } from './utils/invoiceTotals.js';
 import { calculateSJPenalty } from './utils/payslipHelpers.js';
 import { downloadSJRecapToExcel } from './utils/excel.js';
+import { findMasterIdByField } from './utils/masterDataMatch.js';
 import { useAuth } from './hooks/useAuth.js';
 import { useMasterData } from './hooks/useMasterData.js';
 import { useUsers } from './hooks/useUsers.js';
@@ -15,7 +17,9 @@ import SearchableSelect from './components/SearchableSelect.jsx';
 import StatSummary from './components/StatSummary.jsx';
 import AlertBanner from './components/AlertBanner.jsx';
 import SuratJalanCard from './components/SuratJalanCard.jsx';
+import EditSJModal from './components/EditSJModal.jsx';
 import Pagination, { PAGE_SIZE, clampPage } from './components/Pagination.jsx';
+import RejectionReport from './components/RejectionReport.jsx';
 import LoginPage from './pages/LoginPage.jsx';
 const LaporanKasPage   = React.lazy(() => import('./pages/LaporanKasPage.jsx'));
 const LaporanTrukPage  = React.lazy(() => import('./pages/LaporanTrukPage.jsx'));
@@ -36,7 +40,7 @@ import {
 
 
 
-import { AlertCircle, Package, Truck, FileText, DollarSign, Users, Settings, Database, LogOut, Plus, Edit, Trash2, Eye, CheckCircle, XCircle, Clock, Search, RefreshCw } from 'lucide-react';
+import { AlertCircle, Package, FileText, DollarSign, Users, Settings, Database, LogOut, Plus, Edit, Trash2, Eye, CheckCircle, XCircle, Clock, Search, RefreshCw } from 'lucide-react';
 import TopBar from './components/TopBar.jsx';
 import OfflineIndicator from './components/OfflineIndicator.jsx';
 import DockNav from './components/DockNav.jsx';
@@ -71,6 +75,12 @@ const getQueryStartISO = () => {
 // Keep it disabled unless it is run from a manual, previewed admin flow.
 const ENABLE_AUTO_UANG_JALAN_RECONCILE = false;
 
+const IMPORT_SJ_REJECTION_COLUMNS = [
+  { key: 'baris', label: 'Baris' },
+  { key: 'nomorSJ', label: 'Nomor SJ' },
+  { key: 'alasan', label: 'Alasan Ditolak' },
+];
+
 // Compact status badge for table rows
 // Uang Muka Management Component
 const SuratJalanMonitor = () => {
@@ -88,16 +98,20 @@ const SuratJalanMonitor = () => {
   const [historyLog, setHistoryLog] = useState([]);
   const [invoiceList, setInvoiceList] = useState([]);
   const [uangMukaList, setUangMukaList] = useState([]);
-  const { truckList, setTruckList, supirList, setSupirList, ruteList, setRuteList, materialList, setMaterialList, tarifRuteList } = useMasterData();
+  const { truckList, setTruckList, supirList, setSupirList, ruteList, setRuteList, materialList, setMaterialList, tarifRuteList, truckListAll, supirListAll, ruteListAll, materialListAll } = useMasterData();
   const { usersList, setUsersList, addUser, updateUser, deleteUser: deleteUserFn, toggleUserActive } = useUsers({ currentUser, setAlertMessage });
   const deleteUser = (id) => deleteUserFn(id, setConfirmDialog);
   const [showModal, setShowModal] = useState(false);
+  const [editSJTarget, setEditSJTarget] = useState(null);
   const [showRitasiBulkUpload, setShowRitasiBulkUpload] = useState(false);
   const [showTarifBulkUpload, setShowTarifBulkUpload] = useState(false);
+  const [importRejectionReport, setImportRejectionReport] = useState(null); // { title, summary, rows } | null
   const [tarifHistoryRute, setTarifHistoryRute] = useState(null);
   const [modalType, setModalType] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
   const [filter, setFilter] = useState('all');
+  const [searchNomorSJ, setSearchNomorSJ] = useState('');
+  const [searchTanggal, setSearchTanggal] = useState('');
   const [sjRecapDateField, setSjRecapDateField] = useState('tanggalSJ');
   const [sjRecapStartDate, setSjRecapStartDate] = useState('');
   const [sjRecapEndDate, setSjRecapEndDate] = useState('');
@@ -271,7 +285,7 @@ const SuratJalanMonitor = () => {
   };
 
   const updateTruck = async (id, updates) => {
-    const payload = { id, ...updates, isActive: true, updatedAt: new Date().toISOString(), updatedBy: currentUser.name };
+    const payload = { id, isActive: true, ...updates, updatedAt: new Date().toISOString(), updatedBy: currentUser.name };
 
     setTruckList((prevList) => prevList.map((t) => (t.id === id ? { ...t, ...payload } : t)));
 
@@ -300,6 +314,15 @@ const SuratJalanMonitor = () => {
     });
   };
 
+  const activateTruck = async (id) => {
+    try {
+      await upsertItemToFirestore(db, "trucks", { id, isActive: true, deletedAt: null, deletedBy: null });
+    } catch (err) {
+      console.error('[activateTruck] Firestore error:', err);
+      setAlertMessage("⚠️ Gagal mengaktifkan truck. Cek koneksi / Console (F12).");
+    }
+  };
+
   // Master Data Supir Functions
 
   const addSupir = async (data) => {
@@ -321,12 +344,12 @@ const SuratJalanMonitor = () => {
   };
 
   const updateSupir = async (id, updates) => {
-    const payload = { id, ...updates, isActive: true, updatedAt: new Date().toISOString(), updatedBy: currentUser.name };
+    const payload = { id, isActive: true, ...updates, updatedAt: new Date().toISOString(), updatedBy: currentUser.name };
     setSupirList((prevList) =>
       prevList.map((s) => (s.id === id ? { ...s, ...payload } : s))
     );
     try {
-      await upsertItemToFirestore(db, "supir", { ...payload, isActive: true });
+      await upsertItemToFirestore(db, "supir", payload);
     } catch (err) {
       console.error("[updateSupir] Firestore error:", err);
       setAlertMessage("⚠️ Gagal update Supir ke Firebase. Cek koneksi / Console (F12).");
@@ -350,6 +373,15 @@ const SuratJalanMonitor = () => {
     });
   };
 
+  const activateSupir = async (id) => {
+    try {
+      await upsertItemToFirestore(db, "supir", { id, isActive: true, deletedAt: null, deletedBy: null });
+    } catch (err) {
+      console.error('[activateSupir] Firestore error:', err);
+      setAlertMessage("⚠️ Gagal mengaktifkan supir. Cek koneksi / Console (F12).");
+    }
+  };
+
   // Master Data Rute Functions
   const addRute = async (data) => {
     const newRute = {
@@ -370,7 +402,7 @@ const SuratJalanMonitor = () => {
   };
 
   const updateRute = async (id, updates) => {
-    const payload = { id, ...updates, isActive: true, updatedAt: new Date().toISOString(), updatedBy: currentUser.name };
+    const payload = { id, isActive: true, ...updates, updatedAt: new Date().toISOString(), updatedBy: currentUser.name };
     setRuteList((prevList) =>
       prevList.map(r => r.id === id ? { ...r, ...payload } : r)
     );
@@ -389,26 +421,34 @@ const SuratJalanMonitor = () => {
       onConfirm: async () => {
         try {
           await softDeleteItemInFirestore(db, "rute", id, currentUser?.name || "system");
+          setRuteList((prevList) => prevList.filter(r => r.id !== id));
         } catch (err) {
           console.error('Error soft-deleting rute:', err);
+          setAlertMessage("⚠️ Gagal menghapus rute. Cek koneksi / Console (F12).");
         }
-
-        setRuteList((prevList) => {
-      const newList = prevList.filter(r => r.id !== id);
-      return newList;
-    });
-setConfirmDialog({ show: false, message: '', onConfirm: null });
+        setConfirmDialog({ show: false, message: '', onConfirm: null });
       }
     });
+  };
+
+  const activateRute = async (id) => {
+    try {
+      await upsertItemToFirestore(db, "rute", { id, isActive: true, deletedAt: null, deletedBy: null });
+    } catch (err) {
+      console.error('[activateRute] Firestore error:', err);
+      setAlertMessage("⚠️ Gagal mengaktifkan rute. Cek koneksi / Console (F12).");
+    }
   };
 
   const loadRuteData = async () => {
     try {
       const snapshot = await getDocs(collection(db, "rute"));
-      const routes = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
+      const routes = snapshot.docs
+        .map(doc => {
+          const data = doc.data() || {};
+          return { id: doc.id, ...data };
+        })
+        .filter((r) => r?.isActive !== false && !r?.deletedAt);
       setRuteList(routes);
     } catch (error) {
       console.error("Error loading rute data:", error);
@@ -436,7 +476,7 @@ setConfirmDialog({ show: false, message: '', onConfirm: null });
   };
 
   const updateMaterial = async (id, updates) => {
-    const payload = { id, ...updates, isActive: true, updatedAt: new Date().toISOString(), updatedBy: currentUser.name };
+    const payload = { id, isActive: true, ...updates, updatedAt: new Date().toISOString(), updatedBy: currentUser.name };
     setMaterialList((prevList) =>
       prevList.map(m => m.id === id ? { ...m, ...payload } : m)
     );
@@ -455,17 +495,23 @@ setConfirmDialog({ show: false, message: '', onConfirm: null });
       onConfirm: async () => {
         try {
           await softDeleteItemInFirestore(db, "material", id, currentUser?.name || "system");
+          setMaterialList((prevList) => prevList.filter(m => m.id !== id));
         } catch (err) {
           console.error('Error soft-deleting material:', err);
+          setAlertMessage("⚠️ Gagal menghapus material. Cek koneksi / Console (F12).");
         }
-
-        setMaterialList((prevList) => {
-      const newList = prevList.filter(m => m.id !== id);
-      return newList;
-    });
-setConfirmDialog({ show: false, message: '', onConfirm: null });
+        setConfirmDialog({ show: false, message: '', onConfirm: null });
       }
     });
+  };
+
+  const activateMaterial = async (id) => {
+    try {
+      await upsertItemToFirestore(db, "material", { id, isActive: true, deletedAt: null, deletedBy: null });
+    } catch (err) {
+      console.error('[activateMaterial] Firestore error:', err);
+      setAlertMessage("⚠️ Gagal mengaktifkan material. Cek koneksi / Console (F12).");
+    }
   };
 
   // Invoice Functions
@@ -532,51 +578,22 @@ const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist }) => {
 
   const addInvoice = async (data) => {
     const who = currentUser?.name || currentUser?.username || 'User';
-    const selectedSJIds = data.selectedSJIds;
+    const { totalQty, totalHarga, totalUM, totalHargaAfterUM } = computeInvoiceTotals(
+      suratJalanList.filter(sj => data.selectedSJIds.includes(sj.id)),
+      data.ruteHarga || {},
+      uangMukaList
+    );
     const newInvoice = {
       id: 'INV-' + Date.now(),
       noInvoice: data.noInvoice,
       tglInvoice: data.tglInvoice,
       suratJalanIds: data.selectedSJIds,
       suratJalanList: suratJalanList.filter(sj => data.selectedSJIds.includes(sj.id)),
-      totalQty: suratJalanList
-        .filter(sj => data.selectedSJIds.includes(sj.id))
-        .reduce((sum, sj) => sum + Number(sj.qtyBongkar || 0), 0),
+      totalQty,
       ruteHarga: data.ruteHarga || {},
-      totalHarga: (() => {
-        const selectedSJs = suratJalanList.filter(sj => selectedSJIds.includes(sj.id));
-        const ruteQtys = {};
-        selectedSJs.forEach(sj => {
-          if (!ruteQtys[sj.rute]) ruteQtys[sj.rute] = 0;
-          ruteQtys[sj.rute] += Number(sj.qtyBongkar || 0);
-        });
-        return Object.entries(data.ruteHarga || {}).reduce((sum, [rute, harga]) => {
-          return sum + (ruteQtys[rute] || 0) * Number(harga || 0);
-        }, 0);
-      })(),
-      totalUM: (() => {
-        const selectedSJs = suratJalanList.filter(sj => selectedSJIds.includes(sj.id));
-        return selectedSJs.reduce((sum, sj) => {
-          const umForSJ = uangMukaList.filter(um => um.sjId === sj.id);
-          return sum + umForSJ.reduce((s, um) => s + Number(um.jumlah || 0), 0);
-        }, 0);
-      })(),
-      totalHargaAfterUM: (() => {
-        const selectedSJs = suratJalanList.filter(sj => selectedSJIds.includes(sj.id));
-        const ruteQtys = {};
-        selectedSJs.forEach(sj => {
-          if (!ruteQtys[sj.rute]) ruteQtys[sj.rute] = 0;
-          ruteQtys[sj.rute] += Number(sj.qtyBongkar || 0);
-        });
-        const total = Object.entries(data.ruteHarga || {}).reduce((sum, [rute, harga]) => {
-          return sum + (ruteQtys[rute] || 0) * Number(harga || 0);
-        }, 0);
-        const totalUMVal = selectedSJs.reduce((sum, sj) => {
-          const umForSJ = uangMukaList.filter(um => um.sjId === sj.id);
-          return sum + umForSJ.reduce((s, um) => s + Number(um.jumlah || 0), 0);
-        }, 0);
-        return total - totalUMVal;
-      })(),
+      totalHarga,
+      totalUM,
+      totalHargaAfterUM,
       createdAt: new Date().toISOString(),
       createdBy: who,
       isActive: true,
@@ -655,48 +672,24 @@ const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist }) => {
     });
 
     // Update invoice
+    // Mirror perilaku lama: totalQty dari updatedSJList, total harga/UM dari suratJalanList.
+    const { totalHarga, totalUM, totalHargaAfterUM } = computeInvoiceTotals(
+      suratJalanList.filter(sj => newSJIds.includes(sj.id)),
+      data.ruteHarga || {},
+      uangMukaList
+    );
     const updatedInvoice = {
       ...invoice,
       suratJalanIds: newSJIds,
       suratJalanList: updatedSJList.filter(sj => newSJIds.includes(sj.id)),
+      // totalQty sengaja tetap dari updatedSJList (mirror perilaku lama); qtyBongkar tak berubah oleh update status jadi nilainya identik.
       totalQty: updatedSJList
         .filter(sj => newSJIds.includes(sj.id))
         .reduce((sum, sj) => sum + Number(sj.qtyBongkar || 0), 0),
       ruteHarga: data.ruteHarga || {},
-      totalHarga: (() => {
-        const selectedSJs = suratJalanList.filter(sj => newSJIds.includes(sj.id));
-        const ruteQtys = {};
-        selectedSJs.forEach(sj => {
-          if (!ruteQtys[sj.rute]) ruteQtys[sj.rute] = 0;
-          ruteQtys[sj.rute] += Number(sj.qtyBongkar || 0);
-        });
-        return Object.entries(data.ruteHarga || {}).reduce((sum, [rute, harga]) => {
-          return sum + (ruteQtys[rute] || 0) * Number(harga || 0);
-        }, 0);
-      })(),
-      totalUM: (() => {
-        const selectedSJs = suratJalanList.filter(sj => newSJIds.includes(sj.id));
-        return selectedSJs.reduce((sum, sj) => {
-          const umForSJ = uangMukaList.filter(um => um.sjId === sj.id);
-          return sum + umForSJ.reduce((s, um) => s + Number(um.jumlah || 0), 0);
-        }, 0);
-      })(),
-      totalHargaAfterUM: (() => {
-        const selectedSJs = suratJalanList.filter(sj => newSJIds.includes(sj.id));
-        const ruteQtys = {};
-        selectedSJs.forEach(sj => {
-          if (!ruteQtys[sj.rute]) ruteQtys[sj.rute] = 0;
-          ruteQtys[sj.rute] += Number(sj.qtyBongkar || 0);
-        });
-        const total = Object.entries(data.ruteHarga || {}).reduce((sum, [rute, harga]) => {
-          return sum + (ruteQtys[rute] || 0) * Number(harga || 0);
-        }, 0);
-        const totalUMVal = selectedSJs.reduce((sum, sj) => {
-          const umForSJ = uangMukaList.filter(um => um.sjId === sj.id);
-          return sum + umForSJ.reduce((s, um) => s + Number(um.jumlah || 0), 0);
-        }, 0);
-        return total - totalUMVal;
-      })(),
+      totalHarga,
+      totalUM,
+      totalHargaAfterUM,
       updatedAt: new Date().toISOString(),
       updatedBy: currentUser.name
     };
@@ -968,13 +961,9 @@ try {
         let errorCount = 0;
         let errorDetails = [];
         const newItems = [];
+        const rejectedRows = []; // { baris, nomorSJ, alasan } — untuk Laporan Data Ditolak
 
         if (type === 'suratjalan') {
-          // Maps untuk track master data baru selama import (cegah duplikat & hindari N+1 writes)
-          const newTrucksMap = new Map();   // key: nomorPolisi
-          const newSupirsMap = new Map();   // key: namaSupir
-          const newRutesMap = new Map();    // key: rute
-          const newMaterialsMap = new Map(); // key: material
           // Helper function to parse date DD/MM/YYYY
           const parseDate = (dateStr) => {
             if (!dateStr || dateStr.trim() === '') return null;
@@ -1006,13 +995,17 @@ try {
 
                 if (!tanggalSJ) {
                   errorCount++;
-                  errorDetails.push(`Baris ${i + 2}: Format tanggal tidak valid (gunakan DD/MM/YYYY)`);
+                  const reason = 'Format tanggal tidak valid (gunakan DD/MM/YYYY)';
+                  errorDetails.push(`Baris ${i + 2}: ${reason}`);
+                  rejectedRows.push({ baris: i + 2, nomorSJ, alasan: reason });
                   continue;
                 }
 
                 if (isNaN(qtyIsi)) {
                   errorCount++;
-                  errorDetails.push(`Baris ${i + 2}: Qty Isi harus berupa angka`);
+                  const reason = 'Qty Isi harus berupa angka';
+                  errorDetails.push(`Baris ${i + 2}: ${reason}`);
+                  rejectedRows.push({ baris: i + 2, nomorSJ, alasan: reason });
                   continue;
                 }
 
@@ -1020,82 +1013,25 @@ try {
                 const validStatus = ['pending', 'terkirim', 'gagal'];
                 const finalStatus = validStatus.includes(status) ? status : 'pending';
 
-                // Find atau create master data IDs
-                let truckId = truckList.find(t => t.nomorPolisi === nomorPolisi)?.id;
-                let supirId = supirList.find(s => s.namaSupir === namaSupir)?.id;
-                let ruteId = ruteList.find(r => r.rute === rute)?.id;
-                let materialId = materialList.find(m => m.material === material)?.id;
+                // Cari master data terdaftar (normalisasi longgar: trim + case-insensitive).
+                // TIDAK auto-create — baris ditolak jika referensinya belum terdaftar di Master Data.
+                const truckId = findMasterIdByField(truckList, 'nomorPolisi', nomorPolisi);
+                const supirId = findMasterIdByField(supirList, 'namaSupir', namaSupir);
+                const ruteId = findMasterIdByField(ruteList, 'rute', rute);
+                const materialId = findMasterIdByField(materialList, 'material', material);
 
-                // Jika tidak ada, buat data master baru — dikumpulkan ke Map, di-batch setelah loop
-                if (!truckId) {
-                  const cached = newTrucksMap.get(nomorPolisi);
-                  if (cached) {
-                    truckId = cached.id;
-                  } else {
-                    const newTruck = {
-                      id: 'TRK-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-                      nomorPolisi,
-                      isActive: true,
-                      createdAt: new Date().toISOString(),
-                      createdBy: 'Import'
-                    };
-                    newTrucksMap.set(nomorPolisi, newTruck);
-                    truckId = newTruck.id;
-                  }
-                }
+                const missingRefs = [];
+                if (!truckId) missingRefs.push(`Nomor Polisi "${nomorPolisi}"`);
+                if (!supirId) missingRefs.push(`Nama Supir "${namaSupir}"`);
+                if (!ruteId) missingRefs.push(`Rute "${rute}"`);
+                if (!materialId) missingRefs.push(`Material "${material}"`);
 
-                if (!supirId) {
-                  const cached = newSupirsMap.get(namaSupir);
-                  if (cached) {
-                    supirId = cached.id;
-                  } else {
-                    const newSupir = {
-                      id: 'SPR-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-                      namaSupir,
-                      pt: 'Import Data',
-                      isActive: true,
-                      createdAt: new Date().toISOString(),
-                      createdBy: 'Import'
-                    };
-                    newSupirsMap.set(namaSupir, newSupir);
-                    supirId = newSupir.id;
-                  }
-                }
-
-                if (!ruteId) {
-                  const cached = newRutesMap.get(rute);
-                  if (cached) {
-                    ruteId = cached.id;
-                  } else {
-                    const newRute = {
-                      id: 'RTE-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-                      rute,
-                      uangJalan: 0,
-                      isActive: true,
-                      createdAt: new Date().toISOString(),
-                      createdBy: 'Import'
-                    };
-                    newRutesMap.set(rute, newRute);
-                    ruteId = newRute.id;
-                  }
-                }
-
-                if (!materialId) {
-                  const cached = newMaterialsMap.get(material);
-                  if (cached) {
-                    materialId = cached.id;
-                  } else {
-                    const newMaterial = {
-                      id: 'MAT-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-                      material,
-                      satuan: 'Ton',
-                      isActive: true,
-                      createdAt: new Date().toISOString(),
-                      createdBy: 'Import'
-                    };
-                    newMaterialsMap.set(material, newMaterial);
-                    materialId = newMaterial.id;
-                  }
+                if (missingRefs.length > 0) {
+                  errorCount++;
+                  const reason = `Data master belum terdaftar: ${missingRefs.join(', ')}`;
+                  errorDetails.push(`Baris ${i + 2}: ${reason}`);
+                  rejectedRows.push({ baris: i + 2, nomorSJ, alasan: reason });
+                  continue;
                 }
 
                 // Buat Surat Jalan
@@ -1107,13 +1043,13 @@ try {
                   nomorPolisi,
                   supirId,
                   namaSupir,
-                  pt: supirList.find(s => s.id === supirId)?.pt || newSupirsMap.get(namaSupir)?.pt || 'Import Data',
+                  pt: supirList.find(s => s.id === supirId)?.pt || 'Import Data',
                   ruteId,
                   rute,
-                  uangJalan: ruteList.find(r => r.id === ruteId)?.uangJalan ?? newRutesMap.get(rute)?.uangJalan ?? 0,
+                  uangJalan: ruteList.find(r => r.id === ruteId)?.uangJalan ?? 0,
                   materialId,
                   material,
-                  satuan: materialList.find(m => m.id === materialId)?.satuan || newMaterialsMap.get(material)?.satuan || 'Ton',
+                  satuan: materialList.find(m => m.id === materialId)?.satuan || 'Ton',
                   qtyIsi,
                   status: finalStatus,
                   tglTerkirim,
@@ -1127,34 +1063,13 @@ try {
               } catch (error) {
                 errorCount++;
                 errorDetails.push(`Baris ${i + 2}: ${values[0]} - ${error.message}`);
+                rejectedRows.push({ baris: i + 2, nomorSJ: values[0], alasan: error.message });
               }
             } else {
               errorCount++;
-              errorDetails.push(`Baris ${i + 2}: Data tidak lengkap (minimal 7 kolom diperlukan)`);
-            }
-          }
-
-          // Batch write master data baru (trucks, supir, rute, material) — satu round-trip
-          const hasNewMasterData = newTrucksMap.size > 0 || newSupirsMap.size > 0
-                                 || newRutesMap.size > 0 || newMaterialsMap.size > 0;
-          if (hasNewMasterData) {
-            try {
-              const masterBatch = writeBatch(db);
-              newTrucksMap.forEach(truck => {
-                masterBatch.set(doc(db, "trucks", String(truck.id)), sanitizeForFirestore(truck), { merge: true });
-              });
-              newSupirsMap.forEach(supir => {
-                masterBatch.set(doc(db, "supir", String(supir.id)), sanitizeForFirestore(supir), { merge: true });
-              });
-              newRutesMap.forEach(rte => {
-                masterBatch.set(doc(db, "rute", String(rte.id)), sanitizeForFirestore(rte), { merge: true });
-              });
-              newMaterialsMap.forEach(mat => {
-                masterBatch.set(doc(db, "material", String(mat.id)), sanitizeForFirestore(mat), { merge: true });
-              });
-              await masterBatch.commit();
-            } catch (e) {
-              console.error("Import master data batch Firestore failed:", e);
+              const reason = 'Data tidak lengkap (minimal 7 kolom diperlukan)';
+              errorDetails.push(`Baris ${i + 2}: ${reason}`);
+              rejectedRows.push({ baris: i + 2, nomorSJ: values[0] || '(kosong)', alasan: reason });
             }
           }
 
@@ -1385,10 +1300,20 @@ if (newItems.length > 0) {
 }
 
         let message = `Import selesai!\n\nBerhasil: ${successCount} data\nGagal: ${errorCount} data`;
-        if (errorCount > 0 && errorDetails.length > 0) {
-          message += '\n\nDetail Error (5 pertama):\n' + errorDetails.slice(0, 5).join('\n');
+        if (type === 'suratjalan' && rejectedRows.length > 0) {
+          message += '\n\nLihat "Laporan Data Ditolak" untuk detail lengkap & unduhan.';
+          setAlertMessage(message);
+          setImportRejectionReport({
+            title: 'Laporan Import Surat Jalan Ditolak',
+            summary: `${successCount} baris berhasil diimport, ${rejectedRows.length} baris ditolak.`,
+            rows: rejectedRows,
+          });
+        } else {
+          if (errorCount > 0 && errorDetails.length > 0) {
+            message += '\n\nDetail Error (5 pertama):\n' + errorDetails.slice(0, 5).join('\n');
+          }
+          setAlertMessage(message);
         }
-        setAlertMessage(message);
       } catch (error) {
         setAlertMessage('Terjadi kesalahan saat import:\n' + error.message);
       }
@@ -1433,26 +1358,34 @@ if (newItems.length > 0) {
       createdBy: currentUser.name
     };
 
-    const newList = [...suratJalanList, newSJ];
-    setSuratJalanList(newList);
+    // Snapshot the previous list so we can roll back if Firestore write fails.
+    // Without this, an optimistic update leaves a phantom SJ in local state
+    // even when persistence fails — and the modal handler would happily close.
+    const previousList = suratJalanList;
+    setSuratJalanList([...previousList, newSJ]);
 
-    // Auto-create transaksi keuangan
-    await upsertItemToFirestore(db, "surat_jalan", { ...newSJ, isActive: true });
+    try {
+      await upsertItemToFirestore(db, "surat_jalan", { ...newSJ, isActive: true });
 
-    // Auto-create transaksi keuangan untuk Uang Jalan (persist ke Firestore via addTransaksi)
-if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0) {
-  await addTransaksi({
-    id: buildUangJalanTransaksiId(newSJ.id),
-    tipe: "pengeluaran",
-    nominal: Number(selectedRute.uangJalan || 0),
-    keterangan: `Uang Jalan - ${newSJ.nomorSJ} (${selectedRute.rute})`,
-    tanggal: data.tanggalSJ,
-    suratJalanId: newSJ.id,
-    pt: newSJ.pt,
-  });
-}
-
-
+      // Auto-create transaksi keuangan untuk Uang Jalan (persist ke Firestore via addTransaksi)
+      if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0) {
+        await addTransaksi({
+          id: buildUangJalanTransaksiId(newSJ.id),
+          tipe: "pengeluaran",
+          nominal: Number(selectedRute.uangJalan || 0),
+          keterangan: `Uang Jalan - ${newSJ.nomorSJ} (${selectedRute.rute})`,
+          tanggal: data.tanggalSJ,
+          suratJalanId: newSJ.id,
+          pt: newSJ.pt,
+        });
+      }
+    } catch (err) {
+      // Roll back optimistic state and rethrow so the caller (e.g. modal submit
+      // handler) can keep the modal open and surface the error to the user.
+      setSuratJalanList(previousList);
+      console.error('[addSuratJalan] gagal menyimpan SJ:', err);
+      throw err;
+    }
   };
 
   const updateSuratJalan = useCallback(async (id, updates) => {
@@ -1486,23 +1419,37 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
       patch.uangJalan = 0;
     }
 
+    // Snapshot the previous SJ list so we can roll back the optimistic update
+    // if the Firestore write fails.
+    const previousSJList = suratJalanList;
     setSuratJalanList((prev) =>
       prev.map((x) => String(x.id) === String(id) ? { ...x, ...patch } : x)
     );
 
-    // Persist ke Firestore
-    await updateDoc(doc(db, 'surat_jalan', String(id)), sanitizeForFirestore(patch));
+    // Persist SJ patch ke Firestore — rollback optimistic state on failure so
+    // local state never reflects a phantom write.
+    try {
+      await updateDoc(doc(db, 'surat_jalan', String(id)), sanitizeForFirestore(patch));
+    } catch (err) {
+      setSuratJalanList(previousSJList);
+      console.error('[updateSuratJalan] gagal update Firestore:', err);
+      throw err;
+    }
 
-    // Jika jadi GAGAL dan ada transaksi uang jalan terkait, soft delete transaksinya
+    // Jika jadi GAGAL dan ada transaksi uang jalan terkait, soft delete
+    // transaksinya. Hanya update state lokal SETELAH Firestore commit sukses
+    // — mencegah subscription re-emit menimpa (atau divergen dari) optimistic
+    // state, dan mencegah inkonsistensi saat soft-delete gagal.
     if (patch.status === 'gagal') {
-      try {
-        const trans = transaksiList.find((t) => String(t.suratJalanId) === String(id));
-        if (trans?.id) {
+      const trans = transaksiList.find((t) => String(t.suratJalanId) === String(id));
+      if (trans?.id) {
+        try {
           await softDeleteItemInFirestore(db, 'transaksi', trans.id, who);
           setTransaksiList((prev) => prev.map((t) => (t.id === trans.id ? { ...t, isActive: false } : t)));
+        } catch (e) {
+          console.error('[updateSuratJalan] soft delete transaksi gagal:', e);
+          setAlertMessage('⚠️ SJ ditandai gagal, tapi transaksi uang jalan terkait gagal dihapus. Refresh halaman atau hapus manual.');
         }
-      } catch (e) {
-        console.warn('Soft delete transaksi uang jalan gagal:', e);
       }
     }
   }, [suratJalanList, transaksiList, currentUser, buildUangJalanTransaksiId]);
@@ -1530,11 +1477,20 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
           deletedUangJalan // Simpan untuk restore
         });
 
-        // Hapus transaksi Uang Jalan yang terkait (Firestore + state)
-if (uangJalanTransaksi?.id) {
-  await softDeleteItemInFirestore(db, "transaksi", uangJalanTransaksi.id, currentUser?.name || "system").catch(() => {});
-}
-setTransaksiList(prev => prev.filter(t => t.suratJalanId !== id));
+        // Hapus transaksi Uang Jalan yang terkait (Firestore + state).
+        // Surface Firestore failures instead of swallowing them with .catch(() => {}):
+        // a silent failure left local state out of sync with the database.
+        if (uangJalanTransaksi?.id) {
+          try {
+            await softDeleteItemInFirestore(db, "transaksi", uangJalanTransaksi.id, currentUser?.name || "system");
+          } catch (err) {
+            console.error('[markAsGagal] gagal soft-delete transaksi terkait:', err);
+            setConfirmDialog({ show: false, message: '', onConfirm: null });
+            setAlertMessage('⚠️ SJ sudah ditandai gagal, tapi transaksi Uang Jalan gagal dihapus. Coba refresh atau hapus manual.');
+            return;
+          }
+        }
+        setTransaksiList(prev => prev.filter(t => t.suratJalanId !== id));
 // Add to history log
         await addHistoryLog('mark_gagal', id, sj?.nomorSJ, {
           previousStatus: sj?.status,
@@ -1709,11 +1665,18 @@ setTransaksiList(prev => prev.filter(t => t.suratJalanId !== id));
   }, []);
 
   const filteredSuratJalan = useMemo(
-    () => suratJalanList.filter(sj => filter === 'all' || sj.status === filter),
-    [suratJalanList, filter]
+    () => suratJalanList.filter(sj => {
+      const matchStatus  = filter === 'all' || sj.status === filter;
+      const matchNomor   = !searchNomorSJ ||
+        (sj.nomorSJ || '').toLowerCase().includes(searchNomorSJ.toLowerCase());
+      const matchTanggal = !searchTanggal ||
+        (sj.tanggalSJ || '').startsWith(searchTanggal);
+      return matchStatus && matchNomor && matchTanggal;
+    }),
+    [suratJalanList, filter, searchNomorSJ, searchTanggal]
   );
   const [sjPage, setSJPage] = useState(1);
-  useEffect(() => { setSJPage(1); }, [filter]);
+  useEffect(() => { setSJPage(1); }, [filter, searchNomorSJ, searchTanggal]);
   const safeSJPage = clampPage(sjPage, filteredSuratJalan.length);
   const pagedSJ = filteredSuratJalan.slice((safeSJPage - 1) * PAGE_SIZE, safeSJPage * PAGE_SIZE);
 
@@ -1943,10 +1906,7 @@ try { unsubTransaksi(); } catch {}
     { tab: 'surat-jalan', icon: Package,     label: 'SJ',       roles: ['superadmin','admin_sj','admin_keuangan','admin_invoice','reader'] },
     { tab: 'keuangan',    icon: DollarSign,  label: 'Keuangan', roles: ['superadmin','admin_keuangan','reader'] },
     { tab: 'laporan-kas', icon: FileText,    label: 'Laporan',  roles: ['superadmin','admin_keuangan','admin_invoice','admin_sj','reader'] },
-    { tab: 'laporan-truk', icon: Truck,     label: 'Laporan Truk', roles: ['superadmin', 'admin_sj'] },
-    { tab: 'payslip',     icon: DollarSign,  label: 'Gaji',     roles: ['superadmin', 'admin_keuangan', 'reader'] },
     { tab: 'invoicing',   icon: FileText,    label: 'Invoice',  roles: ['superadmin','admin_invoice','reader'] },
-    { tab: 'uang-muka',   icon: DollarSign,  label: 'UM',       roles: ['superadmin','admin_invoice','reader'] },
     { tab: 'master-data', icon: Database,    label: 'Data',     roles: ['superadmin'] },
     { tab: 'users',       icon: Users,       label: 'Users',    roles: ['superadmin'] },
     { tab: 'settings',    icon: Settings,    label: 'Settings', roles: ['superadmin'] },
@@ -2010,10 +1970,10 @@ try { unsubTransaksi(); } catch {}
         ) : activeTab === 'master-data' && effectiveRole === 'superadmin' ? (
           <Suspense fallback={<PageLoader />}>
           <MasterDataManagement
-            truckList={truckList}
-            supirList={supirList}
-            ruteList={ruteList}
-            materialList={materialList}
+            truckList={truckListAll}
+            supirList={supirListAll}
+            ruteList={ruteListAll}
+            materialList={materialListAll}
             currentUser={currentUser}
             onAddTruck={() => {
               setModalType('addTruck');
@@ -2026,6 +1986,7 @@ try { unsubTransaksi(); } catch {}
               setShowModal(true);
             }}
             onDeleteTruck={deleteTruck}
+            onActivateTruck={activateTruck}
             onAddSupir={() => {
               setModalType('addSupir');
               setSelectedItem(null);
@@ -2037,6 +1998,7 @@ try { unsubTransaksi(); } catch {}
               setShowModal(true);
             }}
             onDeleteSupir={deleteSupir}
+            onActivateSupir={activateSupir}
             onAddRute={() => {
               setModalType('addRute');
               setSelectedItem(null);
@@ -2048,6 +2010,7 @@ try { unsubTransaksi(); } catch {}
               setShowModal(true);
             }}
             onDeleteRute={deleteRute}
+            onActivateRute={activateRute}
             onAddMaterial={() => {
               setModalType('addMaterial');
               setSelectedItem(null);
@@ -2059,6 +2022,7 @@ try { unsubTransaksi(); } catch {}
               setShowModal(true);
             }}
             onDeleteMaterial={deleteMaterial}
+            onActivateMaterial={activateMaterial}
             onDownloadTemplate={downloadTemplate}
             onImportData={importData}
             showRitasiBulkUpload={showRitasiBulkUpload}
@@ -2200,6 +2164,30 @@ try { unsubTransaksi(); } catch {}
                 </>
               )}
             </div>
+            <div className="flex items-center gap-2 mb-3">
+              <input
+                type="text"
+                placeholder="Cari nomor SJ..."
+                value={searchNomorSJ}
+                onChange={e => setSearchNomorSJ(e.target.value)}
+                className="flex-1 px-3 py-1.5 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <input
+                type="date"
+                value={searchTanggal}
+                onChange={e => setSearchTanggal(e.target.value)}
+                className="px-3 py-1.5 text-sm rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              {(searchNomorSJ || searchTanggal) && (
+                <button
+                  onClick={() => { setSearchNomorSJ(''); setSearchTanggal(''); }}
+                  className="px-2 py-1.5 text-sm rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 border border-gray-300"
+                  title="Reset pencarian"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
             <div className="flex gap-2 flex-wrap">
               <button
                 onClick={() => setFilter('all')}
@@ -2313,6 +2301,7 @@ try { unsubTransaksi(); } catch {}
                     currentUser={currentUser}
                     onUpdate={handleSJCardUpdate}
                     onEditTerkirim={handleSJCardEditTerkirim}
+                    onEditSJ={setEditSJTarget}
                     onMarkGagal={markAsGagal}
                     onRestore={restoreFromGagal}
                     onDeleteBiaya={deleteBiaya}
@@ -2347,67 +2336,92 @@ try { unsubTransaksi(); } catch {}
           uangMukaList={uangMukaList}
           onClose={() => setShowModal(false)}
           onSubmit={async (data) => {
-            if (modalType === 'addSJ') {
-              await addSuratJalan(data);
-              setShowModal(false);
-            } else if (modalType === 'markTerkirim' || modalType === 'editTerkirim') {
-              const qtyBongkar = parseFloat(data.qtyBongkar);
-              const qtyIsi = parseFloat(selectedItem.qtyIsi);
-              const quantityLoss = qtyIsi - qtyBongkar;
+            // Wrap the entire dispatch in try/catch so that any failed Firestore
+            // write keeps the modal open with an alert, instead of silently
+            // closing and leaving the user without feedback. addSuratJalan and
+            // updateSuratJalan rethrow on error so this catch sees the failure.
+            try {
+              if (modalType === 'addSJ') {
+                await addSuratJalan(data);
+                setShowModal(false);
+              } else if (modalType === 'markTerkirim' || modalType === 'editTerkirim') {
+                const qtyBongkar = parseFloat(data.qtyBongkar);
+                const qtyIsi = parseFloat(selectedItem.qtyIsi);
+                const quantityLoss = qtyIsi - qtyBongkar;
 
-              await updateSuratJalan(selectedItem.id, {
-                status: 'terkirim',
-                tglTerkirim: data.tglTerkirim,
-                qtyBongkar: qtyBongkar,
-                quantityLoss: Math.max(0, quantityLoss),
-                abolishPenalty: data.abolishPenalty || false
-              });
-              setShowModal(false);
-            } else if (modalType === 'addTransaksi') {
-              await addTransaksi(data);
-              setShowModal(false);
-            } else if (modalType === 'addUser') {
-              const success = await addUser(data);
-              if (success) {
+                await updateSuratJalan(selectedItem.id, {
+                  status: 'terkirim',
+                  tglTerkirim: data.tglTerkirim,
+                  qtyBongkar: qtyBongkar,
+                  quantityLoss: Math.max(0, quantityLoss),
+                  abolishPenalty: data.abolishPenalty || false
+                });
+                setShowModal(false);
+              } else if (modalType === 'addTransaksi') {
+                await addTransaksi(data);
+                setShowModal(false);
+              } else if (modalType === 'addUser') {
+                const success = await addUser(data);
+                if (success) {
+                  setShowModal(false);
+                }
+              } else if (modalType === 'editUser') {
+                await updateUser(selectedItem.id, data);
+                setShowModal(false);
+              } else if (modalType === 'addTruck') {
+                await addTruck(data);
+                setShowModal(false);
+              } else if (modalType === 'editTruck') {
+                await updateTruck(selectedItem.id, data);
+                setShowModal(false);
+              } else if (modalType === 'addSupir') {
+                await addSupir(data);
+                setShowModal(false);
+              } else if (modalType === 'editSupir') {
+                await updateSupir(selectedItem.id, data);
+                setShowModal(false);
+              } else if (modalType === 'addRute') {
+                await addRute(data);
+                setShowModal(false);
+              } else if (modalType === 'editRute') {
+                await updateRute(selectedItem.id, data);
+                setShowModal(false);
+              } else if (modalType === 'addMaterial') {
+                await addMaterial(data);
+                setShowModal(false);
+              } else if (modalType === 'editMaterial') {
+                await updateMaterial(selectedItem.id, data);
+                setShowModal(false);
+              } else if (modalType === 'addInvoice') {
+                await addInvoice(data);
+                setShowModal(false);
+              } else if (modalType === 'editInvoice') {
+                await editInvoice(selectedItem.id, data);
+                setShowModal(false);
+              } else if (modalType === 'addUangMuka') {
+                await addUangMuka(data);
                 setShowModal(false);
               }
-            } else if (modalType === 'editUser') {
-              await updateUser(selectedItem.id, data);
-              setShowModal(false);
-            } else if (modalType === 'addTruck') {
-              await addTruck(data);
-              setShowModal(false);
-            } else if (modalType === 'editTruck') {
-              await updateTruck(selectedItem.id, data);
-              setShowModal(false);
-            } else if (modalType === 'addSupir') {
-              await addSupir(data);
-              setShowModal(false);
-            } else if (modalType === 'editSupir') {
-              await updateSupir(selectedItem.id, data);
-              setShowModal(false);
-            } else if (modalType === 'addRute') {
-              await addRute(data);
-              setShowModal(false);
-            } else if (modalType === 'editRute') {
-              await updateRute(selectedItem.id, data);
-              setShowModal(false);
-            } else if (modalType === 'addMaterial') {
-              await addMaterial(data);
-              setShowModal(false);
-            } else if (modalType === 'editMaterial') {
-              await updateMaterial(selectedItem.id, data);
-              setShowModal(false);
-            } else if (modalType === 'addInvoice') {
-              await addInvoice(data);
-              setShowModal(false);
-            } else if (modalType === 'editInvoice') {
-              await editInvoice(selectedItem.id, data);
-              setShowModal(false);
-            } else if (modalType === 'addUangMuka') {
-              await addUangMuka(data);
-              setShowModal(false);
+            } catch (err) {
+              console.error('[modal onSubmit] gagal menyimpan:', err);
+              setAlertMessage(`⚠️ Gagal menyimpan: ${err?.message || 'Coba lagi.'}`);
+              // modal stays open intentionally so user can retry
             }
+          }}
+        />
+      )}
+
+      {/* Edit SJ Modal (superadmin only) */}
+      {editSJTarget && effectiveRole === 'superadmin' && (
+        <EditSJModal
+          sj={editSJTarget}
+          masters={{ truckList, supirList, ruteList, materialList }}
+          ctx={{ masters: { truckList, supirList, ruteList, materialList }, transaksiList, invoiceList, uangMukaList, biayaList }}
+          currentUser={currentUser}
+          onClose={() => setEditSJTarget(null)}
+          onDone={(sjAfter) => {
+            setSuratJalanList((prev) => prev.map((s) => (s.id === sjAfter.id ? { ...s, ...sjAfter } : s)));
+            setEditSJTarget(null);
           }}
         />
       )}
@@ -2430,6 +2444,17 @@ try { unsubTransaksi(); } catch {}
           </div>
         </div>
       )}
+
+      {/* Laporan Data Ditolak (import) */}
+      <RejectionReport
+        open={!!importRejectionReport}
+        onClose={() => setImportRejectionReport(null)}
+        title={importRejectionReport?.title}
+        summary={importRejectionReport?.summary}
+        rows={importRejectionReport?.rows || []}
+        columns={IMPORT_SJ_REJECTION_COLUMNS}
+        filenamePrefix="laporan_penolakan_import_sj"
+      />
 
       {/* Confirm Dialog */}
       {confirmDialog.show && (
@@ -3285,7 +3310,8 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
         rute: formData.rute,
         uangJalan: parseFloat(formData.uangJalan),
         ritasi: parseFloat(formData.ritasi) || 0,
-        uangMuka: parseFloat(formData.uangMuka) || 0
+        uangMuka: parseFloat(formData.uangMuka) || 0,
+        isActive: formData.isActive
       });
     } else if (type === 'addMaterial' || type === 'editMaterial') {
       if (!formData.material || !formData.satuan) {
@@ -3294,7 +3320,8 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
       }
       onSubmit({
         material: formData.material,
-        satuan: formData.satuan
+        satuan: formData.satuan,
+        isActive: formData.isActive
       });
     }
   };

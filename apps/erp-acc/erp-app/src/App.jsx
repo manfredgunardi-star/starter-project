@@ -7,6 +7,7 @@ import LoginPage from './pages/LoginPage'
 import AppLayout from './components/layout/AppLayout'
 import ProtectedRoute from './components/layout/ProtectedRoute'
 import RoleGuard from './components/layout/RoleGuard'
+import RouteErrorBoundary from './components/layout/RouteErrorBoundary'
 
 // Master Data
 const UnitsPage = lazy(() => import('./pages/master/UnitsPage'))
@@ -14,6 +15,7 @@ const ProductCategoriesPage = lazy(() => import('./pages/master/ProductCategorie
 const PaymentTermsPage = lazy(() => import('./pages/master/PaymentTermsPage'))
 const TaxCodesPage = lazy(() => import('./pages/master/TaxCodesPage'))
 const WarehousesPage = lazy(() => import('./pages/master/WarehousesPage'))
+const CostCentersPage = lazy(() => import('./pages/master/CostCentersPage'))
 const ProductsPage = lazy(() => import('./pages/master/ProductsPage'))
 const CustomersPage = lazy(() => import('./pages/master/CustomersPage'))
 const SuppliersPage = lazy(() => import('./pages/master/SuppliersPage'))
@@ -33,6 +35,10 @@ const GoodsDeliveriesPage = lazy(() => import('./pages/sales/GoodsDeliveriesPage
 const GoodsDeliveryFormPage = lazy(() => import('./pages/sales/GoodsDeliveryFormPage'))
 const SalesInvoicesPage = lazy(() => import('./pages/sales/SalesInvoicesPage'))
 const SalesInvoiceFormPage = lazy(() => import('./pages/sales/SalesInvoiceFormPage'))
+const SalesReturnsPage = lazy(() => import('./pages/sales/SalesReturnsPage'))
+const SalesReturnFormPage = lazy(() => import('./pages/sales/SalesReturnFormPage'))
+const ProformaInvoicesPage = lazy(() => import('./pages/sales/ProformaInvoicesPage'))
+const ProformaInvoiceFormPage = lazy(() => import('./pages/sales/ProformaInvoiceFormPage'))
 
 // Purchase
 const PurchaseOrdersPage = lazy(() => import('./pages/purchase/PurchaseOrdersPage'))
@@ -41,6 +47,8 @@ const GoodsReceiptsPage = lazy(() => import('./pages/purchase/GoodsReceiptsPage'
 const GoodsReceiptFormPage = lazy(() => import('./pages/purchase/GoodsReceiptFormPage'))
 const PurchaseInvoicesPage = lazy(() => import('./pages/purchase/PurchaseInvoicesPage'))
 const PurchaseInvoiceFormPage = lazy(() => import('./pages/purchase/PurchaseInvoiceFormPage'))
+const PurchaseReturnsPage = lazy(() => import('./pages/purchase/PurchaseReturnsPage'))
+const PurchaseReturnFormPage = lazy(() => import('./pages/purchase/PurchaseReturnFormPage'))
 
 // Cash & Bank
 const CashBankAccountsPage = lazy(() => import('./pages/cash/AccountsPage'))
@@ -48,6 +56,8 @@ const PaymentsPage = lazy(() => import('./pages/cash/PaymentsPage'))
 const PaymentFormPage = lazy(() => import('./pages/cash/PaymentFormPage'))
 const TransferFormPage = lazy(() => import('./pages/cash/TransferFormPage'))
 const ReconciliationPage = lazy(() => import('./pages/cash/ReconciliationPage'))
+const BankStatementImportPage = lazy(() => import('./pages/cash/BankStatementImportPage'))
+const BankImportPreviewPage = lazy(() => import('./pages/cash/BankImportPreviewPage'))
 
 // Accounting
 const JournalsPage = lazy(() => import('./pages/accounting/JournalsPage'))
@@ -61,9 +71,16 @@ const BalanceSheetPage = lazy(() => import('./pages/reports/BalanceSheetPage'))
 const IncomeStatementPage = lazy(() => import('./pages/reports/IncomeStatementPage'))
 const CashFlowPage = lazy(() => import('./pages/reports/CashFlowPage'))
 const ARAPAgingPage = lazy(() => import('./pages/reports/ARAPAgingPage'))
+const TrialBalancePage = lazy(() => import('./pages/reports/TrialBalancePage'))
+const SalesReportPage = lazy(() => import('./pages/reports/SalesReportPage'))
+const PurchaseReportPage = lazy(() => import('./pages/reports/PurchaseReportPage'))
+const PLByCostCenterPage = lazy(() => import('./pages/reports/PLByCostCenterPage'))
 
 // Dashboard
 const DashboardPage = lazy(() => import('./pages/DashboardPage'))
+
+// Shared (cross-cutting AR/AP)
+const CreditNotesPage = lazy(() => import('./pages/shared/CreditNotesPage'))
 
 // Fixed Assets
 const AssetsPage = lazy(() => import('./pages/assets/AssetsPage'))
@@ -85,6 +102,7 @@ const AuditLogPage = lazy(() => import('./pages/settings/AuditLogPage'))
 const UsersPage = lazy(() => import('./pages/settings/UsersPage'))
 const CompanySettingsPage = lazy(() => import('./pages/settings/CompanySettingsPage'))
 const ClosingPeriodPage = lazy(() => import('./pages/settings/ClosingPeriodPage'))
+const FiscalYearClosingPage = lazy(() => import('./pages/settings/FiscalYearClosingPage'))
 
 
 function AppContent() {
@@ -103,8 +121,9 @@ function AppContent() {
   }
 
   return (
-    <Suspense fallback={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}><Spin size="large" description="Memuat..." /></div>}>
-      <Routes>
+    <RouteErrorBoundary>
+      <Suspense fallback={<div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}><Spin size="large" description="Memuat..." /></div>}>
+        <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route
           path="/*"
@@ -120,6 +139,7 @@ function AppContent() {
           <Route path="master/payment-terms" element={<PaymentTermsPage />} />
           <Route path="master/tax-codes" element={<TaxCodesPage />} />
           <Route path="master/warehouses" element={<WarehousesPage />} />
+          <Route path="master/cost-centers" element={<CostCentersPage />} />
           <Route path="master/products" element={<ProductsPage />} />
           <Route path="master/products/import" element={<RoleGuard require="canWrite"><ProductsBulkImportPage /></RoleGuard>} />
           <Route path="master/customers" element={<CustomersPage />} />
@@ -143,6 +163,16 @@ function AppContent() {
           <Route path="sales/invoices/new" element={<RoleGuard require="canWrite"><SalesInvoiceFormPage /></RoleGuard>} />
           <Route path="sales/invoices/:id" element={<SalesInvoiceFormPage />} />
 
+          {/* Sales Returns */}
+          <Route path="sales/returns" element={<SalesReturnsPage />} />
+          <Route path="sales/returns/new" element={<RoleGuard require="canWrite"><SalesReturnFormPage /></RoleGuard>} />
+          <Route path="sales/returns/:id" element={<SalesReturnFormPage />} />
+
+          {/* Proforma Invoices */}
+          <Route path="sales/proforma" element={<ProformaInvoicesPage />} />
+          <Route path="sales/proforma/new" element={<RoleGuard require="canWrite"><ProformaInvoiceFormPage /></RoleGuard>} />
+          <Route path="sales/proforma/:id" element={<ProformaInvoiceFormPage />} />
+
           {/* Purchase */}
           <Route path="purchase/orders" element={<PurchaseOrdersPage />} />
           <Route path="purchase/orders/new" element={<RoleGuard require="canWrite"><PurchaseOrderFormPage /></RoleGuard>} />
@@ -154,12 +184,19 @@ function AppContent() {
           <Route path="purchase/invoices/new" element={<RoleGuard require="canWrite"><PurchaseInvoiceFormPage /></RoleGuard>} />
           <Route path="purchase/invoices/:id" element={<PurchaseInvoiceFormPage />} />
 
+          {/* Purchase Returns */}
+          <Route path="purchase/returns" element={<PurchaseReturnsPage />} />
+          <Route path="purchase/returns/new" element={<RoleGuard require="canWrite"><PurchaseReturnFormPage /></RoleGuard>} />
+          <Route path="purchase/returns/:id" element={<PurchaseReturnFormPage />} />
+
           {/* Cash & Bank */}
           <Route path="cash/accounts" element={<CashBankAccountsPage />} />
           <Route path="cash/payments" element={<PaymentsPage />} />
           <Route path="cash/payments/new" element={<RoleGuard require="canWrite"><PaymentFormPage /></RoleGuard>} />
           <Route path="cash/transfers/new" element={<RoleGuard require="canWrite"><TransferFormPage /></RoleGuard>} />
           <Route path="cash/reconciliation" element={<ReconciliationPage />} />
+          <Route path="cash/import" element={<RoleGuard require="canWrite"><BankStatementImportPage /></RoleGuard>} />
+          <Route path="cash/import/:sessionId" element={<BankImportPreviewPage />} />
 
           {/* Accounting */}
           <Route path="accounting/journals" element={<JournalsPage />} />
@@ -175,10 +212,17 @@ function AppContent() {
           <Route path="reports/income-statement" element={<IncomeStatementPage />} />
           <Route path="reports/cash-flow" element={<CashFlowPage />} />
           <Route path="reports/ar-ap-aging" element={<ARAPAgingPage />} />
+          <Route path="reports/trial-balance" element={<TrialBalancePage />} />
+          <Route path="reports/sales" element={<SalesReportPage />} />
+          <Route path="reports/purchases" element={<PurchaseReportPage />} />
+          <Route path="reports/pl-cost-center" element={<PLByCostCenterPage />} />
           <Route path="reports/assets-list" element={<AssetsListReportPage />} />
           <Route path="reports/depreciation-period" element={<DepreciationPeriodReportPage />} />
           <Route path="reports/asset-disposals" element={<AssetDisposalsReportPage />} />
           <Route path="reports/assets-summary" element={<AssetsSummaryReportPage />} />
+
+          {/* Credit Notes (cross-cutting AR/AP) */}
+          <Route path="credit-notes" element={<CreditNotesPage />} />
 
           {/* Fixed Assets */}
           <Route path="assets" element={<AssetsPage />} />
@@ -195,12 +239,14 @@ function AppContent() {
           <Route path="settings/users" element={<RoleGuard require="isAdmin"><UsersPage /></RoleGuard>} />
           <Route path="settings/audit-log" element={<RoleGuard require="isAdmin"><AuditLogPage /></RoleGuard>} />
           <Route path="settings/closing-period" element={<RoleGuard require="canPost"><ClosingPeriodPage /></RoleGuard>} />
+          <Route path="settings/fiscal-year-closing" element={<RoleGuard require="canPost"><FiscalYearClosingPage /></RoleGuard>} />
 
           {/* Default */}
           <Route index element={<DashboardPage />} />
         </Route>
       </Routes>
-    </Suspense>
+      </Suspense>
+    </RouteErrorBoundary>
   )
 }
 
@@ -210,6 +256,7 @@ export default function App() {
       <AuthProvider>
         <ToastProvider>
           <div id="invoice-print-root" style={{ display: 'none' }} />
+          <div id="proforma-invoice-print-root" style={{ display: 'none' }} />
           <AppContent />
         </ToastProvider>
       </AuthProvider>

@@ -1,0 +1,76 @@
+name: BUL-Accounting GL Sync
+
+on:
+  schedule:
+    # Jam 17:00 UTC = 00:00 WIB (UTC+7) — sync data hari sebelumnya
+    - cron: '0 17 * * *'
+
+  # Manual trigger untuk testing
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run — tampilkan data yang akan disync tanpa menulis ke Sheets'
+        required: false
+        type: boolean
+        default: false
+      full_sync:
+        description: 'Full sync — ambil SEMUA data Firestore tanpa filter tanggal (hanya untuk initial load pertama kali)'
+        required: false
+        type: boolean
+        default: false
+
+# Hanya satu GL sync berjalan sekaligus
+concurrency:
+  group: gl-sync
+  cancel-in-progress: false
+
+jobs:
+  sync-general-ledger:
+    name: Sync GL → Google Sheets
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write  # Wajib untuk OIDC token GitHub
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: scripts/gl-sync/package-lock.json
+
+      - name: Authenticate to Google Cloud (Workload Identity Federation)
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ secrets.GCP_SERVICE_ACCOUNT }}
+
+      - name: Install GL sync dependencies
+        working-directory: scripts/gl-sync
+        run: npm ci
+
+      - name: Test GL sync
+        working-directory: scripts/gl-sync
+        run: npm test
+
+      - name: Run GL sync
+        working-directory: scripts/gl-sync
+        env:
+          GOOGLE_SPREADSHEET_ID: ${{ secrets.GOOGLE_SPREADSHEET_ID }}
+          FIREBASE_PROJECT_ID: bul-accounting
+          DRY_RUN: ${{ github.event.inputs.dry_run || 'false' }}
+          FULL_SYNC: ${{ github.event.inputs.full_sync || 'false' }}
+        run: node index.js
+
+      - name: Upload log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gl-sync-log-${{ github.run_id }}
+          path: /tmp/gl-sync-*.log
+          retention-days: 7

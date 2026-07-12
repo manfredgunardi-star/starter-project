@@ -32,6 +32,7 @@ const menuGroups = [
       { label: 'Syarat Pembayaran', path: '/master/payment-terms' },
       { label: 'Kode Pajak', path: '/master/tax-codes' },
       { label: 'Gudang', path: '/master/warehouses' },
+      { label: 'Cost Center', path: '/master/cost-centers' },
       { label: 'Produk', path: '/master/products' },
       { label: 'Customer', path: '/master/customers' },
       { label: 'Supplier', path: '/master/suppliers' },
@@ -54,7 +55,9 @@ const menuGroups = [
     items: [
       { label: 'Sales Order', path: '/sales/orders' },
       { label: 'Pengiriman', path: '/sales/deliveries' },
-      { label: 'Invoice Penjualan', path: '/sales/invoices' }
+      { label: 'Invoice Penjualan', path: '/sales/invoices' },
+      { label: 'Proforma Invoice', path: '/sales/proforma' },
+      { label: 'Retur Penjualan', path: '/sales/returns' }
     ]
   },
   {
@@ -64,7 +67,8 @@ const menuGroups = [
     items: [
       { label: 'Purchase Order', path: '/purchase/orders' },
       { label: 'Penerimaan', path: '/purchase/receipts' },
-      { label: 'Invoice Pembelian', path: '/purchase/invoices' }
+      { label: 'Invoice Pembelian', path: '/purchase/invoices' },
+      { label: 'Retur Pembelian', path: '/purchase/returns' }
     ]
   },
   {
@@ -75,7 +79,8 @@ const menuGroups = [
       { label: 'Akun', path: '/cash/accounts' },
       { label: 'Pembayaran', path: '/cash/payments' },
       { label: 'Transfer', path: '/cash/transfers/new', minRole: 'write' },
-      { label: 'Rekonsiliasi', path: '/cash/reconciliation' }
+      { label: 'Rekonsiliasi', path: '/cash/reconciliation' },
+      { label: 'Import Rekening Koran', path: '/cash/import', minRole: 'write' }
     ]
   },
   {
@@ -108,6 +113,11 @@ const menuGroups = [
       { label: 'Laba Rugi', path: '/reports/income-statement' },
       { label: 'Arus Kas', path: '/reports/cash-flow' },
       { label: 'AR/AP Aging', path: '/reports/ar-ap-aging' },
+      { label: 'Saldo Kredit', path: '/credit-notes' },
+      { label: 'Neraca Saldo', path: '/reports/trial-balance' },
+      { label: 'Laporan Penjualan', path: '/reports/sales' },
+      { label: 'Laporan Pembelian', path: '/reports/purchases' },
+      { label: 'P&L per Cost Center', path: '/reports/pl-cost-center' },
       { label: 'Daftar Aset Tetap', path: '/reports/assets-list' },
       { label: 'Penyusutan per Periode', path: '/reports/depreciation-period' },
       { label: 'Disposal Aset', path: '/reports/asset-disposals' },
@@ -124,6 +134,7 @@ const menuGroups = [
       { label: 'Users', path: '/settings/users', minRole: 'admin' },
       { label: 'Audit Log', path: '/settings/audit-log', minRole: 'admin' },
       { label: 'Closing Period', path: '/settings/closing-period', minRole: 'admin' },
+      { label: 'Tutup Tahun Buku', path: '/settings/fiscal-year-closing', minRole: 'admin' },
     ]
   }
 ]

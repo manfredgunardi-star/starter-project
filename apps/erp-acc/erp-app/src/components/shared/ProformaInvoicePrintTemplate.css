@@ -1,0 +1,48 @@
+@import './InvoicePrintTemplate.css';
+
+.inv-template { position: relative; overflow: hidden; }
+
+@media print {
+  body > * { display: none !important; }
+  #proforma-invoice-print-root {
+    display: block !important;
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+    width: auto !important;
+  }
+  @page { size: A4 portrait; margin: 20mm; }
+}
+
+.proforma-watermark {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-35deg);
+  font-size: 76px;
+  font-weight: 900;
+  color: rgba(29, 78, 216, 0.06);
+  letter-spacing: 6px;
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+  white-space: nowrap;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.inv-template > *:not(.proforma-watermark) { position: relative; z-index: 1; }
+
+.inv-valid-until { color: #b45309; font-weight: 600; }
+
+/* Fix: constrain right header column so title wraps cleanly to 2 lines.
+   font-size 16px ensures "PROFORMA INVOICE" (line 1) fits within 200px
+   at all screen sizes and print configurations. */
+.inv-header-right {
+  max-width: 200px;
+}
+.inv-title {
+  font-size: 16px;
+  line-height: 1.25;
+  letter-spacing: 0.3px;
+  word-break: keep-all;
+}

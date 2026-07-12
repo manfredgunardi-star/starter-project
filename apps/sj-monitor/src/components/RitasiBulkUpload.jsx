@@ -1,15 +1,25 @@
 // src/components/RitasiBulkUpload.jsx
 
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import * as XLSX from "xlsx";
-import { generateRitasiTemplate, validateRitasiTemplate, parseRitasiUpdates } from "../utils/ritasiTemplateHelpers";
+import { generateRitasiTemplate, validateRitasiTemplate, partitionRitasiRowsByRuteExistence } from "../utils/ritasiTemplateHelpers";
 import { fetchAllRutes, bulkUpdateRitasi } from "../services/ritasiBulkService";
+import RejectionReport from "./RejectionReport.jsx";
+
+const RITASI_REJECTION_COLUMNS = [
+  { key: 'baris', label: 'Baris' },
+  { key: 'ruteId', label: 'ID Rute' },
+  { key: 'namaRute', label: 'Nama Rute' },
+  { key: 'alasan', label: 'Alasan Ditolak' },
+];
 
 export default function RitasiBulkUpload({ ruteList = [], onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState(null);
   const [messageType, setMessageType] = useState(null); // 'success' or 'error'
   const [step, setStep] = useState("menu"); // menu, downloading, uploading, processing
+  const [rejectionReport, setRejectionReport] = useState(null); // { summary, rows } | null
+  const fileInputRef = useRef(null);
 
   const handleDownloadTemplate = async () => {
     try {
@@ -72,91 +82,97 @@ export default function RitasiBulkUpload({ ruteList = [], onSuccess }) {
   };
 
   const handleFileUpload = async (event) => {
-    const file = event.target.files[0];
+    const file = event.target.files?.[0];
     if (!file) return;
 
+    setLoading(true);
+    setStep("uploading");
+    setMessage("Membaca file...");
+
     try {
-      setLoading(true);
-      setStep("uploading");
-      setMessage("Membaca file...");
+      // Use file.arrayBuffer() so we can keep the parsing flow inside a single
+      // try/finally — avoids the race where event.target.value reset ran before
+      // the FileReader callback and could clobber a queued upload.
+      const buffer = await file.arrayBuffer();
+      const workbook = XLSX.read(buffer, { type: "array" });
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 0, defval: "" });
 
-      // Read Excel file
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          const data = e.target.result;
-          const workbook = XLSX.read(data, { type: "binary" });
-          const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-          const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 0, defval: "" });
+      // Convert to array format (headers + rows)
+      const headers = Object.keys(jsonData[0] || {});
+      const arrayData = [
+        headers,
+        ...jsonData.map(row => headers.map(h => row[h] || "")),
+      ];
 
-          // Convert to array format (headers + rows)
-          const headers = Object.keys(jsonData[0] || {});
-          const arrayData = [
-            headers,
-            ...jsonData.map(row => headers.map(h => row[h] || "")),
-          ];
+      // Validate template
+      setMessage("Validasi data...");
+      const validation = validateRitasiTemplate(arrayData);
 
-          // Validate template
-          setMessage("Validasi data...");
-          const validation = validateRitasiTemplate(arrayData);
+      if (!validation.isValid) {
+        const errorList = validation.errors.join("\n");
+        setMessage(`✗ Error validasi:\n${errorList}`);
+        setMessageType("error");
+        setStep("menu");
+        return;
+      }
 
-          if (!validation.isValid) {
-            const errorList = validation.errors.join("\n");
-            setMessage(`✗ Error validasi:\n${errorList}`);
-            setMessageType("error");
-            setStep("menu");
-            setLoading(false);
-            return;
-          }
+      // Pisahkan baris yang rute-nya masih terdaftar (validUpdates) dari yang
+      // ID Rute-nya sudah tidak ada di Master Data (rejectedRows) — baris yang
+      // ditolak TIDAK memblokir update baris lain yang valid.
+      const { validUpdates, rejectedRows } = partitionRitasiRowsByRuteExistence(arrayData, ruteList);
+      const updateCount = Object.keys(validUpdates).length;
 
-          // Parse updates
-          const updates = parseRitasiUpdates(arrayData);
-          const updateCount = Object.keys(updates).length;
-
-          if (updateCount === 0) {
-            setMessage("✗ Tidak ada data untuk di-update");
-            setMessageType("error");
-            setStep("menu");
-            setLoading(false);
-            return;
-          }
-
-          // Confirm before update
-          setStep("processing");
-          setMessage(`Siap update ${updateCount} rute. Memproses...`);
-
-          const result = await bulkUpdateRitasi(updates);
-
-          if (result.success) {
-            setMessage(`✓ ${result.message}`);
-            setMessageType("success");
-            if (onSuccess) onSuccess();
-          } else {
-            setMessage(`✗ ${result.message}`);
-            setMessageType("error");
-          }
-
-          setStep("menu");
-          setTimeout(() => setMessage(null), 3000);
-        } catch (error) {
-          setMessage(`✗ Error: ${error.message}`);
-          setMessageType("error");
-          setStep("menu");
-        } finally {
-          setLoading(false);
+      if (updateCount === 0) {
+        setMessage("✗ Tidak ada data valid untuk di-update");
+        setMessageType("error");
+        setStep("menu");
+        if (rejectedRows.length > 0) {
+          setRejectionReport({
+            summary: `Semua ${rejectedRows.length} baris ditolak karena ID Rute tidak ditemukan.`,
+            rows: rejectedRows,
+          });
         }
-      };
+        return;
+      }
 
-      reader.readAsBinaryString(file);
+      // Confirm before update
+      setStep("processing");
+      setMessage(`Siap update ${updateCount} rute. Memproses...`);
+
+      const result = await bulkUpdateRitasi(validUpdates);
+
+      if (result.success) {
+        setMessage(
+          rejectedRows.length > 0
+            ? `✓ ${result.message} (${rejectedRows.length} baris ditolak — lihat Laporan Data Ditolak)`
+            : `✓ ${result.message}`
+        );
+        setMessageType("success");
+        if (rejectedRows.length > 0) {
+          setRejectionReport({
+            summary: `${updateCount} rute berhasil diupdate, ${rejectedRows.length} baris ditolak.`,
+            rows: rejectedRows,
+          });
+        }
+        if (onSuccess) onSuccess();
+      } else {
+        setMessage(`✗ ${result.message}`);
+        setMessageType("error");
+      }
+
+      setStep("menu");
+      setTimeout(() => setMessage(null), 3000);
     } catch (error) {
       setMessage(`✗ Error: ${error.message}`);
       setMessageType("error");
       setStep("menu");
+    } finally {
       setLoading(false);
+      // Reset file input AFTER all async work completes so re-uploading the
+      // same filename still triggers onChange.
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
-
-    // Reset file input
-    event.target.value = "";
   };
 
   return (
@@ -197,6 +213,7 @@ export default function RitasiBulkUpload({ ruteList = [], onSuccess }) {
 
         <div className="relative">
           <input
+            ref={fileInputRef}
             type="file"
             accept=".xlsx,.xls"
             onChange={handleFileUpload}
@@ -211,6 +228,16 @@ export default function RitasiBulkUpload({ ruteList = [], onSuccess }) {
           </button>
         </div>
       </div>
+
+      <RejectionReport
+        open={!!rejectionReport}
+        onClose={() => setRejectionReport(null)}
+        title="Laporan Ritasi Ditolak"
+        summary={rejectionReport?.summary}
+        rows={rejectionReport?.rows || []}
+        columns={RITASI_REJECTION_COLUMNS}
+        filenamePrefix="laporan_penolakan_ritasi"
+      />
     </div>
   );
 }

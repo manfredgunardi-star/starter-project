@@ -12,6 +12,7 @@ const SuratJalanCard = ({
   onMarkGagal,
   onRestore,
   onEditTerkirim,
+  onEditSJ,
   onDeleteBiaya,
   formatCurrency,
   getStatusColor,
@@ -124,6 +125,19 @@ const SuratJalanCard = ({
               >
                 <CheckCircle className="h-3.5 w-3.5" />
                 <span>Terkirim</span>
+              </button>
+            )}
+            {effectiveRole === 'superadmin' && (
+              <button
+                type="button"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onEditSJ?.(suratJalan);
+                }}
+                className="flex items-center gap-1 rounded-full bg-blue-600 px-2.5 py-1 text-[11px] font-semibold tracking-normal text-white transition hover:bg-blue-700 sm:px-3 sm:py-1.5 sm:text-xs"
+              >
+                <Edit className="h-3.5 w-3.5" />
+                <span>Edit</span>
               </button>
             )}
             <button

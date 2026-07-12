@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Space, Flex, Typography, Card, Alert, Spin, Col } from 'antd'
+import { Space, Flex, Typography, Card, Alert, Spin, Col, Modal } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useSuppliers } from '../../hooks/useMasterData'
 import { useProducts } from '../../hooks/useMasterData'
-import { savePurchaseOrder, getPurchaseOrder, confirmPurchaseOrder } from '../../services/purchaseService'
+import { savePurchaseOrder, getPurchaseOrder, confirmPurchaseOrder, closePurchaseOrder, cancelPurchaseOrder } from '../../services/purchaseService'
 import { getPaymentTerms } from '../../services/paymentTermService'
 import { getWarehouses, getDefaultWarehouse } from '../../services/warehouseService'
 import { today } from '../../utils/date'
@@ -14,7 +14,7 @@ import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import DocumentHeader from '../../components/shared/DocumentHeader'
 import LineItemsTable from '../../components/shared/LineItemsTable'
 import Select from '../../components/ui/Select'
-import { ArrowLeft, Save, Check, Printer, FileDown, ClipboardList } from 'lucide-react'
+import { ArrowLeft, Save, Check, Printer, FileDown, ClipboardList, Archive, XCircle } from 'lucide-react'
 import { usePrintPO } from '../../hooks/usePrintPO'
 
 export default function PurchaseOrderFormPage() {
@@ -165,6 +165,49 @@ export default function PurchaseOrderFormPage() {
     }
   }
 
+  const handleCloseOrder = () => {
+    Modal.confirm({
+      title: 'Tutup Purchase Order?',
+      content: 'Menutup PO berarti tidak ada lagi penerimaan barang yang akan dibuat dari order ini. Tindakan ini tidak dapat dibatalkan.',
+      okText: 'Ya, Tutup',
+      cancelText: 'Batal',
+      onOk: async () => {
+        setSubmitting(true)
+        try {
+          await closePurchaseOrder(id)
+          toast.success('Purchase Order berhasil ditutup')
+          setPO(prev => ({ ...prev, status: 'closed' }))
+        } catch (err) {
+          toast.error(err.message)
+        } finally {
+          setSubmitting(false)
+        }
+      },
+    })
+  }
+
+  const handleCancelOrder = () => {
+    Modal.confirm({
+      title: 'Batalkan Purchase Order?',
+      content: 'PO yang dibatalkan tidak dapat diubah kembali. Penerimaan barang dan invoice yang masih draft akan tetap ada.',
+      okText: 'Ya, Batalkan',
+      okType: 'danger',
+      cancelText: 'Batal',
+      onOk: async () => {
+        setSubmitting(true)
+        try {
+          await cancelPurchaseOrder(id)
+          toast.success('Purchase Order berhasil dibatalkan')
+          setPO(prev => ({ ...prev, status: 'cancelled' }))
+        } catch (err) {
+          toast.error(err.message)
+        } finally {
+          setSubmitting(false)
+        }
+      },
+    })
+  }
+
   return (
     <Space direction="vertical" style={{ width: '100%' }} size={24}>
       <Space align="center">
@@ -267,6 +310,16 @@ export default function PurchaseOrderFormPage() {
                   Download PDF
                 </Button>
               </>
+            )}
+            {id && po?.status === 'confirmed' && canPost && (
+              <Button variant="secondary" onClick={handleCloseOrder} loading={submitting}>
+                <Archive size={18} /> Tutup PO
+              </Button>
+            )}
+            {id && po && ['draft', 'confirmed'].includes(po.status) && canPost && (
+              <Button variant="secondary" onClick={handleCancelOrder} loading={submitting}>
+                <XCircle size={18} /> Batalkan
+              </Button>
             )}
           </Flex>
         </Space>

@@ -1,14 +1,15 @@
 import { Tag } from 'antd'
 
 const statusConfig = {
-  draft: { color: 'default', label: 'Draft' },
-  posted: { color: 'success', label: 'Posted' },
-  confirmed: { color: 'blue', label: 'Confirmed' },
-  paid: { color: 'blue', label: 'Paid' },
-  partial: { color: 'warning', label: 'Partial' },
-  pending: { color: 'orange', label: 'Pending' },
+  draft:     { color: 'default', label: 'Draft' },
+  posted:    { color: 'success', label: 'Posted' },
+  confirmed: { color: 'blue',    label: 'Confirmed' },
+  paid:      { color: 'blue',    label: 'Paid' },
+  partial:   { color: 'warning', label: 'Partial' },
+  pending:   { color: 'orange',  label: 'Pending' },
   completed: { color: 'success', label: 'Completed' },
-  cancelled: { color: 'error', label: 'Cancelled' }
+  cancelled: { color: 'error',   label: 'Cancelled' },
+  closed:    { color: 'default', label: 'Closed' },
 }
 
 export default function StatusBadge({ status }) {

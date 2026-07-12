@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { Space, Flex, Typography, Col } from 'antd'
+import { Space, Flex, Typography, Col, Modal } from 'antd'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useProducts, useCustomers } from '../../hooks/useMasterData'
-import { getSalesOrder, saveSalesOrder, confirmSalesOrder } from '../../services/salesService'
+import { getSalesOrder, saveSalesOrder, confirmSalesOrder, closeSalesOrder, cancelSalesOrder } from '../../services/salesService'
 import { getPaymentTerms } from '../../services/paymentTermService'
 import { getWarehouses, getDefaultWarehouse } from '../../services/warehouseService'
 import { today } from '../../utils/date'
@@ -13,7 +13,7 @@ import Select from '../../components/ui/Select'
 import DocumentHeader from '../../components/shared/DocumentHeader'
 import LineItemsTable from '../../components/shared/LineItemsTable'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
-import { ArrowLeft, Save, CheckCircle, Truck } from 'lucide-react'
+import { ArrowLeft, Save, CheckCircle, Truck, Archive, XCircle } from 'lucide-react'
 
 export default function SalesOrderFormPage() {
   const { id } = useParams()
@@ -142,6 +142,49 @@ export default function SalesOrderFormPage() {
     }
   }
 
+  const handleCloseOrder = () => {
+    Modal.confirm({
+      title: 'Tutup Sales Order?',
+      content: 'Menutup SO berarti tidak ada lagi pengiriman yang akan dibuat dari order ini. Tindakan ini tidak dapat dibatalkan.',
+      okText: 'Ya, Tutup',
+      cancelText: 'Batal',
+      onOk: async () => {
+        setSubmitting(true)
+        try {
+          await closeSalesOrder(id)
+          toast.success('Sales Order berhasil ditutup')
+          setHeader(h => ({ ...h, status: 'closed' }))
+        } catch (err) {
+          toast.error(err.message)
+        } finally {
+          setSubmitting(false)
+        }
+      },
+    })
+  }
+
+  const handleCancelOrder = () => {
+    Modal.confirm({
+      title: 'Batalkan Sales Order?',
+      content: 'SO yang dibatalkan tidak dapat diubah kembali. Pengiriman dan invoice yang masih draft akan tetap ada.',
+      okText: 'Ya, Batalkan',
+      okType: 'danger',
+      cancelText: 'Batal',
+      onOk: async () => {
+        setSubmitting(true)
+        try {
+          await cancelSalesOrder(id)
+          toast.success('Sales Order berhasil dibatalkan')
+          setHeader(h => ({ ...h, status: 'cancelled' }))
+        } catch (err) {
+          toast.error(err.message)
+        } finally {
+          setSubmitting(false)
+        }
+      },
+    })
+  }
+
   const customerOptions = customers.map(c => ({ value: c.id, label: c.name }))
   const paymentTermOptions = paymentTerms.map(term => ({
     value: term.id,
@@ -186,6 +229,21 @@ export default function SalesOrderFormPage() {
           {!isNew && header.status === 'confirmed' && canWrite && (
             <Button variant="primary" onClick={() => navigate(`/sales/invoices/new?so=${id}`)}>
               Buat Invoice
+            </Button>
+          )}
+          {!isNew && (
+            <Button variant="secondary" onClick={() => navigate(`/sales/proforma/new?so=${id}`)}>
+              Proforma Invoice
+            </Button>
+          )}
+          {!isNew && header.status === 'confirmed' && canPost && (
+            <Button variant="secondary" onClick={handleCloseOrder} loading={submitting}>
+              <Archive size={18} /> Tutup SO
+            </Button>
+          )}
+          {!isNew && ['draft', 'confirmed'].includes(header.status) && canPost && (
+            <Button variant="secondary" onClick={handleCancelOrder} loading={submitting}>
+              <XCircle size={18} /> Batalkan
             </Button>
           )}
         </Space>

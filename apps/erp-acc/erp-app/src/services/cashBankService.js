@@ -29,6 +29,12 @@ export async function savePayment(payment) {
       supplier_id: payment.supplier_id || null,
       account_id:  payment.account_id,
       amount:      Number(payment.amount),
+      discount_amount:   Number(payment.discount_amount) || 0,
+      discount_coa_id:   payment.discount_coa_id || null,
+      fee_amount:        Number(payment.fee_amount) || 0,
+      fee_coa_id:        payment.fee_coa_id || null,
+      rounding_amount:   Number(payment.rounding_amount) || 0,
+      rounding_coa_id:   payment.rounding_coa_id || null,
       notes:       payment.notes || null,
     },
   })
@@ -39,7 +45,7 @@ export async function savePayment(payment) {
 export async function getAccounts() {
   const { data, error } = await supabase
     .from('accounts')
-    .select('id, name, type, balance')
+    .select('id, name, type, balance, coa_id')
     .eq('is_active', true)
     .order('name')
   if (error) throw error
@@ -76,7 +82,7 @@ export async function saveReconciliation({ account_id, date, statement_balance }
 export async function getOutstandingInvoicesByCustomer(customerId) {
   const { data, error } = await supabase
     .from('invoices')
-    .select('id, invoice_number, date, total, amount_paid, status')
+    .select('id, invoice_number, date, total, amount_paid, advance_deduction_amount, credit_applied_amount, return_credit_amount, status')
     .eq('type', 'sales')
     .eq('customer_id', customerId)
     .in('status', ['posted', 'partial'])

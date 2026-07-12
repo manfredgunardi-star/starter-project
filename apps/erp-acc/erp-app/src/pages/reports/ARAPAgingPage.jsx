@@ -1,13 +1,17 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
+import { jsPDF } from 'jspdf'
+import { applyPlugin } from 'jspdf-autotable'
+applyPlugin(jsPDF)
+import * as XLSX from 'xlsx'
 import { getARAgingData, getAPAgingData } from '../../services/reportService'
 import { formatCurrency } from '../../utils/currency'
 import { formatDate, today } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import DateInput from '../../components/ui/DateInput'
-import { Search } from 'lucide-react'
+import { Download, FileText, Search } from 'lucide-react'
 import {
-  Space, Card, Typography, Alert, Statistic, Table, Tabs, Row, Col, Tag
+  Button as AntButton, Space, Card, Typography, Alert, Statistic, Table, Tabs, Row, Col, Tag
 } from 'antd'
 
 const { Title, Text } = Typography
@@ -15,9 +19,9 @@ const { Title, Text } = Typography
 const BUCKETS = ['current', '1-30', '31-60', '61-90', '90+']
 const BUCKET_LABELS = {
   current: 'Belum Jatuh Tempo',
-  '1-30': '1–30 Hari',
-  '31-60': '31–60 Hari',
-  '61-90': '61–90 Hari',
+  '1-30': '1â€“30 Hari',
+  '31-60': '31â€“60 Hari',
+  '61-90': '61â€“90 Hari',
   '90+': '> 90 Hari',
 }
 const BUCKET_COLORS = {
@@ -46,6 +50,9 @@ function buildRows(invoices, partyKey, asOfDate) {
     const party = inv[partyKey]
     const partyName = party?.name || '(Tidak Diketahui)'
     const balance = Number(inv.total) - Number(inv.amount_paid)
+      - Number(inv.advance_deduction_amount || 0)
+      - Number(inv.credit_applied_amount || 0)
+      - Number(inv.return_credit_amount || 0)
     const bucket = getAgingBucket(inv.due_date, asOfDate)
     if (!grouped[partyName]) {
       grouped[partyName] = { partyName, invoices: [], totals: {} }
@@ -106,7 +113,7 @@ function buildColumns() {
       dataIndex: 'dueDate',
       key: 'dueDate',
       width: 110,
-      render: (v, row) => (row.isGroupHeader ? null : (v ? formatDate(v) : '—')),
+      render: (v, row) => (row.isGroupHeader ? null : (v ? formatDate(v) : 'â€”')),
     },
     {
       title: 'Total Invoice',
@@ -212,6 +219,76 @@ export default function ARAPAgingPage() {
   const apRows = apData ? buildRows(apData, 'supplier', asOfDate) : []
   const columns = buildColumns()
 
+  const exportPDF = () => {
+    const doc = new jsPDF('landscape')
+    doc.setFontSize(16)
+    doc.text('Laporan AR/AP Aging', 14, 15)
+    doc.setFontSize(10)
+    doc.text(`Per Tanggal: ${asOfDate}`, 14, 23)
+
+    let y = 32
+    const addSection = (title, rows) => {
+      doc.setFontSize(12)
+      doc.text(title, 14, y)
+      y += 5
+      doc.autoTable({
+        startY: y,
+        head: [['Invoice/Pihak', 'Tanggal', 'Jatuh Tempo', 'Total', 'Dibayar', 'Sisa', 'Bucket']],
+        body: rows.map(row => {
+          if (row.isGroupHeader) {
+            return [row.partyName, '', '', '', '', formatCurrency(row.grandBalance), 'Subtotal']
+          }
+          return [
+            row.invoiceNumber,
+            formatDate(row.date),
+            row.dueDate ? formatDate(row.dueDate) : '-',
+            formatCurrency(row.total),
+            formatCurrency(row.amountPaid),
+            formatCurrency(row.balance),
+            BUCKET_LABELS[row.bucket],
+          ]
+        }),
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [52, 73, 94] },
+      })
+      y = doc.lastAutoTable.finalY + 10
+    }
+
+    addSection('Piutang / AR', arRows)
+    if (y > 150) {
+      doc.addPage()
+      y = 20
+    }
+    addSection('Utang / AP', apRows)
+
+    doc.save(`ar-ap-aging-${asOfDate}.pdf`)
+  }
+
+  const exportExcel = () => {
+    const makeRows = (rows) => [
+      ['Invoice/Pihak', 'Tanggal', 'Jatuh Tempo', 'Total', 'Dibayar', 'Sisa', 'Bucket'],
+      ...rows.map(row => {
+        if (row.isGroupHeader) {
+          return [row.partyName, '', '', '', '', row.grandBalance, 'Subtotal']
+        }
+        return [
+          row.invoiceNumber,
+          row.date,
+          row.dueDate || '',
+          row.total,
+          row.amountPaid,
+          row.balance,
+          BUCKET_LABELS[row.bucket],
+        ]
+      }),
+    ]
+
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(makeRows(arRows)), 'Piutang AR')
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(makeRows(apRows)), 'Utang AP')
+    XLSX.writeFile(wb, `ar-ap-aging-${asOfDate}.xlsx`)
+  }
+
   const tabItems = [
     {
       key: 'ar',
@@ -282,7 +359,18 @@ export default function ARAPAgingPage() {
       {error && <Alert type="error" message={error} showIcon />}
 
       {(arData || apData) && !loading && (
-        <Tabs defaultActiveKey="ar" items={tabItems} />
+        <Space direction="vertical" style={{ width: '100%' }}>
+          <Space>
+            <AntButton icon={<FileText size={14} />} onClick={exportPDF}>
+              Export PDF
+            </AntButton>
+            <AntButton icon={<Download size={14} />} onClick={exportExcel}>
+              Export Excel
+            </AntButton>
+          </Space>
+
+          <Tabs defaultActiveKey="ar" items={tabItems} />
+        </Space>
       )}
     </Space>
   )

@@ -50,17 +50,7 @@ export async function saveGoodsReceipt(gr, items) {
     })),
   })
   if (error) throw error
-
-  const grId = data
-  if (Object.prototype.hasOwnProperty.call(gr, 'warehouse_id')) {
-    const { error: warehouseError } = await supabase
-      .from('goods_receipts')
-      .update({ warehouse_id: gr.warehouse_id || null })
-      .eq('id', grId)
-    if (warehouseError) throw warehouseError
-  }
-
-  return grId
+  return data
 }
 
 export async function postGoodsReceipt(id) {
@@ -109,8 +99,10 @@ export async function savePurchaseInvoice(invoice, items) {
       supplier_id:       invoice.supplier_id,
       purchase_order_id: invoice.purchase_order_id || null,
       goods_receipt_id:  invoice.goods_receipt_id  || null,
+      payment_term_id:   invoice.payment_term_id   || null,
       status:            invoice.status            || 'draft',
       notes:             invoice.notes             || null,
+      credit_applied_amount: Number(invoice.credit_applied_amount) || 0,
     },
     p_items: items.map(i => ({
       product_id:    i.product_id,
@@ -123,16 +115,6 @@ export async function savePurchaseInvoice(invoice, items) {
     })),
   })
   if (error) throw error
-
-  // Persist payment_term_id — not handled by save_purchase_invoice RPC (adds nullable FK column)
-  if (invoice.payment_term_id) {
-    const { error: ptErr } = await supabase
-      .from('invoices')
-      .update({ payment_term_id: invoice.payment_term_id })
-      .eq('id', data)
-    if (ptErr) throw ptErr
-  }
-
   return data
 }
 
@@ -145,7 +127,7 @@ export async function postPurchaseInvoice(id) {
 export async function getOutstandingPurchaseInvoicesBySupplier(supplierId) {
   const { data, error } = await supabase
     .from('invoices')
-    .select('id, invoice_number, date, total, amount_paid, status')
+    .select('id, invoice_number, date, total, amount_paid, credit_applied_amount, return_credit_amount, status')
     .eq('type', 'purchase')
     .eq('supplier_id', supplierId)
     .in('status', ['posted', 'partial'])
@@ -208,31 +190,7 @@ export async function savePurchaseOrder(po, items) {
     })),
   })
   if (error) throw error
-
-  const poId = data
-  const hasPaymentTerm = Object.prototype.hasOwnProperty.call(po, 'payment_term_id')
-  const hasWarehouse = Object.prototype.hasOwnProperty.call(po, 'warehouse_id')
-
-  if (hasPaymentTerm || hasWarehouse) {
-    const updatePayload = {}
-
-    if (hasPaymentTerm) {
-      updatePayload.payment_term_id = po.payment_term_id || null
-    }
-
-    if (hasWarehouse) {
-      updatePayload.warehouse_id = po.warehouse_id || null
-    }
-
-    const { error: updateError } = await supabase
-      .from('purchase_orders')
-      .update(updatePayload)
-      .eq('id', poId)
-
-    if (updateError) throw updateError
-  }
-
-  return poId
+  return data
 }
 
 export async function confirmPurchaseOrder(id) {
@@ -240,5 +198,15 @@ export async function confirmPurchaseOrder(id) {
     .from('purchase_orders')
     .update({ status: 'confirmed' })
     .eq('id', id)
+  if (error) throw error
+}
+
+export async function closePurchaseOrder(id) {
+  const { error } = await supabase.rpc('close_purchase_order', { p_po_id: id })
+  if (error) throw error
+}
+
+export async function cancelPurchaseOrder(id) {
+  const { error } = await supabase.rpc('cancel_purchase_order', { p_po_id: id })
   if (error) throw error
 }

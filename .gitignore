@@ -9,3 +9,8 @@ rules terupdate.txt
 .worktrees/
 .claude/worktrees/
 Token GitHub.txt
+_local/
+ruvector.db
+*-SNAPSHOT-*.zip
+*-SNAPSHOT-*.tgz
+context-*.md

@@ -1,6 +1,4 @@
 import { supabase } from '../lib/supabase'
-import { getClosedPeriods } from './companySettingsService'
-import { isPeriodClosed } from '../utils/periodUtils'
 
 export async function getJournals({ startDate, endDate, source } = {}) {
   let query = supabase
@@ -24,7 +22,7 @@ export async function getJournal(id) {
     .select(`
       *,
       journal_items(
-        id, coa_id, debit, credit, description,
+        id, coa_id, cost_center_id, account_id, debit, credit, description,
         coa:coa(id, code, name)
       )
     `)
@@ -36,11 +34,6 @@ export async function getJournal(id) {
 
 export async function saveManualJournal(header, items) {
   const { data: { user } } = await supabase.auth.getUser()
-
-  const { closedPeriods } = await getClosedPeriods()
-  if (isPeriodClosed(header.date, closedPeriods)) {
-    throw new Error(`Periode ${header.date.slice(0, 7)} sudah ditutup. Tidak dapat menyimpan jurnal.`)
-  }
 
   const { data: num, error: numErr } = await supabase.rpc('generate_number', { p_prefix: 'JRN' })
   if (numErr) throw numErr
@@ -62,28 +55,25 @@ export async function saveManualJournal(header, items) {
   const itemRows = items.map(i => ({
     journal_id: journal.id,
     coa_id: i.coa_id,
+    account_id: i.account_id || null,
     debit: Number(i.debit) || 0,
     credit: Number(i.credit) || 0,
     description: i.description || null,
+    cost_center_id: i.cost_center_id ?? null,
   }))
   const { error: itemErr } = await supabase.from('journal_items').insert(itemRows)
-  if (itemErr) throw itemErr
+  if (itemErr) {
+    // Kompensasi: insert header & items belum atomik (idealnya satu RPC transaksional,
+    // mirip save_and_post_payment). Bila insert baris gagal, hapus header yatim agar
+    // tidak meninggalkan jurnal tanpa baris di database.
+    await supabase.from('journals').delete().eq('id', journal.id)
+    throw itemErr
+  }
 
   return journal.id
 }
 
 export async function postManualJournal(id) {
-  const { data: journal, error: fetchErr } = await supabase
-    .from('journals')
-    .select('date')
-    .eq('id', id)
-    .single()
-  if (fetchErr) throw fetchErr
-  const { closedPeriods } = await getClosedPeriods()
-  if (isPeriodClosed(journal.date, closedPeriods)) {
-    throw new Error(`Periode ${journal.date.slice(0, 7)} sudah ditutup. Tidak dapat memposting jurnal.`)
-  }
-
   const { error } = await supabase.rpc('post_manual_journal', { p_journal_id: id })
   if (error) throw error
 }

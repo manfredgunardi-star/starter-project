@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import { useAccounts } from '../../hooks/useCashBank'
-import { useCustomers, useSuppliers } from '../../hooks/useMasterData'
+import { useCOA, useCustomers, useSuppliers } from '../../hooks/useMasterData'
 import { savePayment, getOutstandingInvoicesByCustomer } from '../../services/cashBankService'
 import { getOutstandingPurchaseInvoicesBySupplier, getPurchaseInvoice } from '../../services/purchaseService'
 import { formatCurrency } from '../../utils/currency'
@@ -24,6 +24,7 @@ export default function PaymentFormPage() {
   const { customers } = useCustomers()
   const { suppliers } = useSuppliers()
   const { accounts } = useAccounts()
+  const { coa } = useCOA()
 
   const [submitting, setSubmitting] = useState(false)
   const [invoices, setInvoices] = useState([])
@@ -39,6 +40,12 @@ export default function PaymentFormPage() {
     invoice_id: searchParams.get('invoice') || '',
     account_id: '',
     amount: '',
+    discount_amount: '',
+    discount_coa_id: '',
+    fee_amount: '',
+    fee_coa_id: '',
+    rounding_amount: '',
+    rounding_coa_id: '',
     notes: '',
   })
 
@@ -82,12 +89,20 @@ export default function PaymentFormPage() {
     const inv = invoices.find(i => i.id === form.invoice_id)
     if (inv) {
       const remaining = inv.total - inv.amount_paid
+        - (inv.advance_deduction_amount || 0)
+        - (inv.credit_applied_amount || 0)
+        - (inv.return_credit_amount || 0)
       field('amount', remaining > 0 ? remaining : '')
     }
   }, [form.invoice_id, invoices])
 
   const selectedInvoice = invoices.find(i => i.id === form.invoice_id)
-  const remaining = selectedInvoice ? selectedInvoice.total - selectedInvoice.amount_paid : null
+  const remaining = selectedInvoice
+    ? selectedInvoice.total - selectedInvoice.amount_paid
+      - (selectedInvoice.advance_deduction_amount || 0)
+      - (selectedInvoice.credit_applied_amount || 0)
+      - (selectedInvoice.return_credit_amount || 0)
+    : null
 
   const validate = () => {
     if (!form.date) { toast.error('Tanggal wajib diisi'); return false }
@@ -95,11 +110,17 @@ export default function PaymentFormPage() {
     if (!form.amount || Number(form.amount) <= 0) { toast.error('Jumlah harus lebih dari 0'); return false }
     if (form.type === 'incoming' && !form.customer_id) { toast.error('Pilih customer'); return false }
     if (form.type === 'outgoing' && !form.supplier_id) { toast.error('Pilih supplier'); return false }
-    if (remaining !== null && Number(form.amount) > remaining + 0.01) {
+    const effectiveAmount = Number(form.amount)
+      + (Number(form.discount_amount) || 0)
+      + (Number(form.rounding_amount) || 0)
+    if (remaining !== null && effectiveAmount > remaining + 0.01) {
       const label = form.type === 'incoming' ? 'sisa piutang' : 'sisa hutang'
-      toast.error(`Jumlah melebihi ${label} ${formatCurrency(remaining)}`)
+      toast.error(`Jumlah efektif (termasuk penyesuaian) melebihi ${label} ${formatCurrency(remaining)}`)
       return false
     }
+    if (Number(form.discount_amount) > 0 && !form.discount_coa_id) { toast.error('Pilih COA diskon'); return false }
+    if (form.type === 'outgoing' && Number(form.fee_amount) > 0 && !form.fee_coa_id) { toast.error('Pilih COA biaya bank'); return false }
+    if (form.rounding_amount !== '' && Number(form.rounding_amount) !== 0 && !form.rounding_coa_id) { toast.error('Pilih COA pembulatan'); return false }
     return true
   }
 
@@ -112,6 +133,12 @@ export default function PaymentFormPage() {
         amount: Number(form.amount),
         customer_id: form.type === 'incoming' ? form.customer_id : null,
         supplier_id: form.type === 'outgoing' ? form.supplier_id : null,
+        discount_amount: Number(form.discount_amount) || 0,
+        discount_coa_id: form.discount_coa_id || null,
+        fee_amount: form.type === 'outgoing' ? Number(form.fee_amount) || 0 : 0,
+        fee_coa_id: form.type === 'outgoing' ? form.fee_coa_id || null : null,
+        rounding_amount: Number(form.rounding_amount) || 0,
+        rounding_coa_id: form.rounding_coa_id || null,
       })
       toast.success('Pembayaran berhasil dicatat dan diposting')
       navigate('/cash/payments')
@@ -127,8 +154,12 @@ export default function PaymentFormPage() {
   const accountOptions = accounts.map(a => ({ value: a.id, label: `${a.name} (${formatCurrency(a.balance)})` }))
   const invoiceOptions = invoices.map(i => ({
     value: i.id,
-    label: `${i.invoice_number} — Sisa: ${formatCurrency(i.total - i.amount_paid)}`
+    label: `${i.invoice_number} — Sisa: ${formatCurrency(
+      i.total - i.amount_paid - (i.advance_deduction_amount || 0)
+        - (i.credit_applied_amount || 0) - (i.return_credit_amount || 0)
+    )}`
   }))
+  const coaOptions = coa.map(c => ({ value: c.id, label: `${c.code} — ${c.name}` }))
 
   return (
     <Space direction="vertical" style={{ width: '100%' }} size="large">
@@ -151,7 +182,7 @@ export default function PaymentFormPage() {
                   checked={form.type === t}
                   onChange={() => {
                     field('type', t)
-                    setForm(f => ({ ...f, type: t, customer_id: '', supplier_id: '', invoice_id: '' }))
+                    setForm(f => ({ ...f, type: t, customer_id: '', supplier_id: '', invoice_id: '', fee_amount: '', fee_coa_id: '' }))
                     setInvoices([])
                   }}
                   style={{ accentColor: '#2563eb' }}
@@ -239,6 +270,74 @@ export default function PaymentFormPage() {
               placeholder="Catatan opsional..."
               style={{ width: '100%', paddingLeft: 12, paddingRight: 12, paddingTop: 8, paddingBottom: 8, border: '1px solid #d1d5db', borderRadius: 8, fontSize: 14, resize: 'none' }}
             />
+          </Space>
+
+          <Space direction="vertical" style={{ width: '100%' }} size="middle">
+            <Typography.Text type="secondary" style={{ fontSize: 12 }}>Penyesuaian (opsional)</Typography.Text>
+
+            <Space direction="vertical" style={{ width: '100%' }} size={8}>
+              <Input
+                label={form.type === 'incoming' ? 'Diskon penjualan' : 'Diskon pembelian'}
+                type="number"
+                min="0"
+                step="any"
+                placeholder="0"
+                value={form.discount_amount}
+                onChange={e => field('discount_amount', e.target.value)}
+              />
+              {Number(form.discount_amount) > 0 && (
+                <Select
+                  label="COA Diskon *"
+                  options={coaOptions}
+                  value={form.discount_coa_id}
+                  onChange={e => field('discount_coa_id', e.target.value)}
+                  placeholder="Pilih COA diskon..."
+                />
+              )}
+            </Space>
+
+            {form.type === 'outgoing' && (
+              <Space direction="vertical" style={{ width: '100%' }} size={8}>
+                <Input
+                  label="Biaya bank/transfer"
+                  type="number"
+                  min="0"
+                  step="any"
+                  placeholder="0"
+                  value={form.fee_amount}
+                  onChange={e => field('fee_amount', e.target.value)}
+                />
+                {Number(form.fee_amount) > 0 && (
+                  <Select
+                    label="COA Biaya Bank *"
+                    options={coaOptions}
+                    value={form.fee_coa_id}
+                    onChange={e => field('fee_coa_id', e.target.value)}
+                    placeholder="Pilih COA biaya bank..."
+                  />
+                )}
+              </Space>
+            )}
+
+            <Space direction="vertical" style={{ width: '100%' }} size={8}>
+              <Input
+                label="Selisih pembulatan (+ atau −)"
+                type="number"
+                step="any"
+                placeholder="0"
+                value={form.rounding_amount}
+                onChange={e => field('rounding_amount', e.target.value)}
+              />
+              {form.rounding_amount !== '' && Number(form.rounding_amount) !== 0 && (
+                <Select
+                  label="COA Pembulatan *"
+                  options={coaOptions}
+                  value={form.rounding_coa_id}
+                  onChange={e => field('rounding_coa_id', e.target.value)}
+                  placeholder="Pilih COA pembulatan..."
+                />
+              )}
+            </Space>
           </Space>
 
           <Alert

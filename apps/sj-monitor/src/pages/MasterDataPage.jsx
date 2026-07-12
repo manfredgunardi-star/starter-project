@@ -2,13 +2,21 @@ import { useEffect, useState } from 'react';
 import { Edit, FileText, Package, Plus, Trash2, Truck, Users } from 'lucide-react';
 import { formatCurrency } from '../utils/currency.js';
 import Pagination, { PAGE_SIZE, clampPage } from '../components/Pagination.jsx';
+import SearchInput from '../components/SearchInput.jsx';
+import { useSearchFilter } from '../hooks/useSearchFilter.js';
+
+// Konstanta level-modul: referensi array stabil antar-render agar useMemo di useSearchFilter benar-benar efektif
+const TRUCK_SEARCH_FIELDS = ['nomorPolisi'];
+const SUPIR_SEARCH_FIELDS = ['namaSupir', 'pt'];
+const RUTE_SEARCH_FIELDS = ['rute'];
+const MATERIAL_SEARCH_FIELDS = ['material', 'satuan'];
 
 export default function MasterDataManagement({
   truckList, supirList, ruteList, materialList, currentUser,
-  onAddTruck, onEditTruck, onDeleteTruck,
-  onAddSupir, onEditSupir, onDeleteSupir,
-  onAddRute, onEditRute, onDeleteRute,
-  onAddMaterial, onEditMaterial, onDeleteMaterial,
+  onAddTruck, onEditTruck, onDeleteTruck, onActivateTruck,
+  onAddSupir, onEditSupir, onDeleteSupir, onActivateSupir,
+  onAddRute, onEditRute, onDeleteRute, onActivateRute,
+  onAddMaterial, onEditMaterial, onDeleteMaterial, onActivateMaterial,
   onDownloadTemplate, onImportData,
   showRitasiBulkUpload, setShowRitasiBulkUpload,
   showTarifBulkUpload, setShowTarifBulkUpload,
@@ -21,6 +29,10 @@ export default function MasterDataManagement({
   const [supirPage, setSupirPage] = useState(1);
   const [rutePage, setRutePage] = useState(1);
   const [matPage, setMatPage] = useState(1);
+  const [searchTruck, setSearchTruck] = useState('');
+  const [searchSupir, setSearchSupir] = useState('');
+  const [searchRute, setSearchRute] = useState('');
+  const [searchMaterial, setSearchMaterial] = useState('');
 
   useEffect(() => {
     setTruckPage(1);
@@ -29,14 +41,24 @@ export default function MasterDataManagement({
     setMatPage(1);
   }, [masterTab]);
 
-  const safeTruckPage = clampPage(truckPage, truckList.length);
-  const safeSupirPage = clampPage(supirPage, supirList.length);
-  const safeRutePage = clampPage(rutePage, ruteList.length);
-  const safeMatPage = clampPage(matPage, materialList.length);
-  const pagedTruck = truckList.slice((safeTruckPage - 1) * PAGE_SIZE, safeTruckPage * PAGE_SIZE);
-  const pagedSupir = supirList.slice((safeSupirPage - 1) * PAGE_SIZE, safeSupirPage * PAGE_SIZE);
-  const pagedRute = ruteList.slice((safeRutePage - 1) * PAGE_SIZE, safeRutePage * PAGE_SIZE);
-  const pagedMat = materialList.slice((safeMatPage - 1) * PAGE_SIZE, safeMatPage * PAGE_SIZE);
+  useEffect(() => { setTruckPage(1); }, [searchTruck]);
+  useEffect(() => { setSupirPage(1); }, [searchSupir]);
+  useEffect(() => { setRutePage(1); }, [searchRute]);
+  useEffect(() => { setMatPage(1); }, [searchMaterial]);
+
+  const filteredTruck = useSearchFilter(truckList, searchTruck, TRUCK_SEARCH_FIELDS);
+  const filteredSupir = useSearchFilter(supirList, searchSupir, SUPIR_SEARCH_FIELDS);
+  const filteredRute = useSearchFilter(ruteList, searchRute, RUTE_SEARCH_FIELDS);
+  const filteredMaterial = useSearchFilter(materialList, searchMaterial, MATERIAL_SEARCH_FIELDS);
+
+  const safeTruckPage = clampPage(truckPage, filteredTruck.length);
+  const safeSupirPage = clampPage(supirPage, filteredSupir.length);
+  const safeRutePage = clampPage(rutePage, filteredRute.length);
+  const safeMatPage = clampPage(matPage, filteredMaterial.length);
+  const pagedTruck = filteredTruck.slice((safeTruckPage - 1) * PAGE_SIZE, safeTruckPage * PAGE_SIZE);
+  const pagedSupir = filteredSupir.slice((safeSupirPage - 1) * PAGE_SIZE, safeSupirPage * PAGE_SIZE);
+  const pagedRute = filteredRute.slice((safeRutePage - 1) * PAGE_SIZE, safeRutePage * PAGE_SIZE);
+  const pagedMat = filteredMaterial.slice((safeMatPage - 1) * PAGE_SIZE, safeMatPage * PAGE_SIZE);
 
   const handleFileUpload = (e, type) => {
     const file = e.target.files[0];
@@ -87,7 +109,7 @@ export default function MasterDataManagement({
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-bold text-gray-800">Master Data Truck</h2>
-                <p className="text-sm text-gray-600">Total: {truckList.length} truck</p>
+                <p className="text-sm text-gray-600">Total: {truckList.length} truck ({truckList.filter(t => t.isActive).length} aktif)</p>
               </div>
               <div className="flex gap-2">
                 <button
@@ -118,11 +140,22 @@ export default function MasterDataManagement({
             </div>
           </div>
 
+          {truckList.length > 0 && (
+            <div className="mb-4">
+              <SearchInput value={searchTruck} onChange={setSearchTruck} placeholder="Cari nomor polisi..." />
+            </div>
+          )}
+
           <div className="space-y-3">
             {truckList.length === 0 ? (
               <div className="bg-white rounded-lg shadow-md p-8 text-center">
                 <Truck className="w-16 h-16 mx-auto text-gray-300 mb-4" />
                 <p className="text-gray-500">Belum ada data truck</p>
+              </div>
+            ) : filteredTruck.length === 0 ? (
+              <div className="bg-white rounded-lg shadow-md p-8 text-center">
+                <Truck className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-500">Tidak ada truck yang cocok dengan pencarian.</p>
               </div>
             ) : (
               pagedTruck.map(truck => (
@@ -152,20 +185,30 @@ export default function MasterDataManagement({
                         <Edit className="w-4 h-4" />
                         <span>Edit</span>
                       </button>
-                      <button
-                        onClick={() => onDeleteTruck(truck.id)}
-                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span>Hapus</span>
-                      </button>
+                      {truck.isActive ? (
+                        <button
+                          onClick={() => onDeleteTruck(truck.id)}
+                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Hapus</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => onActivateTruck(truck.id)}
+                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>Aktifkan</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
               ))
             )}
           </div>
-          <Pagination total={truckList.length} page={safeTruckPage} onChange={setTruckPage} />
+          <Pagination total={filteredTruck.length} page={safeTruckPage} onChange={setTruckPage} />
         </div>
       )}
 
@@ -176,7 +219,7 @@ export default function MasterDataManagement({
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-bold text-gray-800">Master Data Supir</h2>
-                <p className="text-sm text-gray-600">Total: {supirList.length} supir</p>
+                <p className="text-sm text-gray-600">Total: {supirList.length} supir ({supirList.filter(s => s.isActive).length} aktif)</p>
               </div>
               <div className="flex gap-2">
                 <button
@@ -207,11 +250,22 @@ export default function MasterDataManagement({
             </div>
           </div>
 
+          {supirList.length > 0 && (
+            <div className="mb-4">
+              <SearchInput value={searchSupir} onChange={setSearchSupir} placeholder="Cari nama supir atau PT..." />
+            </div>
+          )}
+
           <div className="space-y-3">
             {supirList.length === 0 ? (
               <div className="bg-white rounded-lg shadow-md p-8 text-center">
                 <Users className="w-16 h-16 mx-auto text-gray-300 mb-4" />
                 <p className="text-gray-500">Belum ada data supir</p>
+              </div>
+            ) : filteredSupir.length === 0 ? (
+              <div className="bg-white rounded-lg shadow-md p-8 text-center">
+                <Users className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-500">Tidak ada supir yang cocok dengan pencarian.</p>
               </div>
             ) : (
               pagedSupir.map(supir => (
@@ -250,20 +304,30 @@ export default function MasterDataManagement({
                         <Edit className="w-4 h-4" />
                         <span>Edit</span>
                       </button>
-                      <button
-                        onClick={() => onDeleteSupir(supir.id)}
-                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span>Hapus</span>
-                      </button>
+                      {supir.isActive ? (
+                        <button
+                          onClick={() => onDeleteSupir(supir.id)}
+                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Hapus</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => onActivateSupir(supir.id)}
+                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>Aktifkan</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
               ))
             )}
           </div>
-          <Pagination total={supirList.length} page={safeSupirPage} onChange={setSupirPage} />
+          <Pagination total={filteredSupir.length} page={safeSupirPage} onChange={setSupirPage} />
         </div>
       )}
 
@@ -274,7 +338,7 @@ export default function MasterDataManagement({
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-bold text-gray-800">Master Data Rute</h2>
-                <p className="text-sm text-gray-600">Total: {ruteList.length} rute</p>
+                <p className="text-sm text-gray-600">Total: {ruteList.length} rute ({ruteList.filter(r => r.isActive).length} aktif)</p>
               </div>
               <div className="flex gap-2">
                 <button
@@ -323,18 +387,36 @@ export default function MasterDataManagement({
             </div>
           </div>
 
+          {ruteList.length > 0 && (
+            <div className="mb-4">
+              <SearchInput value={searchRute} onChange={setSearchRute} placeholder="Cari nama rute..." />
+            </div>
+          )}
+
           <div className="space-y-3">
             {ruteList.length === 0 ? (
               <div className="bg-white rounded-lg shadow-md p-8 text-center">
                 <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
                 <p className="text-gray-500">Belum ada data rute</p>
               </div>
+            ) : filteredRute.length === 0 ? (
+              <div className="bg-white rounded-lg shadow-md p-8 text-center">
+                <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-500">Tidak ada rute yang cocok dengan pencarian.</p>
+              </div>
             ) : (
               pagedRute.map(rute => (
                 <div key={rute.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="text-lg font-bold text-gray-800 mb-2">{rute.rute}</h3>
+                      <div className="flex items-center space-x-3 mb-2">
+                        <h3 className="text-lg font-bold text-gray-800">{rute.rute}</h3>
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          rute.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {rute.isActive ? 'Aktif' : 'Nonaktif'}
+                        </span>
+                      </div>
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
                         <div>
                           <p className="text-gray-600">Rute ID:</p>
@@ -375,20 +457,30 @@ export default function MasterDataManagement({
                         <Edit className="w-4 h-4" />
                         <span>Edit</span>
                       </button>
-                      <button
-                        onClick={() => onDeleteRute(rute.id)}
-                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span>Hapus</span>
-                      </button>
+                      {rute.isActive ? (
+                        <button
+                          onClick={() => onDeleteRute(rute.id)}
+                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Hapus</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => onActivateRute(rute.id)}
+                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>Aktifkan</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
               ))
             )}
           </div>
-          <Pagination total={ruteList.length} page={safeRutePage} onChange={setRutePage} />
+          <Pagination total={filteredRute.length} page={safeRutePage} onChange={setRutePage} />
         </div>
       )}
 
@@ -399,7 +491,7 @@ export default function MasterDataManagement({
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-bold text-gray-800">Master Data Material</h2>
-                <p className="text-sm text-gray-600">Total: {materialList.length} material</p>
+                <p className="text-sm text-gray-600">Total: {materialList.length} material ({materialList.filter(m => m.isActive).length} aktif)</p>
               </div>
               <div className="flex gap-2">
                 <button
@@ -430,18 +522,36 @@ export default function MasterDataManagement({
             </div>
           </div>
 
+          {materialList.length > 0 && (
+            <div className="mb-4">
+              <SearchInput value={searchMaterial} onChange={setSearchMaterial} placeholder="Cari nama material atau satuan..." />
+            </div>
+          )}
+
           <div className="space-y-3">
             {materialList.length === 0 ? (
               <div className="bg-white rounded-lg shadow-md p-8 text-center">
                 <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
                 <p className="text-gray-500">Belum ada data material</p>
               </div>
+            ) : filteredMaterial.length === 0 ? (
+              <div className="bg-white rounded-lg shadow-md p-8 text-center">
+                <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-500">Tidak ada material yang cocok dengan pencarian.</p>
+              </div>
             ) : (
               pagedMat.map(material => (
                 <div key={material.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h3 className="text-lg font-bold text-gray-800 mb-2">{material.material}</h3>
+                      <div className="flex items-center space-x-3 mb-2">
+                        <h3 className="text-lg font-bold text-gray-800">{material.material}</h3>
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          material.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                        }`}>
+                          {material.isActive ? 'Aktif' : 'Nonaktif'}
+                        </span>
+                      </div>
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
                           <p className="text-gray-600">Material ID:</p>
@@ -466,20 +576,30 @@ export default function MasterDataManagement({
                         <Edit className="w-4 h-4" />
                         <span>Edit</span>
                       </button>
-                      <button
-                        onClick={() => onDeleteMaterial(material.id)}
-                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        <span>Hapus</span>
-                      </button>
+                      {material.isActive ? (
+                        <button
+                          onClick={() => onDeleteMaterial(material.id)}
+                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Hapus</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => onActivateMaterial(material.id)}
+                          className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm transition flex items-center space-x-1"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>Aktifkan</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
               ))
             )}
           </div>
-          <Pagination total={materialList.length} page={safeMatPage} onChange={setMatPage} />
+          <Pagination total={filteredMaterial.length} page={safeMatPage} onChange={setMatPage} />
         </div>
       )}
     </div>

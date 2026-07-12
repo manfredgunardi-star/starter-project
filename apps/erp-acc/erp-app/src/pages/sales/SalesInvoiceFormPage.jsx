@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { Space, Flex, Typography, Row, Col, Card, Switch, Divider, Select as AntdSelect } from 'antd'
+import { Space, Flex, Typography, Row, Col, Card, Switch, Divider, Select as AntdSelect, InputNumber } from 'antd'
 import dayjs from 'dayjs'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
-import { useProducts, useCustomers } from '../../hooks/useMasterData'
+import { useProducts, useCustomers, useCOA } from '../../hooks/useMasterData'
 import { getSalesInvoice, saveSalesInvoice, postSalesInvoice, getGoodsDelivery } from '../../services/salesService'
+import { getAvailableCredit } from '../../services/creditNoteService'
 import { createRecurringTemplate } from '../../services/recurringService'
 import { getPaymentTerms } from '../../services/paymentTermService'
 import { today } from '../../utils/date'
@@ -14,6 +15,7 @@ import Button from '../../components/ui/Button'
 import DateInput from '../../components/ui/DateInput'
 import DocumentHeader from '../../components/shared/DocumentHeader'
 import LineItemsTable from '../../components/shared/LineItemsTable'
+import { rowTotals } from '../../utils/lineItemTotals'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { usePrintInvoice } from '../../hooks/usePrintInvoice'
 import { ArrowLeft, Save, Send, Printer, FileDown, Repeat } from 'lucide-react'
@@ -30,6 +32,7 @@ export default function SalesInvoiceFormPage() {
 
   const { products } = useProducts()
   const { customers } = useCustomers()
+  const { coa } = useCOA()
 
   const [loading, setLoading] = useState(!isNew)
   const [submitting, setSubmitting] = useState(false)
@@ -44,8 +47,13 @@ export default function SalesInvoiceFormPage() {
     goods_delivery_id: '',
     status: 'draft',
     notes: '',
+    advance_deduction_amount: 0,
+    advance_deduction_coa_id: '',
+    credit_applied_amount: 0,
+    return_credit_amount: 0,
   })
   const [items, setItems] = useState([LineItemsTable.emptyRow()])
+  const [gdRaw, setGdRaw] = useState(null) // raw GD awaiting products master to compute price + PPN
 
   useEffect(() => {
     getPaymentTerms()
@@ -74,6 +82,10 @@ export default function SalesInvoiceFormPage() {
             goods_delivery_id: inv.goods_delivery_id || '',
             status: inv.status,
             notes: inv.notes || '',
+            advance_deduction_amount: inv.advance_deduction_amount || 0,
+            advance_deduction_coa_id: inv.advance_deduction_coa_id || '',
+            credit_applied_amount: inv.credit_applied_amount || 0,
+            return_credit_amount: inv.return_credit_amount || 0,
             amount_paid: inv.amount_paid,
             total: inv.total,
           })
@@ -104,22 +116,42 @@ export default function SalesInvoiceFormPage() {
           sales_order_id: gd.sales_order_id || '',
           goods_delivery_id: gd.id,
         }))
-        // GD has no unit_price — LineItemsTable will auto-fill from product.sell_price
-        setItems(
-          (gd.items || []).map(i => ({
-            _key: i.id,
-            product_id: i.product_id,
-            unit_id: i.unit_id,
-            quantity: i.quantity,
-            quantity_base: i.quantity_base,
-            unit_price: '',
-            tax_amount: 0,
-            total: 0,
-          }))
-        )
+        setGdRaw(gd)
       })
       .catch(err => toast.error('Gagal load GD: ' + err.message))
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Map GD items to invoice lines once the products master is loaded. GD carries
+  // no price, so fill unit_price from product.sell_price, then compute PPN
+  // (is_taxable / tax_rate) instead of leaving price/tax at 0.
+  useEffect(() => {
+    if (!gdRaw || products.length === 0) return
+    setItems(
+      (gdRaw.items || []).map(i => {
+        const prod = products.find(p => p.id === i.product_id)
+        const row = {
+          _key: i.id,
+          product_id: i.product_id,
+          unit_id: i.unit_id,
+          quantity: i.quantity,
+          quantity_base: i.quantity_base,
+          unit_price: prod ? (prod.sell_price ?? 0) : '',
+        }
+        return { ...row, ...rowTotals(row, prod) }
+      })
+    )
+  }, [gdRaw, products])
+
+  const [availableCredit, setAvailableCredit] = useState(0)
+
+  useEffect(() => {
+    let cancelled = false
+    if (!header.customer_id) { setAvailableCredit(0); return }
+    getAvailableCredit('customer', header.customer_id)
+      .then(v => { if (!cancelled) setAvailableCredit(v) })
+      .catch(err => toast.error('Gagal memuat saldo kredit: ' + err.message))
+    return () => { cancelled = true }
+  }, [header.customer_id])
 
   const readOnly = !isNew && header.status !== 'draft'
 
@@ -148,6 +180,13 @@ export default function SalesInvoiceFormPage() {
     if (!header.date) { toast.error('Tanggal wajib diisi'); return }
     const validItems = items.filter(i => i.product_id && Number(i.quantity) > 0)
     if (validItems.length === 0) { toast.error('Minimal satu item'); return }
+    if (advance < 0) { toast.error('Potongan uang muka tidak boleh negatif'); return }
+    if (advance > clientTotal + 0.01) { toast.error('Potongan uang muka melebihi total invoice'); return }
+    if (advance > 0 && !header.advance_deduction_coa_id) { toast.error('Pilih akun COA uang muka'); return }
+    const creditApplied = Number(header.credit_applied_amount) || 0
+    if (creditApplied < 0) { toast.error('Kredit yang diterapkan tidak boleh negatif'); return }
+    if (creditApplied > availableCredit + 0.01) { toast.error('Kredit yang diterapkan melebihi saldo kredit tersedia'); return }
+    if (advance + creditApplied > clientTotal + 0.01) { toast.error('Potongan uang muka + kredit yang diterapkan melebihi total invoice'); return }
     if (makeRecurring && !recurStart) {
       toast.error('Tanggal mulai untuk template berulang wajib diisi')
       return
@@ -220,7 +259,18 @@ export default function SalesInvoiceFormPage() {
   }
 
   const customerOptions = customers.map(c => ({ value: c.id, label: c.name }))
-  const remaining = (header.total || 0) - (header.amount_paid || 0)
+  const coaOptions = coa.map(c => ({ value: c.id, label: `${c.code} — ${c.name}` }))
+
+  // Total dari item (server otoritatif, tapi perlu untuk validasi & tampilan draft)
+  const clientTotal = items.reduce((sum, row) => {
+    const prod = products.find(p => p.id === row.product_id)
+    return sum + (rowTotals(row, prod).total || 0)
+  }, 0)
+  const invoiceTotal = header.total || clientTotal
+  const advance = Number(header.advance_deduction_amount) || 0
+  const creditApplied = Number(header.credit_applied_amount) || 0
+  const returnCredit = Number(header.return_credit_amount) || 0
+  const remaining = invoiceTotal - advance - creditApplied - returnCredit - (header.amount_paid || 0)
 
   if (loading) return <LoadingSpinner message="Memuat invoice..." />
 
@@ -251,6 +301,11 @@ export default function SalesInvoiceFormPage() {
               Terima Pembayaran
             </Button>
           )}
+          {!isNew && ['posted', 'partial', 'paid'].includes(header.status) && (
+            <Button variant="secondary" onClick={() => navigate(`/sales/returns/new?from_invoice=${id}`)}>
+              Buat Retur
+            </Button>
+          )}
           {!isNew && (
             <>
               <Button variant="secondary" onClick={() => triggerPrint(id)} loading={isPrinting} disabled={isPrinting}>
@@ -271,7 +326,7 @@ export default function SalesInvoiceFormPage() {
         status={isNew ? null : header.status}
         partyLabel="Customer"
         partyId={header.customer_id}
-        onPartyChange={v => setHeader(h => ({ ...h, customer_id: v }))}
+        onPartyChange={v => setHeader(h => ({ ...h, customer_id: v, credit_applied_amount: 0 }))}
         partyOptions={customerOptions}
         dueDate={header.due_date}
         onDueDateChange={d => setHeader(h => ({ ...h, due_date: d }))}
@@ -301,6 +356,55 @@ export default function SalesInvoiceFormPage() {
           </Col>
         </Row>
       </Card>
+
+      {!readOnly && (
+        <Card size="small">
+          <Row gutter={16}>
+            <Col xs={24} md={8}>
+              <div style={{ marginBottom: 4, fontSize: 13, fontWeight: 500 }}>Potongan Uang Muka</div>
+              <InputNumber
+                style={{ width: '100%' }}
+                min={0}
+                value={header.advance_deduction_amount || 0}
+                onChange={v => setHeader(h => ({ ...h, advance_deduction_amount: v || 0 }))}
+                formatter={val => `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
+                parser={val => val.replace(/\./g, '')}
+                placeholder="0"
+              />
+            </Col>
+            {Number(header.advance_deduction_amount) > 0 && (
+              <Col xs={24} md={10}>
+                <div style={{ marginBottom: 4, fontSize: 13, fontWeight: 500 }}>Akun COA Uang Muka *</div>
+                <AntdSelect
+                  showSearch
+                  optionFilterProp="label"
+                  style={{ width: '100%' }}
+                  placeholder="Pilih akun uang muka..."
+                  value={header.advance_deduction_coa_id || undefined}
+                  onChange={v => setHeader(h => ({ ...h, advance_deduction_coa_id: v || '' }))}
+                  options={coaOptions}
+                />
+              </Col>
+            )}
+            <Col xs={24} md={8}>
+              <div style={{ marginBottom: 4, fontSize: 13, fontWeight: 500 }}>
+                Terapkan dari Saldo Kredit (Tersedia: {formatCurrency(availableCredit)})
+              </div>
+              <InputNumber
+                style={{ width: '100%' }}
+                min={0}
+                max={Math.max(availableCredit, Number(header.credit_applied_amount) || 0)}
+                value={header.credit_applied_amount || 0}
+                onChange={v => setHeader(h => ({ ...h, credit_applied_amount: v || 0 }))}
+                formatter={val => `${val}`.replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
+                parser={val => val.replace(/\./g, '')}
+                placeholder="0"
+                disabled={availableCredit <= 0}
+              />
+            </Col>
+          </Row>
+        </Card>
+      )}
 
       <Space direction="vertical" style={{ width: '100%' }} size={8}>
         <Typography.Title level={5} style={{ margin: 0 }}>Item Invoice</Typography.Title>
@@ -379,17 +483,27 @@ export default function SalesInvoiceFormPage() {
       {!isNew && header.status !== 'draft' && (
         <Card style={{ background: '#e6f4ff', border: '1px solid #91caff' }}>
           <Row gutter={16}>
-            <Col span={8}>
+            <Col span={6}>
               <Typography.Text style={{ color: '#0958d9', display: 'block' }}>Total Invoice</Typography.Text>
               <Typography.Text strong style={{ color: '#003eb3', fontSize: 16 }}>{formatCurrency(header.total)}</Typography.Text>
             </Col>
-            <Col span={8}>
+            <Col span={6}>
+              <Typography.Text style={{ color: '#0958d9', display: 'block' }}>Potongan Uang Muka</Typography.Text>
+              <Typography.Text strong style={{ color: '#003eb3', fontSize: 16 }}>{formatCurrency(header.advance_deduction_amount || 0)}</Typography.Text>
+            </Col>
+            <Col span={6}>
               <Typography.Text type="success" style={{ display: 'block' }}>Dibayar</Typography.Text>
               <Typography.Text strong style={{ color: '#135200', fontSize: 16 }}>{formatCurrency(header.amount_paid)}</Typography.Text>
             </Col>
-            <Col span={8}>
-              <Typography.Text type="danger" style={{ display: 'block' }}>Sisa Piutang</Typography.Text>
+            <Col span={6}>
+              <Typography.Text type="danger" style={{ display: 'block' }}>Sisa Tagih</Typography.Text>
               <Typography.Text strong type="danger" style={{ fontSize: 16 }}>{formatCurrency(remaining)}</Typography.Text>
+            </Col>
+          </Row>
+          <Row gutter={16} style={{ marginTop: 12 }}>
+            <Col span={6}>
+              <Typography.Text style={{ color: '#0958d9', display: 'block' }}>Kredit Diterapkan</Typography.Text>
+              <Typography.Text strong style={{ color: '#003eb3', fontSize: 16 }}>{formatCurrency(header.credit_applied_amount || 0)}</Typography.Text>
             </Col>
           </Row>
         </Card>
