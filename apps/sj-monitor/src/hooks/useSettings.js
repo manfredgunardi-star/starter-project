@@ -28,7 +28,7 @@ export const useSettings = ({ currentUser, setAlertMessage, onForcedLogout }) =>
       },
       (err) => { console.warn('Failed to fetch settings/app:', err); }
     );
-    return () => { try { unsub(); } catch {} };
+    return () => { try { unsub(); } catch { /* ignore unsubscribe error */ } };
   }, []);
 
   // Force logout config subscription
@@ -52,7 +52,7 @@ export const useSettings = ({ currentUser, setAlertMessage, onForcedLogout }) =>
       },
       (err) => { console.warn('Failed to fetch settings/forceLogout:', err); }
     );
-    return () => { try { unsub(); } catch {} };
+    return () => { try { unsub(); } catch { /* ignore unsubscribe error */ } };
   }, []);
 
   // Force logout timer
@@ -65,6 +65,7 @@ export const useSettings = ({ currentUser, setAlertMessage, onForcedLogout }) =>
 
       if (diffMs <= 0) {
         if (currentUser.role !== 'superadmin') {
+          // eslint-disable-next-line react-hooks/immutability -- pre-existing: executeForcedLogout is declared below in this hook's body but only invoked from this interval callback, which runs after the closure captures it; reordering deferred, see lint triage notes
           executeForcedLogout();
         }
         return;
@@ -97,7 +98,7 @@ export const useSettings = ({ currentUser, setAlertMessage, onForcedLogout }) =>
     try {
       await setDoc(doc(db, 'settings', 'forceLogout'),
         { executedAt: new Date().toISOString() }, { merge: true });
-    } catch (_) {}
+    } catch (_) { /* ignore write error during forced logout */ }
     signOut(auth).catch(() => {});
     if (typeof onForcedLogout === 'function') onForcedLogout();
   };

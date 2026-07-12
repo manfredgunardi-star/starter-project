@@ -197,9 +197,9 @@ export default function RitasiBulkUpload({ ruteList = [], onSuccess }) {
             <strong>Cara penggunaan:</strong>
           </p>
           <ol className="text-sm text-gray-700 space-y-1 ml-4 list-decimal">
-            <li>Klik "Download Template" untuk mendapatkan file template</li>
-            <li>Buka file dan isi kolom "Ritasi Baru" untuk setiap rute</li>
-            <li>Simpan file dan klik "Upload File" untuk update semua rute</li>
+            <li>Klik &quot;Download Template&quot; untuk mendapatkan file template</li>
+            <li>Buka file dan isi kolom &quot;Ritasi Baru&quot; untuk setiap rute</li>
+            <li>Simpan file dan klik &quot;Upload File&quot; untuk update semua rute</li>
           </ol>
         </div>
 

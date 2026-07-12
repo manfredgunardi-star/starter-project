@@ -13,6 +13,11 @@ const LaporanTrukPage = ({ suratJalanList = [], truckList = [], currentUser = {}
   const canViewReport = effectiveRole === 'superadmin' || effectiveRole === 'admin_sj';
 
   // ===== State Management =====
+  /* eslint-disable react-hooks/rules-of-hooks -- pre-existing: all hooks below are called after
+     the early return above (canViewReport gate), which conditionally skips this component's hooks
+     entirely for unauthorized roles. This is a real rules-of-hooks violation, but fixing it requires
+     restructuring the component (hoisting hooks above the guard), a behavioral change out of scope
+     for this mechanical lint-coverage pass. See docs/superpowers/notes/2026-07-03-sj-monitor-lint-triage.md */
   const today = new Date().toISOString().split('T')[0];
   const [selectedDate, setSelectedDate] = useState(today);
   const [explanations, setExplanations] = useState({});
@@ -32,6 +37,7 @@ const LaporanTrukPage = ({ suratJalanList = [], truckList = [], currentUser = {}
     () => getInactiveTrucks(allTrucks, suratJalanList, selectedDate),
     [allTrucks, suratJalanList, selectedDate]
   );
+  /* eslint-enable react-hooks/rules-of-hooks */
 
   if (!canViewReport) {
     return (

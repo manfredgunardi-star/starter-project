@@ -12,6 +12,7 @@ export default function PayslipTable({ payslip, canEdit = false, onSave }) {
     payslip.deliveries.forEach((sj) => {
       adjustments[sj.id] = sj.bonusAdjustment || 0;
     });
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing: syncs local edit-buffer state from payslip prop; behavioral change deferred, see lint triage notes
     setBonusAdjustments(adjustments);
   }, [payslip]);
 

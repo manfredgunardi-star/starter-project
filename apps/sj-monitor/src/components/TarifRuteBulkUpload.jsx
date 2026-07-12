@@ -182,10 +182,10 @@ export default function TarifRuteBulkUpload({ ruteList = [], currentUser, onSucc
           <div className="bg-blue-50 border border-blue-200 p-4 rounded">
             <p className="text-sm text-gray-700 mb-2"><strong>Cara penggunaan:</strong></p>
             <ol className="text-sm text-gray-700 space-y-1 ml-4 list-decimal">
-              <li>Klik "Download Template" — file berisi semua rute dengan tarif saat ini</li>
+              <li>Klik &quot;Download Template&quot; — file berisi semua rute dengan tarif saat ini</li>
               <li>Isi cell <strong>B1 (Tanggal Efektif)</strong> dengan format yyyy-mm-dd</li>
               <li>Isi kolom <strong>Tarif Baru</strong> hanya untuk rute yang berubah (biarkan kosong jika tidak berubah)</li>
-              <li>Simpan lalu klik "Upload File" — Anda akan melihat preview dampak sebelum apply</li>
+              <li>Simpan lalu klik &quot;Upload File&quot; — Anda akan melihat preview dampak sebelum apply</li>
             </ol>
             <p className="text-xs text-amber-700 mt-2">
               ⚠️ SJ dengan tanggal ≥ Tanggal Efektif akan ikut di-update, termasuk transaksi Kas Keluar terkait.

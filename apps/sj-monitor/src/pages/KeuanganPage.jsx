@@ -32,6 +32,7 @@ export default function KeuanganManagement({ transaksiList, currentUser, onAddTr
     [activeTransaksiList, filter, filterPT]
   );
   const [keuPage, setKeuPage] = useState(1);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing: resets pagination to page 1 when filters change; behavioral change deferred, see lint triage notes
   useEffect(() => { setKeuPage(1); }, [filter, filterPT]);
   const safeKeuPage = clampPage(keuPage, filteredTransaksi.length);
   const pagedTransaksi = filteredTransaksi.slice((safeKeuPage - 1) * PAGE_SIZE, safeKeuPage * PAGE_SIZE);

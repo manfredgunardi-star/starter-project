@@ -6,10 +6,9 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      // 2026-05-15: SW di-disable sementara untuk investigasi Firestore write quota.
-      // selfDestroying=true men-generate SW yang unregister dirinya & clear cache.
-      // Set false kembali setelah root cause ditemukan & diperbaiki.
-      selfDestroying: true,
+      // 2026-07: SW diaktifkan kembali — root cause write quota (auto-reconcile)
+      // sudah permanen disabled (ENABLE_AUTO_UANG_JALAN_RECONCILE = false).
+      selfDestroying: false,
       registerType: 'autoUpdate',
       includeAssets: [
         'favicon.ico',
@@ -49,7 +48,11 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {
-            // Firebase Firestore REST API - NetworkFirst: coba jaringan, fallback cache
+            // Firebase Firestore REST API - NetworkFirst: coba jaringan, fallback cache.
+            // RISIKO STALENESS: di jaringan buruk, timeout 10 dtk membuat respons
+            // cache lama tersaji (status SJ/invoice bisa tampak basi). Dapat diterima
+            // karena listener onSnapshot auto-retry dan refresh me-refetch live.
+            // Jangan ubah handler/timeout tanpa mempertimbangkan alur logistik ini.
             urlPattern: /^https:\/\/firestore\.googleapis\.com\/.*/i,
             handler: 'NetworkFirst',
             options: {

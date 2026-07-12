@@ -1,5 +1,3 @@
-import * as XLSX from 'xlsx';
-
 function escapeCell(value) {
   const s = String(value ?? '');
   return /[",;\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
@@ -9,7 +7,8 @@ function toRows(rows, columns) {
   return rows.map((row) => columns.map((c) => row[c.key] ?? ''));
 }
 
-export function exportRejectionReportToExcel(rows, columns, filenamePrefix) {
+export async function exportRejectionReportToExcel(rows, columns, filenamePrefix) {
+  const XLSX = await import('xlsx');
   const headers = columns.map((c) => c.label);
   const ws = XLSX.utils.aoa_to_sheet([headers, ...toRows(rows, columns)]);
   ws['!cols'] = columns.map(() => ({ wch: 22 }));

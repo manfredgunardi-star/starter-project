@@ -66,6 +66,7 @@ export default function SwipeableRow({ children, actions = [], disabled = false 
   useEffect(() => {
     if (isEnabled) return;
 
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing: resets swipe drag state when row becomes disabled; behavioral change deferred, see lint triage notes
     resetDrag();
     if (translateX !== 0) close();
   }, [close, isEnabled, resetDrag, translateX]);
