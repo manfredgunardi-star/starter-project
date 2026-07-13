@@ -1,6 +1,6 @@
-# CLAUDE.md — sj-monitor
+# AGENTS.md — sj-monitor
 
-Instruksi Claude khusus `C:\Project\apps\sj-monitor`. Root `CLAUDE.md` tetap berlaku.
+Instruksi Codex khusus `C:\Project\apps\sj-monitor`. Root `AGENTS.md` tetap berlaku.
 
 ## Domain
 

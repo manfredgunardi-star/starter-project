@@ -30,7 +30,7 @@ const scopeFiles = {
     ['apps/bul-monitor/AGENTS.md', ['bul_*', 'npm run build', 'production deployment dilarang'], []],
     ['apps/bul-monitor/CLAUDE.md', ['bul_*', 'npm run build', 'production deployment dilarang'], ['firebase deploy --only hosting,firestore:rules']],
     ['apps/bul-accounting/AGENTS.md', ['debit', 'kredit', 'npm test'], []],
-    ['apps/bul-accounting/CLAUDE.md', ['debit', 'kredit', 'npm test'], ['c:\\project\\apps\\bul-acc']],
+    ['apps/bul-accounting/CLAUDE.md', ['debit', 'kredit', 'npm test'], ['c:\\project\\apps\\bul-acc`']],
     ['apps/erp-acc/erp-app/AGENTS.md', ['supabase', 'rls', 'npm run lint'], []],
     ['apps/erp-acc/erp-app/CLAUDE.md', ['supabase', 'rls', 'npm run lint'], ['firebase deploy']],
   ],
