@@ -1,13 +1,5 @@
 {
   "permissions": {
-    "allow": [
-      "Bash(npm audit *)",
-      "Bash(curl -s http://localhost:5173)",
-      "mcp__plugin_playwright_playwright__browser_navigate",
-      "mcp__plugin_playwright_playwright__browser_snapshot",
-      "mcp__plugin_playwright_playwright__browser_close",
-      "Bash(pkill -f \"node.*vite\")",
-      "Bash(pkill -f \"npm.*dev\")"
-    ]
+    "allow": []
   }
 }
