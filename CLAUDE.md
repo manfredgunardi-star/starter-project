@@ -37,6 +37,8 @@ Detail: [Manual Collaboration](docs/agent-policy/manual-collaboration.md).
 
 Production deployment dilarang bagi workflow agen standar. Staging deployment hanya boleh dijalankan ketika task contract menetapkan `staging_deploy: true` atau user memintanya secara eksplisit.
 
+Profil permission default memblokir CLI deployment. Otorisasi staging harus disertai pembukaan izin yang sempit dan sementara untuk command serta target yang disetujui; task contract saja tidak melewati deny teknis tersebut.
+
 Minta persetujuan user sebelum mengubah:
 
 - financial logic, formula uang, debit/kredit, COA, pajak, invoice pricing, uang muka, rekonsiliasi, posting, atau stock valuation;

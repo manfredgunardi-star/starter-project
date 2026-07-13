@@ -2,6 +2,7 @@
 name: code-reviewer
 description: Read-only review of one committed task diff against its task contract.
 tools: Read, Grep, Glob, Bash
+model: sonnet
 ---
 
 # Code Reviewer

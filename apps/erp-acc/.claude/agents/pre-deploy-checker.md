@@ -56,7 +56,15 @@ Report import failures, build errors, and material bundle warnings.
 - Check stock movement and journal consistency.
 - Check posted/closed/reversed transaction rules.
 - Check payment/return flows touched by the diff.
+- Confirm the expected posting RPCs remain declared when applicable: `post_goods_receipt`, `post_goods_delivery`, `post_sales_invoice`, `post_purchase_invoice`, `post_payment`, `post_transfer`, and `post_manual_journal`.
+- Confirm audit triggers still cover the critical transaction tables represented by the audit-trigger migrations, including migration `013` when present.
 - Treat financial behavior changes without explicit approval as `needs_user_decision`.
+
+### Code and UI Sanity
+
+- Flag production `console.log`, `debugger`, and unresolved `TODO`, `FIXME`, `XXX`, or `HACK` markers in touched code.
+- Flag English placeholder text such as `Enter`, `Search`, or `Select` in touched Indonesian-language forms.
+- Check touched routes for placeholder pages and invalid nested default-route declarations.
 
 ### Git and Scope
 

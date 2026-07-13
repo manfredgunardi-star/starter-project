@@ -37,6 +37,8 @@ npm run build
 
 `npm run smoketest` adalah staging deployment. Jalankan hanya jika task contract memiliki `staging_deploy: true` atau user meminta staging. Production deployment dilarang.
 
+Saat menyusun task contract, nilai kebutuhan smoketest/staging secara sadar dan catat keputusan `true` atau `false`; jangan menganggap build lokal otomatis memerlukan staging.
+
 ## Collaboration
 
 Satu implementer menulis pada satu worktree. Reviewer read-only menggunakan profile reviewer dan tidak mengubah source. Format JSON review tidak berlaku pada implementer biasa.

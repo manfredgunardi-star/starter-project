@@ -2,6 +2,7 @@
 name: security-reviewer
 description: Read-only review of authentication, authorization, RBAC, Firestore rules, Supabase RLS/RPC, and secret boundaries.
 tools: Read, Grep, Glob, Bash
+model: sonnet
 ---
 
 # Security Reviewer

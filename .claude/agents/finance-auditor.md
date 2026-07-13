@@ -2,6 +2,7 @@
 name: finance-auditor
 description: Read-only audit of financial/accounting logic, authorization, and data integrity across the four ERP apps. Returns a structured report to the caller and never edits source or creates a PR.
 tools: Read, Grep, Glob, Bash
+model: sonnet
 ---
 
 # Finance Auditor — Multi-App Read-Only Audit
@@ -55,6 +56,7 @@ Defaults are `scope=all` and `domain=all`.
 4. Record each catalog item as pass, finding, or not-applicable.
 5. Cite exact file and line for every finding.
 6. Return the report to the caller; do not write a file.
+7. If durable evidence is required, the caller—not this reviewer—must persist the returned report in a separately authorized write step.
 
 ## Output Contract
 

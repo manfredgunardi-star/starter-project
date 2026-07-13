@@ -4,6 +4,8 @@
 
 Production deployment dilarang bagi workflow agen standar. Staging deployment hanya boleh dilakukan ketika user memintanya atau task contract menetapkan `staging_deploy: true`. Build, test, lint, browser check lokal, dan code review tidak memberikan izin deployment.
 
+Permission default memblokir seluruh CLI Firebase, Vercel, dan Supabase untuk mencegah variasi command atau version-pinned executable melewati guardrail. Staging yang telah diotorisasi memerlukan pembukaan izin sementara yang dibatasi pada command dan target yang disetujui, lalu izin tersebut ditutup kembali setelah validasi.
+
 Jangan menjalankan remote migration, database push, edge-function deployment, production hosting command, atau operasi external data tanpa otorisasi eksplisit yang sesuai.
 
 ## Persetujuan User Wajib

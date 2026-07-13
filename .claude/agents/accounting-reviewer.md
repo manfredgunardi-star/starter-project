@@ -2,6 +2,7 @@
 name: accounting-reviewer
 description: Read-only review of financial, accounting, stock, posting, tax, invoice, payment, and reconciliation behavior.
 tools: Read, Grep, Glob, Bash
+model: sonnet
 ---
 
 # Accounting Reviewer

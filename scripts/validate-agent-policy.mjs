@@ -51,14 +51,14 @@ const scopeFiles = {
 };
 
 const requiredRootDeny = [
-  'Bash(firebase deploy:*)',
-  'Bash(npx firebase deploy:*)',
-  'Bash(vercel deploy --prod:*)',
-  'Bash(npx vercel deploy --prod:*)',
-  'Bash(supabase db push:*)',
-  'Bash(npx supabase db push:*)',
-  'Bash(git push --force:*)',
-  'Bash(git reset --hard:*)',
+  'Bash(firebase:*)',
+  'Bash(npx firebase:*)',
+  'Bash(vercel:*)',
+  'Bash(npx vercel:*)',
+  'Bash(supabase:*)',
+  'Bash(npx supabase:*)',
+  'Bash(git push:*)',
+  'Bash(git reset:*)',
   'Bash(rm -rf:*)',
 ];
 

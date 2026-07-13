@@ -29,4 +29,4 @@ Tambahkan manual scenario untuk flow yang berubah. Production deployment dilaran
 
 ## Collaboration
 
-Satu implementer per worktree; reviewer read-only. Format JSON review hanya milik reviewer profile.
+Satu implementer per worktree; reviewer read-only. Format JSON review hanya digunakan oleh agen yang berperan sebagai reviewer, bukan implementer.
