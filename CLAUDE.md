@@ -1,203 +1,100 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Panduan root untuk Claude Code di repository `C:\Project`.
 
 ## Communication
 
-- Respond in **Bahasa Indonesia** for discussion and explanations.
-- Write **git commit messages in English** using conventional commit style (e.g., `fix:`, `feat:`, `refactor:`).
+- Gunakan Bahasa Indonesia untuk diskusi, penjelasan, status, dan handoff.
+- Gunakan English conventional commit style, misalnya `feat:`, `fix:`, `docs:`, `test:`, atau `chore:`.
+- Laporkan bukti konkret: file yang berubah, perintah validasi, hasil, branch, dan worktree.
 
-## Project Overview
+## Repository Map — Empat Aplikasi
 
-Multi-company ERP for sand/stone logistics businesses. Four independent React SPAs share one git repo, each with its own Firebase project:
+Repository ini memuat empat aplikasi React independen:
 
-```
-C:\Project/
-├── apps/
-│   ├── sj-monitor/       # Surat Jalan Monitor — delivery note tracking, invoicing, payments
-│   ├── bul-monitor/      # BUL Monitor — delivery note tracking (variant of sj-monitor)
-│   ├── bul-accounting/   # Pembukuan Truck — full accounting (COA, jurnal, kas/bank, penjualan)
-│   └── erp-acc/          # ERP ACC — full ERP system (Supabase + Ant Design)
-├── shared/
-│   └── bul-bridge/       # Data exchange contract docs: bul-monitor ↔ bul-accounting
-└── scripts/              # Dev tooling (bug-hunter.sh autonomous pipeline)
-```
-
-Each sub-project is a **separate company** with its own Firestore database and deployment. `bul-monitor` and `bul-accounting` have a data exchange relationship (see `shared/bul-bridge/`).
-
-## Tech Stack
-
-- **Frontend**: React 18, Vite, Tailwind CSS 3, Lucide React icons
-- **Backend**: Firebase Auth + Cloud Firestore (real-time sync)
-- **Hosting**: Firebase Hosting (SPA rewrite to index.html)
-- **Exports**: jsPDF + jspdf-autotable (PDF), xlsx (Excel)
-- **Charts**: Recharts (BUL-accounting only)
-- **Testing**: Vitest 4 + Testing Library (sj-monitor only, pilot)
-- **Linting**: ESLint 9 flat config (sj-monitor: `src/utils/`, `src/services/`)
-
-## Commands
-
-Each sub-project has its own `package.json`. Always `cd` into the correct project first:
-
-```bash
-cd apps/sj-monitor && npm run dev      # Local dev server
-cd apps/sj-monitor && npm run build    # Production build (validate before claiming done)
-cd apps/sj-monitor && npm test         # Run Vitest (exit 0 = ok)
-cd apps/sj-monitor && npm run lint     # ESLint on src/utils/ + src/services/
-cd apps/sj-monitor && npm run smoketest  # Build + deploy to STAGING (wajib sebelum production deploy)
-cd apps/bul-accounting && npm run dev
-cd apps/bul-accounting && npm run build
-cd apps/bul-monitor && npm run dev
-cd apps/bul-monitor && npm run build
-cd apps/erp-acc/erp-app && npm run dev
-cd apps/erp-acc/erp-app && npm run build
-```
-
-**Deployment**: Claude may deploy to staging only. Never deploy to production.
-- **sj-monitor staging**: `cd apps/sj-monitor && npm run smoketest`
-- **sj-monitor production**: User deploys manually — Claude does NOT run `firebase deploy` on the default project.
-
-## Module Boundaries
-
-### sj-monitor (`apps/sj-monitor/`)
-| Module | Key files | Purpose |
+| Aplikasi | Root | Backend/hosting |
 |---|---|---|
-| Surat Jalan (SJ) | App.jsx | Create, edit, track delivery notes |
-| Invoice | App.jsx | Generate invoices with Harga Per Rute pricing |
-| Uang Muka | App.jsx | Down payment tracking per route/customer |
-| Kas / Laporan Kas | LaporanKasPage.jsx | Cash flow reporting |
-| Laporan Truk | LaporanTrukPage.jsx | Truck activity reports |
-| Payslip | PayslipExport/Report/Table.jsx | Driver payslip generation |
-| Ritasi | RitasiBulkUpload.jsx | Bulk trip data import |
-| Master Data | firestoreService.js, App.jsx | Rute, Material, Armada, Supir |
+| Surat Jalan Monitor | `apps/sj-monitor` | Firebase Auth, Firestore, Firebase Hosting |
+| BUL Monitor | `apps/bul-monitor` | Firebase Auth, Firestore, Firebase Hosting |
+| BUL Accounting | `apps/bul-accounting` | Firebase Auth, Firestore, Firebase Hosting |
+| ERP-ACC | `apps/erp-acc/erp-app` | Supabase Auth/Postgres/RLS/RPC, Vercel |
 
-### bul-accounting (`apps/bul-accounting/`)
-| Module | Key files | Purpose |
-|---|---|---|
-| COA | COAPage.jsx | Chart of Accounts management |
-| Jurnal | JurnalPage.jsx, JournalEntryForm.jsx | Double-entry journal entries |
-| Kas/Bank | KasBankPage.jsx | Cash and bank transactions |
-| Penjualan | PenjualanPage.jsx | Sales records |
-| Biaya | BiayaPage.jsx | Expense tracking |
-| Aset | AsetPage.jsx | Asset management |
-| Laporan | LaporanPage.jsx | Financial reports |
-| Pelanggan/Supplier | PelangganPage.jsx, SupplierPage.jsx | Customer/vendor master data |
-| Armada | ArmadaPage.jsx | Fleet management |
+`bul-monitor` dan `bul-accounting` bertukar data melalui kontrak di `shared/bul-bridge`.
+Detail: [Repository Map](docs/agent-policy/repository-map.md).
 
-### bul-monitor (`apps/bul-monitor/`)
-Variant of sj-monitor for a different company. Main logic in App.jsx (7,249 lines). Mengirim data ke bul-accounting via Firestore (lihat `shared/bul-bridge/`).
+## Manual Codex–Claude Operating Model
 
-## Data Safety Rules
+- Satu task memiliki satu implementer, satu branch, dan satu worktree.
+- Implementer adalah satu-satunya agen yang boleh menulis pada task tersebut.
+- Reviewer read-only: boleh membaca diff dan menjalankan validasi lokal yang aman, tetapi tidak boleh edit, commit, push, deploy, atau migration.
+- Codex dan Claude tidak boleh menulis bersamaan pada file atau worktree yang sama.
+- Maksimal dua siklus implementasi-review sebelum temuan blocking dieskalasikan kepada user.
+- Task contract harus menetapkan scope, protected paths, risk flags, validation, dan deployment flags sebelum implementasi.
 
-1. **Always soft delete** — never hard-delete any business data. Use `softDeleteItemInFirestore()` which sets `isActive: false`, `deletedAt`, `deletedBy`.
-2. **Audit trail** — use `addHistoryLog()` for all significant state changes (mark gagal, restore, status changes).
-3. **Sanitize before write** — use `sanitizeForFirestore()` to clean objects before Firestore writes (strips undefined, converts Date to ISO).
-4. **Auth context** — always call `ensureAuthed()` before Firestore writes.
-5. **Upsert pattern** — use `upsertItemToFirestore()` for master data CRUD; requires `data.id`.
+Detail: [Manual Collaboration](docs/agent-policy/manual-collaboration.md).
 
-## Finance / Accounting Guardrails
+## Global Safety and Approval Gates
 
-**ASK before changing any of the following:**
-- Double-entry bookkeeping logic (journal debit/credit balancing)
-- Chart of Accounts (COA) structure or account mappings
-- Tax calculations (PPN, PPh) or tax-related formulas
-- Invoice pricing logic (Harga Per Rute)
-- Uang Muka (down payment) calculation or allocation
-- Cash/bank reconciliation logic
-- Any formula that calculates money
+Production deployment dilarang bagi workflow agen standar. Staging deployment hanya boleh dijalankan ketika task contract menetapkan `staging_deploy: true` atau user memintanya secara eksplisit.
 
-## Security Guardrails
+Minta persetujuan user sebelum mengubah:
 
-**ASK before modifying:**
-- `firestore.rules` — RBAC rules for all collections
-- Firebase Auth configuration or login flow (`useAuth.js`, `LoginPage.jsx`)
-- Role definitions: superadmin, owner, admin_sj, admin_invoice, admin_keuangan, reader
-- `firebase-config.js` / `firebase.js` — Firebase initialization
+- financial logic, formula uang, debit/kredit, COA, pajak, invoice pricing, uang muka, rekonsiliasi, posting, atau stock valuation;
+- schema Firestore/Postgres, migration, RPC, RLS, Firestore security rules, role, auth, atau Firebase/Supabase initialization;
+- approval flow, audit trail, history log, soft-delete behavior, seed/master data, atau bulk import;
+- deployment settings, production environment, atau external data.
 
-## Change Guardrails
+Untuk aplikasi Firebase, gunakan soft delete, audit trail, sanitasi data, dan auth context sesuai pola aplikasi. Jangan hard-delete business data.
 
-**Always ask before:**
-- Changing Firestore collection schema or adding/removing fields
-- Modifying approval flow logic (planned but not yet implemented)
-- Altering audit trail / history log behavior
-- Changing posted transaction behavior
-- Deleting or overwriting seed data or master data
-- Introducing breaking changes to shared utilities (`firestoreService.js`, `currency.js`, `sjHelpers.js`)
-- Modifying bulk import logic (CSV/Excel parsing in `ritasiBulkService.js`)
+Detail: [Shared Safety](docs/agent-policy/shared-safety.md).
+
+## Worktree Policy
+
+- Semua implementasi dimulai dari isolated worktree di `C:\Project\.worktrees\<app>\<task>`.
+- Branch implementer memakai `codex/<app>/<task>` atau `claude/<app>/<task>`.
+- Detached HEAD tidak digunakan untuk task aktif.
+- Dirty, unmerged, atau unique detached worktree masuk status QUARANTINED dan tidak boleh dibersihkan tanpa keputusan user.
+- Worktree hanya dihapus melalui Git setelah clean, merged/closed, dan disetujui sesuai lifecycle.
+- Jangan membersihkan checkout utama atau perubahan user sebagai bagian implisit dari task lain.
+
+Detail: [Worktree Lifecycle](docs/agent-policy/worktree-lifecycle.md).
+
+## Validation Matrix
+
+- Jalankan validasi dari root aplikasi yang benar.
+- `npm run build` wajib untuk setiap aplikasi yang terkena perubahan.
+- Jalankan test, lint, Playwright, atau manual scenario sesuai aplikasi dan scope.
+- Build/test lokal tidak memberikan izin deployment.
+- Jangan mengklaim selesai tanpa bukti fresh dari validasi yang disyaratkan.
+
+Detail: [Validation Matrix](docs/agent-policy/validation-matrix.md).
+
+## Autonomous Bug-Hunter Boundary
+
+Pipeline pada `.github/workflows/bug-hunter.yml`, `scripts/bug-hunter.sh`, dan `.agents/skills/bug-hunter/SKILL.md` adalah workflow terpisah. Pipeline itu tidak memperluas izin manual workflow, tidak boleh deploy, dan tetap memerlukan human review sebelum merge.
 
 ## Coding Conventions
 
-- **Components**: React functional components with hooks, JSX files (not TSX)
-- **State**: React hooks (`useState`, `useEffect`), custom hooks in `hooks/`
-- **Services**: Firestore operations in `firestoreService.js` or `services/`
-- **Utils**: Pure helpers in `utils/` (currency formatting, Excel generation, etc.)
-- **Styling**: Tailwind CSS utility classes inline, no CSS modules
-- **Indonesian terms in code**: Business domain uses Indonesian names (suratJalan, nomorSJ, supir, rute, armada, uangMuka, biaya, pelanggan, penjualan, jurnal)
-- **ID pattern**: String IDs for Firestore documents
-- **Date format**: ISO strings stored in Firestore
+- React functional components dan hooks; ikuti pola aplikasi yang sudah ada.
+- Domain Indonesia tetap memakai nama seperti `suratJalan`, `nomorSJ`, `supir`, `rute`, `armada`, `uangMuka`, `pelanggan`, `jurnal`, `debit`, dan `kredit`.
+- Firestore document ID berupa string dan tanggal disimpan dalam bentuk ISO sesuai pola aplikasi.
+- Jangan melakukan refactor di luar scope, terutama pada file monolitik.
+- Jangan memperkenalkan breaking change pada shared utilities tanpa persetujuan user.
 
-## Validation
+## Instruction Precedence
 
-- Run `npm run build` in the affected project — **must pass with no errors** before claiming work is done.
-- For sj-monitor `src/utils/` or `src/services/` changes: run `npm test && npm run lint` first.
-- Test files live at `sj-monitor/src/utils/__tests__/` and `sj-monitor/src/services/__tests__/`.
+1. Instruksi langsung user pada task aktif.
+2. `CLAUDE.md` terdekat pada root aplikasi.
+3. Root `CLAUDE.md` ini.
+4. Dokumen referensi di `docs/agent-policy`.
+5. Task contract yang telah disetujui.
 
-### sj-monitor — Wajib Smoke Test ke Staging
-
-**SETIAP KALI** pekerjaan di sj-monitor selesai, jalankan smoke test ke staging **tanpa menunggu instruksi dari user**:
-
-```bash
-cd apps/sj-monitor
-npm run smoketest
-```
-
-Ini akan:
-1. Build dengan konfigurasi staging (`.env.staging`)
-2. Deploy ke Firebase Hosting staging project (`sj-monitor-staging`)
-3. Print URL: `https://sj-monitor-staging.web.app`
-
-**Staging environment:**
-- Project ID: `sj-monitor-staging`
-- URL: `https://sj-monitor-staging.web.app`
-- Firestore: database staging terpisah (tidak menyentuh data production)
-
-**JANGAN** jalankan `firebase deploy` tanpa `--project staging` — itu akan deploy ke production.
-**JANGAN** buka `https://surat-jalan-monitor.web.app` untuk smoke test — itu URL production.
-
-## Autonomous Bug-Fix Pipeline
-
-A `claude --print` headless pipeline auto-fixes issues labeled `bug` + `ai-fixable`.
-
-### How It Works
-1. GitHub Actions runs nightly (02:00 WIB) or on manual dispatch via Actions > Bug-Hunter
-2. Runner creates a git worktree at `.worktrees/fix-<issue>` for isolation
-3. Claude follows the `bug-hunter` skill: RED → GREEN → VALIDATE → COMMIT → OUTPUT
-4. PR dibuka untuk human review — **no auto-merge, no auto-deploy**
-
-### Safety Boundaries untuk Pipeline
-- NEVER `firebase deploy` (semua variant)
-- NEVER push ke `main` langsung
-- NEVER ubah `firestore.rules`, firebase-config, atau auth files
-- NEVER ubah financial logic (fungsi dengan `hargaPerRute`, `uangMuka`, `pajak`, `ppn`, `pph`, `debit`, `kredit`)
-
-### Labeling Issues untuk Pipeline
-Label issue dengan `ai-fixable` HANYA jika:
-- Bug ada di `src/utils/` atau `src/services/` pure functions, ATAU
-- Bug ada di presentational UI component tanpa financial logic
-- Fix yang diharapkan adalah behavioral correction, bukan architectural change
-
-**Jangan pernah** label `ai-fixable` jika bug menyentuh financial calculations, Firestore rules, atau auth.
-
-## Known Architecture Notes
-
-- `App.jsx` files are monolithic (5,000–7,000+ lines). Refactoring is ongoing but changes should respect existing patterns.
-- Each sub-project has independent `node_modules` — install dependencies per project.
-- Firebase long-polling auto-detection is enabled for ISPs blocking QUIC/HTTP3.
-- `.env` files contain Firebase config and are gitignored. Reference `.env.example` for required variables.
+Task contract tidak boleh meniadakan larangan production deployment atau approval gates kecuali user memberikan otorisasi baru yang eksplisit dan terpisah.
 
 ## Handling Ambiguity
 
-If a task is unclear or could affect financial logic, data integrity, security, or audit behavior:
-1. **Stop and ask** — do not guess.
-2. State what you understand, what's ambiguous, and what the risk is.
-3. Propose options and let the user decide.
+Jika scope tidak jelas atau dapat menyentuh financial logic, data integrity, security, schema, audit behavior, atau external state:
+
+1. Berhenti sebelum mengubah file sensitif.
+2. Jelaskan pemahaman, bagian ambigu, dan risikonya.
+3. Berikan opsi terukur dan minta keputusan user.
