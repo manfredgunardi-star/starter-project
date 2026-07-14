@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Invoice Print Feature', () => {
 
-  test.beforeEach(async ({ page, context }) => {
+  test.beforeEach(async ({ context }) => {
     // Mock authentication by setting session token in localStorage
     // In production, you'd use actual test credentials
     await context.addInitScript(() => {
@@ -38,13 +38,10 @@ test.describe('Invoice Print Feature', () => {
     // Try to navigate to an invoice (will redirect to login if not authenticated)
     await page.goto('/sales/invoices', { waitUntil: 'networkidle' });
 
-    const loginIndicator = page.locator('text=Login');
     const invoicesTitle = page.locator('text=Invoice Penjualan');
 
     if (await invoicesTitle.isVisible({ timeout: 2000 }).catch(() => false)) {
       // We're on the invoices page - find a print button (if invoices exist)
-      const printButton = page.locator('button:has-text("Print")').first();
-      const pdfButton = page.locator('button:has-text("PDF")').first();
 
       // Buttons may not exist if no invoices, but component should be loaded
       console.log('✓ Invoice page loaded');
