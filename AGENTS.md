@@ -37,7 +37,7 @@ Detail: [Manual Collaboration](docs/agent-policy/manual-collaboration.md).
 
 Production deployment dilarang bagi workflow agen standar. Staging deployment hanya boleh dijalankan ketika task contract menetapkan `staging_deploy: true` atau user memintanya secara eksplisit.
 
-Profil permission default memblokir CLI deployment. Otorisasi staging harus disertai pembukaan izin yang sempit dan sementara untuk command serta target yang disetujui; task contract saja tidak melewati deny teknis tersebut.
+Profil permission Claude memblokir seluruh CLI Firebase, Vercel, dan Supabase, termasuk command local-development. Task contract tidak melewati deny teknis tersebut. Jika staging telah diotorisasi, Claude menyerahkan exact command dan target kepada Codex atau user untuk dieksekusi; persistent deny tidak dilonggarkan.
 
 Minta persetujuan user sebelum mengubah:
 
@@ -58,6 +58,7 @@ Detail: [Shared Safety](docs/agent-policy/shared-safety.md).
 - Dirty, unmerged, atau unique detached worktree masuk status QUARANTINED dan tidak boleh dibersihkan tanpa keputusan user.
 - Worktree hanya dihapus melalui Git setelah clean, merged/closed, dan disetujui sesuai lifecycle.
 - Jangan membersihkan checkout utama atau perubahan user sebagai bagian implisit dari task lain.
+- Gunakan `git restore --staged <path>` untuk unstaging aman; seluruh varian `git reset` diblokir pada profil Claude.
 
 Detail: [Worktree Lifecycle](docs/agent-policy/worktree-lifecycle.md).
 
