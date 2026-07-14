@@ -51,6 +51,19 @@ export async function getReturnableSalesInvoiceItems(invoiceId) {
   return data
 }
 
+// Products this customer has ever received via a posted Goods Delivery (or
+// invoice), with remaining returnable qty already netted against all posted
+// returns for that customer+product combo (any path — see
+// docs/superpowers/specs/2026-07-14-double-retur-prevention-design.md).
+// Used by the "tanpa invoice (retur stok saja)" form path.
+export async function getCustomerReturnableProducts(customerId) {
+  const { data, error } = await supabase.rpc('get_customer_returnable_products', {
+    p_customer_id: customerId,
+  })
+  if (error) throw error
+  return data
+}
+
 export async function saveSalesReturn(sr, items) {
   const { data, error } = await supabase.rpc('save_sales_return', {
     p_sr: {

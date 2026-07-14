@@ -49,6 +49,15 @@ export async function getReturnablePurchaseInvoiceItems(invoiceId) {
   return data
 }
 
+// Mirror of getCustomerReturnableProducts for the purchase side.
+export async function getSupplierReturnableProducts(supplierId) {
+  const { data, error } = await supabase.rpc('get_supplier_returnable_products', {
+    p_supplier_id: supplierId,
+  })
+  if (error) throw error
+  return data
+}
+
 export async function savePurchaseReturn(pr, items) {
   const { data, error } = await supabase.rpc('save_purchase_return', {
     p_pr: {
