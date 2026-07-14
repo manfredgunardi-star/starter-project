@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useCOA } from '../../hooks/useMasterData'
 import { getLedger } from '../../services/reportService'
 import { formatCurrency } from '../../utils/currency'

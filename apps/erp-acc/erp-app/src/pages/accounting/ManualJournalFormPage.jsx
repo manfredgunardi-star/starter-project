@@ -69,7 +69,7 @@ export default function ManualJournalFormPage() {
         .catch(err => toast.error(err.message))
         .finally(() => setLoading(false))
     }
-  }, [id, isNew])
+  }, [id, isNew, toast])
 
   const readOnly = (!isNew && header.status === 'posted') || !canPost
 
@@ -156,7 +156,6 @@ export default function ManualJournalFormPage() {
   }
 
   // Flatten COA for dropdown
-  const coaOptions = coa.filter(c => !c.children?.length).map(c => ({ value: c.id, label: `${c.code} — ${c.name}` }))
   // Actually show all COA with code
   const allCoaOptions = coa.map(c => ({ value: c.id, label: `${c.code} — ${c.name}` }))
 

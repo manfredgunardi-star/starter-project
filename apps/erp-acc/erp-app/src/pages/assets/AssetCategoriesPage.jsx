@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useToast } from '../../components/ui/ToastContext'
 import * as svc from '../../services/assetCategoryService'
@@ -20,14 +20,9 @@ export default function AssetCategoriesPage() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [editData, setEditData] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const [_isDeleting, setIsDeleting] = useState(false)
 
-  // Load categories on mount
-  useEffect(() => {
-    loadCategories()
-  }, [])
-
-  const loadCategories = async () => {
+  const loadCategories = useCallback(async () => {
     try {
       setLoading(true)
       const data = await svc.listCategories()
@@ -37,7 +32,12 @@ export default function AssetCategoriesPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [toast])
+
+  // Load categories on mount
+  useEffect(() => {
+    loadCategories()
+  }, [loadCategories])
 
   const handleAdd = () => {
     setEditData(null)
@@ -76,7 +76,7 @@ export default function AssetCategoriesPage() {
     setEditData(null)
   }
 
-  const handleModalSaved = (category) => {
+  const handleModalSaved = () => {
     loadCategories()
     handleModalClose()
   }

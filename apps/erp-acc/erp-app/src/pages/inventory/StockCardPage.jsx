@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useStockCard } from '../../hooks/useInventory'
 import { useProducts } from '../../hooks/useMasterData'
-import { formatDate, formatDateInput, today } from '../../utils/date'
+import { formatDate, today } from '../../utils/date'
 import { formatNumber } from '../../utils/currency'
 import Button from '../../components/ui/Button'
 import Select from '../../components/ui/Select'
@@ -23,20 +23,14 @@ export default function StockCardPage() {
 
   // Compute running balance
   const movementsWithBalance = useMemo(() => {
-    let runningBalance = 0
-    return movements.map(m => {
+    return movements.reduce((acc, m) => {
       const incoming = m.type === 'in' ? m.quantity_original : 0
       const outgoing = m.type === 'out' ? m.quantity_original : 0
-
-      runningBalance += m.type === 'in' ? m.quantity_original : -m.quantity_original
-
-      return {
-        ...m,
-        incoming,
-        outgoing,
-        balance: runningBalance,
-      }
-    })
+      const prevBalance = acc.length > 0 ? acc[acc.length - 1].balance : 0
+      const balance = prevBalance + (m.type === 'in' ? m.quantity_original : -m.quantity_original)
+      acc.push({ ...m, incoming, outgoing, balance })
+      return acc
+    }, [])
   }, [movements])
 
   const selectedProduct = products.find(p => p.id === selectedProductId)

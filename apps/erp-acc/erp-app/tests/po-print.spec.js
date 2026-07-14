@@ -19,7 +19,7 @@ test.describe('PO Print Feature', () => {
 
   test.use({ storageState: 'tests/.auth.json' })
 
-  test.beforeAll(async ({ browser }) => {
+  test.beforeAll(async () => {
     // --- Setup Supabase client ---
     const { error: authErr } = await supabase.auth.signInWithPassword({
       email: process.env.TEST_EMAIL,
