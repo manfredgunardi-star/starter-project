@@ -1,5 +1,4 @@
 // erp-app/tests/master-data-tier1.spec.js
-/* global process */
 import { test, expect } from '@playwright/test'
 import { createClient } from '@supabase/supabase-js'
 import dotenv from 'dotenv'

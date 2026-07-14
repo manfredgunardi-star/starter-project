@@ -37,6 +37,7 @@ const STATUS_COLOR = {
   paid: 'success',
 }
 
+// eslint-disable-next-line no-unused-vars -- Icon IS used in the JSX below; this project's ESLint config has no eslint-plugin-react, so it doesn't track JSX-element-name usage for renamed destructured props
 function MetricCard({ icon: Icon, label, value, color, sub }) {
   return (
     <Card style={{ background: color?.bg, borderColor: color?.border }}>

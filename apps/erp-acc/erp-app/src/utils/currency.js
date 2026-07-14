@@ -21,7 +21,7 @@ export function parseCurrency(str) {
   // Format Indonesia: titik = pemisah ribuan, koma = desimal
   // 1. Hapus semua selain digit, koma, dan minus
   // 2. Ubah semua koma ke titik, lalu normalisasi: hanya titik terakhir = desimal
-  const stripped = s.replace(/[^0-9,\-]/g, '')
+  const stripped = s.replace(/[^0-9,-]/g, '')
   const parts = stripped.split(',')
   const normalized = parts.length > 1
     ? parts.slice(0, -1).join('') + '.' + parts[parts.length - 1]

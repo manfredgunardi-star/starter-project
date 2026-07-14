@@ -171,7 +171,7 @@ test.describe('Closing Period', () => {
     // Coba insert jurnal dengan tanggal di periode tertutup menggunakan Supabase client
     // (mensimulasikan apa yang terjadi jika validasi tidak ada — test ini memverifikasi DB state)
     const dateInClosedPeriod = `${currentYear - 2}-01-15`
-    const { data: num } = await supabase.rpc('generate_number', { p_prefix: 'JRN' })
+    await supabase.rpc('generate_number', { p_prefix: 'JRN' })
 
     // Insert langsung ke DB untuk memverifikasi bahwa periode tertutup ada di closed_periods
     const { data: checkSettings } = await supabase

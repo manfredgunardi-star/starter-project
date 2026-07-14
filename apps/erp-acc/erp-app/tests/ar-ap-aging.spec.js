@@ -27,7 +27,7 @@ test.describe('AR/AP Aging Report', () => {
 
   test.use({ storageState: 'tests/.auth.json' })
 
-  test.beforeAll(async ({ browser }) => {
+  test.beforeAll(async () => {
     // Autentikasi Supabase
     const { error: authErr } = await supabase.auth.signInWithPassword({
       email: process.env.TEST_EMAIL,
@@ -39,10 +39,6 @@ test.describe('AR/AP Aging Report', () => {
     const { data: unit, error: uErr } = await supabase
       .from('units').select('id').limit(1).single()
     if (uErr) throw new Error(`Tidak ada unit: ${uErr.message}`)
-
-    // Buat COA dummy untuk AR/AP (ambil akun yang sudah ada)
-    const { data: arCoa } = await supabase
-      .from('coa').select('id').limit(1).single()
 
     // Buat customer test
     const { data: customer, error: cErr } = await supabase

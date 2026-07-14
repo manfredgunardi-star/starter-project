@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useToast } from '../ui/ToastContext'
 import * as svc from '../../services/assetCategoryService'
@@ -30,6 +30,23 @@ export default function AssetCategoryFormModal({
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [formErrors, setFormErrors] = useState({})
 
+  const loadCOAList = useCallback(async () => {
+    try {
+      setLoadingCOA(true)
+      const { data, error } = await supabase
+        .from('coa')
+        .select('id, code, name')
+        .eq('is_active', true)
+        .order('code')
+      if (error) throw error
+      setCoaList(data || [])
+    } catch (err) {
+      toast.error(`Gagal memuat daftar akun: ${err.message}`)
+    } finally {
+      setLoadingCOA(false)
+    }
+  }, [toast])
+
   // Load COA list when modal opens
   useEffect(() => {
     if (open) {
@@ -55,24 +72,7 @@ export default function AssetCategoryFormModal({
       }
       setFormErrors({})
     }
-  }, [open, editData])
-
-  const loadCOAList = async () => {
-    try {
-      setLoadingCOA(true)
-      const { data, error } = await supabase
-        .from('coa')
-        .select('id, code, name')
-        .eq('is_active', true)
-        .order('code')
-      if (error) throw error
-      setCoaList(data || [])
-    } catch (err) {
-      toast.error(`Gagal memuat daftar akun: ${err.message}`)
-    } finally {
-      setLoadingCOA(false)
-    }
-  }
+  }, [open, editData, loadCOAList])
 
   // Filter COA by code pattern
   const getFilteredAccounts = (pattern) => {

@@ -12,7 +12,6 @@ import {
   safeText,
   loadLogoDataUrl,
   drawCompanyHeader,
-  drawDocTitle,
   drawDivider,
   drawSectionLabel,
   drawMetaRow,

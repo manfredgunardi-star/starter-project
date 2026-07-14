@@ -62,7 +62,7 @@ export default function PaymentFormPage() {
         })
         .catch(err => toast.error(err.message))
     }
-  }, [])
+  }, [searchParams, toast])
 
   // Load outstanding invoices when customer/supplier changes
   useEffect(() => {
@@ -81,7 +81,7 @@ export default function PaymentFormPage() {
         .catch(err => toast.error(err.message))
         .finally(() => setLoadingInvoices(false))
     }
-  }, [form.customer_id, form.supplier_id, form.type])
+  }, [form.customer_id, form.supplier_id, form.type, toast])
 
   // Auto-fill amount from selected invoice remaining balance
   useEffect(() => {

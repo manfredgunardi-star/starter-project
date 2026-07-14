@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useToast } from '../ui/ToastContext'
 import { formatCurrency, parseCurrency } from '../../utils/currency'
@@ -37,12 +37,7 @@ export default function AssetPaymentFields({
   const [supplierList, setSupplierList] = useState([])
   const [loadingData, setLoadingData] = useState(false)
 
-  // Load COA and suppliers on mount
-  useEffect(() => {
-    loadLists()
-  }, [])
-
-  const loadLists = async () => {
+  const loadLists = useCallback(async () => {
     try {
       setLoadingData(true)
 
@@ -69,7 +64,12 @@ export default function AssetPaymentFields({
     } finally {
       setLoadingData(false)
     }
-  }
+  }, [toast])
+
+  // Load COA and suppliers on mount
+  useEffect(() => {
+    loadLists()
+  }, [loadLists])
 
   // Filter COA by code pattern
   const getFilteredAccounts = (pattern) => {
@@ -403,6 +403,7 @@ export default function AssetPaymentFields({
  * @param {number} totalAmount - Target total amount
  * @returns {boolean}
  */
+// eslint-disable-next-line react-refresh/only-export-components -- HMR-only rule; this helper is only used together with the default export
 export function isPaymentValid(payment, totalAmount) {
   const sum = (payment.cash_bank_amount || 0) +
               (payment.hutang_amount || 0) +

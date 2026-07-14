@@ -51,7 +51,7 @@ export default function PurchaseInvoiceFormPage() {
     getPaymentTerms()
       .then(setPaymentTerms)
       .catch(err => toast.error('Gagal load syarat pembayaran: ' + err.message))
-  }, [])
+  }, [toast])
 
   useEffect(() => {
     if (!isNew) {
@@ -87,7 +87,7 @@ export default function PurchaseInvoiceFormPage() {
         .catch(err => toast.error(err.message))
         .finally(() => setLoading(false))
     }
-  }, [id, isNew])
+  }, [id, isNew, toast])
 
   useEffect(() => {
     const fromGrId = searchParams.get('from_gr')
@@ -134,7 +134,7 @@ export default function PurchaseInvoiceFormPage() {
       .then(v => { if (!cancelled) setAvailableCredit(v) })
       .catch(err => toast.error('Gagal memuat saldo kredit: ' + err.message))
     return () => { cancelled = true }
-  }, [header.supplier_id])
+  }, [header.supplier_id, toast])
 
   const readOnly = !isNew && header.status !== 'draft'
 

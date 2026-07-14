@@ -70,4 +70,5 @@ export function AuthProvider({ children }) {
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components -- HMR-only rule; splitting this hook into a separate file means updating 40+ import sites for zero runtime benefit
 export const useAuth = () => useContext(AuthContext)
