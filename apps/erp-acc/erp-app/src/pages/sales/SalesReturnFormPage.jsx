@@ -7,6 +7,7 @@ import { useProducts, useCustomers } from '../../hooks/useMasterData'
 import {
   getSalesReturn, saveSalesReturn, postSalesReturn,
   getReturnableSalesInvoices, getReturnableSalesInvoiceItems,
+  getCustomerReturnableProducts,
 } from '../../services/salesReturnService'
 import { getGoodsDelivery, getSalesInvoice } from '../../services/salesService'
 import { getWarehouses, getDefaultWarehouse } from '../../services/warehouseService'
@@ -14,8 +15,8 @@ import { today } from '../../utils/date'
 import Button from '../../components/ui/Button'
 import Select from '../../components/ui/Select'
 import DocumentHeader from '../../components/shared/DocumentHeader'
-import LineItemsTable from '../../components/shared/LineItemsTable'
 import InvoiceReturnItemsPicker from '../../components/shared/InvoiceReturnItemsPicker'
+import PartyReturnableProductsPicker from '../../components/shared/PartyReturnableProductsPicker'
 import LoadingSpinner from '../../components/ui/LoadingSpinner'
 import { ArrowLeft, Save, Send } from 'lucide-react'
 
@@ -44,10 +45,11 @@ export default function SalesReturnFormPage() {
     status: 'draft',
     notes: '',
   })
-  const [items, setItems] = useState([LineItemsTable.emptyRow()])
+  const [items, setItems] = useState([])
   const [warehouses, setWarehouses] = useState([])
   const [invoiceOptionsList, setInvoiceOptionsList] = useState([])
   const [returnableItems, setReturnableItems] = useState([])
+  const [returnableProducts, setReturnableProducts] = useState([])
 
   useEffect(() => { toastRef.current = toast }, [toast])
 
@@ -127,6 +129,44 @@ export default function SalesReturnFormPage() {
       .catch(err => toastRef.current.error(err.message))
     return () => { cancelled = true }
   }, [header.invoice_id])
+
+  // Returnable products for the "tanpa invoice (retur stok saja)" path —
+  // only loaded/shown when no invoice is linked. Ledger comes from
+  // sales_return_remaining_qty (see
+  // docs/superpowers/specs/2026-07-14-double-retur-prevention-design.md).
+  useEffect(() => {
+    let cancelled = false
+    if (!header.customer_id || header.invoice_id) { setReturnableProducts([]); return }
+    getCustomerReturnableProducts(header.customer_id)
+      .then(list => { if (!cancelled) setReturnableProducts(list) })
+      .catch(err => toastRef.current.error(err.message))
+    return () => { cancelled = true }
+  }, [header.customer_id, header.invoice_id])
+
+  // Clamp any pre-filled items (e.g. from the GD-prefill effect below) to
+  // the current returnable-qty ledger once it loads — prevents the GD
+  // shortcut from pre-filling more than what's actually still returnable.
+  useEffect(() => {
+    if (header.invoice_id) return
+    if (returnableProducts.length === 0) return
+    setItems(prev => prev
+      .map(i => {
+        const match = returnableProducts.find(r => r.product_id === i.product_id)
+        if (!match) return null
+        const originalQty = Number(i.quantity) || 0
+        const qty = Math.min(originalQty, Number(match.remaining))
+        if (qty <= 0) return null
+        const ratio = originalQty > 0 ? qty / originalQty : 0
+        return {
+          ...i,
+          quantity: qty,
+          quantity_base: qty,
+          tax_amount: Number(i.tax_amount || 0) * ratio,
+          total: qty * Number(i.unit_price) + Number(i.tax_amount || 0) * ratio,
+        }
+      })
+      .filter(Boolean))
+  }, [returnableProducts]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleInvoiceChange(invoiceId) {
     setHeader(h => ({ ...h, invoice_id: invoiceId }))
@@ -305,13 +345,14 @@ export default function SalesReturnFormPage() {
             taxRate={pid => products.find(p => p.id === pid)?.tax_rate || 11}
           />
         ) : (
-          <LineItemsTable
+          <PartyReturnableProductsPicker
+            returnableProducts={returnableProducts}
             items={items}
             onItemsChange={setItems}
-            products={products}
-            priceField="sell_price"
             readOnly={readOnly}
             showTax
+            isTaxable={pid => products.find(p => p.id === pid)?.is_taxable}
+            taxRate={pid => products.find(p => p.id === pid)?.tax_rate || 11}
           />
         )}
       </Space>
