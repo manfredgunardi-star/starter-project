@@ -1,5 +1,4 @@
 import { supabase } from '../lib/supabase'
-import { today } from '../utils/date'
 
 export async function getDashboardMetrics() {
   const { data, error } = await supabase.rpc('get_dashboard_metrics')

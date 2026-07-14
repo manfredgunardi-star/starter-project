@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import * as assetService from '../../services/assetService'
 import * as assetCategoryService from '../../services/assetCategoryService'

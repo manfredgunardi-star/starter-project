@@ -171,7 +171,7 @@ export default function AssetFormPage() {
     }
   }
 
-  const financialFieldProps = (field) =>
+  const financialFieldProps = (_field) =>
     hasPosted
       ? {
           disabled: true,

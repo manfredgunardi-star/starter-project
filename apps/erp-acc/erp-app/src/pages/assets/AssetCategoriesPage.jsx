@@ -20,7 +20,7 @@ export default function AssetCategoriesPage() {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
   const [editData, setEditData] = useState(null)
   const [deletingId, setDeletingId] = useState(null)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const [_isDeleting, setIsDeleting] = useState(false)
 
   const loadCategories = useCallback(async () => {
     try {
@@ -76,7 +76,7 @@ export default function AssetCategoriesPage() {
     setEditData(null)
   }
 
-  const handleModalSaved = (category) => {
+  const handleModalSaved = () => {
     loadCategories()
     handleModalClose()
   }
