@@ -69,7 +69,7 @@ export default function ManualJournalFormPage() {
         .catch(err => toast.error(err.message))
         .finally(() => setLoading(false))
     }
-  }, [id, isNew])
+  }, [id, isNew, toast])
 
   const readOnly = (!isNew && header.status === 'posted') || !canPost
 

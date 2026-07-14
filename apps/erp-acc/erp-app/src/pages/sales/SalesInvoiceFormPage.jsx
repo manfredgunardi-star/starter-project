@@ -59,7 +59,7 @@ export default function SalesInvoiceFormPage() {
     getPaymentTerms()
       .then(setPaymentTerms)
       .catch(err => toast.error('Gagal load syarat pembayaran: ' + err.message))
-  }, [])
+  }, [toast])
 
   // ----- Recurring template state (only relevant for new invoices) -----
   const [makeRecurring, setMakeRecurring] = useState(false)
@@ -103,7 +103,7 @@ export default function SalesInvoiceFormPage() {
         .catch(err => toast.error(err.message))
         .finally(() => setLoading(false))
     }
-  }, [id, isNew])
+  }, [id, isNew, toast])
 
   useEffect(() => {
     const fromGdId = searchParams.get('from_gd')
@@ -151,7 +151,7 @@ export default function SalesInvoiceFormPage() {
       .then(v => { if (!cancelled) setAvailableCredit(v) })
       .catch(err => toast.error('Gagal memuat saldo kredit: ' + err.message))
     return () => { cancelled = true }
-  }, [header.customer_id])
+  }, [header.customer_id, toast])
 
   const readOnly = !isNew && header.status !== 'draft'
 

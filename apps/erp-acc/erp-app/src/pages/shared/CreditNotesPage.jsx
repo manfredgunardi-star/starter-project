@@ -36,7 +36,7 @@ export default function CreditNotesPage() {
     }
     load()
     return () => { cancelled = true }
-  }, [partyType])
+  }, [partyType, toast])
 
   const columns = [
     { title: partyType === 'customer' ? 'Customer' : 'Supplier', dataIndex: 'party_id', render: id => names[id] || id },
