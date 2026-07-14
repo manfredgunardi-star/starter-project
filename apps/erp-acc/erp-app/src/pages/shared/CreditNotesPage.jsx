@@ -17,9 +17,10 @@ export default function CreditNotesPage() {
 
   useEffect(() => {
     let cancelled = false
-    setLoading(true)
-    getCreditNotes({ partyType })
-      .then(async data => {
+    async function load() {
+      setLoading(true)
+      try {
+        const data = await getCreditNotes({ partyType })
         if (cancelled) return
         setRows(data)
         const ids = [...new Set(data.map(r => r.party_id))]
@@ -27,9 +28,13 @@ export default function CreditNotesPage() {
           ? await getCustomerNames(ids)
           : await getSupplierNames(ids)
         if (!cancelled) setNames(nameMap)
-      })
-      .catch(err => toast.error(err.message))
-      .finally(() => { if (!cancelled) setLoading(false) })
+      } catch (err) {
+        if (!cancelled) toast.error(err.message)
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    load()
     return () => { cancelled = true }
   }, [partyType])
 
