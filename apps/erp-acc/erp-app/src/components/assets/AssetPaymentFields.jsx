@@ -403,6 +403,7 @@ export default function AssetPaymentFields({
  * @param {number} totalAmount - Target total amount
  * @returns {boolean}
  */
+// eslint-disable-next-line react-refresh/only-export-components -- HMR-only rule; this helper is only used together with the default export
 export function isPaymentValid(payment, totalAmount) {
   const sum = (payment.cash_bank_amount || 0) +
               (payment.hutang_amount || 0) +
