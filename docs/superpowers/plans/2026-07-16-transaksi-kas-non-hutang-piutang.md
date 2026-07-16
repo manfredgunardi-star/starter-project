@@ -81,8 +81,21 @@ All file paths in the tasks below are relative to `C:\Project\.worktrees\erp-acc
 -- _ensure_period_open() guards that 016_period_lock_enforcement.sql
 -- had added. Since then, ANY authenticated user (not just
 -- staff/admin) can post an existing draft manual journal, even for
--- a closed accounting period. This restores both guards; the
--- account_id balance-sync logic from 032 is preserved unchanged.
+-- a closed accounting period. This restores both guards.
+--
+-- It also closes three defects the balance-sync side effect (added
+-- in 032) introduced that neither the 016 nor the 032 version
+-- guarded against, because before 032 there was no non-idempotent
+-- side effect to protect: (1) no check that the journal isn't
+-- already posted, so a repeat call double-applies the balance delta;
+-- (2) no upfront check that source = 'manual', so a non-manual
+-- journal id could mutate accounts.balance while the final header
+-- UPDATE silently affects zero rows; (3) no row lock, so two
+-- concurrent calls on the same journal could both pass the checks
+-- before either commits and both apply the balance delta. Fixed by
+-- adding `for update` (same locking idiom already used by
+-- execute_asset_disposal in 011_posting_functions.sql) plus explicit
+-- source/is_posted checks before any mutation.
 -- ============================================================
 
 create or replace function post_manual_journal(p_journal_id uuid)
@@ -97,8 +110,14 @@ declare
 begin
   perform _ensure_can_post();
 
-  select * into v_journal from journals where id = p_journal_id;
+  select * into v_journal from journals where id = p_journal_id for update;
   if v_journal is null then raise exception 'journal not found'; end if;
+  if v_journal.source != 'manual' then
+    raise exception 'journal % bukan jurnal manual (source=%)', p_journal_id, v_journal.source;
+  end if;
+  if v_journal.is_posted then
+    raise exception 'journal % sudah diposting sebelumnya', p_journal_id;
+  end if;
 
   perform _ensure_period_open(v_journal.date);
 
@@ -119,15 +138,19 @@ begin
 
   update journals
      set is_posted = true
-   where id = p_journal_id
-     and source = 'manual';
+   where id = p_journal_id;
 end;
 $$;
 ```
 
-- [ ] **Step 2: Self-review against both prior versions**
+- [ ] **Step 2: Self-review against both prior versions, plus idempotency/concurrency**
 
 Open `supabase/migrations/016_period_lock_enforcement.sql` and find its `post_manual_journal` definition (the one with `perform _ensure_can_post();` and `perform _ensure_period_open(v_journal.date);`), and `supabase/migrations/032_journal_items_account_id.sql:16-45` (the one with the `account_id` balance-sync loop, no guards). Confirm the Step 1 SQL above contains **all** of: both guards from the 016 version, the `v_journal` null-check and balance validation from the 016 version, AND the `account_id` balance-sync loop from the 032 version — i.e. it is the union of both, not a revert of 032's feature.
+
+Additionally confirm (these three were missing from an earlier draft of this same migration and were caught in pre-commit review — do not skip):
+- [ ] The initial `select * into v_journal from journals where id = p_journal_id for update;` uses `for update` — this locks the row so a second concurrent call on the same `p_journal_id` blocks until the first transaction commits, matching the locking idiom `execute_asset_disposal` already uses in `011_posting_functions.sql` (`select * into v_asset from assets where id = p_asset_id for update;`).
+- [ ] There is an explicit `if v_journal.source != 'manual' then raise exception ...` check before any mutation (not just a silent `where source = 'manual'` filter on the final UPDATE) — an auto-sourced journal must be rejected loudly, not partially processed.
+- [ ] There is an explicit `if v_journal.is_posted then raise exception ...` check before the balance-sync loop — without it, calling this RPC twice on the same already-posted journal would double-apply `balance = balance + debit - credit` for every line with an `account_id`, silently corrupting `accounts.balance`.
 
 - [ ] **Step 3: File-readability check (no live database available)**
 
@@ -141,13 +164,16 @@ Expected: the command prints nothing and exits with code 0 (silent success — `
 
 ```bash
 git add supabase/migrations/043_fix_post_manual_journal_guards.sql
-git commit -m "fix(erp-acc): restore missing role/period guards to post_manual_journal
+git commit -m "fix(erp-acc): restore missing guards and add idempotency to post_manual_journal
 
 Migration 032 redefined post_manual_journal to add account_id balance
 sync but dropped the _ensure_can_post()/_ensure_period_open() guards
 that 016 had added, leaving any authenticated user able to post a
-draft manual journal for a closed period. Restores both guards while
-keeping 032's balance-sync behavior.
+draft manual journal for a closed period. Also adds a for-update row
+lock plus explicit source/is_posted checks before mutating balances,
+since 032's balance-sync side effect is not idempotent: a repeat or
+concurrent call on the same journal would otherwise double-apply the
+balance delta. Keeps 032's balance-sync behavior for the normal path.
 
 Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
 ```
@@ -301,6 +327,7 @@ Open `supabase/migrations/011_posting_functions.sql` and compare `post_general_c
 - [ ] `journal_items` CHECK constraints from `007_cashbank_accounting.sql:56-59` (`debit > 0 or credit > 0`, `not (debit > 0 and credit > 0)`) are satisfied by construction: the validation loop in Pass 1 already rejects any line where both or neither of debit/credit are `> 0`.
 - [ ] `accounts.balance` update formula `balance + debit - credit` matches the generic sync logic in `post_manual_journal` (`032_journal_items_account_id.sql`), not the direction-specific `post_expense` formula (which only works because `post_expense` always puts the cash leg on credit — this RPC's cash leg can be debit or credit, so it must use the generic formula).
 - [ ] No RLS/GRANT changes needed: confirm by checking `015_fix_rls_security.sql` shows every other posting RPC also has no table-level RLS INSERT policy for `staff` on `journal_items` (only `is_admin()`), yet all work — because `security definer` bypasses table RLS entirely. Do not add a `journal_items` RLS policy for staff.
+- [ ] **Idempotency/locking is intentionally NOT needed here, unlike Task 0's fix:** Task 0's `post_manual_journal` needed `for update` + `is_posted`/`source` checks because it re-processes an *existing* journal row supplied by the caller (a repeat call or a race on the same `p_journal_id` re-triggers the same balance mutation). This RPC is different — every call creates a brand-new journal via `gen_random_uuid()` from `p_lines` supplied fresh each time; there is no existing row being re-posted, so there is nothing to double-apply and no row to race on. Do not add `for update` or an `is_posted` check to this RPC — there is no journal row to select until this function creates one. (A double form-submission would create two separate journal entries, the same class of duplicate-data-entry risk that already exists for every other creation flow in this app, e.g. `saveManualJournal`/`post_payment` — out of scope to solve differently here; Task 4's `submitting` state disables the submit button as the existing app-wide mitigation.)
 
 If any box fails, fix the SQL before proceeding — do not move to Step 3 with a known mismatch.
 
@@ -1353,7 +1380,9 @@ Report: "Semua task (0-6) selesai dan ter-commit di branch `codex/erp-acc/non-ap
 
 ## Self-Review
 
-**Revision note (post first Codex attempt):** Task 0 was added after Codex's first execution attempt on Task 1 found that `post_manual_journal` (as currently defined by migration `032_journal_items_account_id.sql`) is missing the `_ensure_can_post()`/`_ensure_period_open()` guards added by migration `016_period_lock_enforcement.sql` — a pre-existing bug unrelated to this feature, discovered because Task 1's self-review checklist used `post_manual_journal` as a reference implementation. Task 1's migration filename shifted from `043` to `044` to make room for the `043` hotfix. This is not a spec change — the design in `docs/superpowers/specs/2026-07-16-transaksi-kas-non-hutang-piutang-design.md` is unaffected; only this plan's task breakdown and file numbering changed.
+**Revision note (post first Codex attempt):** Task 0 was added after Codex's first execution attempt on Task 1 found that `post_manual_journal` (as currently defined by migration `032_journal_items_account_id.sql`) is missing the `_ensure_can_post()`/`_ensure_period_open()` guards added by migration `016_period_lock_enforcement.sql` — a pre-existing bug unrelated to this feature, discovered because Task 1's self-review checklist used `post_manual_journal` as a reference implementation. Task 1's migration filename shifted from `043` to `044` to make room for the `043` hotfix. Also fixed: two shell-compatibility issues (`&&` is not valid in this repo's Windows PowerShell). This is not a spec change — the design in `docs/superpowers/specs/2026-07-16-transaksi-kas-non-hutang-piutang-design.md` is unaffected; only this plan's task breakdown and file numbering changed.
+
+**Revision note 2 (Codex pre-commit review of Task 0):** before committing Task 0's own migration, Codex's own review (not user or Claude) caught that the drafted fix restored the two guards but introduced/left a separate correctness gap: the `account_id` balance-sync loop (from migration 032) is not idempotent, and the drafted SQL had no `is_posted` check, no upfront `source` check, and no row lock — so a repeat call or a race on the same journal would double-apply the balance delta, and a non-manual journal id would silently mutate balances while the header update no-opped. Fixed in Task 0 Step 1 by adding `select ... for update` (matching the locking idiom already used by `execute_asset_disposal` in `011_posting_functions.sql`) plus explicit `source`/`is_posted` checks before any mutation. Task 1 Step 2 now also carries an explicit note explaining why `post_general_cash_transaction` does *not* need the same pattern (it always creates a new journal row per call — there is no existing row to double-process or race on).
 
 **Spec coverage:**
 - Bagian 5.1 (shared `JournalLinesEditor`) → Task 2. ✓
