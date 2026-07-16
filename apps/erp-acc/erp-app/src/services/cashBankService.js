@@ -66,6 +66,24 @@ export async function saveTransfer({ from_account_id, to_account_id, amount, dat
   return data
 }
 
+export async function saveGeneralCashTransaction({ date, description, lines }) {
+  const { data: { user } } = await supabase.auth.getUser()
+  const { data, error } = await supabase.rpc('post_general_cash_transaction', {
+    p_date: date,
+    p_description: description,
+    p_lines: lines.map(l => ({
+      coa_id: l.coa_id,
+      account_id: l.account_id || null,
+      debit: Number(l.debit) || 0,
+      credit: Number(l.credit) || 0,
+      description: l.description || null,
+    })),
+    p_user_id: user?.id ?? null,
+  })
+  if (error) throw error
+  return data
+}
+
 export async function saveReconciliation({ account_id, date, statement_balance }) {
   // Atomic: SELECT balance FOR UPDATE + INSERT reconciliation in a single RPC transaction.
   // Prevents lost-update race when two requests read the same account balance concurrently.
