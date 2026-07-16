@@ -25,6 +25,7 @@
 - No production deployment, no remote migration execution, in any task.
 - `npm run build` (run from `C:\Project\apps\erp-acc\erp-app`) must pass with zero errors before any task is considered done. `npm run lint` must also pass.
 - Out of scope (do not build): automatic prepaid-expense amortization engine (separate future spec — see design spec Bagian 9), any change to `payments`/`post_payment`/AR-AP flow, any approval/review workflow for this feature's postings.
+- **Shell compatibility:** this repo's execution shell is Windows PowerShell (confirmed by Codex during Task 0 Step 3 of the first attempt at this plan), which does not support `&&`/`||` as statement separators. All command blocks below are written as plain sequential lines (no `&&` chaining) for this reason — run each line as its own command. If a command block anywhere in this plan is found to still contain `&&`, treat it as a plan bug: run the lines separately instead of guessing a PowerShell-specific rewrite, and flag it back to the user/Claude rather than silently improvising.
 
 ## Worktree & Branch Setup (do this once, before Task 1)
 
@@ -132,9 +133,9 @@ Open `supabase/migrations/016_period_lock_enforcement.sql` and find its `post_ma
 
 ```bash
 cd "C:\Project\.worktrees\erp-acc\non-ap-ar-cash-transaction\apps\erp-acc\erp-app"
-node -e "require('fs').readFileSync('supabase/migrations/043_fix_post_manual_journal_guards.sql','utf8')" && echo "file readable, proceeding to manual SQL review"
+node -e "require('fs').readFileSync('supabase/migrations/043_fix_post_manual_journal_guards.sql','utf8')"
 ```
-Do not attempt to connect to or apply against any Supabase project (local or remote) — same restriction as Task 1.
+Expected: the command prints nothing and exits with code 0 (silent success — `readFileSync` only throws if the file is missing or unreadable; a thrown error would print a stack trace and exit non-zero). Do not chain a success-only follow-up command after this with `&&` — this repo's shell is Windows PowerShell, where `&&` is not a valid statement separator; run each command as its own line instead. Do not attempt to connect to or apply against any Supabase project (local or remote) — same restriction as Task 1.
 
 - [ ] **Step 4: Commit**
 
@@ -307,9 +308,9 @@ If any box fails, fix the SQL before proceeding — do not move to Step 3 with a
 
 ```bash
 cd "C:\Project\.worktrees\erp-acc\non-ap-ar-cash-transaction\apps\erp-acc\erp-app"
-node -e "require('fs').readFileSync('supabase/migrations/044_general_cash_transaction.sql','utf8')" && echo "file readable, proceeding to manual SQL review"
+node -e "require('fs').readFileSync('supabase/migrations/044_general_cash_transaction.sql','utf8')"
 ```
-There is no local Postgres instance available in this workflow — do not attempt `supabase db push`, `supabase start`, or any command that connects to a Supabase project (local or remote). Syntax correctness is established by Step 2's structural comparison against working, already-deployed RPCs in the same file, not by execution.
+Expected: silent success, exit code 0. Run each line as its own command — do not chain with `&&` (this repo's shell is Windows PowerShell, where `&&` is not a valid statement separator). There is no local Postgres instance available in this workflow — do not attempt `supabase db push`, `supabase start`, or any command that connects to a Supabase project (local or remote). Syntax correctness is established by Step 2's structural comparison against working, already-deployed RPCs in the same file, not by execution.
 
 - [ ] **Step 4: Commit**
 
