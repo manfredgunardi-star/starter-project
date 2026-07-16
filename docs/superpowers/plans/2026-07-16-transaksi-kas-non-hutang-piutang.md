@@ -424,6 +424,7 @@ import { formatCurrency } from '../../utils/currency'
 import { Plus, Trash2 } from 'lucide-react'
 import { Typography } from 'antd'
 
+// eslint-disable-next-line react-refresh/only-export-components -- HMR-only rule; this helper is only used together with the default export
 export const emptyJournalLine = () => ({
   _key: Date.now() + Math.random(),
   coa_id: '',
@@ -434,6 +435,7 @@ export const emptyJournalLine = () => ({
   credit: '',
 })
 
+// eslint-disable-next-line react-refresh/only-export-components -- HMR-only rule; this helper is only used together with the default export
 export function computeJournalTotals(items) {
   const totalDebit = items.reduce((s, i) => s + (Number(i.debit) || 0), 0)
   const totalCredit = items.reduce((s, i) => s + (Number(i.credit) || 0), 0)
