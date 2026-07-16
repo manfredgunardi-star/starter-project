@@ -21,7 +21,7 @@
 - Staff posts directly — no draft/approval step for this feature (explicit user decision).
 - Counterparty COA selection is unrestricted (any COA type: asset/liability/equity/revenue/expense) — do not filter the COA dropdown by type.
 - Route guard for the new page is `canWrite` (`RoleGuard require="canWrite"`), not `canPost`.
-- **Migration/schema/RPC/seed-data changes require explicit user approval before being applied to any Supabase project (local or remote)** — per `C:\Project\CLAUDE.md` and `apps/erp-acc/erp-app/CLAUDE.md` Protected Areas. Task 1 ends with the migration file written and self-reviewed, NOT applied — applying it is a separate, explicit checkpoint with the user (see Task 1, Step 5).
+- **Migration/schema/RPC/seed-data changes require explicit user approval before being applied to any Supabase project (local or remote)** — per `C:\Project\CLAUDE.md` and `apps/erp-acc/erp-app/CLAUDE.md` Protected Areas. Task 0 and Task 1 each end with their migration file written and self-reviewed, NOT applied — applying either is a separate, explicit checkpoint with the user (see Task 0 Step 5, Task 1 Step 5). Apply `043` (Task 0 hotfix) before `044` (Task 1 feature) when the user authorizes it — `044` does not depend on `043` functionally, but `043` fixes a live security/period-lock gap and should not wait behind feature work.
 - No production deployment, no remote migration execution, in any task.
 - `npm run build` (run from `C:\Project\apps\erp-acc\erp-app`) must pass with zero errors before any task is considered done. `npm run lint` must also pass.
 - Out of scope (do not build): automatic prepaid-expense amortization engine (separate future spec — see design spec Bagian 9), any change to `payments`/`post_payment`/AR-AP flow, any approval/review workflow for this feature's postings.
@@ -56,12 +56,113 @@ All file paths in the tasks below are relative to `C:\Project\.worktrees\erp-acc
 
 ---
 
+### Task 0: Hotfix — restore missing guards to `post_manual_journal`
+
+**Discovered during Task 1 Step 2 (first execution attempt):** `supabase/migrations/032_journal_items_account_id.sql:16` redefines `post_manual_journal(p_journal_id uuid)` (via `create or replace function`) to add `account_id` balance-sync, but the redefinition **drops** the `perform _ensure_can_post();` and `perform _ensure_period_open(...)` guards that `supabase/migrations/016_period_lock_enforcement.sql` had added to this same function. `create or replace function` replaces the entire function body, so the currently-active `post_manual_journal` has **no role check and no closed-period check at all**. Practical impact: draft manual journals can still only be *created* by an admin (RLS on `journal_items` insert is admin-only), but once a draft exists, **any authenticated user** can call `post_manual_journal` via RPC to post it — including for a period that is already closed. This is a pre-existing bug, unrelated to this plan's feature, but it blocks Task 1's self-review (which cites `post_manual_journal` as a reference implementation) and is a real financial-integrity gap on its own — user decision: fix it now, before Task 1, in this same worktree.
+
+**Model/Effort: Sol / high** — same class as Task 1 (posting RPC, financial/period-lock control).
+
+**Files:**
+- Create: `supabase/migrations/043_fix_post_manual_journal_guards.sql`
+
+**Interfaces:**
+- Consumes: existing `_ensure_can_post()`, `_ensure_period_open(date)`, `validate_journal_balance(uuid)` (all already defined).
+- Produces: no new interface — restores `post_manual_journal(p_journal_id uuid) returns void` to its correct, guarded behavior. Nothing downstream in this plan calls this function directly, but Task 1 Step 2's self-review checklist relies on it being a valid reference implementation.
+
+- [ ] **Step 1: Write the hotfix migration**
+
+```sql
+-- ============================================================
+-- Migration 043: Fix post_manual_journal — restore missing guards
+-- Migration 032_journal_items_account_id.sql redefined
+-- post_manual_journal() to add account_id balance sync, but the
+-- redefinition dropped the _ensure_can_post() and
+-- _ensure_period_open() guards that 016_period_lock_enforcement.sql
+-- had added. Since then, ANY authenticated user (not just
+-- staff/admin) can post an existing draft manual journal, even for
+-- a closed accounting period. This restores both guards; the
+-- account_id balance-sync logic from 032 is preserved unchanged.
+-- ============================================================
+
+create or replace function post_manual_journal(p_journal_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_journal record;
+  v_item record;
+begin
+  perform _ensure_can_post();
+
+  select * into v_journal from journals where id = p_journal_id;
+  if v_journal is null then raise exception 'journal not found'; end if;
+
+  perform _ensure_period_open(v_journal.date);
+
+  if not validate_journal_balance(p_journal_id) then
+    raise exception 'Journal is not balanced (total debit != total credit)';
+  end if;
+
+  for v_item in
+    select account_id, debit, credit
+      from journal_items
+     where journal_id = p_journal_id
+       and account_id is not null
+  loop
+    update accounts
+       set balance = balance + v_item.debit - v_item.credit
+     where id = v_item.account_id;
+  end loop;
+
+  update journals
+     set is_posted = true
+   where id = p_journal_id
+     and source = 'manual';
+end;
+$$;
+```
+
+- [ ] **Step 2: Self-review against both prior versions**
+
+Open `supabase/migrations/016_period_lock_enforcement.sql` and find its `post_manual_journal` definition (the one with `perform _ensure_can_post();` and `perform _ensure_period_open(v_journal.date);`), and `supabase/migrations/032_journal_items_account_id.sql:16-45` (the one with the `account_id` balance-sync loop, no guards). Confirm the Step 1 SQL above contains **all** of: both guards from the 016 version, the `v_journal` null-check and balance validation from the 016 version, AND the `account_id` balance-sync loop from the 032 version — i.e. it is the union of both, not a revert of 032's feature.
+
+- [ ] **Step 3: File-readability check (no live database available)**
+
+```bash
+cd "C:\Project\.worktrees\erp-acc\non-ap-ar-cash-transaction\apps\erp-acc\erp-app"
+node -e "require('fs').readFileSync('supabase/migrations/043_fix_post_manual_journal_guards.sql','utf8')" && echo "file readable, proceeding to manual SQL review"
+```
+Do not attempt to connect to or apply against any Supabase project (local or remote) — same restriction as Task 1.
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add supabase/migrations/043_fix_post_manual_journal_guards.sql
+git commit -m "fix(erp-acc): restore missing role/period guards to post_manual_journal
+
+Migration 032 redefined post_manual_journal to add account_id balance
+sync but dropped the _ensure_can_post()/_ensure_period_open() guards
+that 016 had added, leaving any authenticated user able to post a
+draft manual journal for a closed period. Restores both guards while
+keeping 032's balance-sync behavior.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
+```
+
+- [ ] **Step 5: STOP — request hotfix approval**
+
+Report to the user: "Hotfix `043_fix_post_manual_journal_guards.sql` ditulis dan di-commit di branch `codex/erp-acc/non-ap-ar-cash-transaction`, TAPI belum diterapkan ke Supabase manapun. Ini memperbaiki bug pre-existing (bukan dari fitur baru), mohon prioritaskan review & approval-nya sebelum Task 1 juga menunggu untuk diterapkan." Do not proceed to apply this migration without explicit sign-off. Continue to Task 1 in the same worktree once this commit is made — Task 1 does not require this hotfix to be *applied*, only to exist as the corrected reference for its Step 2 self-review.
+
+---
+
 ### Task 1: Database migration — COA accounts + `post_general_cash_transaction` RPC
 
 **Model/Effort: Sol / high** — financial posting logic + schema/seed change, highest blast radius in this plan.
 
 **Files:**
-- Create: `supabase/migrations/043_general_cash_transaction.sql`
+- Create: `supabase/migrations/044_general_cash_transaction.sql`
 
 **Interfaces:**
 - Consumes: existing `_ensure_can_post()`, `_ensure_period_open(date)`, `generate_number('JRN')` functions (all already defined — do not redefine them).
@@ -72,7 +173,7 @@ All file paths in the tasks below are relative to `C:\Project\.worktrees\erp-acc
 
 ```sql
 -- ============================================================
--- Migration 043: General cash/bank transaction (non-AP/AR)
+-- Migration 044: General cash/bank transaction (non-AP/AR)
 -- Adds COA accounts for prepaid expense and tax expense, and a
 -- new RPC post_general_cash_transaction: an atomic, multi-line,
 -- staff-postable journal entry for transactions with no AP/AR
@@ -192,7 +293,7 @@ $$;
 
 - [ ] **Step 2: Self-review the migration against 3 existing analogous RPCs**
 
-Open `supabase/migrations/011_posting_functions.sql` and compare `post_general_cash_transaction` line-by-line against `post_transfer`, `post_expense`, and `post_manual_journal` (all in that file). Confirm all of the following (check each box mentally, do not skip):
+Open `supabase/migrations/011_posting_functions.sql` and compare `post_general_cash_transaction` line-by-line against `post_transfer` and `post_expense` (both in that file). Also compare against the corrected `post_manual_journal` from Task 0's `043_fix_post_manual_journal_guards.sql` — **not** the version in `011_posting_functions.sql` or `032_journal_items_account_id.sql`, both of which are superseded (the former lacks the `account_id` sync, the latter lacks the guards; Task 0 fixed this — see its note for detail). Confirm all of the following (check each box mentally, do not skip):
 - [ ] Calls `perform _ensure_can_post();` then `perform _ensure_period_open(p_date);` as the first two statements, same as every other posting RPC.
 - [ ] Declared `language plpgsql security definer set search_path = public` (matches `post_general_cash_transaction`'s sibling functions defined with the trailing `$$ language plpgsql security definer set search_path = public;` form in 011, or the `language plpgsql / security definer / set search_path = public` block form used by `create_asset_acquisition_journal` in the same file — both forms are equivalent, this migration uses the block form).
 - [ ] Uses `generate_number('JRN')` for `journal_number`, `gen_random_uuid()` for the journal id — matches every other RPC.
@@ -206,14 +307,14 @@ If any box fails, fix the SQL before proceeding — do not move to Step 3 with a
 
 ```bash
 cd "C:\Project\.worktrees\erp-acc\non-ap-ar-cash-transaction\apps\erp-acc\erp-app"
-node -e "require('fs').readFileSync('supabase/migrations/043_general_cash_transaction.sql','utf8')" && echo "file readable, proceeding to manual SQL review"
+node -e "require('fs').readFileSync('supabase/migrations/044_general_cash_transaction.sql','utf8')" && echo "file readable, proceeding to manual SQL review"
 ```
 There is no local Postgres instance available in this workflow — do not attempt `supabase db push`, `supabase start`, or any command that connects to a Supabase project (local or remote). Syntax correctness is established by Step 2's structural comparison against working, already-deployed RPCs in the same file, not by execution.
 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add supabase/migrations/043_general_cash_transaction.sql
+git add supabase/migrations/044_general_cash_transaction.sql
 git commit -m "feat(erp-acc): add post_general_cash_transaction RPC and prepaid/tax COA accounts
 
 Adds a third posting path for cash/bank transactions with no AP/AR
@@ -225,9 +326,9 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
 
 - [ ] **Step 5: STOP — request migration approval**
 
-Report to the user: "Migration `043_general_cash_transaction.sql` ditulis dan di-commit di branch `codex/erp-acc/non-ap-ar-cash-transaction`, TAPI belum diterapkan ke Supabase manapun (kebijakan proteksi schema/migration). Mohon review SQL-nya dan beri tahu kapan boleh diterapkan, dan ke lingkungan mana (biasanya dev/staging Supabase project dulu, bukan production)." Do not proceed to apply the migration yourself even if you have Supabase CLI credentials configured — this is a hard stop pending explicit user sign-off, independent of which task/model is next.
+Report to the user: "Migration `044_general_cash_transaction.sql` ditulis dan di-commit di branch `codex/erp-acc/non-ap-ar-cash-transaction`, TAPI belum diterapkan ke Supabase manapun (kebijakan proteksi schema/migration) — begitu juga hotfix `043_fix_post_manual_journal_guards.sql` dari Task 0. Mohon review kedua SQL ini dan beri tahu kapan boleh diterapkan (berurutan: 043 dulu baru 044), dan ke lingkungan mana (biasanya dev/staging Supabase project dulu, bukan production)." Do not proceed to apply the migration yourself even if you have Supabase CLI credentials configured — this is a hard stop pending explicit user sign-off, independent of which task/model is next.
 
-Continue to Task 2 in the same worktree (Task 2 does not depend on the migration being applied — it is a pure frontend refactor).
+Then STOP per the model/effort-switch rule at the top of this plan (Task 2 is Terra/medium, different from this task's Sol/high) — report using the exact format specified at the top of this document, substituting Task 2's name, and wait for the user/Claude to hand you the next prompt. Do not self-continue into Task 2 even though it doesn't depend on the migration being applied.
 
 ---
 
@@ -811,7 +912,7 @@ Expected: both exit 0.
 
 - [ ] **Step 3: Manual verification (deferred if Task 1's migration is not yet applied)**
 
-If the user has approved and applied migration `043_general_cash_transaction.sql` to a reachable Supabase project by this point: open the browser console on any page of the running app (`npm run dev`) and run:
+If the user has approved and applied migration `044_general_cash_transaction.sql` (and the `043` hotfix) to a reachable Supabase project by this point: open the browser console on any page of the running app (`npm run dev`) and run:
 ```js
 const { saveGeneralCashTransaction } = await import('/src/services/cashBankService.js')
 ```
@@ -1245,11 +1346,13 @@ Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
 
 - [ ] **Step 4: Final report to user**
 
-Report: "Semua 6 task selesai dan ter-commit di branch `codex/erp-acc/non-ap-ar-cash-transaction` (worktree `C:\Project\.worktrees\erp-acc\non-ap-ar-cash-transaction`). Migration `043_general_cash_transaction.sql` (Task 1) BELUM diterapkan ke Supabase manapun — masih menunggu persetujuan Anda. Setelah migration diterapkan ke lingkungan dev/staging, jalankan ulang `npx playwright test playwright/general-cash-transaction.spec.js` untuk verifikasi penuh, lalu lakukan uji manual end-to-end (posting transaksi sungguhan) sebelum meminta PR/merge."
+Report: "Semua task (0-6) selesai dan ter-commit di branch `codex/erp-acc/non-ap-ar-cash-transaction` (worktree `C:\Project\.worktrees\erp-acc\non-ap-ar-cash-transaction`). Migration `043_fix_post_manual_journal_guards.sql` (Task 0, hotfix) dan `044_general_cash_transaction.sql` (Task 1) BELUM diterapkan ke Supabase manapun — masih menunggu persetujuan Anda. Setelah keduanya diterapkan (berurutan) ke lingkungan dev/staging, jalankan ulang `npx playwright test playwright/general-cash-transaction.spec.js` untuk verifikasi penuh, lalu lakukan uji manual end-to-end (posting transaksi sungguhan) sebelum meminta PR/merge."
 
 ---
 
 ## Self-Review
+
+**Revision note (post first Codex attempt):** Task 0 was added after Codex's first execution attempt on Task 1 found that `post_manual_journal` (as currently defined by migration `032_journal_items_account_id.sql`) is missing the `_ensure_can_post()`/`_ensure_period_open()` guards added by migration `016_period_lock_enforcement.sql` — a pre-existing bug unrelated to this feature, discovered because Task 1's self-review checklist used `post_manual_journal` as a reference implementation. Task 1's migration filename shifted from `043` to `044` to make room for the `043` hotfix. This is not a spec change — the design in `docs/superpowers/specs/2026-07-16-transaksi-kas-non-hutang-piutang-design.md` is unaffected; only this plan's task breakdown and file numbering changed.
 
 **Spec coverage:**
 - Bagian 5.1 (shared `JournalLinesEditor`) → Task 2. ✓
