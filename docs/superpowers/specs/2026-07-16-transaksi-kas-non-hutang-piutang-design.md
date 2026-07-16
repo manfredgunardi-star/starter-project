@@ -51,11 +51,11 @@ Ekstrak logika tabel baris (tambah/hapus baris, pilih COA, pilih `account_id` op
 
 `src/pages/cash/GeneralCashTransactionFormPage.jsx`: header (tanggal, keterangan) + `JournalLinesEditor` (minimal 2 baris) + indikator saldo debit=kredit + tombol submit (disabled saat pending, mencegah double-submit). Validasi client-side sebelum submit: saldo balance, dan **minimal satu baris punya `account_id` terisi** (harus akun kas/bank) — pesan error: "Minimal satu baris harus terhubung ke akun kas/bank."
 
-List page ringan (reuse struktur tabel dari `JournalsPage.jsx`) menampilkan riwayat transaksi jenis ini, difilter `reference_type = 'general_cash_transaction'`, supaya staff yang mungkin tidak diberi akses menu Akuntansi tetap bisa lihat riwayat entrinya sendiri.
+**Koreksi setelah baca kode aktual**: tidak perlu list page baru. `JournalsPage.jsx` (`accounting/journals`) tidak digerbang `RoleGuard` sama sekali — semua role sudah bisa mengaksesnya, dan menu "Jurnal" di sidebar (`Sidebar.jsx`) juga tanpa `minRole`, jadi staff sudah melihatnya. Baris dengan `source === 'manual'` sudah otomatis bisa diklik untuk membuka `ManualJournalFormPage` (read-only karena `is_posted = true`). Karena RPC baru tetap menulis `source = 'manual'`, transaksi baru ini otomatis muncul dan bisa dibuka di list yang sudah ada tanpa kode tambahan. Satu polesan kecil opsional: ubah label `Tag` di `JournalsPage.jsx` supaya baris dengan `reference_type = 'general_cash_transaction'` menampilkan "Kas Lainnya" alih-alih "Manual" generik.
 
 ### 5.3 Routing & akses
 
-Route baru `cash/general-transactions` (list) dan `cash/general-transactions/new` (form) di `src/App.jsx`, digerbang `RoleGuard require="canWrite"` (staff+admin) — berbeda dari Jurnal Umum lama yang tetap `canPost` (admin-only). Menu baru ditambahkan ke sidebar Kas & Bank, label kerja: "Transaksi Kas/Bank Lainnya" (nama final dikonfirmasi saat implementasi).
+Route baru `cash/general-transactions/new` (form) di `src/App.jsx`, digerbang `RoleGuard require="canWrite"` (staff+admin) — berbeda dari Jurnal Umum lama yang tetap `canPost` (admin-only). Tidak perlu route list baru (lihat koreksi di Bagian 5.2 — reuse `accounting/journals`). Menu item baru ditambahkan ke grup "Kas & Bank" di `Sidebar.jsx` dengan `minRole: 'write'`, label kerja: "Transaksi Lainnya" (nama final dikonfirmasi saat implementasi).
 
 ### 5.4 Service layer
 
@@ -74,7 +74,7 @@ post_general_cash_transaction(
 
 Langkah validasi & eksekusi (mengikuti pola RPC posting yang sudah ada):
 
-1. `_ensure_can_write()` — guard baru (staff ATAU admin), berbeda dari `_ensure_can_post()` yang admin-only. Perlu ditambahkan sebagai fungsi guard baru di migration, atau reuse pola RLS `is_admin_or_staff()` yang sudah dipakai di tabel lain.
+1. `_ensure_can_post()` — **koreksi setelah baca kode aktual**: fungsi ini (`015_fix_rls_security.sql:73-82`) sudah memeriksa `is_admin_or_staff()`, BUKAN admin-only seperti dugaan awal. RPC baru cukup reuse guard ini langsung, tidak perlu guard baru. (Pembatasan admin-only yang ada sekarang murni di frontend: `AuthContext.canPost = isAdmin` dan RLS `journal_items` insert langsung — keduanya tidak menghalangi RPC security-definer baru ini.)
 2. `_ensure_period_open(p_date)` — reuse fungsi yang sudah ada.
 3. Validasi `p_lines`: minimal 2 baris; `sum(debit) = sum(credit)` dan `> 0`; setiap baris tepat satu dari debit/kredit > 0; **minimal satu baris punya `account_id` tidak null** dan `account_id` tersebut menunjuk baris di tabel `accounts` (kas/bank) — jika tidak, raise exception (defense in depth, client sudah validasi juga).
 4. Insert `journals` header: `source = 'manual'`, `reference_type = 'general_cash_transaction'`, `is_posted = true`, `created_by = p_user_id`.
@@ -125,7 +125,7 @@ Staff/Admin buka "Transaksi Kas/Bank Lainnya" (menu Kas & Bank)
   - Saldo `accounts.balance` ter-update benar setelah posting.
   - Jurnal Umum lama (`ManualJournalFormPage`) tetap berperilaku identik untuk admin — regression check pasca-ekstraksi `JournalLinesEditor`.
 - `npm run build` wajib lulus tanpa error di `apps/erp-acc/erp-app`.
-- Manual test: staff tanpa akses menu Akuntansi tetap bisa lihat riwayat transaksinya via list page baru di Kas & Bank.
+- Manual test: staff bisa melihat riwayat transaksinya via menu "Pembukuan > Jurnal" yang sudah ada (list tidak digerbang role) dan membuka detailnya (read-only, karena langsung ter-posting).
 
 ## 9. Pekerjaan Lanjutan (Di Luar Scope Sesi Ini)
 
