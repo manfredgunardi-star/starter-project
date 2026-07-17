@@ -1419,12 +1419,11 @@ test.describe('General Cash Transaction (non-AP/AR) — live smoke', () => {
 })
 ```
 
-- [ ] **Step 2: Run the suite**
+- [ ] **Step 2: Run the suite — conditional, do not run against unrelated deployed code**
 
-```bash
-npx playwright test playwright/general-cash-transaction.spec.js --reporter=list
-```
-Expected: all 7 tests pass, provided `.env.test` (`VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `TEST_EMAIL`, `TEST_PASSWORD`) is configured and the test account has at least `staff` role. If Task 1's migration has not yet been applied to the project this `.env.test` points at, T1-T4 may fail only insofar as the route itself works (they don't call the RPC) — but if the route 404s or the page throws because a downstream hook errors, that's a real failure to fix, not an expected one.
+`LIVE_URL` in the spec above (`https://erp-app-bay.vercel.app`) is the **currently deployed site**, which serves whatever is on `main` — it does not have this feature's branch (`codex/erp-acc/non-ap-ar-cash-transaction`) deployed to it, and no task in this plan deploys anything (deployment is out of scope/prohibited for standard agent workflow per this repo's policy). This means T1-T5 (which assert on the new route/page/sidebar item) **will fail against `LIVE_URL` right now — not because of a bug in this spec or in Task 4/5's code, but because that code has never been deployed anywhere reachable.** T6-T7 (regression checks on the pre-existing Jurnal list/Jurnal Umum pages) may still pass, since those routes already exist on `main` and Task 2's refactor was behavior-preserving.
+
+Do not run `npx playwright test playwright/general-cash-transaction.spec.js` against `LIVE_URL` expecting T1-T5 to pass at this point — that is an expected, known-cause failure, not a regression to fix. Skip Step 2 entirely for now. Running the full suite for real verification is only meaningful after both: (a) migrations `043`/`044` are applied to a reachable Supabase project, and (b) this branch (or its built output) is deployed to some environment `LIVE_URL` can be pointed at (dev/staging — never production) — both of which require explicit user approval/action outside this plan's scope. Note this deferral in the commit message.
 
 - [ ] **Step 3: Commit**
 
@@ -1432,12 +1431,18 @@ Expected: all 7 tests pass, provided `.env.test` (`VITE_SUPABASE_URL`, `VITE_SUP
 git add playwright/general-cash-transaction.spec.js
 git commit -m "test(erp-acc): add Playwright smoke suite for general cash transaction page
 
+Live suite run deferred: LIVE_URL serves the currently deployed main
+branch, which does not yet have this feature. Running T1-T5 against
+it now would fail on missing deployment, not a code defect. Requires
+migrations 043/044 applied plus this branch deployed to a reachable
+dev/staging environment before the suite is meaningful.
+
 Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
 ```
 
 - [ ] **Step 4: Final report to user**
 
-Report: "Semua task (0-6) selesai dan ter-commit di branch `codex/erp-acc/non-ap-ar-cash-transaction` (worktree `C:\Project\.worktrees\erp-acc\non-ap-ar-cash-transaction`). Migration `043_fix_post_manual_journal_guards.sql` (Task 0, hotfix) dan `044_general_cash_transaction.sql` (Task 1) BELUM diterapkan ke Supabase manapun — masih menunggu persetujuan Anda. Setelah keduanya diterapkan (berurutan) ke lingkungan dev/staging, jalankan ulang `npx playwright test playwright/general-cash-transaction.spec.js` untuk verifikasi penuh, lalu lakukan uji manual end-to-end (posting transaksi sungguhan) sebelum meminta PR/merge."
+Report: "Semua task (0-6) selesai dan ter-commit di branch `codex/erp-acc/non-ap-ar-cash-transaction` (worktree `C:\Project\.worktrees\erp-acc\non-ap-ar-cash-transaction`). Dua hal masih menunggu keputusan/tindakan Anda sebelum fitur ini bisa diverifikasi penuh dan di-PR: (1) migration `043_fix_post_manual_journal_guards.sql` (Task 0, hotfix) dan `044_general_cash_transaction.sql` (Task 1) BELUM diterapkan ke Supabase manapun; (2) branch ini BELUM di-deploy ke lingkungan mana pun yang bisa diakses `LIVE_URL` di Playwright suite — suite Task 6 (`playwright/general-cash-transaction.spec.js`) belum dijalankan karena T1-T5-nya pasti gagal melawan situs live saat ini (yang masih menjalankan `main`, belum punya fitur ini). Setelah migration diterapkan DAN branch/build ini di-deploy ke dev/staging (bukan production), jalankan ulang `npx playwright test playwright/general-cash-transaction.spec.js` untuk verifikasi penuh, lalu lakukan uji manual end-to-end (posting transaksi sungguhan) sebelum meminta PR/merge."
 
 ---
 
