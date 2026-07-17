@@ -30,7 +30,7 @@ export default function JournalLinesEditor({ items, onChange, coa, accounts, cos
   const getAccountsForCoa = coaId => accounts.filter(a => a.coa_id === coaId)
 
   const updateItem = (idx, key, value) => {
-    onChange(items.map((item, i) => {
+    onChange(prev => prev.map((item, i) => {
       if (i !== idx) return item
       const updated = { ...item, [key]: value }
       if (key === 'coa_id') updated.account_id = ''
@@ -152,7 +152,7 @@ export default function JournalLinesEditor({ items, onChange, coa, accounts, cos
               {!readOnly && (
                 <td style={{ paddingLeft: 8, paddingRight: 8, paddingTop: 8, paddingBottom: 8 }}>
                   <button
-                    onClick={() => onChange(items.filter((_, i) => i !== idx))}
+                    onClick={() => onChange(prev => prev.filter((_, i) => i !== idx))}
                     style={{ color: '#ef4444' }}
                   >
                     <Trash2 size={16} />
@@ -192,7 +192,7 @@ export default function JournalLinesEditor({ items, onChange, coa, accounts, cos
       {!readOnly && (
         <div style={{ padding: 12, borderTop: '1px solid #e5e7eb' }}>
           <button
-            onClick={() => onChange([...items, emptyJournalLine()])}
+            onClick={() => onChange(prev => [...prev, emptyJournalLine()])}
             style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#2563eb' }}
           >
             <Plus size={16} /> Tambah Baris

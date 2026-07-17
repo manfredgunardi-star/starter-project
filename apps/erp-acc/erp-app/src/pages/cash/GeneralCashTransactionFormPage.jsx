@@ -37,9 +37,12 @@ export default function GeneralCashTransactionFormPage() {
   const handleSubmit = async () => {
     if (!date) { toast.error('Tanggal wajib diisi'); return }
     if (!description) { toast.error('Deskripsi wajib diisi'); return }
-    const validItems = items
-      .filter(i => i.coa_id && (Number(i.debit) > 0 || Number(i.credit) > 0))
-      .map(i => ({ ...i, debit: round2(i.debit), credit: round2(i.credit) }))
+    const roundedItems = items.map(i => ({ ...i, debit: round2(i.debit), credit: round2(i.credit) }))
+    if (roundedItems.some(i => i.coa_id && (i.debit < 0 || i.credit < 0))) {
+      toast.error('Nilai debit/kredit tidak boleh negatif')
+      return
+    }
+    const validItems = roundedItems.filter(i => i.coa_id && (i.debit > 0 || i.credit > 0))
     if (validItems.length < 2) { toast.error('Minimal 2 baris jurnal'); return }
     if (!validItems.some(i => i.account_id)) {
       toast.error('Minimal satu baris harus terhubung ke akun kas/bank')
