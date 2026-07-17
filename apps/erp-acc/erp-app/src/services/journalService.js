@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase'
 export async function getJournals({ startDate, endDate, source } = {}) {
   let query = supabase
     .from('journals')
-    .select('id, journal_number, date, description, source, is_posted, created_at')
+    .select('id, journal_number, date, description, source, reference_type, is_posted, created_at')
     .order('date', { ascending: false })
     .order('created_at', { ascending: false })
 

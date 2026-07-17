@@ -101,8 +101,8 @@ export default function JournalsPage() {
                   <td style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, fontSize: 14, color: '#374151' }}>{formatDate(j.date)}</td>
                   <td style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, fontSize: 14, color: '#111827' }}>{j.description || '—'}</td>
                   <td style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, fontSize: 14 }}>
-                    <Tag color={j.source === 'manual' ? 'purple' : 'default'}>
-                      {j.source === 'manual' ? 'Manual' : 'Otomatis'}
+                    <Tag color={j.source !== 'manual' ? 'default' : j.reference_type === 'general_cash_transaction' ? 'blue' : 'purple'}>
+                      {j.source !== 'manual' ? 'Otomatis' : j.reference_type === 'general_cash_transaction' ? 'Kas Lainnya' : 'Manual'}
                     </Tag>
                   </td>
                   <td style={{ paddingLeft: 24, paddingRight: 24, paddingTop: 12, paddingBottom: 12, fontSize: 14 }}>
