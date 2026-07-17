@@ -62,6 +62,7 @@ const BankImportPreviewPage = lazy(() => import('./pages/cash/BankImportPreviewP
 // Accounting
 const JournalsPage = lazy(() => import('./pages/accounting/JournalsPage'))
 const ManualJournalFormPage = lazy(() => import('./pages/accounting/ManualJournalFormPage'))
+const GeneralCashTransactionFormPage = lazy(() => import('./pages/cash/GeneralCashTransactionFormPage'))
 const LedgerPage = lazy(() => import('./pages/accounting/LedgerPage'))
 const RecurringPage = lazy(() => import('./pages/accounting/RecurringPage'))
 const RecurringFormPage = lazy(() => import('./pages/accounting/RecurringFormPage'))
@@ -194,6 +195,7 @@ function AppContent() {
           <Route path="cash/payments" element={<PaymentsPage />} />
           <Route path="cash/payments/new" element={<RoleGuard require="canWrite"><PaymentFormPage /></RoleGuard>} />
           <Route path="cash/transfers/new" element={<RoleGuard require="canWrite"><TransferFormPage /></RoleGuard>} />
+          <Route path="cash/general-transactions/new" element={<RoleGuard require="canWrite"><GeneralCashTransactionFormPage /></RoleGuard>} />
           <Route path="cash/reconciliation" element={<ReconciliationPage />} />
           <Route path="cash/import" element={<RoleGuard require="canWrite"><BankStatementImportPage /></RoleGuard>} />
           <Route path="cash/import/:sessionId" element={<BankImportPreviewPage />} />
