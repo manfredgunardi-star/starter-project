@@ -1446,6 +1446,125 @@ Report: "Semua task (0-6) selesai dan ter-commit di branch `codex/erp-acc/non-ap
 
 ---
 
+### Task 7: Post-audit hardening — client-side validation order and functional state updater
+
+**Added after an independent third-party audit (Gemini) of Task 0-6, requested by the user once all six tasks were committed.** Both fixes below are small, precisely-specified, low-risk patches to already-committed files — not new features, not a reopening of Task 2 or Task 4's design. See Self-Review Revision note 11 below for the full audit disposition (what was accepted, what was downgraded, and why).
+
+**Model/Effort: Luna / low** — two mechanical, exactly-specified patches, no new design decisions.
+
+**Files:**
+- Modify: `src/pages/cash/GeneralCashTransactionFormPage.jsx`
+- Modify: `src/components/journal/JournalLinesEditor.jsx`
+
+**Interfaces:** no change to either file's exports or the props/interface any other file consumes — both fixes are internal-only.
+
+- [ ] **Step 1: Fix validation order in `GeneralCashTransactionFormPage.jsx`**
+
+Find (inside `handleSubmit`):
+```jsx
+    const validItems = items
+      .filter(i => i.coa_id && (Number(i.debit) > 0 || Number(i.credit) > 0))
+      .map(i => ({ ...i, debit: round2(i.debit), credit: round2(i.credit) }))
+    if (validItems.length < 2) { toast.error('Minimal 2 baris jurnal'); return }
+```
+Replace with:
+```jsx
+    const roundedItems = items.map(i => ({ ...i, debit: round2(i.debit), credit: round2(i.credit) }))
+    if (roundedItems.some(i => i.coa_id && (i.debit < 0 || i.credit < 0))) {
+      toast.error('Nilai debit/kredit tidak boleh negatif')
+      return
+    }
+    const validItems = roundedItems.filter(i => i.coa_id && (i.debit > 0 || i.credit > 0))
+    if (validItems.length < 2) { toast.error('Minimal 2 baris jurnal'); return }
+```
+This fixes two related client-validation gaps caught by audit: (a) the old code filtered on the *unrounded* debit/credit before calling `round2`, so a value like `0.004` passed the `> 0` filter but rounded to `0` afterward — the row then reached the RPC with `debit=0 AND credit=0`, which the RPC's own Pass-1 validation correctly rejects (`raise exception 'Baris % harus mengisi tepat satu dari debit atau kredit'`), but only *after* the client's own "form looks ready" state (button enabled, balance indicator green) had already told the user otherwise — a confusing late rejection for a case the client should have caught. (b) the old filter silently dropped any row with a negative debit/credit (since `Number(-100) > 0` is `false`), submitting the remaining rows as if the negative row had never been entered, with no error telling the user why; the RPC also rejects negative values server-side (`if v_debit < 0 or v_credit < 0 then raise exception ...`), so no bad data could ever reach `accounts.balance` either way — this fix only closes the *UX* gap, not a financial-integrity gap that ever existed.
+
+Note: this exact filter-then-round pattern was copied from the pre-existing `ManualJournalFormPage.jsx`'s `handleSave` (unchanged by this plan, still using the same order) — it is a pre-existing UX quirk in that file too, not a regression introduced by Task 4. This step deliberately fixes it **only** in `GeneralCashTransactionFormPage.jsx` (the file this plan owns) and does **not** touch `ManualJournalFormPage.jsx` — that file is out of scope for this plan (existing, already-shipped admin feature; changing it now would be an unscoped edit to a file this plan was never meant to touch beyond Task 2's structural extraction). If the user wants `ManualJournalFormPage.jsx` fixed the same way for consistency, that is a separate, explicit follow-up task outside this plan.
+
+- [ ] **Step 2: Restore functional state updater in `JournalLinesEditor.jsx`**
+
+Find:
+```jsx
+  const updateItem = (idx, key, value) => {
+    onChange(items.map((item, i) => {
+```
+Replace with:
+```jsx
+  const updateItem = (idx, key, value) => {
+    onChange(prev => prev.map((item, i) => {
+```
+
+Find:
+```jsx
+                  <button
+                    onClick={() => onChange(items.filter((_, i) => i !== idx))}
+                    style={{ color: '#ef4444' }}
+                  >
+```
+Replace with:
+```jsx
+                  <button
+                    onClick={() => onChange(prev => prev.filter((_, i) => i !== idx))}
+                    style={{ color: '#ef4444' }}
+                  >
+```
+
+Find:
+```jsx
+          <button
+            onClick={() => onChange([...items, emptyJournalLine()])}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#2563eb' }}
+          >
+```
+Replace with:
+```jsx
+          <button
+            onClick={() => onChange(prev => [...prev, emptyJournalLine()])}
+            style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#2563eb' }}
+          >
+```
+
+Do **not** change anything else in this file — `items` is still used elsewhere (rendering the table rows, `computeJournalTotals(items)` for the totals row) and must stay as-is; only these three `onChange(...)` call sites change from passing a computed array to passing a functional updater. This works with **zero changes** to either consuming page (`ManualJournalFormPage.jsx`, `GeneralCashTransactionFormPage.jsx`) — both already wire `onChange={setItems}`, and React's `useState` setter natively accepts a functional updater (`setItems(prev => ...)`) with no additional wiring; this is standard `useState` behavior, not a new API. This restores the exact update pattern the original, pre-Task-2 `ManualJournalFormPage.jsx` used (`setItems(prev => prev.map(...))` etc.) before Task 2's extraction changed it to a direct-array form — i.e., this makes Task 2 a more faithful "pure extraction, behavior-preserving" change than it currently is, independent of whether the current usage can actually trigger a stale-state bug today (see Self-Review Revision note 11 for why the audit's specific race-condition scenario does not hold under React's actual event-dispatch model, and why this is being fixed anyway).
+
+- [ ] **Step 3: Run lint and build**
+
+```bash
+npm run lint
+npm run build
+```
+Expected: both exit 0.
+
+- [ ] **Step 4: Manual verification — conditional, same as every prior task**
+
+`.env` is still not present in this worktree. Skip `npm run dev`/browser verification. Note the deferral in the commit message, same pattern as Tasks 2-5.
+
+- [ ] **Step 5: Commit**
+
+```bash
+git add src/pages/cash/GeneralCashTransactionFormPage.jsx src/components/journal/JournalLinesEditor.jsx
+git commit -m "fix(erp-acc): harden client validation order and restore functional state updater
+
+Round debit/credit before filtering in GeneralCashTransactionFormPage
+so a sub-rounding value can no longer pass client validation and then
+be rejected by the RPC with a confusing late error; also reject
+negative debit/credit explicitly instead of silently dropping the
+row. In JournalLinesEditor, restore the functional setState-updater
+form (onChange(prev => ...)) that the pre-Task-2 ManualJournalFormPage
+used, closing a latent staleness risk for any future consumer of this
+shared component.
+
+Manual verification deferred: no .env present in this worktree, so
+the dev server / browser check could not be run.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>"
+```
+
+- [ ] **Step 6: STOP — report to user**
+
+Report: "Task 7 (perbaikan pasca-audit Gemini) selesai dan sudah di-commit di branch `codex/erp-acc/non-ap-ar-cash-transaction`. Tidak ada task berikutnya di plan ini — status kembali ke: menunggu approval migration 043/044 dan keputusan deployment staging."
+
+---
+
 ## Self-Review
 
 **Revision note (post first Codex attempt):** Task 0 was added after Codex's first execution attempt on Task 1 found that `post_manual_journal` (as currently defined by migration `032_journal_items_account_id.sql`) is missing the `_ensure_can_post()`/`_ensure_period_open()` guards added by migration `016_period_lock_enforcement.sql` — a pre-existing bug unrelated to this feature, discovered because Task 1's self-review checklist used `post_manual_journal` as a reference implementation. Task 1's migration filename shifted from `043` to `044` to make room for the `043` hotfix. Also fixed: two shell-compatibility issues (`&&` is not valid in this repo's Windows PowerShell). This is not a spec change — the design in `docs/superpowers/specs/2026-07-16-transaksi-kas-non-hutang-piutang-design.md` is unaffected; only this plan's task breakdown and file numbering changed.
@@ -1461,6 +1580,11 @@ Report: "Semua task (0-6) selesai dan ter-commit di branch `codex/erp-acc/non-ap
 **Revision note 6 (Codex direct-diff review of Task 1 Step 2, `security definer` claim):** Codex directly diffed `post_transfer`/`post_expense` between `011_posting_functions.sql` and `016_period_lock_enforcement.sql` and found this plan's claim that their `$$ language plpgsql security definer set search_path = public;` trailing declaration was "identical between the two files" was false: `011`'s originals end with plain `$$ language plpgsql;` (no `security definer`, no `search_path`) — those two properties were bolted onto the already-existing function *objects* later via `ALTER FUNCTION ... SECURITY DEFINER;` / `ALTER FUNCTION ... SET search_path = public;` in `015_fix_rls_security.sql` (lines 91-92, 100-101), without touching their source text, so `011`'s CREATE statement alone never shows it; only `016`'s later `create or replace function` redefinition states it explicitly inline. Fixed by restricting the "either file is equivalent" claim to structural details that a direct `sed -n` diff actually confirmed are byte-identical (parameter list, `declare` block, every `insert`/`update`/`select`), while calling out the guard calls and the trailing declaration as the two things that do differ — both were previously conflated as "the guards" in the plan's prose, which was internally inconsistent with the correct, separate checklist item on the trailing declaration a few lines below it. Separately, three "around line N" navigational hints in Task 5 (App.jsx lines 64/196, Sidebar.jsx lines 78-84) were re-verified with fresh `grep`/`sed` against the actual current files and found to already be exact — the hedging word "around" was removed and the verification method noted, and a new Global Constraints note distinguishes verified content-claims (stop if wrong) from Find-text navigational line hints (locate by text match, only stop if the text is missing or ambiguous, not over a shifted line number).
 
 **Revision note 7 (not a plan bug — a stop-threshold miscalibration):** unlike revision notes 1-6, this one is not a factual error in the plan. Task 1 Step 2's `git add supabase/migrations/044_general_cash_transaction.sql` produced Git's completely standard `warning: ... LF will be replaced by CRLF ...` notice (confirmed benign: this repo has `core.autocrlf = true`, no `.gitattributes` override — this warning is expected on every single `git add`/`git commit` of a text file in this plan, exit code `0`, nothing corrupted or wrong), and the implementer treated the mere presence of unscripted output as grounds to stop, even though nothing failed. This reflects the accumulated "verify everything, stop on any deviation from the plan" instruction from the previous six rounds being applied too literally to routine tool chatter, not just to actual correctness/citation issues. Fixed by adding an explicit Global Constraints note naming this exact warning as expected on every git step in this plan, and by narrowing future stop-worthy conditions to non-zero exit codes or files ending up unstaged/uncommitted when they shouldn't be — not the presence of any output not verbatim-quoted in a step's "expected" text.
+
+**Revision note 11 (post-Task-6, independent third-party audit by Gemini — disposition of each finding):** once all of Task 0-6 were committed, the user requested an independent audit from a different model (Gemini), prompted with read-only access to the plan, the worktree, and full commit history, deliberately kept separate from this plan's own authoring process to get an unbiased second opinion. Three findings came back; each was independently re-verified against the actual committed code (not accepted on the auditor's word alone, per this plan's own standing discipline) before being actioned:
+- **Accepted, fixed in Task 7 Step 1:** `GeneralCashTransactionFormPage.jsx`'s `handleSubmit` filtered `items` on unrounded debit/credit before calling `round2`, so a value that rounds to zero (e.g. `0.004`) could pass client validation and only be rejected later by the RPC with a confusing error; separately, a negative debit/credit was silently dropped from the submitted rows rather than surfaced as an error. Both confirmed real by direct trace through the actual code and the RPC's Pass-1 validation order. Confirmed **not** a new regression — this exact filter-then-round pattern was copied from the pre-existing `ManualJournalFormPage.jsx`'s `handleSave` (verified via `git show` against the pre-Task-2 commit), so it predates this plan; fixed only in the file this plan owns, per Task 7 Step 1's own note.
+- **Accepted, fixed in Task 7 Step 2, but severity downgraded from the auditor's "Blocking" to defensive hardening:** the auditor's specific failure scenario — a user typing a debit value, then "sepersekian milidetik kemudian" clicking "Tambah Baris," losing the typed character because both `onChange` calls read a stale `items` closure — does not actually occur under React 18's real event-dispatch model. Two genuinely distinct DOM events (a keystroke's `input` event and a separate `click` event) are never processed concurrently or out of commit-order by React/the browser: each discrete event is fully handled — including React's synchronous re-render and prop commit — before the JS event loop dispatches the next queued event, regardless of how few milliseconds apart the two physical user actions are. No handler in `JournalLinesEditor.jsx` calls `onChange` more than once within a single synchronous execution, so there is no code path today that actually loses an update this way. The auditor's secondary "browser autofill" scenario is also assessed as inapplicable here: none of `ManualJournalFormPage.jsx`/`GeneralCashTransactionFormPage.jsx` render these fields inside an actual `<form>` element, and none of the fields (COA select, cost center, debit/credit numbers) match any browser autofill heuristic, so autofill has no realistic trigger surface on this component. The fix is applied anyway, not because the current usage is exploitable, but because it is near-zero-risk (React's `useState` setter already accepts a functional updater with no wiring changes needed in either consuming page), it hardens the shared component against any *future* consumer that might not preserve the current single-`onChange`-call-per-tick discipline, and — most importantly — it restores the exact update pattern (`setItems(prev => ...)`) the original pre-Task-2 `ManualJournalFormPage.jsx` used, which Task 2's extraction changed without being asked to. That makes this fix a correction toward Task 2's own stated goal ("pure extraction, behavior-preserving"), not a new feature.
+- **Acknowledged, not separately actioned:** the auditor's plan-quality note — that the plan did not require preserving the functional state-updater form during Task 2's extraction — is accurate, and more precisely: Task 2 Step 1's code block, as originally written into this plan, specified the direct-array form from the start; this was a plan-authoring gap in an earlier session, not a deviation Codex introduced. Captured here rather than by editing Task 2's already-executed Step 1 retroactively, since Task 2 is already committed history — Task 7 is the forward-looking correction.
 
 **Revision note 8 (Codex's independent SQL security/correctness review, Task 1 Step 1):** unlike revision notes 1-7 (citation accuracy, shell/tool compatibility, stop-threshold calibration), this is the first finding that is a genuine logic defect in SQL this plan asked to be written, not a defect in the plan's prose or a false-positive stop. Two issues, both real: (1) **Critical — NaN bypass.** Postgres `numeric` accepts `'NaN'::numeric` as a valid value, and in comparisons `NaN` sorts as greater than every ordinary number (`NaN > 0` is `true`) while `NaN = NaN` is also `true` — the inverse of IEEE-754 float semantics. Without an explicit rejection, a line with `debit: "NaN"` would pass the "exactly one of debit/credit > 0" check, pass the "not negative" check, and — critically — pass the final `v_total_debit != v_total_credit` balance check too (since both totals would become `NaN` and `NaN = NaN`), permanently corrupting `accounts.balance` to `NaN`. Fixed by rejecting `v_debit`/`v_credit` values whose `::text` cast is `'NaN'`, `'Infinity'`, or `'-Infinity'`, checked immediately after computing them and before any comparison that a NaN value could subvert. (2) **Important — `coa_id`/`account_id` mismatch.** The RPC accepted `coa_id` and `account_id` as independent fields per line with no cross-check, so a caller could pair a real cash/bank `account_id` with an unrelated `coa_id` — `accounts.balance` would move correctly, but the general ledger (`journal_items`) would record the movement against the wrong COA entirely. The frontend (`JournalLinesEditor`, Task 2) already constrains the account dropdown to the line's selected COA, but per this plan's own repeated principle (Supabase RLS/RPC is the security boundary, not the UI — see `C:\Project\apps\erp-acc\erp-app\CLAUDE.md`), a directly-callable `security definer` RPC must not rely on frontend-only enforcement. Fixed by adding `if not exists (select 1 from accounts where id = <account_id> and coa_id = <line's coa_id>) then raise exception ...` for every line with a non-null `account_id`. Both fixes land in Task 1 Step 1's SQL and are covered by two new Task 1 Step 2 checklist items (verify placement/presence, not just existence, since NaN rejection specifically must run *before* the comparison checks it protects).
 
