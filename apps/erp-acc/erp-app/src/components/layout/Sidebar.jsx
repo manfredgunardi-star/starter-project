@@ -79,6 +79,7 @@ const menuGroups = [
       { label: 'Akun', path: '/cash/accounts' },
       { label: 'Pembayaran', path: '/cash/payments' },
       { label: 'Transfer', path: '/cash/transfers/new', minRole: 'write' },
+      { label: 'Transaksi Lainnya', path: '/cash/general-transactions/new', minRole: 'write' },
       { label: 'Rekonsiliasi', path: '/cash/reconciliation' },
       { label: 'Import Rekening Koran', path: '/cash/import', minRole: 'write' }
     ]
