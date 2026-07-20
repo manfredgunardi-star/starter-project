@@ -71,3 +71,8 @@ exports.createUserWithRole = functions.https.onCall(async (data, context) => {
 
   return { ok: true, uid: userRecord.uid, email };
 });
+
+// ===== Rekap Operasional Harian (Opsi B) =====
+const recap = require("./recap");
+exports.rekapHarianScheduled = recap.rekapHarianScheduled;
+exports.rekapHarianTest = recap.rekapHarianTest;
