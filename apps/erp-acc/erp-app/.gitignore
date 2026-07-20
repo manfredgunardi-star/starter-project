@@ -26,5 +26,10 @@ dist-ssr
 # Test credentials and session
 .env.test
 tests/.auth.json
+playwright/.auth/
+
+# Test output & temp
+test-results/
+supabase/.temp/
 
 .vercel
