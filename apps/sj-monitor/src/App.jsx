@@ -625,99 +625,6 @@ const persistInvoiceWithFallback = async ({ invoiceDoc, updatedSJList, sjIdsToPe
     }
   };
 
-  const editInvoice = async (invoiceId, data) => {
-    const invoice = invoiceList.find(inv => inv.id === invoiceId);
-    if (!invoice) return;
-
-    const oldSJIds = invoice.suratJalanIds;
-    const newSJIds = data.selectedSJIds;
-
-    // SJ yang dihapus dari invoice (ada di old, tidak ada di new)
-    const removedSJIds = oldSJIds.filter(id => !newSJIds.includes(id));
-
-    // SJ yang ditambah ke invoice (ada di new, tidak ada di old)
-    const addedSJIds = newSJIds.filter(id => !oldSJIds.includes(id));
-
-    // Update Surat Jalan
-    const updatedSJList = suratJalanList.map(sj => {
-      // Remove invoice status dari SJ yang dihapus
-      if (removedSJIds.includes(sj.id)) {
-        return {
-          ...sj,
-          statusInvoice: 'belum',
-          invoiceId: null,
-          invoiceNo: null,
-          updatedAt: new Date().toISOString(),
-          updatedBy: currentUser.name
-        };
-      }
-
-      // Add invoice status ke SJ yang ditambah
-      if (addedSJIds.includes(sj.id)) {
-        return {
-          ...sj,
-          statusInvoice: 'terinvoice',
-          invoiceId: invoiceId,
-          invoiceNo: invoice.noInvoice,
-          updatedAt: new Date().toISOString(),
-          updatedBy: currentUser.name
-        };
-      }
-
-      return sj;
-    });
-
-    // Update invoice
-    // Mirror perilaku lama: totalQty dari updatedSJList, total harga/UM dari suratJalanList.
-    const { totalHarga, totalUM, totalHargaAfterUM } = computeInvoiceTotals(
-      suratJalanList.filter(sj => newSJIds.includes(sj.id)),
-      data.ruteHarga || {},
-      uangMukaList
-    );
-    const updatedInvoice = {
-      ...invoice,
-      suratJalanIds: newSJIds,
-      suratJalanList: updatedSJList.filter(sj => newSJIds.includes(sj.id)),
-      // totalQty sengaja tetap dari updatedSJList (mirror perilaku lama); qtyBongkar tak berubah oleh update status jadi nilainya identik.
-      totalQty: updatedSJList
-        .filter(sj => newSJIds.includes(sj.id))
-        .reduce((sum, sj) => sum + Number(sj.qtyBongkar || 0), 0),
-      ruteHarga: data.ruteHarga || {},
-      totalHarga,
-      totalUM,
-      totalHargaAfterUM,
-      updatedAt: new Date().toISOString(),
-      updatedBy: currentUser.name
-    };
-
-    const updatedInvoiceList = invoiceList.map(inv =>
-      inv.id === invoiceId ? updatedInvoice : inv
-    );
-
-    setSuratJalanList(updatedSJList);
-setInvoiceList(updatedInvoiceList);
-
-// Persist ke Firestore (invoice + update SJ terkait)
-try {
-  const touchedIds = Array.from(new Set([...(oldSJIds || []), ...(newSJIds || [])]));
-  const { failedSJIds } = await persistInvoiceWithFallback({
-    invoiceDoc: updatedInvoice,
-    updatedSJList,
-    sjIdsToPersist: touchedIds,
-  });
-  setAlertMessage(failedSJIds.length > 0
-    ? `⚠️ Invoice tersimpan, tapi ${failedSJIds.length} dari ${touchedIds.length} Surat Jalan gagal disinkronkan. Buka lagi Edit invoice ini dan simpan ulang.`
-    : '✅ Invoice berhasil diupdate!');
-} catch (e) {
-  console.error("Persist edit invoice failed:", e);
-  if (e?.code === 'NOT_AUTHENTICATED') {
-    setAlertMessage('⚠️ Sesi login habis. Silakan login ulang lalu coba lagi.');
-  } else {
-    setAlertMessage("⚠️ Perubahan invoice tampil di UI, tapi gagal sync ke Firebase. Cek Console (F12).");
-  }
-}
-  };
-
 
   const deleteInvoice = async (id) => {
     setConfirmDialog({
@@ -2396,9 +2303,6 @@ try { unsubTransaksi(); } catch { /* ignore unsubscribe error */ }
               } else if (modalType === 'addInvoice') {
                 await addInvoice(data);
                 setShowModal(false);
-              } else if (modalType === 'editInvoice') {
-                await editInvoice(selectedItem.id, data);
-                setShowModal(false);
               } else if (modalType === 'addUangMuka') {
                 await addUangMuka(data);
                 setShowModal(false);
@@ -3111,7 +3015,6 @@ const UsersManagement = ({ usersList, currentUser, onAddUser, onEditUser, onDele
 
 const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [], supirList = [], ruteList = [], materialList = [], suratJalanList = [], uangMukaList = [], onClose, onSubmit }) => {
   const [searchInvoiceSJ, setSearchInvoiceSJ] = useState('');
-  const initializedRef = React.useRef(false);
   const [formData, setFormData] = useState({
     nomorSJ: '',
     tanggalSJ: new Date().toISOString().split('T')[0],
@@ -3153,25 +3056,6 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
     tanggalUM: new Date().toISOString().split('T')[0],
     keteranganUM: '',
   });
-
-  // Initialize selectedSJIds untuk editInvoice
-  useEffect(() => {
-    if (type === 'editInvoice' && selectedItem && !initializedRef.current) {
-      setFormData(prev => ({
-        ...prev,
-        noInvoice: selectedItem.noInvoice || '',
-        tglInvoice: selectedItem.tglInvoice || new Date().toISOString().split('T')[0],
-        selectedSJIds: selectedItem.suratJalanIds || [],
-        ruteHarga: selectedItem.ruteHarga || {}
-      }));
-      initializedRef.current = true;
-    }
-
-    // Reset ref saat modal dibuka untuk type lain
-    if (type !== 'editInvoice') {
-      initializedRef.current = false;
-    }
-  }, [type, selectedItem]);
 
   const handleSubmit = () => {
     if (type === 'addSJ') {
@@ -3217,7 +3101,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
       }
 
       onSubmit(formData);
-    } else if (type === 'addInvoice' || type === 'editInvoice') {
+    } else if (type === 'addInvoice') {
       if (!formData.noInvoice || !formData.tglInvoice) {
         setAlertMessage('No Invoice dan Tgl Invoice wajib diisi!');
         return;
@@ -3333,7 +3217,6 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
     if (type === 'markTerkirim') return 'Tandai Surat Jalan Terkirim';
     if (type === 'editTerkirim') return 'Edit Data Pengiriman';
     if (type === 'addInvoice') return 'Buat Invoice Baru';
-    if (type === 'editInvoice') return 'Edit Invoice';
     if (type === 'addUangMuka') return 'Tambah Uang Muka';
     if (type === 'addTransaksi') return 'Tambah Transaksi Kas';
     if (type === 'addUser') return 'Tambah User Baru';
@@ -3603,7 +3486,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                 </p>
               </div>
             </>
-          ) : (type === 'addInvoice' || type === 'editInvoice') ? (
+          ) : type === 'addInvoice' ? (
             <>
               {/* Form Invoice */}
               <div className="grid grid-cols-2 gap-4 mb-4">
@@ -3615,7 +3498,6 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                     onChange={(e) => setFormData({ ...formData, noInvoice: e.target.value.toUpperCase() })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     placeholder="Contoh: INV/2024/001"
-                    disabled={type === 'editInvoice'}
                   />
                 </div>
 
@@ -3626,7 +3508,6 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                     value={formData.tglInvoice}
                     onChange={(e) => setFormData({ ...formData, tglInvoice: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    disabled={type === 'editInvoice'}
                   />
                 </div>
               </div>
@@ -3635,7 +3516,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Pilih Surat Jalan * <span className="text-xs text-gray-500">
-                    {type === 'editInvoice' ? '(tambah atau hapus SJ dari invoice)' : '(yang sudah terkirim)'}
+                    (yang sudah terkirim)
                   </span>
                 </label>
 
@@ -3663,15 +3544,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
 
                 <div className="border border-gray-300 rounded-lg p-4 max-h-80 overflow-y-auto bg-gray-50">
                   {suratJalanList
-                    .filter(sj => {
-                      // Untuk edit: tampilkan SJ yang sudah di invoice INI atau yang available
-                      if (type === 'editInvoice') {
-                        return String(sj?.status || '').toLowerCase() === 'terkirim' &&
-                               (isSJBelumInvoice(sj) || sj.invoiceId === selectedItem?.id);
-                      }
-                      // Untuk add: hanya tampilkan yang available
-                      return isSJBelumInvoice(sj);
-                    })
+                    .filter(sj => isSJBelumInvoice(sj))
                     .filter(sj => {
                       if (!searchInvoiceSJ) return true;
                       const search = searchInvoiceSJ.toLowerCase();
@@ -3694,13 +3567,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                   ) : (
                     <div className="space-y-2">
                       {suratJalanList
-                        .filter(sj => {
-                          if (type === 'editInvoice') {
-                            return String(sj?.status || '').toLowerCase() === 'terkirim' &&
-                                   (isSJBelumInvoice(sj) || sj.invoiceId === selectedItem?.id);
-                          }
-                          return isSJBelumInvoice(sj);
-                        })
+                        .filter(sj => isSJBelumInvoice(sj))
                         .filter(sj => {
                           if (!searchInvoiceSJ) return true;
                           const search = searchInvoiceSJ.toLowerCase();
