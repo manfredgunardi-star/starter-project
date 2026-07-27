@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { formatCurrency } from './utils/currency.js';
 import { isSJBelumInvoice, mergeById } from './utils/sjHelpers.js';
 import { computeInvoiceTotals } from './utils/invoiceTotals.js';
+import { buildSJInvoicePatchMap, releaseSJsFromInvoice } from './services/invoiceSJService.js';
 import { calculateSJPenalty } from './utils/payslipHelpers.js';
 import { downloadSJRecapToExcel } from './utils/excel.js';
 import { findMasterIdByField } from './utils/masterDataMatch.js';
@@ -518,18 +519,9 @@ const SuratJalanMonitor = () => {
   // Persist invoice + update SJ terkait dengan fallback nama koleksi ("invoice" vs "invoices")
 
   // Saat admin_invoice update surat_jalan, Firestore Rules hanya mengizinkan perubahan field invoice tertentu.
-  const pickSJInvoicePatch = (sj) => {
-    const nowIso = new Date().toISOString();
-    return sanitizeForFirestore({
-      statusInvoice: sj?.statusInvoice ?? 'belum',
-      invoiceId: sj?.invoiceId ?? null,
-      invoiceNo: sj?.invoiceNo ?? null,
-      updatedAt: sj?.updatedAt ?? nowIso,
-      updatedBy: sj?.updatedBy ?? (currentUser?.name || 'system'),
-    });
-  };
+  // Patch per-SJ dibangun oleh buildSJInvoicePatchMap (services/invoiceSJService.js).
 
-const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist }) => {
+const persistInvoiceWithFallback = async ({ invoiceDoc, updatedSJList, sjIdsToPersist }) => {
     await ensureAuthed();
     const nowIso = new Date().toISOString();
     const who = currentUser?.name || currentUser?.username || 'system';
@@ -551,29 +543,30 @@ const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist }) => {
     }
     if (!invoiceSaved) throw lastErr || new Error('Gagal menyimpan invoice');
 
-    const resolveResults = await Promise.allSettled((sjIdsToPersist || []).map(async (sjId) => ({ sjId, ref: await resolveSuratJalanDocRef(db, sjId) })));
-    const resolved = resolveResults
-      .filter(r => r.status === 'fulfilled')
-      .map(r => r.value);
-    const failedResolves = resolveResults.filter(r => r.status === 'rejected');
-    if (failedResolves.length > 0) {
-      console.warn(`[persistInvoice] ${failedResolves.length} SJ gagal resolve:`, failedResolves.map(r => r.reason));
-    }
-    for (const { sjId, ref } of resolved) {
-      if (!ref) continue;
+    // Patch diambil per-SJ dari updatedSJList: SJ yang dicabut dari invoice tertulis
+    // 'belum' + link kosong, bukan ikut ditandai 'terinvoice' seperti sebelumnya.
+    const patchById = buildSJInvoicePatchMap(updatedSJList, sjIdsToPersist, { nowIso, who });
+    const failedSJIds = [];
+    for (const rawId of sjIdsToPersist || []) {
+      const sjId = String(rawId ?? '');
+      const patch = patchById.get(sjId);
+      if (!sjId || !patch) {
+        if (sjId) failedSJIds.push(sjId);
+        continue;
+      }
       try {
-        await setDoc(ref, sanitizeForFirestore({
-          statusInvoice: 'terinvoice',
-          invoiceId: invoiceDoc.id,
-          invoiceNo: invoiceDoc.noInvoice,
-          updatedAt: nowIso,
-          updatedBy: who,
-        }), { merge: true });
+        const ref = await resolveSuratJalanDocRef(db, sjId);
+        if (!ref) {
+          failedSJIds.push(sjId);
+          continue;
+        }
+        await setDoc(ref, sanitizeForFirestore(patch), { merge: true });
       } catch (err) {
         console.error(`[persistInvoice] Gagal update SJ ${sjId}:`, err);
+        failedSJIds.push(sjId);
       }
     }
-    return true;
+    return { failedSJIds };
   };
 
   const addInvoice = async (data) => {
@@ -612,13 +605,16 @@ const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist }) => {
     );
 
     try {
-      await persistInvoiceWithFallback({
+      const { failedSJIds } = await persistInvoiceWithFallback({
         invoiceDoc: newInvoice,
+        updatedSJList,
         sjIdsToPersist: data.selectedSJIds,
       });
       setSuratJalanList(updatedSJList);
       setInvoiceList((prev) => mergeById(prev, [newInvoice]));
-      setAlertMessage('✅ Invoice berhasil dibuat!');
+      setAlertMessage(failedSJIds.length > 0
+        ? `⚠️ Invoice tersimpan, tapi ${failedSJIds.length} dari ${data.selectedSJIds.length} Surat Jalan gagal ditandai terinvoice. Cek Console (F12) lalu ulangi lewat Edit invoice.`
+        : '✅ Invoice berhasil dibuat!');
     } catch (e) {
       console.error('Persist invoice failed:', e);
       if (e?.code === 'NOT_AUTHENTICATED') {
@@ -704,12 +700,14 @@ setInvoiceList(updatedInvoiceList);
 // Persist ke Firestore (invoice + update SJ terkait)
 try {
   const touchedIds = Array.from(new Set([...(oldSJIds || []), ...(newSJIds || [])]));
-  await persistInvoiceWithFallback({
+  const { failedSJIds } = await persistInvoiceWithFallback({
     invoiceDoc: updatedInvoice,
     updatedSJList,
     sjIdsToPersist: touchedIds,
   });
-  setAlertMessage('✅ Invoice berhasil diupdate!');
+  setAlertMessage(failedSJIds.length > 0
+    ? `⚠️ Invoice tersimpan, tapi ${failedSJIds.length} dari ${touchedIds.length} Surat Jalan gagal disinkronkan. Buka lagi Edit invoice ini dan simpan ulang.`
+    : '✅ Invoice berhasil diupdate!');
 } catch (e) {
   console.error("Persist edit invoice failed:", e);
   if (e?.code === 'NOT_AUTHENTICATED') {
@@ -733,6 +731,17 @@ try {
           const nowIso = new Date().toISOString();
           const who = currentUser?.name || currentUser?.username || 'system';
 
+          // Lepas SJ LEBIH DULU. Kalau ada yang gagal, invoice sengaja dibiarkan hidup
+          // supaya masih terlihat di UI dan pembatalan bisa diulang — mencegah SJ yatim
+          // yang terkunci 'terinvoice' tanpa invoice induk.
+          const { released, failed } = await releaseSJsFromInvoice(db, sjIds, { nowIso, who });
+          if (failed.length > 0) {
+            console.error('[deleteInvoice] SJ gagal dilepas:', failed);
+            setAlertMessage(`⚠️ ${failed.length} dari ${sjIds.length} Surat Jalan gagal dilepas, invoice TIDAK jadi dihapus. Cek koneksi lalu coba lagi.`);
+            setConfirmDialog({ show: false, message: '', onConfirm: null });
+            return;
+          }
+
           let softDeleteOk = false;
           let lastErr = null;
           for (const col of ['invoice', 'invoices']) {
@@ -752,19 +761,8 @@ try {
           }
           if (!softDeleteOk) throw lastErr || new Error('Gagal membatalkan invoice');
 
-          const resolved = await Promise.all(sjIds.map(async (sjId) => ({ sjId, ref: await resolveSuratJalanDocRef(db, sjId) })));
-          for (const { ref } of resolved) {
-            if (!ref) continue;
-            await setDoc(ref, sanitizeForFirestore({
-              statusInvoice: 'belum',
-              invoiceId: null,
-              invoiceNo: null,
-              updatedAt: nowIso,
-              updatedBy: who,
-            }), { merge: true });
-          }
-
-          setSuratJalanList((prev) => prev.map((sj) => sjIds.includes(sj.id) ? {
+          const releasedSet = new Set(released);
+          setSuratJalanList((prev) => prev.map((sj) => releasedSet.has(String(sj.id)) ? {
             ...sj,
             statusInvoice: 'belum',
             invoiceId: null,
