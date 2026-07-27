@@ -1,0 +1,16 @@
+{
+  "name": "sj-monitor-repair",
+  "version": "1.0.0",
+  "private": true,
+  "description": "One-off Firestore data repair scripts for sj-monitor",
+  "scripts": {
+    "plan": "node release-orphan-sj.js",
+    "apply": "node release-orphan-sj.js --apply"
+  },
+  "dependencies": {
+    "@google-cloud/firestore": "^7.10.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
