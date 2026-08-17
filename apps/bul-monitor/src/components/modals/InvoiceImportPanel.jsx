@@ -21,7 +21,7 @@ const InvoiceImportPanel = ({ eligibleSJList = [], onImported, setAlertMessage }
 
   const unduhTemplate = () => {
     // BOM UTF-8 agar Excel mengenali encoding — pola sama dengan downloadTemplate() di App.jsx
-    const blob = new Blob(['﻿' + TEMPLATE_CSV], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(['\uFEFF' + TEMPLATE_CSV], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
