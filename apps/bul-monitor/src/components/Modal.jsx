@@ -6,6 +6,7 @@ import SupirFormFields from './modals/SupirFormFields.jsx';
 import PelangganFormFields from './modals/PelangganFormFields.jsx';
 import RuteFormFields from './modals/RuteFormFields.jsx';
 import MaterialFormFields from './modals/MaterialFormFields.jsx';
+import InvoiceImportPanel from './modals/InvoiceImportPanel.jsx';
 
 const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [], supirList = [], ruteList = [], materialList = [], suratJalanList = [], pelangganList = [], onClose, onSubmit }) => {
   const [searchInvoiceSJ, setSearchInvoiceSJ] = useState('');
@@ -72,6 +73,21 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
       initializedRef.current = false;
     }
   }, [type, selectedItem]);
+
+  // Daftar SJ yang boleh masuk invoice BARU — dipakai oleh panel import CSV.
+  // Kriterianya sengaja disamakan persis dengan filter checklist manual di bawah
+  // (lihat blok filter pada bagian "Pilih Surat Jalan"), supaya hasil import
+  // tidak pernah berbeda dari apa yang bisa dicentang manual.
+  const eligibleSJForImport = React.useMemo(
+    () =>
+      suratJalanList.filter((sj) => {
+        const belumInvoice =
+          sj.statusInvoice == null || sj.statusInvoice === '' || sj.statusInvoice === 'belum';
+        const layak = (sj.status === 'terkirim' || sj.status === 'terkunci') && sj.isActive !== false;
+        return layak && belumInvoice;
+      }),
+    [suratJalanList]
+  );
 
   const handleSubmit = () => {
     if (type === 'addSJ') {
@@ -573,6 +589,25 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                   <p className="text-xs text-orange-600 mt-1">Belum ada data pelanggan. Tambahkan di menu Master Data → Pelanggan.</p>
                 )}
               </div>
+
+              {/* Import CSV — hanya untuk invoice baru, bukan mode edit */}
+              {type === 'addInvoice' && (
+                <InvoiceImportPanel
+                  eligibleSJList={eligibleSJForImport}
+                  setAlertMessage={setAlertMessage}
+                  onImported={(hasil) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      selectedSJIds: hasil.selectedSJIds,
+                      hargaPerGroup: hasil.hargaPerGroup,
+                      // String kosong (bukan null) agar input tetap controlled.
+                      // handleSubmit memilih hargaSatuan vs hargaPerGroup sendiri
+                      // berdasarkan jumlah grup.
+                      hargaSatuan: hasil.hargaSatuan ?? '',
+                    }));
+                  }}
+                />
+              )}
 
               {/* Pilih Surat Jalan */}
               <div className="mb-4">
