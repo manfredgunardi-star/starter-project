@@ -36,10 +36,24 @@ describe('isSJEligibleForInvoice — invoice baru', () => {
   it('menolak SJ yang sudah terinvoice', () => {
     expect(isSJEligibleForInvoice({ ...sjTerkirim, statusInvoice: 'terinvoice', invoiceId: 'INV-1' })).toBe(false);
   });
+
+  it('menolak SJ terinvoice yang tidak punya field invoiceId sama sekali', () => {
+    // Mengunci default isEdit=false. Kalau defaultnya tertukar jadi true,
+    // undefined === undefined membuat SJ ini lolos dan muncul di panel import
+    // padahal sudah terinvoice.
+    const sj = { id: '9', nomorSJ: '09999', status: 'terkirim', isActive: true, statusInvoice: 'terinvoice' };
+    expect(isSJEligibleForInvoice(sj)).toBe(false);
+  });
 });
 
 describe('isSJEligibleForInvoice — mode edit invoice', () => {
   const opsiEdit = { isEdit: true, editingInvoiceId: 'INV-1' };
+
+  it('membandingkan invoiceId secara ketat, bukan longgar', () => {
+    // invoiceId null vs editingInvoiceId undefined: === memberi false, == memberi true.
+    const sj = { ...sjTerkirim, statusInvoice: 'terinvoice', invoiceId: null };
+    expect(isSJEligibleForInvoice(sj, { isEdit: true, editingInvoiceId: undefined })).toBe(false);
+  });
 
   it('menerima SJ yang sudah terinvoice ke invoice yang sedang diedit', () => {
     const sj = { ...sjTerkirim, statusInvoice: 'terinvoice', invoiceId: 'INV-1' };
