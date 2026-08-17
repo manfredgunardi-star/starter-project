@@ -7,6 +7,7 @@ import PelangganFormFields from './modals/PelangganFormFields.jsx';
 import RuteFormFields from './modals/RuteFormFields.jsx';
 import MaterialFormFields from './modals/MaterialFormFields.jsx';
 import InvoiceImportPanel from './modals/InvoiceImportPanel.jsx';
+import { isSJEligibleForInvoice } from '../utils/invoiceEligibility.js';
 
 const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [], supirList = [], ruteList = [], materialList = [], suratJalanList = [], pelangganList = [], onClose, onSubmit }) => {
   const [searchInvoiceSJ, setSearchInvoiceSJ] = useState('');
@@ -75,17 +76,10 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
   }, [type, selectedItem]);
 
   // Daftar SJ yang boleh masuk invoice BARU — dipakai oleh panel import CSV.
-  // Kriterianya sengaja disamakan persis dengan filter checklist manual di bawah
-  // (lihat blok filter pada bagian "Pilih Surat Jalan"), supaya hasil import
+  // Memakai helper yang sama dengan checklist manual di bawah, supaya hasil import
   // tidak pernah berbeda dari apa yang bisa dicentang manual.
   const eligibleSJForImport = React.useMemo(
-    () =>
-      suratJalanList.filter((sj) => {
-        const belumInvoice =
-          sj.statusInvoice == null || sj.statusInvoice === '' || sj.statusInvoice === 'belum';
-        const layak = (sj.status === 'terkirim' || sj.status === 'terkunci') && sj.isActive !== false;
-        return layak && belumInvoice;
-      }),
+    () => suratJalanList.filter((sj) => isSJEligibleForInvoice(sj)),
     [suratJalanList]
   );
 
@@ -641,17 +635,10 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                 
                 <div className="border border-gray-300 rounded-lg p-4 max-h-80 overflow-y-auto bg-gray-50">
                   {suratJalanList
-                    .filter(sj => {
-                      const isBelumInvoice = (sj.statusInvoice == null || sj.statusInvoice === '' || sj.statusInvoice === 'belum');
-                      const baseEligible = ((sj.status === 'terkirim' || sj.status === 'terkunci') && sj.isActive !== false);
-
-                      // Untuk edit: tampilkan SJ yang sudah di invoice INI atau yang available
-                      if (type === 'editInvoice') {
-                        return baseEligible && (isBelumInvoice || sj.invoiceId === selectedItem?.id);
-                      }
-                      // Untuk add: hanya tampilkan yang available
-                      return baseEligible && isBelumInvoice;
-                    })
+                    .filter(sj => isSJEligibleForInvoice(sj, {
+                      isEdit: type === 'editInvoice',
+                      editingInvoiceId: selectedItem?.id,
+                    }))
                     .filter(sj => {
                       if (!searchInvoiceSJ) return true;
                       const search = searchInvoiceSJ.toLowerCase();
@@ -674,15 +661,10 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                   ) : (
                     <div className="space-y-2">
                       {suratJalanList
-                        .filter(sj => {
-                          const isBelumInvoice = (sj.statusInvoice == null || sj.statusInvoice === '' || sj.statusInvoice === 'belum');
-                          const baseEligible = ((sj.status === 'terkirim' || sj.status === 'terkunci') && sj.isActive !== false);
-
-                          if (type === 'editInvoice') {
-                            return baseEligible && (isBelumInvoice || sj.invoiceId === selectedItem?.id);
-                          }
-                          return baseEligible && isBelumInvoice;
-                        })
+                        .filter(sj => isSJEligibleForInvoice(sj, {
+                          isEdit: type === 'editInvoice',
+                          editingInvoiceId: selectedItem?.id,
+                        }))
                         .filter(sj => {
                           if (!searchInvoiceSJ) return true;
                           const search = searchInvoiceSJ.toLowerCase();
