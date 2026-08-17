@@ -21,6 +21,17 @@
 - Commit memakai conventional commit berbahasa Inggris (`feat:`, `test:`, `chore:`).
 - Jangan me-refactor kode di luar scope. Duplikasi filter SJ yang sudah ada di `Modal.jsx:609-619` dan `Modal.jsx:642-650` **dibiarkan apa adanya**.
 
+## Amandemen 2026-08-17 (setelah review Task 3)
+
+Review Task 3 menemukan cacat pada plan versi pertama. Disetujui user untuk diperbaiki sebelum Task 4:
+
+1. **Harga `50.000` diterima sebagai Rp 50 (salah 1000×).** Pola awal `/^\d+(\.\d+)?$/` menganggap titik selalu desimal, padahal Excel berlokal Indonesia mengekspor lima puluh ribu sebagai `50.000`. Baris itu lolos validasi dan `parseFloat` menghasilkan `50`. Pengecekan konsistensi harga di Task 4 tidak menangkapnya karena file yang seluruh barisnya `50.000` tetap konsisten. **Perbaikan:** desimal dibatasi maksimal 2 angka → `/^\d+(\.\d{1,2})?$/`. `50.000` ditolak, `50123.45` tetap diterima.
+2. **Kolom berlebih dibuang diam-diam.** Dengan pemisah koma, `07214,50,000` terpecah jadi 3 kolom dan kolom ketiga dibuang, harga terbaca `50`. **Perbaikan:** jumlah kolom wajib tepat 2 (`kolom.length !== 2`).
+3. **Nomor baris meleset bila ada baris kosong.** Nomor baris dihitung dari array yang sudah dibuang baris kosongnya, sehingga daftar penolakan menunjuk baris yang salah. **Perbaikan:** nomor baris asli di file disimpan saat pemisahan baris.
+4. **Karakter BOM mentah di file test.** Diganti dengan escape enam karakter (garis miring terbalik, `u`, `FEFF`) agar tidak lenyap tersapu formatter/linter.
+
+Jumlah test bertambah dari 21 menjadi 24 (Task 3: 14 → 17). Angka harapan di tiap langkah di bawah sudah menyesuaikan.
+
 ## Kontrak Format CSV
 
 ```
@@ -244,7 +255,10 @@ Buat `apps/bul-monitor/src/utils/invoiceCsvParser.js`:
  * di App.jsx, yaitu qtyBongkar * hargaSatuan per Surat Jalan.
  */
 
-const HARGA_PATTERN = /^\d+(\.\d+)?$/;
+// Maksimal 2 angka desimal. Batas inilah yang menolak "50.000" — format ribuan
+// Excel berlokal Indonesia — yang kalau diterima akan terbaca sebagai Rp 50,
+// yaitu salah tagih 1000x tanpa peringatan apa pun.
+const HARGA_PATTERN = /^\d+(\.\d{1,2})?$/;
 
 const hasil = (patch = {}) => ({
   ok: true,
@@ -264,17 +278,21 @@ export function parseInvoiceCsv(csvText, eligibleSJList = []) {
   // agar pengecekan header tidak gagal karena karakter tak terlihat.
   const teks = String(csvText || '').replace(/^\uFEFF/, '');
 
-  const baris = teks
-    .split('\n')
-    .map((b) => b.trim())
-    .filter((b) => b.length > 0);
+  // Nomor baris ASLI di berkas ikut disimpan. Kalau baris kosong hanya dibuang,
+  // daftar penolakan akan menunjuk baris yang salah dan operator mengoreksi
+  // baris yang sebenarnya sudah benar.
+  const baris = [];
+  teks.split('\n').forEach((isi, idx) => {
+    const bersih = isi.trim();
+    if (bersih.length > 0) baris.push({ isi: bersih, nomorAsli: idx + 1 });
+  });
 
   if (baris.length < 2) {
     return hasil({ ok: false, error: 'File CSV kosong atau tidak berisi baris data.' });
   }
 
-  const pemisah = baris[0].includes(';') ? ';' : ',';
-  const header = baris[0].split(pemisah).map((h) => h.trim().toLowerCase());
+  const pemisah = baris[0].isi.includes(';') ? ';' : ',';
+  const header = baris[0].isi.split(pemisah).map((h) => h.trim().toLowerCase());
 
   const headerValid =
     header.length === 2 &&
@@ -287,7 +305,7 @@ export function parseInvoiceCsv(csvText, eligibleSJList = []) {
       ok: false,
       error:
         'Header CSV tidak sesuai.\n\nFormat yang benar:\nNomor SJ;Harga Jual per Satuan\n\n' +
-        `Header yang ditemukan:\n${baris[0]}\n\nSilakan pakai tombol "Download Template CSV".`,
+        `Header yang ditemukan:\n${baris[0].isi}\n\nSilakan pakai tombol "Download Template CSV".`,
     });
   }
 
@@ -397,6 +415,31 @@ describe('parseInvoiceCsv — pencocokan baris', () => {
     expect(hasil.rejected[0].alasan).toContain('2 kolom');
   });
 
+  it('menolak harga bergaya ribuan Indonesia yang akan terbaca 1000x lebih kecil', () => {
+    // Excel berlokal Indonesia mengekspor lima puluh ribu sebagai "50.000".
+    // parseFloat("50.000") = 50, jadi ini WAJIB ditolak, bukan diterima diam-diam.
+    const hasil = parseInvoiceCsv(`${HEADER}\n07214;50.000`, SJ_LIST);
+    expect(hasil.matched).toHaveLength(0);
+    expect(hasil.rejected).toHaveLength(1);
+    expect(hasil.rejected[0].alasan).toContain('angka');
+  });
+
+  it('menolak baris yang kolomnya lebih dari 2', () => {
+    // Dengan pemisah koma, "07214,50,000" terpecah jadi 3 kolom; kalau kolom
+    // ketiga dibuang diam-diam maka harga terbaca 50, bukan 50000.
+    const hasil = parseInvoiceCsv('Nomor SJ,Harga Jual per Satuan\n07214,50,000', SJ_LIST);
+    expect(hasil.matched).toHaveLength(0);
+    expect(hasil.rejected).toHaveLength(1);
+    expect(hasil.rejected[0].alasan).toContain('2 kolom');
+  });
+
+  it('menomori baris sesuai posisi asli di berkas meski ada baris kosong', () => {
+    const hasil = parseInvoiceCsv(`${HEADER}\n\n07214;50000\n\n99999;50000`, SJ_LIST);
+    expect(hasil.matched).toHaveLength(1);
+    expect(hasil.rejected).toHaveLength(1);
+    expect(hasil.rejected[0].baris).toBe(5);
+  });
+
   it('gagal keseluruhan bila tidak ada satu pun baris yang cocok', () => {
     const hasil = parseInvoiceCsv(`${HEADER}\n99999;50000`, SJ_LIST);
     expect(hasil.ok).toBe(false);
@@ -412,7 +455,7 @@ Run:
 ```bash
 cd "C:/Project/VPS/.claude/worktrees/interesting-noyce-5a85e6/apps/bul-monitor" && npm test
 ```
-Expected: 3 test lama LULUS, 11 test baru GAGAL (`matched` masih array kosong).
+Expected: 3 test lama LULUS, 14 test baru GAGAL (`matched` masih array kosong).
 
 - [ ] **Step 3: Tulis implementasi pencocokan baris**
 
@@ -424,16 +467,18 @@ Di `apps/bul-monitor/src/utils/invoiceCsvParser.js`, ganti baris terakhir fungsi
   const sudahDipakai = new Map(); // nomorSJ (lowercase) -> nomor baris pertama yang memakainya
 
   for (let i = 1; i < baris.length; i++) {
-    const nomorBaris = i + 1; // header = baris 1
-    const kolom = baris[i].split(pemisah).map((v) => v.trim());
+    const nomorBaris = baris[i].nomorAsli;
+    const kolom = baris[i].isi.split(pemisah).map((v) => v.trim());
     const nomorSJ = kolom[0] || '';
     const hargaMentah = kolom[1] || '';
 
-    if (kolom.length < 2 || !nomorSJ || !hargaMentah) {
+    // Wajib TEPAT 2 kolom. Kalau kolom berlebih dibiarkan, "07214,50,000"
+    // akan terbaca sebagai harga 50 dan kolom ketiga hilang tanpa jejak.
+    if (kolom.length !== 2 || !nomorSJ || !hargaMentah) {
       rejected.push({
         baris: nomorBaris,
         nomorSJ,
-        alasan: 'Baris tidak lengkap — butuh 2 kolom: Nomor SJ dan Harga Jual per Satuan.',
+        alasan: 'Baris harus tepat 2 kolom: Nomor SJ dan Harga Jual per Satuan.',
       });
       continue;
     }
@@ -444,7 +489,8 @@ Di `apps/bul-monitor/src/utils/invoiceCsvParser.js`, ganti baris terakhir fungsi
         nomorSJ,
         alasan:
           `Harga "${hargaMentah}" bukan angka polos. Tulis tanpa "Rp" dan tanpa pemisah ribuan, ` +
-          'pakai titik untuk desimal. Contoh: 50000 atau 50123.45.',
+          'maksimal 2 angka desimal dengan titik. Contoh: 50000 atau 50123.45. ' +
+          'Kalau maksud Anda lima puluh ribu, tulis 50000 — bukan 50.000.',
       });
       continue;
     }
@@ -514,7 +560,7 @@ Run:
 ```bash
 cd "C:/Project/VPS/.claude/worktrees/interesting-noyce-5a85e6/apps/bul-monitor" && npm test
 ```
-Expected: `Tests  14 passed (14)`.
+Expected: `Tests  17 passed (17)`.
 
 - [ ] **Step 5: Commit**
 
@@ -612,7 +658,7 @@ Run:
 ```bash
 cd "C:/Project/VPS/.claude/worktrees/interesting-noyce-5a85e6/apps/bul-monitor" && npm test
 ```
-Expected: 14 test lama LULUS, 7 test baru GAGAL (`groups` masih array kosong).
+Expected: 17 test lama LULUS, 7 test baru GAGAL (`groups` masih array kosong).
 
 - [ ] **Step 3: Tulis implementasi pengelompokan**
 
@@ -695,7 +741,7 @@ Run:
 ```bash
 cd "C:/Project/VPS/.claude/worktrees/interesting-noyce-5a85e6/apps/bul-monitor" && npm test
 ```
-Expected: `Tests  21 passed (21)`.
+Expected: `Tests  24 passed (24)`.
 
 - [ ] **Step 5: Commit**
 
@@ -876,7 +922,7 @@ Run:
 ```bash
 cd "C:/Project/VPS/.claude/worktrees/interesting-noyce-5a85e6/apps/bul-monitor" && npm test && npm run build
 ```
-Expected: `Tests  21 passed (21)` lalu `✓ built in ...` tanpa error.
+Expected: `Tests  24 passed (24)` lalu `✓ built in ...` tanpa error.
 
 - [ ] **Step 3: Commit**
 
@@ -977,7 +1023,7 @@ Run:
 ```bash
 cd "C:/Project/VPS/.claude/worktrees/interesting-noyce-5a85e6/apps/bul-monitor" && npm test && npm run build
 ```
-Expected: `Tests  21 passed (21)` lalu `✓ built in ...` tanpa error.
+Expected: `Tests  24 passed (24)` lalu `✓ built in ...` tanpa error.
 
 - [ ] **Step 5: Commit**
 
@@ -1034,7 +1080,7 @@ cd "C:/Project/VPS/.claude/worktrees/interesting-noyce-5a85e6" && git add docs/s
 | Fase | Isi | Model | Effort | Task |
 |---|---|---|---|---|
 | 1 | Fondasi uji (Vitest) | Sonnet | rendah | 1 |
-| 2 | Parser CSV + 21 unit test | Opus | tinggi | 2, 3, 4 |
+| 2 | Parser CSV + 24 unit test | Opus | tinggi | 2, 3, 4 |
 | 3 | Komponen UI panel import | Sonnet | sedang | 5 |
 | 4 | Integrasi Modal + verifikasi | Opus | sedang | 6, 7 |
 
