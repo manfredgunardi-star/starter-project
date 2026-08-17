@@ -151,5 +151,72 @@ export function parseInvoiceCsv(csvText, eligibleSJList = []) {
     });
   }
 
-  return hasil({ matched, rejected });
+  // Kelompokkan per (material|rute) — kunci ini HARUS sama persis dengan yang
+  // dipakai Modal.jsx dan addInvoice() di App.jsx agar harga tersambung benar.
+  const peta = new Map();
+  for (const item of matched) {
+    const groupKey = `${item.sj.material}|${item.sj.rute}`;
+    if (!peta.has(groupKey)) peta.set(groupKey, []);
+    peta.get(groupKey).push(item);
+  }
+
+  // Harga wajib seragam dalam satu grup. Kalau tidak, tolak seluruh berkas —
+  // menebak salah satu harga berarti diam-diam mengubah nilai tagihan.
+  for (const [groupKey, anggota] of peta) {
+    const pertama = anggota[0];
+    const beda = anggota.find((a) => a.harga !== pertama.harga);
+    if (beda) {
+      const [material, rute] = groupKey.split('|');
+      return hasil({
+        ok: false,
+        rejected,
+        error:
+          `Harga tidak konsisten untuk ${material} — ${rute}.\n\n` +
+          `SJ ${pertama.nomorSJ}: Rp ${pertama.harga.toLocaleString('id-ID')}\n` +
+          `SJ ${beda.nomorSJ}: Rp ${beda.harga.toLocaleString('id-ID')}\n\n` +
+          'Satu rute hanya boleh punya satu harga per invoice. Perbaiki file lalu import ulang.',
+      });
+    }
+  }
+
+  const groups = [];
+  let totalNilai = 0;
+  const hargaPerGroup = {};
+
+  for (const [groupKey, anggota] of peta) {
+    const [material, rute] = groupKey.split('|');
+    const hargaSatuanGrup = anggota[0].harga;
+    const totalQty = anggota.reduce((s, a) => s + (Number(a.sj.qtyBongkar) || 0), 0);
+    // Dihitung per Surat Jalan, persis seperti addInvoice() di App.jsx,
+    // supaya angka pratinjau sama dengan angka yang tersimpan.
+    const nilai = anggota.reduce(
+      (s, a) => s + (Number(a.sj.qtyBongkar) || 0) * hargaSatuanGrup,
+      0
+    );
+
+    totalNilai += nilai;
+    hargaPerGroup[groupKey] = String(hargaSatuanGrup);
+    groups.push({
+      groupKey,
+      material,
+      rute,
+      satuan: anggota[0].sj.satuan || 'satuan',
+      hargaSatuan: hargaSatuanGrup,
+      totalQty,
+      nilai,
+      jumlahSJ: anggota.length,
+    });
+  }
+
+  return hasil({
+    matched,
+    rejected,
+    groups,
+    selectedSJIds: matched.map((m) => m.sj.id),
+    hargaPerGroup,
+    // Form invoice memakai satu input tunggal bila hanya ada 1 grup,
+    // dan input per grup bila lebih dari 1 (lihat Modal.jsx:737 dan :766).
+    hargaSatuan: groups.length === 1 ? String(groups[0].hargaSatuan) : null,
+    totalNilai,
+  });
 }

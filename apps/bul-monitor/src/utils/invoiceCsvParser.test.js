@@ -137,3 +137,69 @@ describe('parseInvoiceCsv — pencocokan baris', () => {
     expect(hasil.rejected).toHaveLength(1);
   });
 });
+
+describe('parseInvoiceCsv — pengelompokan dan nilai', () => {
+  it('menghasilkan satu grup: hargaSatuan terisi, totalNilai benar', () => {
+    const hasil = parseInvoiceCsv(`${HEADER}\n07214;50000\n07215;50000`, SJ_LIST);
+    expect(hasil.ok).toBe(true);
+    expect(hasil.groups).toHaveLength(1);
+    expect(hasil.selectedSJIds).toEqual(['SJ-1', 'SJ-2']);
+    expect(hasil.hargaSatuan).toBe('50000');
+    expect(hasil.hargaPerGroup).toEqual({ [`Pasir|${RUTE_TA}`]: '50000' });
+    // 25 * 50000 + 30 * 50000
+    expect(hasil.totalNilai).toBeCloseTo(2750000, 2);
+    expect(hasil.groups[0].totalQty).toBeCloseTo(55, 2);
+    expect(hasil.groups[0].jumlahSJ).toBe(2);
+    expect(hasil.groups[0].satuan).toBe('m3');
+  });
+
+  it('menghasilkan banyak grup: hargaSatuan null, hargaPerGroup berisi tiap grup', () => {
+    const hasil = parseInvoiceCsv(`${HEADER}\n07214;50000\n08120;60000`, SJ_LIST);
+    expect(hasil.ok).toBe(true);
+    expect(hasil.groups).toHaveLength(2);
+    expect(hasil.hargaSatuan).toBeNull();
+    expect(hasil.hargaPerGroup).toEqual({
+      [`Pasir|${RUTE_TA}`]: '50000',
+      [`Pasir|${RUTE_KAMAL}`]: '60000',
+    });
+    // 25 * 50000 + 20 * 60000
+    expect(hasil.totalNilai).toBeCloseTo(2450000, 2);
+  });
+
+  it('memakai kunci grup dengan format material|rute', () => {
+    const hasil = parseInvoiceCsv(`${HEADER}\n07214;50000`, SJ_LIST);
+    expect(hasil.groups[0].groupKey).toBe(`Pasir|${RUTE_TA}`);
+    expect(hasil.groups[0].material).toBe('Pasir');
+    expect(hasil.groups[0].rute).toBe(RUTE_TA);
+  });
+
+  it('mempertahankan presisi harga desimal (kasus adjusted rate dari kwitansi)', () => {
+    const hasil = parseInvoiceCsv(`${HEADER}\n07214;50123.45\n07215;50123.45`, SJ_LIST);
+    expect(hasil.ok).toBe(true);
+    expect(hasil.hargaSatuan).toBe('50123.45');
+    // 25 * 50123.45 + 30 * 50123.45 = 1253086.25 + 1503703.5
+    expect(hasil.totalNilai).toBeCloseTo(2756789.75, 2);
+  });
+
+  it('menolak seluruh file bila harga tidak konsisten dalam satu grup', () => {
+    const hasil = parseInvoiceCsv(`${HEADER}\n07214;50000\n07215;51000`, SJ_LIST);
+    expect(hasil.ok).toBe(false);
+    expect(hasil.error).toContain('tidak konsisten');
+    expect(hasil.error).toContain(RUTE_TA);
+    expect(hasil.error).toContain('07215');
+    expect(hasil.selectedSJIds).toHaveLength(0);
+  });
+
+  it('mengizinkan harga berbeda selama grupnya juga berbeda', () => {
+    const hasil = parseInvoiceCsv(`${HEADER}\n07214;50000\n07215;50000\n08120;60000`, SJ_LIST);
+    expect(hasil.ok).toBe(true);
+    expect(hasil.groups).toHaveLength(2);
+  });
+
+  it('tetap mengembalikan daftar penolakan bersama hasil yang sukses', () => {
+    const hasil = parseInvoiceCsv(`${HEADER}\n07214;50000\n99999;50000`, SJ_LIST);
+    expect(hasil.ok).toBe(true);
+    expect(hasil.selectedSJIds).toEqual(['SJ-1']);
+    expect(hasil.rejected).toHaveLength(1);
+  });
+});
