@@ -6,6 +6,8 @@ import SupirFormFields from './modals/SupirFormFields.jsx';
 import PelangganFormFields from './modals/PelangganFormFields.jsx';
 import RuteFormFields from './modals/RuteFormFields.jsx';
 import MaterialFormFields from './modals/MaterialFormFields.jsx';
+import InvoiceImportPanel from './modals/InvoiceImportPanel.jsx';
+import { isSJEligibleForInvoice } from '../utils/invoiceEligibility.js';
 
 const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [], supirList = [], ruteList = [], materialList = [], suratJalanList = [], pelangganList = [], onClose, onSubmit }) => {
   const [searchInvoiceSJ, setSearchInvoiceSJ] = useState('');
@@ -72,6 +74,14 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
       initializedRef.current = false;
     }
   }, [type, selectedItem]);
+
+  // Daftar SJ yang boleh masuk invoice BARU — dipakai oleh panel import CSV.
+  // Memakai helper yang sama dengan checklist manual di bawah, supaya hasil import
+  // tidak pernah berbeda dari apa yang bisa dicentang manual.
+  const eligibleSJForImport = React.useMemo(
+    () => suratJalanList.filter((sj) => isSJEligibleForInvoice(sj)),
+    [suratJalanList]
+  );
 
   const handleSubmit = () => {
     if (type === 'addSJ') {
@@ -574,6 +584,25 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                 )}
               </div>
 
+              {/* Import CSV — hanya untuk invoice baru, bukan mode edit */}
+              {type === 'addInvoice' && (
+                <InvoiceImportPanel
+                  eligibleSJList={eligibleSJForImport}
+                  setAlertMessage={setAlertMessage}
+                  onImported={(hasil) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      selectedSJIds: hasil.selectedSJIds,
+                      hargaPerGroup: hasil.hargaPerGroup,
+                      // String kosong (bukan null) agar input tetap controlled.
+                      // handleSubmit memilih hargaSatuan vs hargaPerGroup sendiri
+                      // berdasarkan jumlah grup.
+                      hargaSatuan: hasil.hargaSatuan ?? '',
+                    }));
+                  }}
+                />
+              )}
+
               {/* Pilih Surat Jalan */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -606,17 +635,10 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                 
                 <div className="border border-gray-300 rounded-lg p-4 max-h-80 overflow-y-auto bg-gray-50">
                   {suratJalanList
-                    .filter(sj => {
-                      const isBelumInvoice = (sj.statusInvoice == null || sj.statusInvoice === '' || sj.statusInvoice === 'belum');
-                      const baseEligible = ((sj.status === 'terkirim' || sj.status === 'terkunci') && sj.isActive !== false);
-
-                      // Untuk edit: tampilkan SJ yang sudah di invoice INI atau yang available
-                      if (type === 'editInvoice') {
-                        return baseEligible && (isBelumInvoice || sj.invoiceId === selectedItem?.id);
-                      }
-                      // Untuk add: hanya tampilkan yang available
-                      return baseEligible && isBelumInvoice;
-                    })
+                    .filter(sj => isSJEligibleForInvoice(sj, {
+                      isEdit: type === 'editInvoice',
+                      editingInvoiceId: selectedItem?.id,
+                    }))
                     .filter(sj => {
                       if (!searchInvoiceSJ) return true;
                       const search = searchInvoiceSJ.toLowerCase();
@@ -639,15 +661,10 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                   ) : (
                     <div className="space-y-2">
                       {suratJalanList
-                        .filter(sj => {
-                          const isBelumInvoice = (sj.statusInvoice == null || sj.statusInvoice === '' || sj.statusInvoice === 'belum');
-                          const baseEligible = ((sj.status === 'terkirim' || sj.status === 'terkunci') && sj.isActive !== false);
-
-                          if (type === 'editInvoice') {
-                            return baseEligible && (isBelumInvoice || sj.invoiceId === selectedItem?.id);
-                          }
-                          return baseEligible && isBelumInvoice;
-                        })
+                        .filter(sj => isSJEligibleForInvoice(sj, {
+                          isEdit: type === 'editInvoice',
+                          editingInvoiceId: selectedItem?.id,
+                        }))
                         .filter(sj => {
                           if (!searchInvoiceSJ) return true;
                           const search = searchInvoiceSJ.toLowerCase();
