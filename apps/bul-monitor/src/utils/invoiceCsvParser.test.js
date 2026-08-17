@@ -136,6 +136,32 @@ describe('parseInvoiceCsv — pencocokan baris', () => {
     expect(hasil.error).toContain('Tidak ada baris');
     expect(hasil.rejected).toHaveLength(1);
   });
+
+  it('menolak SJ dengan qtyBongkar null, sementara baris lain tetap cocok', () => {
+    const sjQtyNull = [
+      { id: 'SJ-1', nomorSJ: '07214', rute: RUTE_TA, material: 'Pasir', satuan: 'm3', qtyBongkar: 25 },
+      { id: 'SJ-2', nomorSJ: '07215', rute: RUTE_TA, material: 'Pasir', satuan: 'm3', qtyBongkar: null },
+    ];
+    const hasil = parseInvoiceCsv(`${HEADER}\n07214;50000\n07215;50000`, sjQtyNull);
+    expect(hasil.matched).toHaveLength(1);
+    expect(hasil.matched[0].sj.id).toBe('SJ-1');
+    expect(hasil.rejected).toHaveLength(1);
+    expect(hasil.rejected[0].nomorSJ).toBe('07215');
+    expect(hasil.rejected[0].alasan).toContain('Qty Bongkar');
+  });
+
+  it('menolak SJ dengan qtyBongkar 0, sementara baris lain tetap cocok', () => {
+    const sjQtyZero = [
+      { id: 'SJ-1', nomorSJ: '07214', rute: RUTE_TA, material: 'Pasir', satuan: 'm3', qtyBongkar: 25 },
+      { id: 'SJ-2', nomorSJ: '07215', rute: RUTE_TA, material: 'Pasir', satuan: 'm3', qtyBongkar: 0 },
+    ];
+    const hasil = parseInvoiceCsv(`${HEADER}\n07214;50000\n07215;50000`, sjQtyZero);
+    expect(hasil.matched).toHaveLength(1);
+    expect(hasil.matched[0].sj.id).toBe('SJ-1');
+    expect(hasil.rejected).toHaveLength(1);
+    expect(hasil.rejected[0].nomorSJ).toBe('07215');
+    expect(hasil.rejected[0].alasan).toContain('Qty Bongkar');
+  });
 });
 
 describe('parseInvoiceCsv — pengelompokan dan nilai', () => {
@@ -201,5 +227,22 @@ describe('parseInvoiceCsv — pengelompokan dan nilai', () => {
     expect(hasil.ok).toBe(true);
     expect(hasil.selectedSJIds).toEqual(['SJ-1']);
     expect(hasil.rejected).toHaveLength(1);
+  });
+
+  it('menolak seluruh file bila harga tidak konsisten pada grup KEDUA, meski grup pertama konsisten', () => {
+    const sjDuaGrup = [
+      { id: 'SJ-1', nomorSJ: '07214', rute: RUTE_TA, material: 'Pasir', satuan: 'm3', qtyBongkar: 25 },
+      { id: 'SJ-3', nomorSJ: '08120', rute: RUTE_KAMAL, material: 'Pasir', satuan: 'm3', qtyBongkar: 20 },
+      { id: 'SJ-5', nomorSJ: '09001', rute: RUTE_KAMAL, material: 'Pasir', satuan: 'm3', qtyBongkar: 15 },
+    ];
+    const hasil = parseInvoiceCsv(
+      `${HEADER}\n07214;50000\n08120;60000\n09001;61000`,
+      sjDuaGrup
+    );
+    expect(hasil.ok).toBe(false);
+    expect(hasil.error).toContain('tidak konsisten');
+    expect(hasil.error).toContain(RUTE_KAMAL);
+    expect(hasil.error).toContain('08120');
+    expect(hasil.error).toContain('09001');
   });
 });

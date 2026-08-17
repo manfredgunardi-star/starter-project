@@ -139,6 +139,21 @@ export function parseInvoiceCsv(csvText, eligibleSJList = []) {
       continue;
     }
 
+    // Qty Bongkar kosong/0 berarti nilainya Rp 0, tapi SJ-nya tetap akan dicap
+    // "terinvoice" saat disimpan — tertagih nol dan hilang selamanya dari daftar
+    // eligible. Import melewati review visual per kartu, jadi harus ditolak di sini.
+    const qtyBongkar = Number(kandidat[0].qtyBongkar);
+    if (!(qtyBongkar > 0)) {
+      rejected.push({
+        baris: nomorBaris,
+        nomorSJ,
+        alasan:
+          'Qty Bongkar Surat Jalan ini kosong atau 0, jadi nilainya akan Rp 0. ' +
+          'Lengkapi Qty Bongkar dulu lewat Surat Jalan, baru import ulang.',
+      });
+      continue;
+    }
+
     sudahDipakai.set(kunci, nomorBaris);
     matched.push({ nomorSJ, sj: kandidat[0], harga });
   }
