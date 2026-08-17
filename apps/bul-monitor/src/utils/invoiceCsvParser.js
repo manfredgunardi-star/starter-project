@@ -8,7 +8,10 @@
  * di App.jsx, yaitu qtyBongkar * hargaSatuan per Surat Jalan.
  */
 
-const HARGA_PATTERN = /^\d+(\.\d+)?$/;
+// Maksimal 2 angka desimal. Batas inilah yang menolak "50.000" — format ribuan
+// Excel berlokal Indonesia — yang kalau diterima akan terbaca sebagai Rp 50,
+// yaitu salah tagih 1000x tanpa peringatan apa pun.
+const HARGA_PATTERN = /^\d+(\.\d{1,2})?$/;
 
 const hasil = (patch = {}) => ({
   ok: true,
@@ -28,17 +31,21 @@ export function parseInvoiceCsv(csvText, eligibleSJList = []) {
   // agar pengecekan header tidak gagal karena karakter tak terlihat.
   const teks = String(csvText || '').replace(/^\uFEFF/, '');
 
-  const baris = teks
-    .split('\n')
-    .map((b) => b.trim())
-    .filter((b) => b.length > 0);
+  // Nomor baris ASLI di berkas ikut disimpan. Kalau baris kosong hanya dibuang,
+  // daftar penolakan akan menunjuk baris yang salah dan operator mengoreksi
+  // baris yang sebenarnya sudah benar.
+  const baris = [];
+  teks.split('\n').forEach((isi, idx) => {
+    const bersih = isi.trim();
+    if (bersih.length > 0) baris.push({ isi: bersih, nomorAsli: idx + 1 });
+  });
 
   if (baris.length < 2) {
     return hasil({ ok: false, error: 'File CSV kosong atau tidak berisi baris data.' });
   }
 
-  const pemisah = baris[0].includes(';') ? ';' : ',';
-  const header = baris[0].split(pemisah).map((h) => h.trim().toLowerCase());
+  const pemisah = baris[0].isi.includes(';') ? ';' : ',';
+  const header = baris[0].isi.split(pemisah).map((h) => h.trim().toLowerCase());
 
   const headerValid =
     header.length === 2 &&
@@ -51,7 +58,7 @@ export function parseInvoiceCsv(csvText, eligibleSJList = []) {
       ok: false,
       error:
         'Header CSV tidak sesuai.\n\nFormat yang benar:\nNomor SJ;Harga Jual per Satuan\n\n' +
-        `Header yang ditemukan:\n${baris[0]}\n\nSilakan pakai tombol "Download Template CSV".`,
+        `Header yang ditemukan:\n${baris[0].isi}\n\nSilakan pakai tombol "Download Template CSV".`,
     });
   }
 
@@ -60,16 +67,18 @@ export function parseInvoiceCsv(csvText, eligibleSJList = []) {
   const sudahDipakai = new Map(); // nomorSJ (lowercase) -> nomor baris pertama yang memakainya
 
   for (let i = 1; i < baris.length; i++) {
-    const nomorBaris = i + 1; // header = baris 1
-    const kolom = baris[i].split(pemisah).map((v) => v.trim());
+    const nomorBaris = baris[i].nomorAsli;
+    const kolom = baris[i].isi.split(pemisah).map((v) => v.trim());
     const nomorSJ = kolom[0] || '';
     const hargaMentah = kolom[1] || '';
 
-    if (kolom.length < 2 || !nomorSJ || !hargaMentah) {
+    // Wajib TEPAT 2 kolom. Kalau kolom berlebih dibiarkan, "07214,50,000"
+    // akan terbaca sebagai harga 50 dan kolom ketiga hilang tanpa jejak.
+    if (kolom.length !== 2 || !nomorSJ || !hargaMentah) {
       rejected.push({
         baris: nomorBaris,
         nomorSJ,
-        alasan: 'Baris tidak lengkap — butuh 2 kolom: Nomor SJ dan Harga Jual per Satuan.',
+        alasan: 'Baris harus tepat 2 kolom: Nomor SJ dan Harga Jual per Satuan.',
       });
       continue;
     }
@@ -80,7 +89,8 @@ export function parseInvoiceCsv(csvText, eligibleSJList = []) {
         nomorSJ,
         alasan:
           `Harga "${hargaMentah}" bukan angka polos. Tulis tanpa "Rp" dan tanpa pemisah ribuan, ` +
-          'pakai titik untuk desimal. Contoh: 50000 atau 50123.45.',
+          'maksimal 2 angka desimal dengan titik. Contoh: 50000 atau 50123.45. ' +
+          'Kalau maksud Anda lima puluh ribu, tulis 50000 — bukan 50.000.',
       });
       continue;
     }

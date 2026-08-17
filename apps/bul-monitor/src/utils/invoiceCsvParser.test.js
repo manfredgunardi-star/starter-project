@@ -49,7 +49,7 @@ describe('parseInvoiceCsv — pencocokan baris', () => {
   });
 
   it('membuang BOM UTF-8 dari Excel di awal berkas', () => {
-    const hasil = parseInvoiceCsv(`﻿${HEADER}\n07214;50000`, SJ_LIST);
+    const hasil = parseInvoiceCsv(`\uFEFF${HEADER}\n07214;50000`, SJ_LIST);
     expect(hasil.ok).toBe(true);
     expect(hasil.matched).toHaveLength(1);
   });
@@ -103,6 +103,31 @@ describe('parseInvoiceCsv — pencocokan baris', () => {
     const hasil = parseInvoiceCsv(`${HEADER}\n07214`, SJ_LIST);
     expect(hasil.rejected).toHaveLength(1);
     expect(hasil.rejected[0].alasan).toContain('2 kolom');
+  });
+
+  it('menolak harga bergaya ribuan Indonesia yang akan terbaca 1000x lebih kecil', () => {
+    // Excel berlokal Indonesia mengekspor lima puluh ribu sebagai "50.000".
+    // parseFloat("50.000") = 50, jadi ini WAJIB ditolak, bukan diterima diam-diam.
+    const hasil = parseInvoiceCsv(`${HEADER}\n07214;50.000`, SJ_LIST);
+    expect(hasil.matched).toHaveLength(0);
+    expect(hasil.rejected).toHaveLength(1);
+    expect(hasil.rejected[0].alasan).toContain('angka');
+  });
+
+  it('menolak baris yang kolomnya lebih dari 2', () => {
+    // Dengan pemisah koma, "07214,50,000" terpecah jadi 3 kolom; kalau kolom
+    // ketiga dibuang diam-diam maka harga terbaca 50, bukan 50000.
+    const hasil = parseInvoiceCsv('Nomor SJ,Harga Jual per Satuan\n07214,50,000', SJ_LIST);
+    expect(hasil.matched).toHaveLength(0);
+    expect(hasil.rejected).toHaveLength(1);
+    expect(hasil.rejected[0].alasan).toContain('2 kolom');
+  });
+
+  it('menomori baris sesuai posisi asli di berkas meski ada baris kosong', () => {
+    const hasil = parseInvoiceCsv(`${HEADER}\n\n07214;50000\n\n99999;50000`, SJ_LIST);
+    expect(hasil.matched).toHaveLength(1);
+    expect(hasil.rejected).toHaveLength(1);
+    expect(hasil.rejected[0].baris).toBe(5);
   });
 
   it('gagal keseluruhan bila tidak ada satu pun baris yang cocok', () => {
