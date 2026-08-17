@@ -31,3 +31,84 @@ describe('parseInvoiceCsv — validasi berkas', () => {
     expect(hasil.error).toContain('Header');
   });
 });
+
+describe('parseInvoiceCsv — pencocokan baris', () => {
+  it('mencocokkan nomor SJ ke objek Surat Jalan yang benar', () => {
+    const hasil = parseInvoiceCsv(`${HEADER}\n07214;50000`, SJ_LIST);
+    expect(hasil.ok).toBe(true);
+    expect(hasil.matched).toHaveLength(1);
+    expect(hasil.matched[0].sj.id).toBe('SJ-1');
+    expect(hasil.matched[0].harga).toBe(50000);
+    expect(hasil.rejected).toHaveLength(0);
+  });
+
+  it('mengabaikan spasi berlebih dan beda huruf besar/kecil pada nomor SJ', () => {
+    const hasil = parseInvoiceCsv(`${HEADER}\n  07214  ;  50000  `, SJ_LIST);
+    expect(hasil.matched).toHaveLength(1);
+    expect(hasil.matched[0].sj.id).toBe('SJ-1');
+  });
+
+  it('membuang BOM UTF-8 dari Excel di awal berkas', () => {
+    const hasil = parseInvoiceCsv(`﻿${HEADER}\n07214;50000`, SJ_LIST);
+    expect(hasil.ok).toBe(true);
+    expect(hasil.matched).toHaveLength(1);
+  });
+
+  it('menerima pemisah koma', () => {
+    const hasil = parseInvoiceCsv('Nomor SJ,Harga Jual per Satuan\n07214,50000', SJ_LIST);
+    expect(hasil.ok).toBe(true);
+    expect(hasil.matched).toHaveLength(1);
+  });
+
+  it('menolak baris yang nomor SJ-nya tidak ada di daftar yang bisa di-invoice', () => {
+    const hasil = parseInvoiceCsv(`${HEADER}\n07214;50000\n99999;50000`, SJ_LIST);
+    expect(hasil.matched).toHaveLength(1);
+    expect(hasil.rejected).toHaveLength(1);
+    expect(hasil.rejected[0].baris).toBe(3);
+    expect(hasil.rejected[0].nomorSJ).toBe('99999');
+    expect(hasil.rejected[0].alasan).toContain('tidak ditemukan');
+  });
+
+  it('menolak baris duplikat di dalam file yang sama', () => {
+    const hasil = parseInvoiceCsv(`${HEADER}\n07214;50000\n07214;50000`, SJ_LIST);
+    expect(hasil.matched).toHaveLength(1);
+    expect(hasil.rejected).toHaveLength(1);
+    expect(hasil.rejected[0].alasan).toContain('duplikat');
+  });
+
+  it('menolak nomor SJ yang ambigu (lebih dari satu SJ bernomor sama)', () => {
+    const kembar = [
+      ...SJ_LIST,
+      { id: 'SJ-4', nomorSJ: '07214', rute: RUTE_KAMAL, material: 'Pasir', satuan: 'm3', qtyBongkar: 5 },
+    ];
+    const hasil = parseInvoiceCsv(`${HEADER}\n07214;50000`, kembar);
+    expect(hasil.matched).toHaveLength(0);
+    expect(hasil.rejected[0].alasan).toContain('ambigu');
+  });
+
+  it('menolak harga yang bukan angka polos', () => {
+    const hasil = parseInvoiceCsv(`${HEADER}\n07214;Rp 50.000`, SJ_LIST);
+    expect(hasil.matched).toHaveLength(0);
+    expect(hasil.rejected[0].alasan).toContain('angka');
+  });
+
+  it('menolak harga nol atau negatif', () => {
+    const hasil = parseInvoiceCsv(`${HEADER}\n07214;0\n07215;-5`, SJ_LIST);
+    expect(hasil.matched).toHaveLength(0);
+    expect(hasil.rejected).toHaveLength(2);
+    expect(hasil.rejected[0].alasan).toContain('lebih besar dari 0');
+  });
+
+  it('menolak baris yang kolomnya kurang', () => {
+    const hasil = parseInvoiceCsv(`${HEADER}\n07214`, SJ_LIST);
+    expect(hasil.rejected).toHaveLength(1);
+    expect(hasil.rejected[0].alasan).toContain('2 kolom');
+  });
+
+  it('gagal keseluruhan bila tidak ada satu pun baris yang cocok', () => {
+    const hasil = parseInvoiceCsv(`${HEADER}\n99999;50000`, SJ_LIST);
+    expect(hasil.ok).toBe(false);
+    expect(hasil.error).toContain('Tidak ada baris');
+    expect(hasil.rejected).toHaveLength(1);
+  });
+});

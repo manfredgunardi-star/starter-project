@@ -55,5 +55,91 @@ export function parseInvoiceCsv(csvText, eligibleSJList = []) {
     });
   }
 
-  return hasil();
+  const matched = [];
+  const rejected = [];
+  const sudahDipakai = new Map(); // nomorSJ (lowercase) -> nomor baris pertama yang memakainya
+
+  for (let i = 1; i < baris.length; i++) {
+    const nomorBaris = i + 1; // header = baris 1
+    const kolom = baris[i].split(pemisah).map((v) => v.trim());
+    const nomorSJ = kolom[0] || '';
+    const hargaMentah = kolom[1] || '';
+
+    if (kolom.length < 2 || !nomorSJ || !hargaMentah) {
+      rejected.push({
+        baris: nomorBaris,
+        nomorSJ,
+        alasan: 'Baris tidak lengkap — butuh 2 kolom: Nomor SJ dan Harga Jual per Satuan.',
+      });
+      continue;
+    }
+
+    if (!HARGA_PATTERN.test(hargaMentah)) {
+      rejected.push({
+        baris: nomorBaris,
+        nomorSJ,
+        alasan:
+          `Harga "${hargaMentah}" bukan angka polos. Tulis tanpa "Rp" dan tanpa pemisah ribuan, ` +
+          'pakai titik untuk desimal. Contoh: 50000 atau 50123.45.',
+      });
+      continue;
+    }
+
+    const harga = parseFloat(hargaMentah);
+    if (!(harga > 0)) {
+      rejected.push({
+        baris: nomorBaris,
+        nomorSJ,
+        alasan: 'Harga harus lebih besar dari 0.',
+      });
+      continue;
+    }
+
+    const kunci = nomorSJ.toLowerCase();
+    if (sudahDipakai.has(kunci)) {
+      rejected.push({
+        baris: nomorBaris,
+        nomorSJ,
+        alasan: `Nomor SJ duplikat di dalam file — sudah dipakai di baris ${sudahDipakai.get(kunci)}.`,
+      });
+      continue;
+    }
+
+    const kandidat = eligibleSJList.filter(
+      (sj) => String(sj.nomorSJ || '').trim().toLowerCase() === kunci
+    );
+
+    if (kandidat.length === 0) {
+      rejected.push({
+        baris: nomorBaris,
+        nomorSJ,
+        alasan:
+          'Nomor SJ tidak ditemukan di daftar Surat Jalan yang bisa di-invoice. ' +
+          'Kemungkinan sudah terinvoice, belum berstatus terkirim, atau salah ketik.',
+      });
+      continue;
+    }
+
+    if (kandidat.length > 1) {
+      rejected.push({
+        baris: nomorBaris,
+        nomorSJ,
+        alasan: `Nomor SJ ambigu — ada ${kandidat.length} Surat Jalan dengan nomor yang sama. Selesaikan lewat pemilihan manual.`,
+      });
+      continue;
+    }
+
+    sudahDipakai.set(kunci, nomorBaris);
+    matched.push({ nomorSJ, sj: kandidat[0], harga });
+  }
+
+  if (matched.length === 0) {
+    return hasil({
+      ok: false,
+      error: 'Tidak ada baris yang bisa dipakai. Periksa daftar penolakan di bawah.',
+      rejected,
+    });
+  }
+
+  return hasil({ matched, rejected });
 }
