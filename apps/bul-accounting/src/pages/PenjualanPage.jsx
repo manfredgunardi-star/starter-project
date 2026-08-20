@@ -13,8 +13,7 @@ import {
   Plus, X, RefreshCw, Search, Edit, Trash2,
   CheckCircle, AlertCircle, FileText, ChevronDown, ChevronUp
 } from 'lucide-react'
-
-const KAS_NAMES = { '1111': 'Kas Kecil', '1112': 'Bank BCA', '1113': 'Bank Mandiri' }
+import { KAS_ACCOUNTS, getKasAccountName, getJournalType } from '../data/kasAccounts'
 
 // ─── Status helpers ─────────────────────────────────────────────────────────
 const STATUS_LABEL = { draft: 'Draft', unpaid: 'Belum Lunas', partial: 'Sebagian', paid: 'Lunas', cancelled: 'Dibatalkan' }
@@ -152,12 +151,6 @@ function PembayaranModal({ invoice, onSaved, onClose }) {
   const [saving, setSaving]       = useState(false)
   const [error, setError]         = useState('')
 
-  const kasOptions = [
-    { code: '1111', name: 'Kas Kecil' },
-    { code: '1112', name: 'Bank BCA Operasional' },
-    { code: '1113', name: 'Bank Mandiri Operasional' },
-  ]
-
   const nominalBayar = parseFloat(jumlahBayar) || 0
   const nominalPph   = parseFloat(pph) || 0
   const netDiterima  = nominalBayar - nominalPph
@@ -184,7 +177,7 @@ function PembayaranModal({ invoice, onSaved, onClose }) {
       const journalId = await saveJournal({
         date,
         description: keterangan,
-        type: account.startsWith('1111') ? 'kas' : 'bank',
+        type: getJournalType(account),
         truckId: invoice.truckId || null,
         lines: journalLines,
         createdBy: currentUser?.uid,
@@ -255,7 +248,7 @@ function PembayaranModal({ invoice, onSaved, onClose }) {
           <div>
             <label className="label">Diterima di Akun</label>
             <select value={account} onChange={e => setAccount(e.target.value)} className="select-field">
-              {kasOptions.map(o => <option key={o.code} value={o.code}>{o.code} - {o.name}</option>)}
+              {KAS_ACCOUNTS.map(o => <option key={o.code} value={o.code}>{o.code} - {o.name}</option>)}
             </select>
           </div>
           <div>
@@ -508,7 +501,7 @@ export default function PenjualanPage() {
                               <div className="text-right shrink-0">
                                 <span className="font-semibold text-gray-800">{formatCurrency(p.jumlahBayar)}</span>
                                 <span className="text-xs text-gray-400 ml-2">
-                                  {KAS_NAMES[p.account] || p.account}
+                                  {getKasAccountName(p.account)}
                                 </span>
                               </div>
                             </div>
