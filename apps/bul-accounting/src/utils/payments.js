@@ -99,6 +99,9 @@ const labelInvoice = (r) => r.invoiceNo || String(r.invoiceId || '').slice(0, 8)
  */
 export function buildPaymentJournalLines({ rows, account, keterangan }) {
   const selected = (rows || []).filter(r => r.selected)
+  if (selected.length === 0) {
+    throw new Error('buildPaymentJournalLines: tidak ada invoice yang dipilih')
+  }
   const { totalPph, totalNet } = summarizeAllocations(rows)
 
   const lines = [
@@ -137,7 +140,11 @@ export function buildPaymentJournalLines({ rows, account, keterangan }) {
 export function buildPaymentEntries({
   rows, account, keterangan, date, journalId, paymentGroupId, createdAt,
 }) {
-  return (rows || []).filter(r => r.selected).map(r => {
+  const selected = (rows || []).filter(r => r.selected)
+  if (selected.length === 0) {
+    throw new Error('buildPaymentEntries: tidak ada invoice yang dipilih')
+  }
+  return selected.map(r => {
     const jumlahBayar = angka(r.jumlahBayar)
     const pph = angka(r.pph)
     return {

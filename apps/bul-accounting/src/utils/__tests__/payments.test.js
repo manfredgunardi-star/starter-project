@@ -314,3 +314,20 @@ describe('buildPaymentEntries', () => {
     expect(total).toBe(summarizeAllocations(rows).totalGross)
   })
 })
+
+describe('buildPaymentJournalLines guards', () => {
+  it('melempar error ketika tidak ada baris tercentang', () => {
+    expect(() => buildPaymentJournalLines({
+      rows: [baris({ selected: false })], account: '1112', keterangan: 'x',
+    })).toThrow()
+  })
+})
+
+describe('buildPaymentEntries guards', () => {
+  it('melempar error ketika tidak ada baris tercentang', () => {
+    expect(() => buildPaymentEntries({
+      rows: [baris({ selected: false })], account: '1112', keterangan: 'x',
+      date: '2026-08-20', journalId: 'j', paymentGroupId: 'g', createdAt: 'now',
+    })).toThrow()
+  })
+})
