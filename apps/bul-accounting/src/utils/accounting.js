@@ -580,6 +580,29 @@ export async function removeInvoicePayment(invoiceId, journalId) {
   })
 }
 
+/**
+ * Seluruh invoice yang masih terbuka untuk satu pelanggan.
+ *
+ * Sengaja memakai where() di Firestore, bukan pola tarik-seluruh-koleksi
+ * seperti getInvoices(), karena pemilih multi-payment harus mengabaikan
+ * filter tanggal halaman dan menampilkan tunggakan selama apa pun.
+ *
+ * Memerlukan composite index (customerId ASC, status ASC) di
+ * firestore.indexes.json.
+ */
+export async function getOpenInvoicesByCustomer(customerId) {
+  if (!customerId) return []
+  const q = query(
+    collection(db, 'invoices'),
+    where('customerId', '==', customerId),
+    where('status', 'in', ['unpaid', 'partial']),
+  )
+  const snap = await getDocs(q)
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
+}
+
 // ===== CUSTOMERS =====
 export async function getCustomers() {
   const snap = await getDocs(collection(db, 'customers'))
