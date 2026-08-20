@@ -4,6 +4,7 @@ import {
   query, where, orderBy, Timestamp, writeBatch, limit, setDoc
 } from 'firebase/firestore'
 import { COA, getNormalBalance } from '../data/chartOfAccounts'
+import { computeInvoiceStatus } from './payments'
 
 // ===== FORMAT HELPERS =====
 export const formatCurrency = (amount) => {
@@ -543,9 +544,7 @@ export async function addInvoicePayment(invoiceId, payment) {
   const inv = snap.data()
   const payments = [...(inv.payments || []), { ...payment, createdAt: new Date().toISOString() }]
   const totalPaid = payments.reduce((s, p) => s + (p.jumlahBayar || 0), 0)
-  // Pakai pembulatan yang sama dengan removeInvoicePayment agar penentuan status konsisten
-  // (hindari selisih floating-point yang membuat invoice lunas tampil 'partial').
-  const status = Math.round(totalPaid) >= Math.round(inv.amount) ? 'paid' : (totalPaid > 0 ? 'partial' : 'unpaid')
+  const status = computeInvoiceStatus(inv.amount, totalPaid)
   await updateDoc(doc(db, 'invoices', invoiceId), {
     payments, totalPaid, status, updatedAt: new Date().toISOString(),
   })
@@ -560,7 +559,7 @@ export async function removeInvoicePayment(invoiceId, journalId) {
   const inv = snap.data()
   const payments = (inv.payments || []).filter(p => p.journalId !== journalId)
   const totalPaid = payments.reduce((s, p) => s + (p.jumlahBayar || 0), 0)
-  const status = Math.round(totalPaid) >= Math.round(inv.amount) ? 'paid' : (totalPaid > 0 ? 'partial' : 'unpaid')
+  const status = computeInvoiceStatus(inv.amount, totalPaid)
   await updateDoc(doc(db, 'invoices', invoiceId), {
     payments, totalPaid, status,
     ...(status !== 'paid' ? { paidDate: null } : {}),
