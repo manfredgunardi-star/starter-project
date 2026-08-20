@@ -9,6 +9,7 @@ vi.mock('firebase/firestore', async () => {
     getDocs: vi.fn(async () => ({ docs: globalThis.__SEED__.map(j => ({ id: j.id, data: () => j })) })),
     addDoc: vi.fn(), updateDoc: vi.fn(), doc: vi.fn(), getDoc: vi.fn(),
     Timestamp: {}, writeBatch: vi.fn(), limit: vi.fn(), setDoc: vi.fn(),
+    runTransaction: vi.fn(),
   }
 })
 
