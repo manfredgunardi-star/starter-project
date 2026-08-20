@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import {
-  getPurchaseInvoices, savePurchaseInvoice, updatePurchaseInvoice,
+  getPurchaseInvoices, savePurchaseInvoice, updatePurchaseInvoice, payPurchaseInvoice,
   getSuppliers, getTrucks,
-  saveJournal, deleteJournal,
+  deleteJournal,
   getCustomCOA, getCOAOverrides,
   formatCurrency, formatDate
 } from '../utils/accounting'
@@ -150,23 +150,23 @@ function BayarModal({ invoice, mergedCOA, onSaved, onClose }) {
     setError('')
     setSaving(true)
     try {
-      // Jurnal: Debit Akun Biaya, Kredit Kas/Bank
-      const journal = await saveJournal({
-        date,
-        description: keterangan,
-        type: account === '1111' ? 'kas' : 'bank',
-        truckId: null,
-        lines: [
-          { accountCode: invoice.accountCode, debit: invoice.amount, credit: 0, keterangan },
-          { accountCode: account,             debit: 0, credit: invoice.amount, keterangan },
-        ],
-        createdBy: currentUser?.uid,
-      })
-      await updatePurchaseInvoice(invoice.id, {
-        status: 'paid',
+      // Jurnal (Dr Akun Biaya / Cr Kas-Bank) dan penandaan lunas ditulis dalam satu
+      // batch, supaya tidak mungkin lagi ada jurnal tanpa tagihan yang ter-update.
+      await payPurchaseInvoice(invoice.id, {
         paidDate: date,
-        journalId: journal.id,
         updatedBy: currentUser?.uid,
+        journalData: {
+          date,
+          description: keterangan,
+          type: account === '1111' ? 'kas' : 'bank',
+          truckId: null,
+          invoiceId: invoice.id,
+          lines: [
+            { accountCode: invoice.accountCode, debit: invoice.amount, credit: 0, keterangan },
+            { accountCode: account,             debit: 0, credit: invoice.amount, keterangan },
+          ],
+          createdBy: currentUser?.uid,
+        },
       })
       onSaved()
       onClose()
