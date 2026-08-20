@@ -78,3 +78,81 @@ export function summarizeAllocations(rows) {
   const totalPph = selected.reduce((s, r) => s + angka(r.pph), 0)
   return { count: selected.length, totalGross, totalPph, totalNet: totalGross - totalPph }
 }
+
+// Akun tetap yang dipakai pembayaran piutang.
+// Nilainya menyalin PembayaranModal lama (PenjualanPage.jsx:173-182).
+export const AKUN_PIUTANG = '1121'            // Piutang Pelanggan - Proyek
+export const AKUN_PPH_DIBAYAR_MUKA = '1172'   // PPh 23 Dibayar Muka
+
+const labelInvoice = (r) => r.invoiceNo || String(r.invoiceId || '').slice(0, 8)
+
+/**
+ * Membentuk baris jurnal untuk satu penerimaan pembayaran multi-invoice.
+ *
+ * Bentuknya:
+ *   Dr  <akun kas/bank>   totalNet      (satu baris, cocok dengan mutasi bank)
+ *   Dr  1172              totalPph      (hanya jika totalPph > 0)
+ *       Cr 1121           per invoice   (agar buku besar piutang tetap detail)
+ *
+ * truckId diletakkan per baris kredit, bukan di header jurnal, karena satu
+ * pembayaran bisa mencakup invoice dari beberapa armada.
+ */
+export function buildPaymentJournalLines({ rows, account, keterangan }) {
+  const selected = (rows || []).filter(r => r.selected)
+  const { totalPph, totalNet } = summarizeAllocations(rows)
+
+  const lines = [
+    { accountCode: account, debit: totalNet, credit: 0, keterangan, truckId: null },
+  ]
+
+  if (totalPph > 0) {
+    lines.push({
+      accountCode: AKUN_PPH_DIBAYAR_MUKA,
+      debit: totalPph,
+      credit: 0,
+      keterangan: `PPh 23 - ${keterangan}`,
+      truckId: null,
+    })
+  }
+
+  for (const r of selected) {
+    lines.push({
+      accountCode: AKUN_PIUTANG,
+      debit: 0,
+      credit: angka(r.jumlahBayar),
+      keterangan: `${keterangan} — ${labelInvoice(r)}`,
+      truckId: r.truckId || null,
+    })
+  }
+
+  return lines
+}
+
+/**
+ * Membentuk entri payments[] per invoice.
+ * Bentuk entri sengaja identik dengan yang ditulis addInvoicePayment(),
+ * hanya ditambah paymentGroupId, agar riwayat pembayaran di PenjualanPage
+ * merender entri baru tanpa perubahan kode.
+ */
+export function buildPaymentEntries({
+  rows, account, keterangan, date, journalId, paymentGroupId, createdAt,
+}) {
+  return (rows || []).filter(r => r.selected).map(r => {
+    const jumlahBayar = angka(r.jumlahBayar)
+    const pph = angka(r.pph)
+    return {
+      invoiceId: r.invoiceId,
+      entry: {
+        journalId,
+        paymentGroupId,
+        date,
+        jumlahBayar,
+        pph,
+        netDiterima: jumlahBayar - pph,
+        account,
+        keterangan,
+        createdAt,
+      },
+    }
+  })
+}
