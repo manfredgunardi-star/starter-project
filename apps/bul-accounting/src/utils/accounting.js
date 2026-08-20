@@ -45,9 +45,16 @@ export async function getAuditLog(journalId) {
   return logs
 }
 
+// Firestore menolak field bernilai undefined (ignoreUndefinedProperties default false),
+// dan satu field undefined membatalkan seluruh tulisan. Buang key-nya sebelum dikirim.
+function stripUndefined(data) {
+  return Object.fromEntries(Object.entries(data).filter(([, v]) => v !== undefined))
+}
+
 // ===== JOURNAL ENTRIES =====
-export async function saveJournal(journalData) {
-  // journalData: { date, description, truckId, type, lines: [{accountCode, debit, credit}], createdBy, recurring? }
+// Validasi balance + bentuk dokumen jurnal. Dipakai saveJournal() dan penulisan
+// jurnal ber-batch supaya aturan balance tidak pernah berbeda antar jalur posting.
+function buildJournalDoc(journalData) {
   const totalDebit = journalData.lines.reduce((s, l) => s + (l.debit || 0), 0)
   const totalCredit = journalData.lines.reduce((s, l) => s + (l.credit || 0), 0)
 
@@ -55,13 +62,19 @@ export async function saveJournal(journalData) {
     throw new Error(`Jurnal tidak balance! Debit: ${totalDebit}, Credit: ${totalCredit}`)
   }
 
-  const docData = {
+  return {
     ...journalData,
     totalDebit,
     totalCredit,
     createdAt: new Date().toISOString(),
     status: 'posted'
   }
+}
+
+export async function saveJournal(journalData) {
+  // journalData: { date, description, truckId, type, lines: [{accountCode, debit, credit}], createdBy, recurring? }
+  // Mengembalikan STRING id dokumen jurnal, bukan DocumentReference.
+  const docData = buildJournalDoc(journalData)
 
   const ref = await addDoc(collection(db, 'journals'), docData)
   await writeAuditLog(ref.id, 'create', journalData.createdBy, { description: journalData.description })
@@ -629,11 +642,11 @@ export async function deleteSupplier(id) {
 
 // ===== PURCHASE INVOICES (Supplier) =====
 export async function savePurchaseInvoice(data) {
-  return await addDoc(collection(db, 'purchase_invoices'), {
+  return await addDoc(collection(db, 'purchase_invoices'), stripUndefined({
     ...data,
     createdAt: new Date().toISOString(),
     status: data.status || 'unpaid'
-  })
+  }))
 }
 
 export async function getPurchaseInvoices(filters = {}) {
@@ -645,7 +658,34 @@ export async function getPurchaseInvoices(filters = {}) {
 }
 
 export async function updatePurchaseInvoice(id, data) {
-  await updateDoc(doc(db, 'purchase_invoices', id), { ...data, updatedAt: new Date().toISOString() })
+  await updateDoc(doc(db, 'purchase_invoices', id), stripUndefined({ ...data, updatedAt: new Date().toISOString() }))
+}
+
+/**
+ * Bayar tagihan supplier: tulis jurnal pembayaran DAN tandai tagihan lunas dalam
+ * satu writeBatch. Sebelumnya kedua tulisan ini terpisah, sehingga kegagalan pada
+ * langkah kedua (field undefined, atau rules menolak update bagi non-superadmin)
+ * meninggalkan jurnal yatim Dr Biaya / Cr Kas di buku besar.
+ *
+ * @returns {Promise<string>} id jurnal pembayaran
+ */
+export async function payPurchaseInvoice(invoiceId, { journalData, paidDate, updatedBy }) {
+  const docData = buildJournalDoc(journalData)
+  const journalRef = doc(collection(db, 'journals'))
+
+  const batch = writeBatch(db)
+  batch.set(journalRef, docData)
+  batch.update(doc(db, 'purchase_invoices', invoiceId), stripUndefined({
+    status: 'paid',
+    paidDate,
+    journalId: journalRef.id,
+    updatedBy,
+    updatedAt: new Date().toISOString(),
+  }))
+  await batch.commit()
+
+  await writeAuditLog(journalRef.id, 'create', journalData.createdBy, { description: journalData.description })
+  return journalRef.id
 }
 
 // ===== COA MANAGEMENT (Firestore) =====
