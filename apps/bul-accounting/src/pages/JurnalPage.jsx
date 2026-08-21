@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { getJournals, deleteJournal, getJournal, removeInvoicePayment, getTrucks, getCustomCOA, getCOAOverrides, formatCurrency, batchImportJournals } from '../utils/accounting'
 import { getMergedCOA } from '../data/chartOfAccounts'
@@ -18,6 +18,29 @@ function parseNumber(str) {
   if (parts.length > 2) return parseFloat(s.replace(/\./g, '')) || 0
   // Jika ada koma → koma adalah desimal (format ID)
   return parseFloat(s.replace(/,/g, '.')) || 0
+}
+
+// ─── Helper: normalisasi invoice yang dilunasi sebuah jurnal ─────────────────
+// Tiga bentuk jurnal hidup berdampingan:
+//   • jurnal multi-payment  -> invoiceIds: string[]
+//   • jurnal pembayaran lama -> invoiceId: string (tanpa invoiceIds)
+//   • jurnal non-invoice     -> tidak punya keduanya
+// Selalu kembalikan array (mungkin kosong) supaya pemanggil cukup melakukan loop.
+export const invoiceIdsDari = (journal) => {
+  if (!journal) return []
+  if (Array.isArray(journal.invoiceIds)) return journal.invoiceIds.filter(Boolean)
+  return journal.invoiceId ? [journal.invoiceId] : []
+}
+
+// ─── Helper: pesan kegagalan penghapusan jurnal ──────────────────────────────
+// Pembalikan invoice berjalan berurutan SEBELUM jurnal di-soft-delete, dan
+// removeInvoicePayment() idempoten per invoice (memfilter payments[] menurut
+// journalId). Jadi bila gagal di tengah, jurnal masih berstatus posted dan
+// mengulang penghapusan menuntaskan sisanya tanpa double-revert — itu yang
+// perlu diketahui user, bukan sekadar "error".
+export const pesanGagalHapus = (error) => {
+  const detail = (error && error.message) || 'Kesalahan tidak diketahui'
+  return `Gagal menghapus jurnal: ${detail}. Sebagian invoice mungkin sudah dikembalikan, tetapi jurnalnya belum dihapus. Silakan coba hapus lagi — pengulangan aman dan akan menuntaskan sisanya.`
 }
 
 // ─── Import Jurnal Modal ──────────────────────────────────────────────────────
@@ -253,7 +276,14 @@ export default function JurnalPage() {
   const [showForm, setShowForm] = useState(false)
   const [editData, setEditData] = useState(null)
   const [deleteId, setDeleteId] = useState(null)
+  const [deleteInvoiceCount, setDeleteInvoiceCount] = useState(0)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
   const [showImport, setShowImport] = useState(false)
+
+  // Id jurnal yang paling terakhir diminta untuk dihapus. Dipakai untuk
+  // membuang hasil getJournal() yang datang terlambat dari permintaan lama.
+  const deleteRequestRef = useRef(null)
 
   const loadCOA = useCallback(async () => {
     const [custom, overrides] = await Promise.all([getCustomCOA(), getCOAOverrides()])
@@ -292,15 +322,59 @@ export default function JurnalPage() {
   const totalCredit = filtered.reduce((s, j) =>
     s + (j.lines?.reduce((ls, l) => ls + (l.credit || 0), 0) || 0), 0)
 
-  const handleDelete = async () => {
-    // Jika jurnal ini adalah pembayaran invoice, revert status invoice dulu
-    const journal = await getJournal(deleteId)
-    if (journal?.invoiceId) {
-      await removeInvoicePayment(journal.invoiceId, deleteId)
+  // JournalList memanggil onDelete dengan id saja, jadi jumlah invoice terdampak
+  // harus diambil dari dokumen jurnalnya untuk ditampilkan di dialog konfirmasi.
+  const mintaHapus = async (id) => {
+    setDeleteId(id)
+    setDeleteInvoiceCount(0)
+    setDeleteError('')
+    // Tandai permintaan ini sebagai yang terbaru sebelum await, lalu abaikan
+    // hasil yang kembali bila user sudah beralih ke jurnal lain (atau batal).
+    deleteRequestRef.current = id
+    try {
+      const journal = await getJournal(id)
+      if (deleteRequestRef.current !== id) return
+      setDeleteInvoiceCount(invoiceIdsDari(journal).length)
+    } catch {
+      // Gagal memuat jurnal hanya membuat pesan konfirmasi memakai bentuk umum.
+      if (deleteRequestRef.current !== id) return
+      setDeleteInvoiceCount(0)
     }
-    await deleteJournal(deleteId, currentUser?.uid)
+  }
+
+  const batalHapus = () => {
+    deleteRequestRef.current = null
     setDeleteId(null)
-    loadData()
+    setDeleteInvoiceCount(0)
+  }
+
+  const handleDelete = async () => {
+    // ConfirmDialog memanggil onConfirm tanpa await, jadi klik ganda bisa
+    // menjalankan dua loop sekaligus dan menulis dua entri audit trail.
+    if (deleting) return
+    setDeleting(true)
+    setDeleteError('')
+    try {
+      // Jika jurnal ini adalah pembayaran invoice, revert status SELURUH invoice
+      // yang dilunasinya (jurnal lama: satu invoiceId, multi-payment: invoiceIds[]).
+      // removeInvoicePayment() memfilter payments[] per journalId sehingga aman
+      // dipanggil berulang dan idempoten per invoice.
+      const journal = await getJournal(deleteId)
+      for (const invoiceId of invoiceIdsDari(journal)) {
+        await removeInvoicePayment(invoiceId, deleteId)
+      }
+      await deleteJournal(deleteId, currentUser?.uid)
+    } catch (e) {
+      // Jurnal belum ter-soft-delete (deleteJournal dipanggil paling akhir),
+      // sehingga masih tampil di daftar dan bisa dihapus ulang dengan aman.
+      setDeleteError(pesanGagalHapus(e))
+    } finally {
+      deleteRequestRef.current = null
+      setDeleteId(null)
+      setDeleteInvoiceCount(0)
+      setDeleting(false)
+      loadData()
+    }
   }
 
   return (
@@ -337,6 +411,17 @@ export default function JurnalPage() {
           )}
         </div>
       </div>
+
+      {/* Error hapus jurnal */}
+      {deleteError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-600 flex items-start gap-2">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+          <span className="flex-1">{deleteError}</span>
+          <button onClick={() => setDeleteError('')} className="p-0.5 hover:bg-red-100 rounded shrink-0">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
 
       {/* Filter bar */}
       <div className="card space-y-3">
@@ -381,7 +466,7 @@ export default function JurnalPage() {
         mergedCOA={mergedCOA}
         loading={loading}
         onEdit={isSuperadmin() ? (j) => { setEditData(j); setShowForm(true) } : null}
-        onDelete={isSuperadmin() ? (id) => setDeleteId(id) : null}
+        onDelete={isSuperadmin() ? mintaHapus : null}
       />
 
       {/* Form modal */}
@@ -409,11 +494,15 @@ export default function JurnalPage() {
       {deleteId && (
         <ConfirmDialog
           title="Hapus Jurnal"
-          message="Jurnal akan dihapus permanen dan dicatat di audit trail. Lanjutkan?"
+          message={
+            deleteInvoiceCount > 1
+              ? `Jurnal ini melunasi ${deleteInvoiceCount} invoice. Seluruhnya akan dikembalikan ke status sebelumnya, dan jurnal dicatat di audit trail. Lanjutkan?`
+              : 'Jurnal akan dihapus permanen dan dicatat di audit trail. Lanjutkan?'
+          }
           confirmLabel="Hapus"
           confirmVariant="danger"
           onConfirm={handleDelete}
-          onCancel={() => setDeleteId(null)}
+          onCancel={batalHapus}
         />
       )}
     </div>

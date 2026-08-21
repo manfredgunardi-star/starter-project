@@ -1,9 +1,17 @@
 import { db } from '../firebase'
 import {
   collection, addDoc, updateDoc, doc, getDocs, getDoc,
-  query, where, orderBy, Timestamp, writeBatch, limit, setDoc
+  query, where, orderBy, Timestamp, writeBatch, limit, setDoc, runTransaction
 } from 'firebase/firestore'
 import { COA, getNormalBalance } from '../data/chartOfAccounts'
+import {
+  computeInvoiceStatus,
+  validateAllocations,
+  buildPaymentJournalLines,
+  buildPaymentEntries,
+  TOLERANSI_RUPIAH,
+} from './payments'
+import { getJournalType } from '../data/kasAccounts'
 
 // ===== FORMAT HELPERS =====
 export const formatCurrency = (amount) => {
@@ -556,9 +564,7 @@ export async function addInvoicePayment(invoiceId, payment) {
   const inv = snap.data()
   const payments = [...(inv.payments || []), { ...payment, createdAt: new Date().toISOString() }]
   const totalPaid = payments.reduce((s, p) => s + (p.jumlahBayar || 0), 0)
-  // Pakai pembulatan yang sama dengan removeInvoicePayment agar penentuan status konsisten
-  // (hindari selisih floating-point yang membuat invoice lunas tampil 'partial').
-  const status = Math.round(totalPaid) >= Math.round(inv.amount) ? 'paid' : (totalPaid > 0 ? 'partial' : 'unpaid')
+  const status = computeInvoiceStatus(inv.amount, totalPaid)
   await updateDoc(doc(db, 'invoices', invoiceId), {
     payments, totalPaid, status, updatedAt: new Date().toISOString(),
   })
@@ -573,12 +579,191 @@ export async function removeInvoicePayment(invoiceId, journalId) {
   const inv = snap.data()
   const payments = (inv.payments || []).filter(p => p.journalId !== journalId)
   const totalPaid = payments.reduce((s, p) => s + (p.jumlahBayar || 0), 0)
-  const status = Math.round(totalPaid) >= Math.round(inv.amount) ? 'paid' : (totalPaid > 0 ? 'partial' : 'unpaid')
+  const status = computeInvoiceStatus(inv.amount, totalPaid)
   await updateDoc(doc(db, 'invoices', invoiceId), {
     payments, totalPaid, status,
     ...(status !== 'paid' ? { paidDate: null } : {}),
     updatedAt: new Date().toISOString(),
   })
+}
+
+/**
+ * Seluruh invoice yang masih terbuka untuk satu pelanggan.
+ *
+ * Sengaja memakai where() di Firestore, bukan pola tarik-seluruh-koleksi
+ * seperti getInvoices(), karena pemilih multi-payment harus mengabaikan
+ * filter tanggal halaman dan menampilkan tunggakan selama apa pun.
+ *
+ * Memerlukan composite index (customerId ASC, status ASC) di
+ * firestore.indexes.json.
+ */
+export async function getOpenInvoicesByCustomer(customerId) {
+  if (!customerId) return []
+  const q = query(
+    collection(db, 'invoices'),
+    where('customerId', '==', customerId),
+    where('status', 'in', ['unpaid', 'partial']),
+  )
+  const snap = await getDocs(q)
+  return snap.docs
+    .map(d => ({ id: d.id, ...d.data() }))
+    .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
+}
+
+// Batas aman jauh di bawah limit 500 write per transaksi Firestore.
+const MAX_INVOICE_PER_PEMBAYARAN = 50
+
+/**
+ * Mencatat satu penerimaan pembayaran yang melunasi beberapa invoice sekaligus.
+ *
+ * Satu runTransaction menulis: satu dokumen jurnal gabungan, lalu pembaruan
+ * payments[]/totalPaid/status pada tiap invoice. Kalau ada satu invoice yang
+ * statusnya berubah sejak modal dibuka, seluruh transaksi dibatalkan — tidak
+ * ada partial write.
+ *
+ * rows: AllocationRow[] (lihat payments.js)
+ * return: { journalId, paymentGroupId }
+ */
+export async function recordMultiInvoicePayment({ rows, account, date, keterangan, createdBy }) {
+  const selected = (rows || []).filter(r => r.selected)
+
+  if (!date) throw new Error('Tanggal wajib diisi')
+  if (!account) throw new Error('Akun kas/bank wajib dipilih')
+  if (selected.length > MAX_INVOICE_PER_PEMBAYARAN) {
+    throw new Error(`Maksimal ${MAX_INVOICE_PER_PEMBAYARAN} invoice per pembayaran`)
+  }
+
+  // Integritas invoiceId diperiksa SEBELUM validateAllocations() karena
+  // errors di sana dipetakan per invoiceId: id yang kosong akan bertumpuk di
+  // key "undefined" dan membuat pesan kesalahan per baris tidak bisa dipercaya.
+  const invoiceIds = selected.map(r => r.invoiceId)
+
+  // Baris tanpa invoiceId lolos guard duplikat (Set hanya melihat kesamaan) dan
+  // baru gagal jauh di dalam transaksi pada doc(db, 'invoices', undefined).
+  // Dua baris yang sama-sama kosong bahkan mengaku "duplikat" — menyesatkan.
+  if (invoiceIds.some(id => !id)) {
+    throw new Error(
+      'Ada baris pembayaran tanpa invoiceId. ' +
+      'Muat ulang daftar invoice dan coba lagi.'
+    )
+  }
+
+  // Satu invoice tercentang dua kali akan dibaca dua kali tetapi hanya
+  // menyisakan satu tx.update() (write terakhir menang), sehingga salah satu
+  // entri pembayaran hilang diam-diam. Tolak sejak awal.
+  if (new Set(invoiceIds).size !== invoiceIds.length) {
+    throw new Error('Ada invoice yang tercantum lebih dari satu kali')
+  }
+
+  const cek = validateAllocations(rows)
+  if (!cek.valid) {
+    // cek.errors dipetakan per invoiceId dan memuat satu-satunya keterangan
+    // spesifik yang dimiliki user ("melebihi sisa tagihan", "PPh tidak valid").
+    // Melemparnya sebagai string generik membuat jalur uang tidak bisa
+    // didiagnosis, jadi detailnya dibawa dua kali: sebagai properti err.errors
+    // untuk modal yang menandai per baris, dan dilipat ke dalam message untuk
+    // pemanggil yang hanya menampilkan error.message.
+    const rincian = Object.entries(cek.errors).map(([id, pesan]) => {
+      const baris = selected.find(r => r.invoiceId === id)
+      const label = baris?.invoiceNo || String(id).slice(0, 8)
+      return `${label}: ${pesan}`
+    })
+    const err = new Error(
+      cek.formError ||
+      (rincian.length
+        ? `Alokasi pembayaran tidak valid — ${rincian.join('; ')}`
+        : 'Alokasi pembayaran tidak valid')
+    )
+    err.errors = cek.errors
+    throw err
+  }
+
+  // keterangan ikut tertulis ke tiap entri payments[]; Firestore menolak
+  // seluruh dokumen bila ada field undefined, dan stripUndefined() hanya
+  // bekerja pada level teratas — jadi normalkan di sini.
+  const catatan = keterangan || ''
+
+  // Referensi dibuat lebih dulu agar journalId sudah diketahui sebelum commit
+  // dan bisa ditulis ke tiap entri payments[].
+  const journalRef = doc(collection(db, 'journals'))
+  const paymentGroupId = crypto.randomUUID()
+
+  const lines = buildPaymentJournalLines({ rows, account, keterangan: catatan })
+
+  // buildJournalDoc() memegang satu-satunya aturan balance di modul ini dan
+  // sekaligus menetapkan createdAt + status: 'posted'.
+  const docData = stripUndefined(buildJournalDoc({
+    date,
+    description: catatan,
+    type: getJournalType(account),
+    truckId: null,
+    lines,
+    invoiceIds,
+    paymentGroupId,
+    createdBy: createdBy || null,
+  }))
+
+  // createdAt yang sama dipakai jurnal dan seluruh entri payments[]: satu
+  // peristiwa pembayaran tidak boleh punya dua timestamp berbeda.
+  const entries = buildPaymentEntries({
+    rows, account, keterangan: catatan, date,
+    journalId: journalRef.id, paymentGroupId, createdAt: docData.createdAt,
+  })
+
+  await runTransaction(db, async (tx) => {
+    // FASE READ — seluruh get() harus selesai sebelum write pertama.
+    const dibaca = []
+    for (const { invoiceId, entry } of entries) {
+      const ref = doc(db, 'invoices', invoiceId)
+      const snap = await tx.get(ref)
+      if (!snap.exists()) throw new Error(`Invoice ${invoiceId} tidak ditemukan`)
+      dibaca.push({ invoiceId, ref, entry, data: snap.data() })
+    }
+
+    // VALIDASI ULANG terhadap data terkini di server.
+    for (const { invoiceId, entry, data } of dibaca) {
+      const label = data.invoiceNo || invoiceId.slice(0, 8)
+      if (data.status !== 'unpaid' && data.status !== 'partial') {
+        throw new Error(
+          `Invoice ${label} sudah berstatus "${data.status}". ` +
+          'Muat ulang daftar invoice dan coba lagi.'
+        )
+      }
+      const sisa = (data.amount || 0) - (data.totalPaid || 0)
+      if (entry.jumlahBayar > sisa + TOLERANSI_RUPIAH) {
+        throw new Error(
+          `Invoice ${label}: jumlah bayar melebihi sisa tagihan terkini. ` +
+          'Muat ulang daftar invoice dan coba lagi.'
+        )
+      }
+    }
+
+    // FASE WRITE — jurnal dulu, lalu tiap invoice.
+    tx.set(journalRef, docData)
+
+    for (const { ref, entry, data } of dibaca) {
+      const payments = [...(data.payments || []), entry]
+      const totalPaid = payments.reduce((s, p) => s + (p.jumlahBayar || 0), 0)
+      const status = computeInvoiceStatus(data.amount, totalPaid)
+      tx.update(ref, stripUndefined({
+        payments,
+        totalPaid,
+        status,
+        ...(status === 'paid' ? { paidDate: date } : {}),
+        updatedAt: new Date().toISOString(),
+      }))
+    }
+  })
+
+  // Audit ditulis setelah commit. Kegagalan audit tidak boleh membatalkan
+  // operasi utama — pola yang sama dipakai writeAuditLog() di seluruh modul ini.
+  await writeAuditLog(journalRef.id, 'create', createdBy, {
+    description: catatan,
+    invoiceIds,
+    paymentGroupId,
+  })
+
+  return { journalId: journalRef.id, paymentGroupId }
 }
 
 // ===== CUSTOMERS =====
