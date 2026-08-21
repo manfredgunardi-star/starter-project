@@ -9,6 +9,7 @@ import {
   validateAllocations,
   buildPaymentJournalLines,
   buildPaymentEntries,
+  TOLERANSI_RUPIAH,
 } from './payments'
 import { getJournalType } from '../data/kasAccounts'
 
@@ -632,17 +633,49 @@ export async function recordMultiInvoicePayment({ rows, account, date, keteranga
     throw new Error(`Maksimal ${MAX_INVOICE_PER_PEMBAYARAN} invoice per pembayaran`)
   }
 
-  const cek = validateAllocations(rows)
-  if (!cek.valid) {
-    throw new Error(cek.formError || 'Alokasi pembayaran tidak valid')
+  // Integritas invoiceId diperiksa SEBELUM validateAllocations() karena
+  // errors di sana dipetakan per invoiceId: id yang kosong akan bertumpuk di
+  // key "undefined" dan membuat pesan kesalahan per baris tidak bisa dipercaya.
+  const invoiceIds = selected.map(r => r.invoiceId)
+
+  // Baris tanpa invoiceId lolos guard duplikat (Set hanya melihat kesamaan) dan
+  // baru gagal jauh di dalam transaksi pada doc(db, 'invoices', undefined).
+  // Dua baris yang sama-sama kosong bahkan mengaku "duplikat" — menyesatkan.
+  if (invoiceIds.some(id => !id)) {
+    throw new Error(
+      'Ada baris pembayaran tanpa invoiceId. ' +
+      'Muat ulang daftar invoice dan coba lagi.'
+    )
   }
 
   // Satu invoice tercentang dua kali akan dibaca dua kali tetapi hanya
   // menyisakan satu tx.update() (write terakhir menang), sehingga salah satu
   // entri pembayaran hilang diam-diam. Tolak sejak awal.
-  const invoiceIds = selected.map(r => r.invoiceId)
   if (new Set(invoiceIds).size !== invoiceIds.length) {
     throw new Error('Ada invoice yang tercantum lebih dari satu kali')
+  }
+
+  const cek = validateAllocations(rows)
+  if (!cek.valid) {
+    // cek.errors dipetakan per invoiceId dan memuat satu-satunya keterangan
+    // spesifik yang dimiliki user ("melebihi sisa tagihan", "PPh tidak valid").
+    // Melemparnya sebagai string generik membuat jalur uang tidak bisa
+    // didiagnosis, jadi detailnya dibawa dua kali: sebagai properti err.errors
+    // untuk modal yang menandai per baris, dan dilipat ke dalam message untuk
+    // pemanggil yang hanya menampilkan error.message.
+    const rincian = Object.entries(cek.errors).map(([id, pesan]) => {
+      const baris = selected.find(r => r.invoiceId === id)
+      const label = baris?.invoiceNo || String(id).slice(0, 8)
+      return `${label}: ${pesan}`
+    })
+    const err = new Error(
+      cek.formError ||
+      (rincian.length
+        ? `Alokasi pembayaran tidak valid — ${rincian.join('; ')}`
+        : 'Alokasi pembayaran tidak valid')
+    )
+    err.errors = cek.errors
+    throw err
   }
 
   // keterangan ikut tertulis ke tiap entri payments[]; Firestore menolak
@@ -697,7 +730,7 @@ export async function recordMultiInvoicePayment({ rows, account, date, keteranga
         )
       }
       const sisa = (data.amount || 0) - (data.totalPaid || 0)
-      if (entry.jumlahBayar > sisa + 0.5) {
+      if (entry.jumlahBayar > sisa + TOLERANSI_RUPIAH) {
         throw new Error(
           `Invoice ${label}: jumlah bayar melebihi sisa tagihan terkini. ` +
           'Muat ulang daftar invoice dan coba lagi.'
