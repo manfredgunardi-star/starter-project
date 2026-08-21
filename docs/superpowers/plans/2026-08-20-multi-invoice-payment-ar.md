@@ -78,7 +78,7 @@ dari sesi browser yang sudah login, lewat dev server lokal.
 
 Agen tidak boleh menangani service account key. Seluruh langkah di bawah dijalankan user.
 
-- [ ] **Langkah 1: Ekspos `db` khusus mode dev**
+- [x] **Langkah 1: Ekspos `db` khusus mode dev**
 
 Modify `apps/bul-accounting/src/firebase.js` — tambahkan di akhir file, sebelum
 `export default app`:
@@ -91,7 +91,7 @@ if (import.meta.env.DEV) {
 }
 ```
 
-- [ ] **Langkah 2: Jalankan dev server dan login**
+- [x] **Langkah 2: Jalankan dev server dan login**
 
 ```bash
 cd apps/bul-accounting && npm run dev
@@ -100,7 +100,7 @@ cd apps/bul-accounting && npm run dev
 User membuka URL yang tertera, lalu login sebagai superadmin. Sesi ini memakai project
 Firebase yang sama dengan produksi (`bul-accounting`), jadi datanya identik.
 
-- [ ] **Langkah 3: Jalankan pengecekan di DevTools Console**
+- [x] **Langkah 3: Jalankan pengecekan di DevTools Console**
 
 ```js
 const { collection, getDocs } = await import('firebase/firestore')
@@ -117,7 +117,7 @@ console.table(missing.map(i => ({
 
 Expected: dua baris hitungan, lalu tabel yang idealnya kosong.
 
-- [ ] **Langkah 4: Gerbang keputusan**
+- [x] **Langkah 4: Gerbang keputusan**
 
 Jika `Tanpa customerId` bernilai **0** → Fase 2 boleh jalan apa adanya.
 
@@ -130,7 +130,7 @@ Penyebab yang paling mungkin: `approveIntegrationItem()` menulis
 `customerId: customer?.id || null` (`integrationUtils.js:113`), sehingga invoice dari
 bul-monitor bisa berakhir tanpa pelanggan bila `findOrCreateCustomer()` gagal.
 
-- [ ] **Langkah 5: Commit perubahan dev-only**
+- [x] **Langkah 5: Commit perubahan dev-only**
 
 ```bash
 git add apps/bul-accounting/src/firebase.js
@@ -160,7 +160,7 @@ Menghapus duplikasi P1-6. **Perilaku tidak boleh berubah sama sekali** — ini m
 - Consumes: —
 - Produces: `KAS_ACCOUNTS: Array<{code: string, name: string, type: 'kas'|'bank'}>`, `getKasAccountName(code: string) => string`, `getJournalType(code: string) => 'kas'|'bank'`
 
-- [ ] **Step 1: Buat file konstanta**
+- [x] **Step 1: Buat file konstanta**
 
 Create `apps/bul-accounting/src/data/kasAccounts.js`:
 
@@ -193,7 +193,7 @@ export const getJournalType = (code) =>
   KAS_ACCOUNTS.find(a => a.code === code)?.type || 'bank'
 ```
 
-- [ ] **Step 2: Rewire PenjualanPage.jsx**
+- [x] **Step 2: Rewire PenjualanPage.jsx**
 
 Hapus baris 17 seluruhnya:
 
@@ -247,7 +247,7 @@ menjadi:
                                   {getKasAccountName(p.account)}
 ```
 
-- [ ] **Step 3: Rewire BiayaPage.jsx**
+- [x] **Step 3: Rewire BiayaPage.jsx**
 
 Tambahkan import setelah blok import `lucide-react` yang ada:
 
@@ -271,7 +271,7 @@ menjadi:
 
 **Jangan sentuh apa pun lagi di BiayaPage.** Khususnya bug `journalId: journal.id` di baris 168 — itu ditangani task terpisah di luar scope plan ini.
 
-- [ ] **Step 4: Verifikasi tidak ada sisa duplikasi di dua file itu**
+- [x] **Step 4: Verifikasi tidak ada sisa duplikasi di dua file itu**
 
 ```bash
 cd apps/bul-accounting && grep -n "KAS_NAMES\|kasOptions\|startsWith('1111')\|account === '1111'" src/pages/PenjualanPage.jsx src/pages/BiayaPage.jsx
@@ -279,7 +279,7 @@ cd apps/bul-accounting && grep -n "KAS_NAMES\|kasOptions\|startsWith('1111')\|ac
 
 Expected: tidak ada output sama sekali.
 
-- [ ] **Step 5: Jalankan validasi**
+- [x] **Step 5: Jalankan validasi**
 
 ```bash
 cd apps/bul-accounting && npm test && npm run build
@@ -287,7 +287,7 @@ cd apps/bul-accounting && npm test && npm run build
 
 Expected: seluruh test lulus (jumlah sama seperti sebelum task ini), build sukses.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/bul-accounting/src/data/kasAccounts.js apps/bul-accounting/src/pages/PenjualanPage.jsx apps/bul-accounting/src/pages/BiayaPage.jsx
@@ -311,7 +311,7 @@ Perhatikan detail halus di kode lama: perbandingan `paid` memakai nilai yang **d
 - Consumes: —
 - Produces: `computeInvoiceStatus(amount: number, totalPaid: number) => 'unpaid'|'partial'|'paid'`, `sisaTagihan(invoice: {amount?: number, totalPaid?: number}) => number`, `TOLERANSI_RUPIAH: number`
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Create `apps/bul-accounting/src/utils/__tests__/payments.test.js`:
 
@@ -362,7 +362,7 @@ describe('sisaTagihan', () => {
 })
 ```
 
-- [ ] **Step 2: Jalankan test untuk memastikan gagal**
+- [x] **Step 2: Jalankan test untuk memastikan gagal**
 
 ```bash
 cd apps/bul-accounting && npx vitest run src/utils/__tests__/payments.test.js
@@ -370,7 +370,7 @@ cd apps/bul-accounting && npx vitest run src/utils/__tests__/payments.test.js
 
 Expected: FAIL — `Failed to resolve import "../payments"`.
 
-- [ ] **Step 3: Implementasi minimal**
+- [x] **Step 3: Implementasi minimal**
 
 Create `apps/bul-accounting/src/utils/payments.js`:
 
@@ -405,7 +405,7 @@ export function computeInvoiceStatus(amount, totalPaid) {
 }
 ```
 
-- [ ] **Step 4: Jalankan test untuk memastikan lulus**
+- [x] **Step 4: Jalankan test untuk memastikan lulus**
 
 ```bash
 cd apps/bul-accounting && npx vitest run src/utils/__tests__/payments.test.js
@@ -413,7 +413,7 @@ cd apps/bul-accounting && npx vitest run src/utils/__tests__/payments.test.js
 
 Expected: PASS, 9 test.
 
-- [ ] **Step 5: Alihkan `accounting.js` ke fungsi bersama**
+- [x] **Step 5: Alihkan `accounting.js` ke fungsi bersama**
 
 Tambahkan import di `apps/bul-accounting/src/utils/accounting.js`, tepat setelah import `chartOfAccounts` yang ada:
 
@@ -441,7 +441,7 @@ Di `removeInvoicePayment()`, ganti baris 563 dengan bentuk yang sama persis:
   const status = computeInvoiceStatus(inv.amount, totalPaid)
 ```
 
-- [ ] **Step 6: Jalankan validasi penuh**
+- [x] **Step 6: Jalankan validasi penuh**
 
 ```bash
 cd apps/bul-accounting && npm test && npm run build
@@ -449,7 +449,7 @@ cd apps/bul-accounting && npm test && npm run build
 
 Expected: seluruh test lulus termasuk `accounting.test.js` yang sudah ada, build sukses.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/bul-accounting/src/utils/payments.js apps/bul-accounting/src/utils/__tests__/payments.test.js apps/bul-accounting/src/utils/accounting.js
@@ -477,7 +477,7 @@ git commit -m "refactor(bul-accounting): extract computeInvoiceStatus into payme
   - `validateAllocations(rows: AllocationRow[]) => { valid: boolean, errors: Record<string,string>, formError: string }`
   - `summarizeAllocations(rows: AllocationRow[]) => { count: number, totalGross: number, totalPph: number, totalNet: number }`
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan di akhir `apps/bul-accounting/src/utils/__tests__/payments.test.js`:
 
@@ -595,7 +595,7 @@ describe('summarizeAllocations', () => {
 })
 ```
 
-- [ ] **Step 2: Jalankan test untuk memastikan gagal**
+- [x] **Step 2: Jalankan test untuk memastikan gagal**
 
 ```bash
 cd apps/bul-accounting && npx vitest run src/utils/__tests__/payments.test.js
@@ -603,7 +603,7 @@ cd apps/bul-accounting && npx vitest run src/utils/__tests__/payments.test.js
 
 Expected: FAIL — `No "validateAllocations" export is defined on the module`.
 
-- [ ] **Step 3: Implementasi**
+- [x] **Step 3: Implementasi**
 
 Tambahkan di akhir `apps/bul-accounting/src/utils/payments.js`:
 
@@ -661,7 +661,7 @@ export function summarizeAllocations(rows) {
 }
 ```
 
-- [ ] **Step 4: Jalankan test untuk memastikan lulus**
+- [x] **Step 4: Jalankan test untuk memastikan lulus**
 
 ```bash
 cd apps/bul-accounting && npx vitest run src/utils/__tests__/payments.test.js
@@ -669,7 +669,7 @@ cd apps/bul-accounting && npx vitest run src/utils/__tests__/payments.test.js
 
 Expected: PASS, 25 test.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/bul-accounting/src/utils/payments.js apps/bul-accounting/src/utils/__tests__/payments.test.js
@@ -693,7 +693,7 @@ Inti akuntansi fitur ini. Invarian yang harus dijaga: `totalDebit === totalCredi
   - `buildPaymentEntries({ rows, account, keterangan, date, journalId, paymentGroupId, createdAt }) => Array<{ invoiceId, entry }>`
   - Konstanta akun: `AKUN_PIUTANG = '1121'`, `AKUN_PPH_DIBAYAR_MUKA = '1172'`
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Tambahkan di akhir `apps/bul-accounting/src/utils/__tests__/payments.test.js`:
 
@@ -859,7 +859,7 @@ describe('buildPaymentEntries', () => {
 })
 ```
 
-- [ ] **Step 2: Jalankan test untuk memastikan gagal**
+- [x] **Step 2: Jalankan test untuk memastikan gagal**
 
 ```bash
 cd apps/bul-accounting && npx vitest run src/utils/__tests__/payments.test.js
@@ -867,7 +867,7 @@ cd apps/bul-accounting && npx vitest run src/utils/__tests__/payments.test.js
 
 Expected: FAIL — `No "buildPaymentJournalLines" export is defined on the module`.
 
-- [ ] **Step 3: Implementasi**
+- [x] **Step 3: Implementasi**
 
 Tambahkan di akhir `apps/bul-accounting/src/utils/payments.js`:
 
@@ -951,7 +951,7 @@ export function buildPaymentEntries({
 }
 ```
 
-- [ ] **Step 4: Jalankan test untuk memastikan lulus**
+- [x] **Step 4: Jalankan test untuk memastikan lulus**
 
 ```bash
 cd apps/bul-accounting && npx vitest run src/utils/__tests__/payments.test.js
@@ -959,7 +959,7 @@ cd apps/bul-accounting && npx vitest run src/utils/__tests__/payments.test.js
 
 Expected: PASS, 36 test.
 
-- [ ] **Step 5: Jalankan validasi penuh**
+- [x] **Step 5: Jalankan validasi penuh**
 
 ```bash
 cd apps/bul-accounting && npm test && npm run build
@@ -967,7 +967,7 @@ cd apps/bul-accounting && npm test && npm run build
 
 Expected: seluruh test lulus, build sukses.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/bul-accounting/src/utils/payments.js apps/bul-accounting/src/utils/__tests__/payments.test.js
@@ -978,11 +978,11 @@ git commit -m "feat(bul-accounting): build combined payment journal lines and en
 
 ### 🛑 GERBANG FASE 1
 
-- [ ] Jalankan `cd apps/bul-accounting && npm test && npm run build` sekali lagi dan catat hasilnya.
-- [ ] **BERHENTI. Jangan mulai Fase 2.**
-- [ ] Laporkan ke user: file yang dibuat/diubah, jumlah test yang lulus, hash 4 commit.
-- [ ] Keluarkan prompt Fase 2 siap-tempel (model `opus`, effort `high`) sesuai format di bagian "Aturan wajib akhir fase". Prompt itu harus memuat signature yang sudah tersedia: `KAS_ACCOUNTS`, `getKasAccountName()`, `getJournalType()`, `computeInvoiceStatus()`, `sisaTagihan()`, `TOLERANSI_RUPIAH`, `validateAllocations()`, `summarizeAllocations()`, `buildPaymentJournalLines()`, `buildPaymentEntries()`, `AKUN_PIUTANG`, `AKUN_PPH_DIBAYAR_MUKA`.
-- [ ] Ingatkan user bahwa **Fase 0 harus sudah selesai** sebelum Fase 2 dijalankan.
+- [x] Jalankan `cd apps/bul-accounting && npm test && npm run build` sekali lagi dan catat hasilnya.
+- [x] **BERHENTI. Jangan mulai Fase 2.**
+- [x] Laporkan ke user: file yang dibuat/diubah, jumlah test yang lulus, hash 4 commit.
+- [x] Keluarkan prompt Fase 2 siap-tempel (model `opus`, effort `high`) sesuai format di bagian "Aturan wajib akhir fase". Prompt itu harus memuat signature yang sudah tersedia: `KAS_ACCOUNTS`, `getKasAccountName()`, `getJournalType()`, `computeInvoiceStatus()`, `sisaTagihan()`, `TOLERANSI_RUPIAH`, `validateAllocations()`, `summarizeAllocations()`, `buildPaymentJournalLines()`, `buildPaymentEntries()`, `AKUN_PIUTANG`, `AKUN_PPH_DIBAYAR_MUKA`.
+- [x] Ingatkan user bahwa **Fase 0 harus sudah selesai** sebelum Fase 2 dijalankan.
 
 ---
 
@@ -1004,7 +1004,7 @@ Fase paling berisiko. Menyentuh posting jurnal dan pembaruan invoice. **Prasyara
 - Consumes: —
 - Produces: `getOpenInvoicesByCustomer(customerId: string) => Promise<Array<Invoice>>`, terurut menaik berdasarkan `date`
 
-- [ ] **Step 1: Tambahkan composite index**
+- [x] **Step 1: Tambahkan composite index**
 
 Modify `apps/bul-accounting/firestore.indexes.json` — tambahkan satu objek ke array `indexes`, setelah entri `integration_queue` yang ada:
 
@@ -1027,7 +1027,7 @@ cd apps/bul-accounting && node -e "JSON.parse(require('fs').readFileSync('firest
 
 Expected: `JSON valid`
 
-- [ ] **Step 2: Implementasi query**
+- [x] **Step 2: Implementasi query**
 
 Tambahkan di `apps/bul-accounting/src/utils/accounting.js`, tepat setelah fungsi `removeInvoicePayment()`:
 
@@ -1058,7 +1058,7 @@ export async function getOpenInvoicesByCustomer(customerId) {
 
 `query`, `collection`, `where`, dan `getDocs` semuanya sudah ada di blok import `firebase/firestore` pada baris 2–5. Tidak perlu import baru.
 
-- [ ] **Step 3: Jalankan validasi**
+- [x] **Step 3: Jalankan validasi**
 
 ```bash
 cd apps/bul-accounting && npm test && npm run build
@@ -1066,14 +1066,14 @@ cd apps/bul-accounting && npm test && npm run build
 
 Expected: seluruh test lulus, build sukses.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add apps/bul-accounting/src/utils/accounting.js apps/bul-accounting/firestore.indexes.json
 git commit -m "feat(bul-accounting): query open invoices by customer with composite index"
 ```
 
-- [ ] **Step 5: Catat untuk user**
+- [x] **Step 5: Catat untuk user**
 
 Index belum aktif sampai di-deploy. CLI Firebase diblokir untuk agen, jadi **catat perintah ini dalam laporan akhir fase** agar user atau Codex menjalankannya sebelum fitur dipakai:
 
@@ -1097,7 +1097,7 @@ Aturan Firestore yang wajib dipatuhi: **seluruh `tx.get()` harus selesai sebelum
 - Consumes: `validateAllocations()`, `buildPaymentJournalLines()`, `buildPaymentEntries()`, `computeInvoiceStatus()` dari Fase 1; `getJournalType()` dari Task 1
 - Produces: `recordMultiInvoicePayment({ rows, account, date, keterangan, createdBy }) => Promise<{ journalId: string, paymentGroupId: string }>`
 
-- [ ] **Step 1: Tambahkan `runTransaction` ke mock test yang sudah ada**
+- [x] **Step 1: Tambahkan `runTransaction` ke mock test yang sudah ada**
 
 `accounting.test.js` memakai `vi.mock('firebase/firestore', ...)` dengan factory yang mendaftarkan export satu per satu. Vitest melempar error saat `accounting.js` meng-import nama yang tidak ada di factory tersebut.
 
@@ -1107,7 +1107,7 @@ Modify `apps/bul-accounting/src/utils/__tests__/accounting.test.js` — di dalam
     runTransaction: vi.fn(),
 ```
 
-- [ ] **Step 2: Jalankan test untuk memastikan masih hijau sebelum implementasi**
+- [x] **Step 2: Jalankan test untuk memastikan masih hijau sebelum implementasi**
 
 ```bash
 cd apps/bul-accounting && npm test
@@ -1115,7 +1115,7 @@ cd apps/bul-accounting && npm test
 
 Expected: seluruh test lulus. Mock tambahan belum dipakai siapa pun.
 
-- [ ] **Step 3: Tambahkan import di `accounting.js`**
+- [x] **Step 3: Tambahkan import di `accounting.js`**
 
 Tambahkan `runTransaction` ke blok import `firebase/firestore` pada baris 2–5 sehingga menjadi:
 
@@ -1138,7 +1138,7 @@ import {
 import { getJournalType } from '../data/kasAccounts'
 ```
 
-- [ ] **Step 4: Implementasi**
+- [x] **Step 4: Implementasi**
 
 Tambahkan di `apps/bul-accounting/src/utils/accounting.js`, tepat setelah `getOpenInvoicesByCustomer()`:
 
@@ -1258,7 +1258,7 @@ export async function recordMultiInvoicePayment({ rows, account, date, keteranga
 }
 ```
 
-- [ ] **Step 5: Verifikasi urutan read-before-write secara manual**
+- [x] **Step 5: Verifikasi urutan read-before-write secara manual**
 
 ```bash
 cd apps/bul-accounting && sed -n '/export async function recordMultiInvoicePayment/,/^}/p' src/utils/accounting.js | grep -n "tx.get\|tx.set\|tx.update"
@@ -1266,7 +1266,7 @@ cd apps/bul-accounting && sed -n '/export async function recordMultiInvoicePayme
 
 Expected: seluruh baris `tx.get` muncul **sebelum** baris `tx.set` dan `tx.update` pertama. Jika tidak, transaksi akan gagal saat runtime.
 
-- [ ] **Step 6: Jalankan validasi penuh**
+- [x] **Step 6: Jalankan validasi penuh**
 
 ```bash
 cd apps/bul-accounting && npm test && npm run build
@@ -1274,7 +1274,7 @@ cd apps/bul-accounting && npm test && npm run build
 
 Expected: seluruh test lulus, build sukses.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/bul-accounting/src/utils/accounting.js apps/bul-accounting/src/utils/__tests__/accounting.test.js
@@ -1285,10 +1285,10 @@ git commit -m "feat(bul-accounting): record multi-invoice payment in one atomic 
 
 ### 🛑 GERBANG FASE 2
 
-- [ ] Jalankan `cd apps/bul-accounting && npm test && npm run build` dan catat hasilnya.
-- [ ] **BERHENTI. Jangan mulai Fase 3.**
-- [ ] Laporkan: file yang diubah, hash 2 commit, dan **perintah deploy index yang harus dijalankan user** (`firebase deploy --only firestore:indexes`).
-- [ ] Keluarkan prompt Fase 3 siap-tempel (model `sonnet`, effort `medium`), memuat signature `getOpenInvoicesByCustomer()` dan `recordMultiInvoicePayment()` beserta bentuk `AllocationRow`.
+- [x] Jalankan `cd apps/bul-accounting && npm test && npm run build` dan catat hasilnya.
+- [x] **BERHENTI. Jangan mulai Fase 3.**
+- [x] Laporkan: file yang diubah, hash 2 commit, dan **perintah deploy index yang harus dijalankan user** (`firebase deploy --only firestore:indexes`).
+- [x] Keluarkan prompt Fase 3 siap-tempel (model `sonnet`, effort `medium`), memuat signature `getOpenInvoicesByCustomer()` dan `recordMultiInvoicePayment()` beserta bentuk `AllocationRow`.
 
 ---
 
@@ -1309,7 +1309,7 @@ Komponen React mengikuti pola modal yang sudah ada di `PenjualanPage`. **Modal t
 - Consumes: `getOpenInvoicesByCustomer()`, `recordMultiInvoicePayment()`, `formatCurrency()`, `formatDate()` dari `accounting.js`; `sisaTagihan()`, `validateAllocations()`, `summarizeAllocations()` dari `payments.js`; `KAS_ACCOUNTS` dari `kasAccounts.js`
 - Produces: default export `MultiPaymentModal({ customers, onSaved, onClose })`
 
-- [ ] **Step 1: Buat komponen**
+- [x] **Step 1: Buat komponen**
 
 Create `apps/bul-accounting/src/components/MultiPaymentModal.jsx`:
 
@@ -1558,7 +1558,7 @@ export default function MultiPaymentModal({ customers, onSaved, onClose }) {
 }
 ```
 
-- [ ] **Step 2: Jalankan validasi**
+- [x] **Step 2: Jalankan validasi**
 
 ```bash
 cd apps/bul-accounting && npm test && npm run build
@@ -1566,7 +1566,7 @@ cd apps/bul-accounting && npm test && npm run build
 
 Expected: seluruh test lulus, build sukses tanpa warning import yang belum terpakai.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add apps/bul-accounting/src/components/MultiPaymentModal.jsx
@@ -1584,7 +1584,7 @@ git commit -m "feat(bul-accounting): add multi-invoice payment modal"
 - Consumes: `MultiPaymentModal` dari Task 7
 - Produces: —
 
-- [ ] **Step 1: Tambahkan import**
+- [x] **Step 1: Tambahkan import**
 
 Tambahkan setelah import `ConfirmDialog` yang ada:
 
@@ -1594,7 +1594,7 @@ import MultiPaymentModal from '../components/MultiPaymentModal'
 
 Tambahkan `Wallet` ke daftar ikon yang diimpor dari `lucide-react`.
 
-- [ ] **Step 2: Tambahkan state**
+- [x] **Step 2: Tambahkan state**
 
 Di dalam `PenjualanPage()`, tepat setelah baris `const [bayarItem, setBayarItem] = useState(null)`:
 
@@ -1602,7 +1602,7 @@ Di dalam `PenjualanPage()`, tepat setelah baris `const [bayarItem, setBayarItem]
   const [showMultiPay, setShowMultiPay] = useState(false)
 ```
 
-- [ ] **Step 3: Tambahkan tombol di header**
+- [x] **Step 3: Tambahkan tombol di header**
 
 Ganti blok tombol header (baris 362–367) — yang saat ini hanya berisi satu tombol Tambah Invoice — menjadi:
 
@@ -1619,7 +1619,7 @@ Ganti blok tombol header (baris 362–367) — yang saat ini hanya berisi satu t
         )}
 ```
 
-- [ ] **Step 4: Render modal**
+- [x] **Step 4: Render modal**
 
 Tambahkan di blok Modals, tepat setelah blok `{bayarItem && (...)}`:
 
@@ -1633,7 +1633,7 @@ Tambahkan di blok Modals, tepat setelah blok `{bayarItem && (...)}`:
       )}
 ```
 
-- [ ] **Step 5: Jalankan validasi**
+- [x] **Step 5: Jalankan validasi**
 
 ```bash
 cd apps/bul-accounting && npm test && npm run build
@@ -1641,7 +1641,7 @@ cd apps/bul-accounting && npm test && npm run build
 
 Expected: seluruh test lulus, build sukses.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/bul-accounting/src/pages/PenjualanPage.jsx
@@ -1652,11 +1652,11 @@ git commit -m "feat(bul-accounting): wire multi-invoice payment into Penjualan p
 
 ### 🛑 GERBANG FASE 3
 
-- [ ] Jalankan `cd apps/bul-accounting && npm test && npm run build` dan catat hasilnya.
-- [ ] **BERHENTI. Jangan mulai Fase 4.**
-- [ ] Laporkan: file yang dibuat/diubah, hash 2 commit.
-- [ ] **Peringatkan user secara eksplisit: JANGAN deploy sampai Fase 4 selesai.** Pada titik ini fitur sudah bisa membuat jurnal `invoiceIds[]`, tetapi `JurnalPage` masih hanya membalikkan satu invoice. Menghapus jurnal multi-payment sekarang akan meninggalkan invoice lain bertanda lunas tanpa jurnal pendukung. Fase 3 dan Fase 4 harus rilis bersamaan dalam satu PR (spec bagian 13).
-- [ ] Keluarkan prompt Fase 4 siap-tempel (model `opus`, effort `high`), memuat catatan bahwa jurnal multi-payment sekarang menulis `invoiceIds[]` + `paymentGroupId` dan `JurnalPage` belum bisa membalikkannya.
+- [x] Jalankan `cd apps/bul-accounting && npm test && npm run build` dan catat hasilnya.
+- [x] **BERHENTI. Jangan mulai Fase 4.**
+- [x] Laporkan: file yang dibuat/diubah, hash 2 commit.
+- [x] **Peringatkan user secara eksplisit: JANGAN deploy sampai Fase 4 selesai.** Pada titik ini fitur sudah bisa membuat jurnal `invoiceIds[]`, tetapi `JurnalPage` masih hanya membalikkan satu invoice. Menghapus jurnal multi-payment sekarang akan meninggalkan invoice lain bertanda lunas tanpa jurnal pendukung. Fase 3 dan Fase 4 harus rilis bersamaan dalam satu PR (spec bagian 13).
+- [x] Keluarkan prompt Fase 4 siap-tempel (model `opus`, effort `high`), memuat catatan bahwa jurnal multi-payment sekarang menulis `invoiceIds[]` + `paymentGroupId` dan `JurnalPage` belum bisa membalikkannya.
 
 ---
 
@@ -1677,7 +1677,7 @@ Mengubah perilaku hapus jurnal yang sudah berjalan di produksi. Tanpa task ini, 
 - Consumes: `removeInvoicePayment()` yang sudah ada
 - Produces: —
 
-- [ ] **Step 1: Tambahkan state jumlah invoice terdampak**
+- [x] **Step 1: Tambahkan state jumlah invoice terdampak**
 
 Di dalam `JurnalPage()`, tepat setelah `const [deleteId, setDeleteId] = useState(null)` (baris 255):
 
@@ -1685,7 +1685,7 @@ Di dalam `JurnalPage()`, tepat setelah `const [deleteId, setDeleteId] = useState
   const [deleteInvoiceCount, setDeleteInvoiceCount] = useState(0)
 ```
 
-- [ ] **Step 2: Isi jumlah itu saat tombol hapus ditekan**
+- [x] **Step 2: Isi jumlah itu saat tombol hapus ditekan**
 
 `JournalList` memanggil prop `onDelete` dengan **id saja**, bukan objek jurnal
 (`JournalList.jsx:15` mendokumentasikan `fn(id)`, dipanggil di `JournalList.jsx:122`).
@@ -1722,7 +1722,7 @@ menjadi:
         onDelete={isSuperadmin() ? mintaHapus : null}
 ```
 
-- [ ] **Step 3: Ganti `handleDelete` agar meng-unapply seluruh invoice**
+- [x] **Step 3: Ganti `handleDelete` agar meng-unapply seluruh invoice**
 
 Ganti isi `handleDelete` (baris 296–304) menjadi:
 
@@ -1742,7 +1742,7 @@ Ganti isi `handleDelete` (baris 296–304) menjadi:
   }
 ```
 
-- [ ] **Step 4: Perjelas pesan konfirmasi**
+- [x] **Step 4: Perjelas pesan konfirmasi**
 
 Ganti blok `ConfirmDialog` di baris 409–418 menjadi:
 
@@ -1763,7 +1763,7 @@ Ganti blok `ConfirmDialog` di baris 409–418 menjadi:
       )}
 ```
 
-- [ ] **Step 5: Verifikasi tidak ada sisa akses `invoiceId` tunggal**
+- [x] **Step 5: Verifikasi tidak ada sisa akses `invoiceId` tunggal**
 
 ```bash
 cd apps/bul-accounting && grep -n "journal.invoiceId\|journal?.invoiceId" src/pages/JurnalPage.jsx
@@ -1771,7 +1771,7 @@ cd apps/bul-accounting && grep -n "journal.invoiceId\|journal?.invoiceId" src/pa
 
 Expected: satu-satunya kemunculan ada di dalam helper `invoiceIdsDari`.
 
-- [ ] **Step 6: Jalankan validasi**
+- [x] **Step 6: Jalankan validasi**
 
 ```bash
 cd apps/bul-accounting && npm test && npm run build
@@ -1779,7 +1779,7 @@ cd apps/bul-accounting && npm test && npm run build
 
 Expected: seluruh test lulus, build sukses.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/bul-accounting/src/pages/JurnalPage.jsx
@@ -1797,7 +1797,7 @@ git commit -m "fix(bul-accounting): revert every invoice when deleting a multi-p
 - Consumes: seluruh task sebelumnya
 - Produces: —
 
-- [ ] **Step 1: Jalankan validasi lengkap dari root aplikasi**
+- [x] **Step 1: Jalankan validasi lengkap dari root aplikasi**
 
 ```bash
 cd apps/bul-accounting && npm test && npm run build
@@ -1805,7 +1805,7 @@ cd apps/bul-accounting && npm test && npm run build
 
 Expected: seluruh test lulus (termasuk 36 test `payments.test.js`), build sukses.
 
-- [ ] **Step 2: Periksa tidak ada perubahan di luar scope**
+- [x] **Step 2: Periksa tidak ada perubahan di luar scope**
 
 ```bash
 git diff --stat main...HEAD
@@ -1813,7 +1813,7 @@ git diff --stat main...HEAD
 
 Expected: hanya file yang terdaftar di bagian "Struktur File" plan ini. Tidak boleh ada perubahan pada `firestore.rules`. Perubahan pada `BiayaPage.jsx` hanya berupa penggantian daftar akun kas dan `getJournalType`. Jika ada file lain, **berhenti dan laporkan ke user.**
 
-- [ ] **Step 3: Konfirmasi `firestore.rules` tidak tersentuh**
+- [x] **Step 3: Konfirmasi `firestore.rules` tidak tersentuh**
 
 ```bash
 git diff main...HEAD -- apps/bul-accounting/firestore.rules
@@ -1821,14 +1821,14 @@ git diff main...HEAD -- apps/bul-accounting/firestore.rules
 
 Expected: tidak ada output.
 
-- [ ] **Step 4: Centang seluruh checkbox plan dan commit**
+- [x] **Step 4: Centang seluruh checkbox plan dan commit**
 
 ```bash
 git add docs/superpowers/plans/2026-08-20-multi-invoice-payment-ar.md
 git commit -m "docs: mark multi-invoice payment plan complete"
 ```
 
-- [ ] **Step 5: Susun daftar smoke test manual untuk user**
+- [x] **Step 5: Susun daftar smoke test manual untuk user**
 
 Fitur ini belum bisa diuji end-to-end oleh agen karena butuh Firestore hidup dan akun superadmin. Susun laporan berisi langkah berikut agar user menjalankannya setelah index ter-deploy:
 
@@ -1843,13 +1843,13 @@ Fitur ini belum bisa diuji end-to-end oleh agen karena butuh Firestore hidup dan
 
 ### 🛑 GERBANG FASE 4 — SELESAI
 
-- [ ] **BERHENTI.**
-- [ ] Laporkan ke user: seluruh file yang berubah, hasil `npm test` dan `npm run build`, daftar seluruh commit, dan daftar smoke test manual dari Task 10 Step 5.
-- [ ] Sampaikan dua perintah yang **harus dijalankan user** (CLI Firebase diblokir untuk agen):
+- [x] **BERHENTI.**
+- [x] Laporkan ke user: seluruh file yang berubah, hasil `npm test` dan `npm run build`, daftar seluruh commit, dan daftar smoke test manual dari Task 10 Step 5.
+- [x] Sampaikan dua perintah yang **harus dijalankan user** (CLI Firebase diblokir untuk agen):
   ```bash
   cd apps/bul-accounting && firebase deploy --only firestore:indexes
   ```
-- [ ] Tawarkan langkah berikutnya: `superpowers:requesting-code-review`, lalu `superpowers:finishing-a-development-branch` untuk membuka PR. **Jangan merge tanpa persetujuan user.**
+- [x] Tawarkan langkah berikutnya: `superpowers:requesting-code-review`, lalu `superpowers:finishing-a-development-branch` untuk membuka PR. **Jangan merge tanpa persetujuan user.**
 
 ---
 
