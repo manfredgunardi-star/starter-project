@@ -9,9 +9,10 @@ import {
 } from '../utils/accounting'
 import DateFilterBar from '../components/DateFilterBar'
 import ConfirmDialog from '../components/ConfirmDialog'
+import MultiPaymentModal from '../components/MultiPaymentModal'
 import {
   Plus, X, RefreshCw, Search, Edit, Trash2,
-  CheckCircle, AlertCircle, FileText, ChevronDown, ChevronUp
+  CheckCircle, AlertCircle, FileText, ChevronDown, ChevronUp, Wallet
 } from 'lucide-react'
 import { KAS_ACCOUNTS, getKasAccountName, getJournalType } from '../data/kasAccounts'
 
@@ -287,6 +288,7 @@ export default function PenjualanPage() {
   const [showForm, setShowForm]     = useState(false)
   const [editData, setEditData]     = useState(null)
   const [bayarItem, setBayarItem]   = useState(null) // PembayaranModal
+  const [showMultiPay, setShowMultiPay] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null) // { id, journalId }
   const [expandedIds, setExpandedIds] = useState(new Set())
 
@@ -353,9 +355,14 @@ export default function PenjualanPage() {
           <p className="text-sm text-gray-500 mt-0.5">Manajemen invoice &amp; piutang pelanggan</p>
         </div>
         {isSuperadmin() && (
-          <button onClick={() => { setEditData(null); setShowForm(true) }} className="btn-primary flex items-center gap-2">
-            <Plus className="w-4 h-4" /> Tambah Invoice
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => setShowMultiPay(true)} className="btn-secondary flex items-center gap-2">
+              <Wallet className="w-4 h-4" /> Terima Pembayaran
+            </button>
+            <button onClick={() => { setEditData(null); setShowForm(true) }} className="btn-primary flex items-center gap-2">
+              <Plus className="w-4 h-4" /> Tambah Invoice
+            </button>
+          </div>
         )}
       </div>
 
@@ -529,6 +536,13 @@ export default function PenjualanPage() {
       )}
       {bayarItem && (
         <PembayaranModal invoice={bayarItem} onSaved={loadData} onClose={() => setBayarItem(null)} />
+      )}
+      {showMultiPay && (
+        <MultiPaymentModal
+          customers={customers}
+          onSaved={loadData}
+          onClose={() => setShowMultiPay(false)}
+        />
       )}
       {deleteTarget && (
         <ConfirmDialog
