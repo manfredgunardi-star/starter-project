@@ -5,7 +5,7 @@ import { describe, it, expect, vi } from 'vitest'
 // Firebase cukup di-stub agar import module tidak menginisialisasi SDK.
 vi.mock('../../firebase', () => ({ db: {}, auth: {}, default: {} }))
 
-import { invoiceIdsDari } from '../JurnalPage'
+import { invoiceIdsDari, pesanGagalHapus } from '../JurnalPage'
 
 describe('invoiceIdsDari', () => {
   it('jurnal multi-payment: mengembalikan seluruh invoiceIds', () => {
@@ -52,5 +52,30 @@ describe('invoiceIdsDari', () => {
     // karena dokumen di koleksi invoices tidak ada.
     expect(invoiceIdsDari({ invoiceId: 'PINV-3', type: 'pembayaran_hutang' }))
       .toEqual(['PINV-3'])
+  })
+})
+
+describe('pesanGagalHapus', () => {
+  it('menyertakan pesan error asli agar penyebabnya terlihat', () => {
+    expect(pesanGagalHapus(new Error('Missing or insufficient permissions.')))
+      .toContain('Missing or insufficient permissions.')
+  })
+
+  it('memberi tahu bahwa mengulang penghapusan aman', () => {
+    const pesan = pesanGagalHapus(new Error('network error'))
+    expect(pesan).toContain('coba hapus lagi')
+    expect(pesan).toContain('aman')
+  })
+
+  it('menjelaskan bahwa pembalikan invoice mungkin baru sebagian', () => {
+    expect(pesanGagalHapus(new Error('boom'))).toContain('Sebagian invoice')
+  })
+
+  it('error tanpa message (null/undefined/string) tidak menghasilkan "undefined"', () => {
+    for (const e of [null, undefined, 'gagal', {}]) {
+      const pesan = pesanGagalHapus(e)
+      expect(pesan).toContain('Kesalahan tidak diketahui')
+      expect(pesan).not.toContain('undefined')
+    }
   })
 })
