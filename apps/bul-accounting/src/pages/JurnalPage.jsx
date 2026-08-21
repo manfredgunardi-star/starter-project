@@ -20,6 +20,18 @@ function parseNumber(str) {
   return parseFloat(s.replace(/,/g, '.')) || 0
 }
 
+// ─── Helper: normalisasi invoice yang dilunasi sebuah jurnal ─────────────────
+// Tiga bentuk jurnal hidup berdampingan:
+//   • jurnal multi-payment  -> invoiceIds: string[]
+//   • jurnal pembayaran lama -> invoiceId: string (tanpa invoiceIds)
+//   • jurnal non-invoice     -> tidak punya keduanya
+// Selalu kembalikan array (mungkin kosong) supaya pemanggil cukup melakukan loop.
+export const invoiceIdsDari = (journal) => {
+  if (!journal) return []
+  if (Array.isArray(journal.invoiceIds)) return journal.invoiceIds.filter(Boolean)
+  return journal.invoiceId ? [journal.invoiceId] : []
+}
+
 // ─── Import Jurnal Modal ──────────────────────────────────────────────────────
 function ImportJurnalModal({ mergedCOA, onSaved, onClose, currentUser }) {
   const [step, setStep] = React.useState('upload') // 'upload' | 'preview' | 'result'
@@ -253,6 +265,7 @@ export default function JurnalPage() {
   const [showForm, setShowForm] = useState(false)
   const [editData, setEditData] = useState(null)
   const [deleteId, setDeleteId] = useState(null)
+  const [deleteInvoiceCount, setDeleteInvoiceCount] = useState(0)
   const [showImport, setShowImport] = useState(false)
 
   const loadCOA = useCallback(async () => {
@@ -292,14 +305,31 @@ export default function JurnalPage() {
   const totalCredit = filtered.reduce((s, j) =>
     s + (j.lines?.reduce((ls, l) => ls + (l.credit || 0), 0) || 0), 0)
 
+  // JournalList memanggil onDelete dengan id saja, jadi jumlah invoice terdampak
+  // harus diambil dari dokumen jurnalnya untuk ditampilkan di dialog konfirmasi.
+  const mintaHapus = async (id) => {
+    setDeleteId(id)
+    try {
+      const journal = await getJournal(id)
+      setDeleteInvoiceCount(invoiceIdsDari(journal).length)
+    } catch {
+      // Gagal memuat jurnal hanya membuat pesan konfirmasi memakai bentuk umum.
+      setDeleteInvoiceCount(0)
+    }
+  }
+
   const handleDelete = async () => {
-    // Jika jurnal ini adalah pembayaran invoice, revert status invoice dulu
+    // Jika jurnal ini adalah pembayaran invoice, revert status SELURUH invoice
+    // yang dilunasinya (jurnal lama: satu invoiceId, multi-payment: invoiceIds[]).
+    // removeInvoicePayment() memfilter payments[] per journalId sehingga aman
+    // dipanggil berulang dan idempoten per invoice.
     const journal = await getJournal(deleteId)
-    if (journal?.invoiceId) {
-      await removeInvoicePayment(journal.invoiceId, deleteId)
+    for (const invoiceId of invoiceIdsDari(journal)) {
+      await removeInvoicePayment(invoiceId, deleteId)
     }
     await deleteJournal(deleteId, currentUser?.uid)
     setDeleteId(null)
+    setDeleteInvoiceCount(0)
     loadData()
   }
 
@@ -381,7 +411,7 @@ export default function JurnalPage() {
         mergedCOA={mergedCOA}
         loading={loading}
         onEdit={isSuperadmin() ? (j) => { setEditData(j); setShowForm(true) } : null}
-        onDelete={isSuperadmin() ? (id) => setDeleteId(id) : null}
+        onDelete={isSuperadmin() ? mintaHapus : null}
       />
 
       {/* Form modal */}
@@ -409,11 +439,15 @@ export default function JurnalPage() {
       {deleteId && (
         <ConfirmDialog
           title="Hapus Jurnal"
-          message="Jurnal akan dihapus permanen dan dicatat di audit trail. Lanjutkan?"
+          message={
+            deleteInvoiceCount > 1
+              ? `Jurnal ini melunasi ${deleteInvoiceCount} invoice. Seluruhnya akan dikembalikan ke status sebelumnya, dan jurnal dicatat di audit trail. Lanjutkan?`
+              : 'Jurnal akan dihapus permanen dan dicatat di audit trail. Lanjutkan?'
+          }
           confirmLabel="Hapus"
           confirmVariant="danger"
           onConfirm={handleDelete}
-          onCancel={() => setDeleteId(null)}
+          onCancel={() => { setDeleteId(null); setDeleteInvoiceCount(0) }}
         />
       )}
     </div>
