@@ -14,6 +14,7 @@ import {
   Plus, X, RefreshCw, Search, Edit, Trash2,
   CheckCircle, AlertCircle, TrendingDown
 } from 'lucide-react'
+import { KAS_ACCOUNTS, getJournalType } from '../data/kasAccounts'
 
 // ─── Status helpers ──────────────────────────────────────────────────────────
 const STATUS_LABEL = { unpaid: 'Belum Bayar', paid: 'Lunas', cancelled: 'Dibatalkan' }
@@ -140,12 +141,6 @@ function BayarModal({ invoice, mergedCOA, onSaved, onClose }) {
   const [saving, setSaving] = useState(false)
   const [error, setError]   = useState('')
 
-  const kasOptions = [
-    { code: '1111', name: 'Kas Kecil' },
-    { code: '1112', name: 'Bank BCA Operasional' },
-    { code: '1113', name: 'Bank Mandiri Operasional' },
-  ]
-
   const handleBayar = async () => {
     setError('')
     setSaving(true)
@@ -158,7 +153,7 @@ function BayarModal({ invoice, mergedCOA, onSaved, onClose }) {
         journalData: {
           date,
           description: keterangan,
-          type: account === '1111' ? 'kas' : 'bank',
+          type: getJournalType(account),
           truckId: null,
           invoiceId: invoice.id,
           lines: [
@@ -196,7 +191,7 @@ function BayarModal({ invoice, mergedCOA, onSaved, onClose }) {
           <div>
             <label className="label">Dibayar dari Akun</label>
             <select value={account} onChange={e => setAccount(e.target.value)} className="select-field">
-              {kasOptions.map(o => <option key={o.code} value={o.code}>{o.code} - {o.name}</option>)}
+              {KAS_ACCOUNTS.map(o => <option key={o.code} value={o.code}>{o.code} - {o.name}</option>)}
             </select>
           </div>
           <div>

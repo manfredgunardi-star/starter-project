@@ -20,6 +20,17 @@ export default function JournalList({ journals = [], mergedCOA = [], loading = f
   const [auditLogs, setAuditLogs] = useState({})
   const [auditLoading, setAuditLoading] = useState({})
   const [auditOpen, setAuditOpen] = useState({})
+  const [copiedId, setCopiedId] = useState(null)
+
+  const handleCopyId = async (id) => {
+    try {
+      await navigator.clipboard.writeText(id)
+      setCopiedId(id)
+      setTimeout(() => setCopiedId(prev => (prev === id ? null : prev)), 1500)
+    } catch (_) {
+      // Clipboard permission ditolak browser — badge tetap tampil, tidak ada crash.
+    }
+  }
 
   const toggleAudit = async (journalId) => {
     const isOpen = auditOpen[journalId]
@@ -68,6 +79,19 @@ export default function JournalList({ journals = [], mergedCOA = [], loading = f
                 <span className="text-sm font-semibold text-gray-800">{formatDate(j.date)}</span>
                 <span className="text-xs bg-brand-50 text-brand-700 px-2 py-0.5 rounded-full font-medium shrink-0">
                   {typeLabel[j.type] || j.type || 'Umum'}
+                </span>
+                <span className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleCopyId(j.id)}
+                    title="Klik untuk menyalin No. Jurnal lengkap"
+                    className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full font-mono hover:bg-gray-200 transition-colors"
+                  >
+                    #{j.id.slice(0, 8)}
+                  </button>
+                  {copiedId === j.id && (
+                    <span className="text-xs text-emerald-600">✓ Disalin</span>
+                  )}
                 </span>
                 {j.description && (
                   <span className="text-sm text-gray-500 truncate">{j.description}</span>

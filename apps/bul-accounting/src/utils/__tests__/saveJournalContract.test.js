@@ -14,6 +14,7 @@ vi.mock('firebase/firestore', () => ({
   addDoc: vi.fn(async () => ({ id: 'JRN123' })),
   updateDoc: vi.fn(), doc: vi.fn(), getDoc: vi.fn(),
   Timestamp: {}, writeBatch: vi.fn(), limit: vi.fn(), setDoc: vi.fn(),
+  runTransaction: vi.fn(),
 }))
 
 import { saveJournal } from '../accounting'

@@ -9,12 +9,12 @@ import {
 } from '../utils/accounting'
 import DateFilterBar from '../components/DateFilterBar'
 import ConfirmDialog from '../components/ConfirmDialog'
+import MultiPaymentModal from '../components/MultiPaymentModal'
 import {
   Plus, X, RefreshCw, Search, Edit, Trash2,
-  CheckCircle, AlertCircle, FileText, ChevronDown, ChevronUp
+  CheckCircle, AlertCircle, FileText, ChevronDown, ChevronUp, Wallet
 } from 'lucide-react'
-
-const KAS_NAMES = { '1111': 'Kas Kecil', '1112': 'Bank BCA', '1113': 'Bank Mandiri' }
+import { KAS_ACCOUNTS, getKasAccountName, getJournalType } from '../data/kasAccounts'
 
 // ─── Status helpers ─────────────────────────────────────────────────────────
 const STATUS_LABEL = { draft: 'Draft', unpaid: 'Belum Lunas', partial: 'Sebagian', paid: 'Lunas', cancelled: 'Dibatalkan' }
@@ -152,12 +152,6 @@ function PembayaranModal({ invoice, onSaved, onClose }) {
   const [saving, setSaving]       = useState(false)
   const [error, setError]         = useState('')
 
-  const kasOptions = [
-    { code: '1111', name: 'Kas Kecil' },
-    { code: '1112', name: 'Bank BCA Operasional' },
-    { code: '1113', name: 'Bank Mandiri Operasional' },
-  ]
-
   const nominalBayar = parseFloat(jumlahBayar) || 0
   const nominalPph   = parseFloat(pph) || 0
   const netDiterima  = nominalBayar - nominalPph
@@ -184,7 +178,7 @@ function PembayaranModal({ invoice, onSaved, onClose }) {
       const journalId = await saveJournal({
         date,
         description: keterangan,
-        type: account.startsWith('1111') ? 'kas' : 'bank',
+        type: getJournalType(account),
         truckId: invoice.truckId || null,
         lines: journalLines,
         createdBy: currentUser?.uid,
@@ -255,7 +249,7 @@ function PembayaranModal({ invoice, onSaved, onClose }) {
           <div>
             <label className="label">Diterima di Akun</label>
             <select value={account} onChange={e => setAccount(e.target.value)} className="select-field">
-              {kasOptions.map(o => <option key={o.code} value={o.code}>{o.code} - {o.name}</option>)}
+              {KAS_ACCOUNTS.map(o => <option key={o.code} value={o.code}>{o.code} - {o.name}</option>)}
             </select>
           </div>
           <div>
@@ -294,6 +288,7 @@ export default function PenjualanPage() {
   const [showForm, setShowForm]     = useState(false)
   const [editData, setEditData]     = useState(null)
   const [bayarItem, setBayarItem]   = useState(null) // PembayaranModal
+  const [showMultiPay, setShowMultiPay] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState(null) // { id, journalId }
   const [expandedIds, setExpandedIds] = useState(new Set())
 
@@ -360,9 +355,14 @@ export default function PenjualanPage() {
           <p className="text-sm text-gray-500 mt-0.5">Manajemen invoice &amp; piutang pelanggan</p>
         </div>
         {isSuperadmin() && (
-          <button onClick={() => { setEditData(null); setShowForm(true) }} className="btn-primary flex items-center gap-2">
-            <Plus className="w-4 h-4" /> Tambah Invoice
-          </button>
+          <div className="flex gap-2">
+            <button onClick={() => setShowMultiPay(true)} className="btn-secondary flex items-center gap-2">
+              <Wallet className="w-4 h-4" /> Terima Pembayaran
+            </button>
+            <button onClick={() => { setEditData(null); setShowForm(true) }} className="btn-primary flex items-center gap-2">
+              <Plus className="w-4 h-4" /> Tambah Invoice
+            </button>
+          </div>
         )}
       </div>
 
@@ -508,7 +508,7 @@ export default function PenjualanPage() {
                               <div className="text-right shrink-0">
                                 <span className="font-semibold text-gray-800">{formatCurrency(p.jumlahBayar)}</span>
                                 <span className="text-xs text-gray-400 ml-2">
-                                  {KAS_NAMES[p.account] || p.account}
+                                  {getKasAccountName(p.account)}
                                 </span>
                               </div>
                             </div>
@@ -536,6 +536,13 @@ export default function PenjualanPage() {
       )}
       {bayarItem && (
         <PembayaranModal invoice={bayarItem} onSaved={loadData} onClose={() => setBayarItem(null)} />
+      )}
+      {showMultiPay && (
+        <MultiPaymentModal
+          customers={customers}
+          onSaved={loadData}
+          onClose={() => setShowMultiPay(false)}
+        />
       )}
       {deleteTarget && (
         <ConfirmDialog
