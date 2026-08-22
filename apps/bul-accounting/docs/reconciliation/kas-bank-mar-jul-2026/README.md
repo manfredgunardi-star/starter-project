@@ -20,11 +20,19 @@ Claude (agen AI), diverifikasi manual oleh Manfred Gunardi (direktur).
      rekening penerima) → 6 jurnal dobel, Rp151.090.000.
   3. 3 duplikat sisa yang lolos dari pemeriksaan otomatis awal karena selisih tanggal/rentang
      tanggal legacy → Rp1.455.778 (lihat `audit-log/03_hapus_duplikat_sisa.csv`).
-- **Total jurnal dihapus**: 594 (567 + 18 + 6 + 3).
-- **Status final**: 1111 (Kas Kecil) dan 1115 (BCA Operasional 2) terverifikasi sudah sesuai
-  target. 1112 (Bank BCA Operasional) terverifikasi cocok 100% terhadap PDF mutasi rekening BCA
-  asli (Feb-Jul 2026) setelah mengeluarkan penerimaan CV Tunas Maju yang memang belum diimport
-  (di luar cakupan pekerjaan ini — lihat catatan di bawah).
+  4. 12 transaksi "Penambahan Uang Kas Masuk" dkk salah klasifikasi akun lawan — 5 di antaranya
+     seharusnya dari Bank (penarikan "ANTONIUS ARI WIBOW" yang salah tercatat sebagai Piutang
+     Karyawan/1181, bukan sebagai transfer ke Kas Kecil) dan 7 sisanya ternyata setoran pribadi
+     direktur (dikonfirmasi user 2026-08-22) yang seharusnya masuk Hutang Pemegang Saham (2153),
+     bukan Bank — total Rp74.500.000. Sudah diperbaiki via hapus 17 jurnal lama + import 12
+     jurnal koreksi (lihat `audit-log/04_hapus_salah_klasifikasi_akun.csv` dan
+     `audit-log/05_import_koreksi_klasifikasi_akun.csv`).
+- **Total jurnal dihapus**: 611 (567 + 18 + 6 + 3 + 17). **Total jurnal koreksi diimport**: 12.
+- **Status final (2026-08-22, terverifikasi)**: ketiga akun (1111 Kas Kecil, 1112 Bank BCA
+  Operasional, 1115 BCA Operasional 2) cocok **100% (selisih Rp0)** terhadap target yang
+  diverifikasi langsung ke PDF mutasi rekening BCA asli (Feb-Jul 2026), setelah mengeluarkan
+  penerimaan CV Tunas Maju yang memang belum diimport (di luar cakupan pekerjaan ini — lihat
+  catatan di bawah). **Rekonsiliasi ini tuntas.**
 
 ## Metodologi verifikasi
 
@@ -47,17 +55,6 @@ Claude (agen AI), diverifikasi manual oleh Manfred Gunardi (direktur).
 - Data 1-6 Maret 2026 di Kas Kecil memakai skema bulk-import lama (1 jurnal per hari, deskripsi
   generik "Transaksi Import dari Excel") — sudah diverifikasi nominal cocok dengan sumber.
 
-## Follow-up / belum selesai
-
-- **13 transaksi "Penambahan Uang Kas Masuk" dkk** di Kas Kecil (~Rp74,5 juta, Maret-Juli) saat
-  ini punya akun lawan "Bank BCA Operasional (1112)" yang kemungkinan besar **salah klasifikasi**
-  — tidak ada transaksi bank yang cocok di PDF mutasi rekening asli untuk sebagian besar item ini.
-  Satu di antaranya (04/05/2026, Rp15.000.000) kemungkinan besar adalah penarikan
-  "TRSF E-BANKING DB — ANTONIUS ARI WIBOW" yang saat ini malah tercatat sebagai Piutang Karyawan
-  (1181) di `data/bank_bca_ledger.csv`. Perlu direview & direklasifikasi terpisah — **belum
-  dieksekusi**, sengaja ditunda per keputusan user (2026-08-22) supaya PR ini bisa fokus ke
-  masalah duplikat-import yang sudah tuntas.
-
 ## Isi folder
 
 - `data/kas_kecil_ledger.csv` — ledger Kas Kecil hasil rekonsiliasi (sumber kebenaran untuk akun 1111).
@@ -65,3 +62,5 @@ Claude (agen AI), diverifikasi manual oleh Manfred Gunardi (direktur).
 - `audit-log/01_hapus_dobel_atm.csv` — 18 jurnal dobel-sumber ATM yang dihapus dari web app.
 - `audit-log/02_hapus_dobel_transfer_5599_7800.csv` — 6 jurnal dobel-sumber transfer internal yang dihapus.
 - `audit-log/03_hapus_duplikat_sisa.csv` — 3 duplikat sisa (lolos dari filter tanggal awal) yang dihapus.
+- `audit-log/04_hapus_salah_klasifikasi_akun.csv` — 17 jurnal salah klasifikasi akun lawan yang dihapus.
+- `audit-log/05_import_koreksi_klasifikasi_akun.csv` — 12 jurnal koreksi (akun lawan benar) yang diimport sbg pengganti.

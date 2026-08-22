@@ -1,0 +1,18 @@
+﻿No.Jurnal;Tanggal;Deskripsi;Nominal;Alasan
+m1vUyEiR;2026-03-18;TRSF E-BANKING DB - ANTONIUS ARI WIBOW;6000000;Salah klasifikasi (1181 Piutang Karyawan) - seharusnya masuk Kas Kecil
+lX38cIlo;2026-03-18;Penambahan Uang Kas Masuk;6000000;Duplikat sisi Kas Kecil utk transaksi yg sama
+6oC1oSDg;2026-04-02;TRSF E-BANKING DB - ANTONIUS ARI WIBOW;5000000;Salah klasifikasi (1181 Piutang Karyawan) - seharusnya masuk Kas Kecil
+BtO3h5ym;2026-04-02;Penambahan Uang Kas Masuk;5000000;Duplikat sisi Kas Kecil utk transaksi yg sama
+15H4ctrP;2026-04-17;TRSF E-BANKING DB - ANTONIUS ARI WIBOW;5000000;Salah klasifikasi (1181 Piutang Karyawan) - seharusnya masuk Kas Kecil
+IlKutgbm;2026-04-17;Penambahan Uang Kas Masuk;5000000;Duplikat sisi Kas Kecil utk transaksi yg sama
+SNBLQdJd;2026-04-29;TRSF E-BANKING DB - ANTONIUS ARI WIBOW;15000000;Salah klasifikasi (1181 Piutang Karyawan) - seharusnya masuk Kas Kecil
+BZyJuC04;2026-04-29;Penambahan Uang Kas Masuk;15000000;Duplikat sisi Kas Kecil utk transaksi yg sama
+0mj1COqT;2026-05-04;TRSF E-BANKING DB - ANTONIUS ARI WIBOW;15000000;Salah klasifikasi (1181 Piutang Karyawan) - seharusnya masuk Kas Kecil
+3EL7xxY2;2026-05-04;Transfer dari BCA Kas Besar;15000000;Duplikat sisi Kas Kecil utk transaksi yg sama
+CTqpx0EW;2026-03-10;Penambahan Uang Kas Masuk;5000000;Akun lawan salah (1112) - tidak ada transaksi bank yg cocok, diganti ke Hutang Pemegang Saham
+K48RXSib;2026-04-14;Penambahan Uang Kas Masuk 2x @2.500.000,-;5000000;Akun lawan salah (1112) - tidak ada transaksi bank yg cocok, diganti ke Hutang Pemegang Saham
+Ecs31San;2026-04-28;Penambahan Uang Kas Masuk;5000000;Akun lawan salah (1112) - tidak ada transaksi bank yg cocok, diganti ke Hutang Pemegang Saham
+182YWGz1;2026-07-11;saldo masuk;2500000;Akun lawan salah (1112) - tidak ada transaksi bank yg cocok, diganti ke Hutang Pemegang Saham
+IP1zag7l;2026-07-16;penambahan saldo;2500000;Akun lawan salah (1112) - tidak ada transaksi bank yg cocok, diganti ke Hutang Pemegang Saham
+6bL9Lvnx;2026-07-22;Uang masuk;3500000;Akun lawan salah (1112) - tidak ada transaksi bank yg cocok, diganti ke Hutang Pemegang Saham
+J9wc3bI2;2026-07-27;SALDO masuk;5000000;Akun lawan salah (1112) - tidak ada transaksi bank yg cocok, diganti ke Hutang Pemegang Saham
