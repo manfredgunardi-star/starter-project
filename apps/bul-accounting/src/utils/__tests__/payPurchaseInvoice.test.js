@@ -26,6 +26,7 @@ vi.mock('firebase/firestore', () => ({
   getDoc: vi.fn(),
   query: vi.fn(), where: vi.fn(), orderBy: vi.fn(),
   Timestamp: {}, limit: vi.fn(), setDoc: vi.fn(),
+  runTransaction: vi.fn(),
 }))
 
 import { payPurchaseInvoice } from '../accounting'
