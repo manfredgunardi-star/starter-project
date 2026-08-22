@@ -281,6 +281,7 @@ export default function JurnalPage() {
       const q = search.toLowerCase()
       return (
         j.description?.toLowerCase().includes(q) ||
+        j.id?.toLowerCase().includes(q) ||
         j.lines?.some(l => l.keterangan?.toLowerCase().includes(q) || l.accountCode?.includes(q))
       )
     }
