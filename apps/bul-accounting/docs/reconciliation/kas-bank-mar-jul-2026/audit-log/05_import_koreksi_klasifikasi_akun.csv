@@ -1,0 +1,25 @@
+﻿No.Jurnal;Tanggal;Deskripsi Jurnal;Kode Akun;Debit;Kredit;Keterangan Baris
+KOREKSI-01;2026-03-18;TRSF E-BANKING DB - ANTONIUS ARI WIBOW;1111;6000000;;Kas Kecil
+KOREKSI-01;2026-03-18;TRSF E-BANKING DB - ANTONIUS ARI WIBOW;1112;;6000000;Bank BCA Operasional
+KOREKSI-02;2026-04-02;TRSF E-BANKING DB - ANTONIUS ARI WIBOW;1111;5000000;;Kas Kecil
+KOREKSI-02;2026-04-02;TRSF E-BANKING DB - ANTONIUS ARI WIBOW;1112;;5000000;Bank BCA Operasional
+KOREKSI-03;2026-04-17;TRSF E-BANKING DB - ANTONIUS ARI WIBOW;1111;5000000;;Kas Kecil
+KOREKSI-03;2026-04-17;TRSF E-BANKING DB - ANTONIUS ARI WIBOW;1112;;5000000;Bank BCA Operasional
+KOREKSI-04;2026-04-29;TRSF E-BANKING DB - ANTONIUS ARI WIBOW;1111;15000000;;Kas Kecil
+KOREKSI-04;2026-04-29;TRSF E-BANKING DB - ANTONIUS ARI WIBOW;1112;;15000000;Bank BCA Operasional
+KOREKSI-05;2026-05-04;TRSF E-BANKING DB - ANTONIUS ARI WIBOW;1111;15000000;;Kas Kecil
+KOREKSI-05;2026-05-04;TRSF E-BANKING DB - ANTONIUS ARI WIBOW;1112;;15000000;Bank BCA Operasional
+KOREKSI-06;2026-03-10;Penambahan Uang Kas Masuk (setoran pribadi direktur);1111;5000000;;Kas Kecil
+KOREKSI-06;2026-03-10;Penambahan Uang Kas Masuk (setoran pribadi direktur);2153;;5000000;Hutang Pemegang Saham
+KOREKSI-07;2026-04-14;Penambahan Uang Kas Masuk 2x @2.500.000,- (setoran pribadi direktur);1111;5000000;;Kas Kecil
+KOREKSI-07;2026-04-14;Penambahan Uang Kas Masuk 2x @2.500.000,- (setoran pribadi direktur);2153;;5000000;Hutang Pemegang Saham
+KOREKSI-08;2026-04-28;Penambahan Uang Kas Masuk (setoran pribadi direktur);1111;5000000;;Kas Kecil
+KOREKSI-08;2026-04-28;Penambahan Uang Kas Masuk (setoran pribadi direktur);2153;;5000000;Hutang Pemegang Saham
+KOREKSI-09;2026-07-11;Saldo masuk (setoran pribadi direktur);1111;2500000;;Kas Kecil
+KOREKSI-09;2026-07-11;Saldo masuk (setoran pribadi direktur);2153;;2500000;Hutang Pemegang Saham
+KOREKSI-10;2026-07-16;Penambahan saldo (setoran pribadi direktur);1111;2500000;;Kas Kecil
+KOREKSI-10;2026-07-16;Penambahan saldo (setoran pribadi direktur);2153;;2500000;Hutang Pemegang Saham
+KOREKSI-11;2026-07-22;Uang masuk (setoran pribadi direktur);1111;3500000;;Kas Kecil
+KOREKSI-11;2026-07-22;Uang masuk (setoran pribadi direktur);2153;;3500000;Hutang Pemegang Saham
+KOREKSI-12;2026-07-27;Saldo masuk (setoran pribadi direktur);1111;5000000;;Kas Kecil
+KOREKSI-12;2026-07-27;Saldo masuk (setoran pribadi direktur);2153;;5000000;Hutang Pemegang Saham
