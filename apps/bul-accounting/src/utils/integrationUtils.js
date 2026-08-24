@@ -11,6 +11,7 @@ import {
   query, where, getDocs,
 } from 'firebase/firestore';
 import { saveJournal, deleteJournal, saveInvoice, updateInvoice, saveCustomer, getNextCustomerNo } from './accounting';
+import { resolvePiutangNet } from './invoiceAmounts';
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
 
@@ -106,6 +107,8 @@ export async function approveIntegrationItem(item, journalLines, date, descripti
   });
 
   // 2. Jika tipe invoice → auto-sync pelanggan + buat invoice di Penjualan
+  //    amount memakai piutang BERSIH agar cocok dengan Dr 1121 di jurnal.
+  //    Nilai bruto disimpan terpisah untuk ditampilkan sebagai rincian.
   let accountingInvoiceId = null;
   if (item.type === 'invoice') {
     const customer = await findOrCreateCustomer(item.pelangganData, item.pt, createdBy);
@@ -114,7 +117,9 @@ export async function approveIntegrationItem(item, journalLines, date, descripti
       invoiceNo: item.noInvoice || '',
       customerId: customer?.id || null,
       customerName: customer?.name || item.pt || '',
-      amount: item.totalNilai || 0,
+      amount: resolvePiutangNet(item),
+      amountGross: Number(item.totalNilai) || 0,
+      totalUJ: Number(item.totalUJ) || 0,
       description: `Invoice ${item.noInvoice} - ${item.pt} (dari BUL-Monitor)`,
       status: 'unpaid',
       sourceIntegration: item.id,
