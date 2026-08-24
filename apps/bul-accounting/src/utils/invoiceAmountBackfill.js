@@ -9,7 +9,7 @@
  * Dipakai oleh scripts/bul-accounting-backfill/index.js.
  */
 
-import { resolvePiutangNet } from './invoiceAmounts'
+import { resolvePiutangNet } from './invoiceAmounts.js'
 
 export const SKIP_REASONS = {
   QUEUE_NOT_APPROVED: 'item antrian tidak berstatus approved',
