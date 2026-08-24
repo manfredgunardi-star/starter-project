@@ -1012,6 +1012,8 @@ CLI Firebase diblokir profil permission.
 - [ ] Fase 0 (cleanup 7 dokumen) sudah selesai
 - [ ] `npm install` di `scripts/bul-accounting-backfill`
 - [ ] Dry run; periksa kedua CSV
-- [ ] Konfirmasi: jumlah invoice yang akan dikoreksi = 35, dan `totalUJ` pada laporan cocok dengan akumulasi debit 2141 (Rp 511.505.000 per data 2026-08-23; angka ini akan berkurang Rp 4.480.000 setelah duplikat SJT/001 dibereskan di Fase 0)
+- [ ] **Gerbang go/no-go (utama):** Σ `totalUJ` pada `backfill-updates-*.csv` harus sama dengan Rp 507.025.000 (akumulasi debit 2141 Rp 511.505.000 per data 2026-08-23, dikurangi Rp 4.480.000 dari duplikat `SJT/001/01/2026` yang dibereskan di Fase 0). Bila tidak cocok, **jangan lanjut ke `DRY_RUN=false`** — telusuri selisihnya dulu.
+- [ ] Verifikasi sekunder: jumlah baris di `updates` sekitar 34 (40 invoice dikurangi 5 dokumen uji coba dan 1 duplikat `SJT/001` yang dibereskan di Fase 0). Boleh sedikit berbeda bila ada invoice dengan `totalUJ = 0` yang di-skip via `NO_UANG_JALAN` — itu normal, bukan tanda kesalahan. Jumlah ini bukan gerbang keputusan; hanya sanity check kasar.
+- [ ] Bandingkan `amountBefore` dengan `amountGross` di setiap baris `backfill-updates-*.csv`: bila berbeda, invoice itu pernah diedit manual setelah masuk sistem dan backfill akan menimpa nilai manual itu. Putuskan per kasus sebelum lanjut — planner tidak punya guard otomatis untuk situasi ini.
 - [ ] Jalankan `DRY_RUN=false`
 - [ ] Tunggu sync GL harian berikutnya, lalu verifikasi tiga kesetaraan di spec bagian 5

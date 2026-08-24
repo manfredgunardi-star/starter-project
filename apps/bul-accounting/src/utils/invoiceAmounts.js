@@ -35,6 +35,13 @@ export function resolvePiutangNet(item) {
  * bridge yang belum di-backfill (amountGross belum ada) — dalam dua kasus itu
  * tidak ada rincian yang benar untuk ditampilkan.
  *
+ * Juga mengembalikan null bila gross − uj tidak lagi cocok dengan amount yang
+ * tersimpan (toleransi Rp 1 untuk pembulatan). Ini terjadi bila invoice diedit
+ * manual lewat form Penjualan setelah amountGross/totalUJ ditulis — form itu
+ * hanya menulis amount, sehingga rincian lama jadi tidak lagi menjelaskan
+ * angka yang ditampilkan. Menampilkan rincian basi lebih menyesatkan daripada
+ * tidak menampilkan rincian sama sekali.
+ *
  * @param   {Object} invoice - Dokumen invoices
  * @returns {{ gross: number, uj: number } | null}
  */
@@ -45,5 +52,30 @@ export function describeInvoiceGross(invoice) {
   const gross = Number(invoice?.amountGross)
   if (!Number.isFinite(gross)) return null
 
+  const amount = Number(invoice?.amount) || 0
+  if (Math.abs((gross - uj) - amount) > 1) return null
+
   return { gross, uj }
+}
+
+/**
+ * Piutang bersih final untuk invoice yang di-approve, memakai baris jurnal
+ * 1121 yang benar-benar disetujui akuntan (boleh sudah diedit dari
+ * suggestedJournal bawaan bridge) bila tersedia, lalu jatuh ke
+ * resolvePiutangNet(item) bila baris itu tidak ada atau tidak valid.
+ *
+ * Tanpa ini, akuntan yang mengedit baris 1121 sebelum approve akan membuat
+ * subledger invoices.amount berselisih dari Dr 1121 yang benar-benar
+ * terposting — persis kelas bug yang diperbaiki modul ini.
+ *
+ * @param {Object}   item          - Dokumen integration_queue bertipe 'invoice'
+ * @param {Object[]} journalLines  - Baris jurnal yang disetujui akuntan
+ * @returns {number}
+ */
+export function resolveApprovedAmount(item, journalLines) {
+  const line1121 = (journalLines || []).find(l => l?.accountCode === '1121')
+  const debit = Number(line1121?.debit)
+  if (Number.isFinite(debit)) return debit
+
+  return resolvePiutangNet(item)
 }

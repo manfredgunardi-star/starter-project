@@ -68,9 +68,13 @@ describe('approveIntegrationItem — invoice', () => {
   })
 
   it('menyimpan totalUJ 0 untuk invoice tanpa uang jalan', async () => {
+    const journalLinesTanpaUJ = [
+      { accountCode: '1121', debit: 12324060, credit: 0, keterangan: 'Piutang' },
+      { accountCode: '4100', debit: 0, credit: 12324060, keterangan: 'Pendapatan' },
+    ]
     await approveIntegrationItem(
       { ...queueItem, totalUJ: 0, piutangNet: 12324060 },
-      journalLines, '2026-01-25', 'Invoice', 'uid1',
+      journalLinesTanpaUJ, '2026-01-25', 'Invoice', 'uid1',
     )
 
     expect(saveInvoice.mock.calls[0][0]).toMatchObject({
@@ -78,5 +82,28 @@ describe('approveIntegrationItem — invoice', () => {
       amountGross: 12324060,
       totalUJ: 0,
     })
+  })
+
+  it('mengikuti baris 1121 yang diedit akuntan, bukan piutangNet bawaan bridge', async () => {
+    // Regresi: akuntan boleh mengedit baris jurnal sebelum approve. amount
+    // harus cocok dengan Dr 1121 yang benar-benar terposting, bukan angka
+    // yang disarankan bridge — jika tidak, subledger bisa berselisih dari
+    // GL lewat jalur ini persis seperti bug yang diperbaiki fix ini.
+    const journalLinesDiedit = [
+      { accountCode: '1121', debit: 8000000, credit: 0, keterangan: 'Piutang (disesuaikan akuntan)' },
+      { accountCode: '4100', debit: 0, credit: 8000000, keterangan: 'Pendapatan' },
+    ]
+    await approveIntegrationItem(queueItem, journalLinesDiedit, '2026-01-25', 'Invoice', 'uid1')
+
+    expect(saveInvoice.mock.calls[0][0]).toMatchObject({ amount: 8000000 })
+  })
+
+  it('jatuh ke piutangNet ketika baris jurnal tidak memuat akun 1121', async () => {
+    const journalLinesTanpa1121 = [
+      { accountCode: '4100', debit: 0, credit: 12324060, keterangan: 'Pendapatan' },
+    ]
+    await approveIntegrationItem(queueItem, journalLinesTanpa1121, '2026-01-25', 'Invoice', 'uid1')
+
+    expect(saveInvoice.mock.calls[0][0]).toMatchObject({ amount: 7844060 })
   })
 })
