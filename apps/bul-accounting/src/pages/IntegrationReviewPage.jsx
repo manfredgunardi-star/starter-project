@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { subscribePendingQueue, subscribeAllQueue, approveIntegrationItem, rejectIntegrationItem, cancelIntegrationItem } from '../utils/integrationUtils'
 import { formatCurrency, formatDate, getTrucks } from '../utils/accounting'
+import { resolveApprovedAmount } from '../utils/invoiceAmounts.js'
 import { getDetailAccounts } from '../data/chartOfAccounts'
 import { Send, Lock, CheckCircle, XCircle, Clock, Eye, AlertCircle, FileText, RefreshCw, Trash2, DollarSign, TrendingUp, TrendingDown } from 'lucide-react'
 
@@ -418,7 +419,10 @@ function ReviewModal({ item, onClose, onApproved, onRejected }) {
                   )}
                   <div className="flex justify-between border-t border-blue-300 pt-1 font-semibold text-blue-800">
                     <span>Piutang Bersih (Dr 1121)</span>
-                    <span className="font-mono">{formatCurrency(item.piutangNet ?? (item.totalNilai - (item.totalUJ ?? 0)))}</span>
+                    {/* Dihitung dari baris jurnal yang sedang diedit di bawah (journalData.lines),
+                        bukan dari item.piutangNet — supaya ringkasan ini selalu cocok dengan angka
+                        yang akan tersimpan ke amount saat akuntan mengedit baris 1121 sebelum approve. */}
+                    <span className="font-mono">{formatCurrency(resolveApprovedAmount(item, journalData.lines))}</span>
                   </div>
                 </div>
               </div>
