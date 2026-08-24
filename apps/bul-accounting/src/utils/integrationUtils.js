@@ -11,6 +11,7 @@ import {
   query, where, getDocs,
 } from 'firebase/firestore';
 import { saveJournal, deleteJournal, saveInvoice, updateInvoice, saveCustomer, getNextCustomerNo } from './accounting';
+import { resolveApprovedAmount } from './invoiceAmounts.js';
 
 // ─── Internal helpers ────────────────────────────────────────────────────────
 
@@ -106,6 +107,11 @@ export async function approveIntegrationItem(item, journalLines, date, descripti
   });
 
   // 2. Jika tipe invoice → auto-sync pelanggan + buat invoice di Penjualan
+  //    amount memakai debit baris 1121 yang BENAR-BENAR disetujui akuntan
+  //    (journalLines boleh sudah diedit dari suggestedJournal bawaan bridge),
+  //    bukan item.piutangNet — supaya subledger tidak bisa berselisih dari
+  //    Dr 1121 yang terposting meski akuntan mengedit baris jurnal sebelum
+  //    approve. Nilai bruto disimpan terpisah untuk ditampilkan sebagai rincian.
   let accountingInvoiceId = null;
   if (item.type === 'invoice') {
     const customer = await findOrCreateCustomer(item.pelangganData, item.pt, createdBy);
@@ -114,7 +120,9 @@ export async function approveIntegrationItem(item, journalLines, date, descripti
       invoiceNo: item.noInvoice || '',
       customerId: customer?.id || null,
       customerName: customer?.name || item.pt || '',
-      amount: item.totalNilai || 0,
+      amount: resolveApprovedAmount(item, journalLines),
+      amountGross: Number(item.totalNilai) || 0,
+      totalUJ: Number(item.totalUJ) || 0,
       description: `Invoice ${item.noInvoice} - ${item.pt} (dari BUL-Monitor)`,
       status: 'unpaid',
       sourceIntegration: item.id,

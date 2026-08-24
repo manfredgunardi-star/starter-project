@@ -1,0 +1,17 @@
+{
+  "name": "bul-accounting-backfill",
+  "version": "1.0.0",
+  "description": "Koreksi invoices.amount bruto menjadi piutang bersih setelah potongan uang jalan",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "check": "node --check index.js"
+  },
+  "dependencies": {
+    "@google-cloud/firestore": "^7.10.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
