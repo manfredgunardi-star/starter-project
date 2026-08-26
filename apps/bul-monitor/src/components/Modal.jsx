@@ -16,6 +16,25 @@ import { filterBySearch } from '../utils/searchFilter.js';
 const MODAL_SJ_SEARCH_FIELDS = ['nomorSJ', 'rute', 'material', 'nomorPolisi'];
 
 const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [], supirList = [], ruteList = [], materialList = [], suratJalanList = [], pelangganList = [], onClose, onSubmit }) => {
+  /**
+   * DISENGAJA: perubahan kata kunci di modal ini TIDAK mengosongkan
+   * `formData.selectedSJIds`.
+   *
+   * Ini sengaja ASIMETRIS dengan `App.jsx` (handleSearchSJChange) dan
+   * `InvoiceManagement.jsx` (handleSearchChange), yang justru mengosongkan
+   * seleksi tiap kata kunci berubah demi mencegah pengiriman SJ/invoice yang
+   * tidak lagi terlihat ke Accounting.
+   *
+   * Alasannya berbeda di sini: user sedang merakit SATU invoice secara
+   * bertahap — cari "citeureup", centang beberapa, ganti kata kunci jadi
+   * "balaraja", centang beberapa lagi. Mengosongkan seleksi akan MERUSAK alur
+   * itu, dan kerusakannya senyap: tidak ada test yang gagal, build tetap
+   * hijau, user hanya mendapati invoice tak bisa lagi dirakit dari lebih dari
+   * satu pencarian.
+   *
+   * Jadi `onChange` memang di-wire langsung ke setter di bawah. Jangan
+   * "konsisten-kan" dengan dua file itu.
+   */
   const [searchInvoiceSJ, setSearchInvoiceSJ] = useState('');
   // Dihitung sekali lalu dipakai ulang untuk gerbang empty-state dan iterasi.
   // Sebelumnya rantai filter yang sama ditulis dua kali.

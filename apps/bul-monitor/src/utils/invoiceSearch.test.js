@@ -20,6 +20,31 @@ const invoiceB = {
 
 const invoiceKosong = { id: 'inv-c', noInvoice: 'SJT/008/08/2026' };
 
+// Invoice legacy: punya suratJalanIds tapi TIDAK punya snapshot suratJalanList.
+// Kartu invoice tetap me-render SJ-nya (resolveSJInvoice IDs-first), jadi
+// pencarian pun harus menemukannya.
+const invoiceLegacy = {
+  id: 'inv-legacy',
+  noInvoice: 'SJT/009/09/2026',
+  suratJalanIds: ['sj-live-1'],
+};
+
+// Invoice yang snapshot-nya BASI: rute di snapshot beda dari dokumen SJ live.
+const invoiceSnapshotBasi = {
+  id: 'inv-basi',
+  noInvoice: 'SJT/010/10/2026',
+  suratJalanIds: ['sj-live-2'],
+  suratJalanList: [
+    { id: 'sj-live-2', nomorSJ: '03001', nomorPolisi: 'B 2222 BBB', rute: 'Rute Lama Sebelum Dikoreksi', material: 'Pasir' },
+  ],
+};
+
+// Dokumen Surat Jalan yang sedang aktif, diindeks seperti yang dilakukan komponen.
+const sjById = new Map([
+  ['sj-live-1', { id: 'sj-live-1', nomorSJ: '09001', nomorPolisi: 'B 1111 AAA', rute: 'Depok (Pasir KT-PT. BRIK)', material: 'Pasir' }],
+  ['sj-live-2', { id: 'sj-live-2', nomorSJ: '03001', nomorPolisi: 'B 2222 BBB', rute: 'Rute Baru Hasil Koreksi', material: 'Pasir' }],
+]);
+
 const list = [invoiceA, invoiceB, invoiceKosong];
 
 describe('matchesInvoiceSearch', () => {
@@ -53,7 +78,38 @@ describe('matchesInvoiceSearch', () => {
   });
 });
 
+describe('matchesInvoiceSearch — resolusi IDs-first (selaras resolveSJInvoice)', () => {
+  it('menemukan invoice legacy yang punya suratJalanIds tanpa snapshot', () => {
+    // Tanpa resolusi IDs-first, invoice ini tampil benar di kartu tapi tak tercari —
+    // user bisa salah menyimpulkan SJ-nya belum diinvoice.
+    expect(matchesInvoiceSearch(invoiceLegacy, '09001', sjById)).toBe(true);
+    expect(matchesInvoiceSearch(invoiceLegacy, 'depok', sjById)).toBe(true);
+  });
+
+  it('memakai dokumen SJ live, bukan snapshot yang basi', () => {
+    expect(matchesInvoiceSearch(invoiceSnapshotBasi, 'Rute Baru Hasil Koreksi', sjById)).toBe(true);
+  });
+
+  it('tetap mengenali snapshot sebagai cadangan saat SJ live tidak ada', () => {
+    expect(matchesInvoiceSearch(invoiceSnapshotBasi, 'Rute Lama Sebelum Dikoreksi', new Map())).toBe(true);
+  });
+
+  it('tetap bekerja untuk data lama yang hanya punya snapshot tanpa suratJalanIds', () => {
+    expect(matchesInvoiceSearch(invoiceA, '02193', sjById)).toBe(true);
+  });
+
+  it('aman saat indeks SJ tidak diberikan sama sekali', () => {
+    expect(matchesInvoiceSearch(invoiceA, '02193')).toBe(true);
+    expect(matchesInvoiceSearch(invoiceLegacy, '09001')).toBe(false);
+  });
+});
+
 describe('filterInvoicesBySearch', () => {
+  it('meneruskan indeks SJ ke matcher', () => {
+    expect(filterInvoicesBySearch([invoiceLegacy], '09001', sjById).map((i) => i.id)).toEqual(['inv-legacy']);
+    expect(filterInvoicesBySearch([invoiceLegacy], '09001')).toEqual([]);
+  });
+
   it('mengembalikan semua invoice saat kata kunci kosong', () => {
     expect(filterInvoicesBySearch(list, '')).toHaveLength(3);
   });

@@ -40,29 +40,45 @@ const InvoiceManagement = ({
     setSelectedInvoiceIds(new Set());
   };
 
+  // Indeks Surat Jalan berdasarkan id. Dipakai canKirimInvoice() dan pencarian
+  // invoice, keduanya berjalan pada SETIAP ketukan tombol di kotak pencarian.
+  // Tanpa indeks ini keduanya melakukan pemindaian linear atas ribuan SJ per
+  // invoice per render — cukup untuk membuat pengetikan terasa tersendat.
+  const sjById = useMemo(
+    () => new Map(suratJalanList.map((sj) => [sj.id, sj])),
+    [suratJalanList]
+  );
+
   // statusInvoice:
   // - undefined / null / ''  -> dianggap BELUM (backward compatible data lama)
   // - 'belum'                -> BELUM
   // - 'terinvoice'           -> SUDAH
-  const sjBelumTerinvoice = suratJalanList.filter(sj =>
-    (sj.status === 'terkirim' || sj.status === 'terkunci') &&
-    sj.isActive !== false &&
-    (sj.statusInvoice == null || sj.statusInvoice === '' || sj.statusInvoice === 'belum')
+  const sjBelumTerinvoice = useMemo(
+    () => suratJalanList.filter(sj =>
+      (sj.status === 'terkirim' || sj.status === 'terkunci') &&
+      sj.isActive !== false &&
+      (sj.statusInvoice == null || sj.statusInvoice === '' || sj.statusInvoice === 'belum')
+    ),
+    [suratJalanList]
   );
 
-  const sjTerinvoice = suratJalanList.filter(sj =>
-    (sj.status === 'terkirim' || sj.status === 'terkunci') &&
-    sj.statusInvoice === 'terinvoice'
+  const sjTerinvoice = useMemo(
+    () => suratJalanList.filter(sj =>
+      (sj.status === 'terkirim' || sj.status === 'terkunci') &&
+      sj.statusInvoice === 'terinvoice'
+    ),
+    [suratJalanList]
   );
 
   const baseSJ = activeFilter === 'belum-terinvoice' ? sjBelumTerinvoice : sjTerinvoice;
   const filteredSJ = useSearchFilter(baseSJ, search, SJ_INVOICE_SEARCH_FIELDS);
 
   // Pencarian invoice bersifat "dalam": cocok pada noInvoice ATAU pada salah
-  // satu Surat Jalan di dalamnya.
+  // satu Surat Jalan di dalamnya, diresolusi IDS-FIRST agar sama persis dengan
+  // apa yang dirender kartu invoice (lihat invoiceSearch.js).
   const searchedInvoices = useMemo(
-    () => filterInvoicesBySearch(invoiceList, search),
-    [invoiceList, search]
+    () => filterInvoicesBySearch(invoiceList, search, sjById),
+    [invoiceList, search, sjById]
   );
 
   const canManageInvoice = () => {
@@ -77,7 +93,7 @@ const InvoiceManagement = ({
     if (effectiveRole !== 'superadmin') return false;
     if (invoice.integrationStatus === 'menunggu_review' || invoice.integrationStatus === 'terkunci') return false;
     const includedSJs = (invoice.suratJalanIds || [])
-      .map(id => suratJalanList.find(s => s.id === id))
+      .map(id => sjById.get(id))
       .filter(Boolean);
     return includedSJs.length > 0 && includedSJs.every(sj => sj.status === 'terkunci');
   };

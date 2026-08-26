@@ -1840,7 +1840,12 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
       setAlertMessage('❌ Koneksi ke sistem Accounting belum siap. Periksa konfigurasi .env dan coba refresh halaman.');
       return;
     }
-    const toSend = suratJalanList.filter(sj => selectedSJIds.has(sj.id) && isSJEligibleForBulkKirim(sj));
+    // Bersumber dari searchedSuratJalan (daftar yang BENAR-BENAR TERLIHAT), bukan
+    // suratJalanList penuh. handleSearchSJChange memang sudah mengosongkan seleksi
+    // tiap kata kunci berubah, tetapi itu proteksi berbasis konvensi — sekali ada
+    // yang menyederhanakannya, tidak ada lapis kedua. Menyaring dari daftar terlihat
+    // membuat invarian "hanya kirim yang terlihat" menjadi struktural.
+    const toSend = searchedSuratJalan.filter(sj => selectedSJIds.has(sj.id) && isSJEligibleForBulkKirim(sj));
     if (!toSend.length) return;
 
     const listPreview = toSend.slice(0, 10).map(sj => `• ${sj.nomorSJ}`).join('\n');
@@ -1912,7 +1917,8 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
   };
 
   const handleBulkBatalkanSJ = async () => {
-    const toCancel = suratJalanList.filter(sj => selectedBatalSJIds.has(sj.id) && isSJEligibleForBulkBatalkan(sj));
+    // Sama seperti handleBulkKirimSJKeAccounting: saring dari daftar yang terlihat.
+    const toCancel = searchedSuratJalan.filter(sj => selectedBatalSJIds.has(sj.id) && isSJEligibleForBulkBatalkan(sj));
     if (!toCancel.length) return;
 
     const listPreview = toCancel.slice(0, 10).map(sj => `• ${sj.nomorSJ}`).join('\n');
