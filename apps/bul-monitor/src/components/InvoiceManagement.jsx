@@ -1,6 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Send, Lock, Plus, Clock, CheckCircle, FileText, Package, XCircle } from 'lucide-react';
 import { hitungTotalInvoice, resolveSJInvoice } from '../utils/invoiceTotals.js';
+import SearchInput from './SearchInput.jsx';
+import { useSearchFilter } from '../hooks/useSearchFilter.js';
+import { filterInvoicesBySearch } from '../utils/invoiceSearch.js';
+
+// Konstanta level-modul: referensi array stabil antar-render.
+const SJ_INVOICE_SEARCH_FIELDS = ['nomorSJ', 'nomorPolisi', 'rute', 'material'];
 
 const InvoiceManagement = ({
   invoiceList,
@@ -14,10 +20,66 @@ const InvoiceManagement = ({
 }) => {
   const [activeFilter, setActiveFilter] = useState('belum-terinvoice');
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState(new Set());
+  const [search, setSearch] = useState('');
   const effectiveRole = (currentUser?.role === 'owner' ? 'reader' : currentUser?.role) || 'reader';
 
-  // Reset seleksi saat pindah tab
-  useEffect(() => { setSelectedInvoiceIds(new Set()); }, [activeFilter]);
+  // Reset seleksi dan kata kunci saat pindah tab — kedua tab mencari entitas
+  // yang berbeda (Surat Jalan vs Invoice), jadi kata kunci tidak dibawa-bawa.
+  useEffect(() => {
+    setSelectedInvoiceIds(new Set());
+    setSearch('');
+  }, [activeFilter]);
+
+  /**
+   * Perubahan kata kunci mengosongkan seleksi invoice. Tanpa ini, user bisa
+   * memilih invoice di bawah satu kata kunci, menghapus kata kuncinya, lalu
+   * mengirim invoice yang tidak lagi terlihat ke Accounting.
+   */
+  const handleSearchChange = (value) => {
+    setSearch(value);
+    setSelectedInvoiceIds(new Set());
+  };
+
+  // Indeks Surat Jalan berdasarkan id. Dipakai canKirimInvoice() dan pencarian
+  // invoice, keduanya berjalan pada SETIAP ketukan tombol di kotak pencarian.
+  // Tanpa indeks ini keduanya melakukan pemindaian linear atas ribuan SJ per
+  // invoice per render — cukup untuk membuat pengetikan terasa tersendat.
+  const sjById = useMemo(
+    () => new Map(suratJalanList.map((sj) => [sj.id, sj])),
+    [suratJalanList]
+  );
+
+  // statusInvoice:
+  // - undefined / null / ''  -> dianggap BELUM (backward compatible data lama)
+  // - 'belum'                -> BELUM
+  // - 'terinvoice'           -> SUDAH
+  const sjBelumTerinvoice = useMemo(
+    () => suratJalanList.filter(sj =>
+      (sj.status === 'terkirim' || sj.status === 'terkunci') &&
+      sj.isActive !== false &&
+      (sj.statusInvoice == null || sj.statusInvoice === '' || sj.statusInvoice === 'belum')
+    ),
+    [suratJalanList]
+  );
+
+  const sjTerinvoice = useMemo(
+    () => suratJalanList.filter(sj =>
+      (sj.status === 'terkirim' || sj.status === 'terkunci') &&
+      sj.statusInvoice === 'terinvoice'
+    ),
+    [suratJalanList]
+  );
+
+  const baseSJ = activeFilter === 'belum-terinvoice' ? sjBelumTerinvoice : sjTerinvoice;
+  const filteredSJ = useSearchFilter(baseSJ, search, SJ_INVOICE_SEARCH_FIELDS);
+
+  // Pencarian invoice bersifat "dalam": cocok pada noInvoice ATAU pada salah
+  // satu Surat Jalan di dalamnya, diresolusi IDS-FIRST agar sama persis dengan
+  // apa yang dirender kartu invoice (lihat invoiceSearch.js).
+  const searchedInvoices = useMemo(
+    () => filterInvoicesBySearch(invoiceList, search, sjById),
+    [invoiceList, search, sjById]
+  );
 
   const canManageInvoice = () => {
     return effectiveRole === 'superadmin' || effectiveRole === 'admin_invoice';
@@ -31,12 +93,12 @@ const InvoiceManagement = ({
     if (effectiveRole !== 'superadmin') return false;
     if (invoice.integrationStatus === 'menunggu_review' || invoice.integrationStatus === 'terkunci') return false;
     const includedSJs = (invoice.suratJalanIds || [])
-      .map(id => suratJalanList.find(s => s.id === id))
+      .map(id => sjById.get(id))
       .filter(Boolean);
     return includedSJs.length > 0 && includedSJs.every(sj => sj.status === 'terkunci');
   };
 
-  const eligibleInvoicesInView = activeFilter === 'terinvoice' ? invoiceList.filter(canKirimInvoice) : [];
+  const eligibleInvoicesInView = activeFilter === 'terinvoice' ? searchedInvoices.filter(canKirimInvoice) : [];
   const selectedInView = eligibleInvoicesInView.filter(inv => selectedInvoiceIds.has(inv.id));
   const allInViewSelected = eligibleInvoicesInView.length > 0 && selectedInView.length === eligibleInvoicesInView.length;
 
@@ -77,23 +139,6 @@ const InvoiceManagement = ({
     }
     return null;
   };
-  
-  // statusInvoice:
-  // - undefined / null / ''  -> dianggap BELUM (backward compatible data lama)
-  // - 'belum'                -> BELUM
-  // - 'terinvoice'           -> SUDAH
-  const sjBelumTerinvoice = suratJalanList.filter(sj =>
-    (sj.status === 'terkirim' || sj.status === 'terkunci') &&
-    sj.isActive !== false &&
-    (sj.statusInvoice == null || sj.statusInvoice === '' || sj.statusInvoice === 'belum')
-  );
-
-  const sjTerinvoice = suratJalanList.filter(sj =>
-    (sj.status === 'terkirim' || sj.status === 'terkunci') &&
-    sj.statusInvoice === 'terinvoice'
-  );
-  
-  const filteredSJ = activeFilter === 'belum-terinvoice' ? sjBelumTerinvoice : sjTerinvoice;
   
   // Export to Excel function
   const exportInvoiceToExcel = (invoice) => {
@@ -223,7 +268,7 @@ const InvoiceManagement = ({
             <Package className="w-5 h-5 text-orange-600" />
             Surat Jalan Terkirim - Belum Terinvoice
           </h3>
-          {filteredSJ.length === 0 ? (
+          {baseSJ.length === 0 ? (
             <div className="text-center py-12">
               <CheckCircle className="w-16 h-16 mx-auto text-green-400 mb-4" />
               <p className="text-lg font-semibold text-gray-600 mb-2">Semua Surat Jalan Sudah Terinvoice! 🎉</p>
@@ -236,6 +281,18 @@ const InvoiceManagement = ({
                   <strong>📋 Info:</strong> Pilih surat jalan di bawah untuk membuat invoice. Klik tombol "Buat Invoice Baru" di atas untuk memulai.
                 </p>
               </div>
+              <div className="mb-4">
+                <SearchInput
+                  value={search}
+                  onChange={handleSearchChange}
+                  placeholder="Cari nomor SJ, nomor polisi, rute, atau material..."
+                />
+              </div>
+              {filteredSJ.length === 0 ? (
+                <div className="text-center py-8">
+                  <p className="text-sm text-gray-500">Tidak ada Surat Jalan yang cocok dengan pencarian.</p>
+                </div>
+              ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
@@ -270,6 +327,7 @@ const InvoiceManagement = ({
                   </tbody>
                 </table>
               </div>
+              )}
             </>
           )}
         </div>
@@ -308,7 +366,27 @@ const InvoiceManagement = ({
             </div>
           )}
 
-          {invoiceList.length === 0 ? (
+          {invoiceList.length > 0 && (
+            <div className="mb-4">
+              <SearchInput
+                value={search}
+                onChange={handleSearchChange}
+                placeholder="Cari nomor invoice atau nomor SJ di dalamnya..."
+              />
+              {search && (
+                <p className="mt-2 text-sm text-gray-600">
+                  {searchedInvoices.length} dari {invoiceList.length} invoice cocok
+                </p>
+              )}
+            </div>
+          )}
+
+          {invoiceList.length > 0 && searchedInvoices.length === 0 ? (
+            <div className="bg-white rounded-lg shadow-md p-12 text-center">
+              <FileText className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+              <p className="text-lg font-semibold text-gray-600 mb-2">Tidak ada invoice yang cocok dengan pencarian.</p>
+            </div>
+          ) : invoiceList.length === 0 ? (
             <div className="bg-white rounded-lg shadow-md p-12 text-center">
               <FileText className="w-16 h-16 mx-auto text-gray-300 mb-4" />
               <p className="text-lg font-semibold text-gray-600 mb-2">Belum Ada Invoice</p>
@@ -324,7 +402,7 @@ const InvoiceManagement = ({
               )}
             </div>
           ) : (
-            invoiceList.map(invoice => {
+            searchedInvoices.map(invoice => {
               const isEligibleForBulk = canKirimInvoice(invoice);
               const isSelected = selectedInvoiceIds.has(invoice.id);
               return (

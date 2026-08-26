@@ -1,6 +1,16 @@
 import { useState } from 'react';
 import { Plus, Edit, Trash2, RefreshCw, FileText, Package, Truck, Users } from 'lucide-react';
 import { formatCurrency } from '../utils/formatters.js';
+import SearchInput from './SearchInput.jsx';
+import { useSearchFilter } from '../hooks/useSearchFilter.js';
+
+// Konstanta level-modul: referensi array stabil antar-render agar useMemo
+// di dalam useSearchFilter benar-benar efektif.
+const TRUCK_SEARCH_FIELDS = ['nomorPolisi'];
+const SUPIR_SEARCH_FIELDS = ['namaSupir', 'pt'];
+const RUTE_SEARCH_FIELDS = ['rute'];
+const MATERIAL_SEARCH_FIELDS = ['material', 'satuan'];
+const PELANGGAN_SEARCH_FIELDS = ['name', 'address', 'npwp'];
 
 const MasterDataManagement = ({
   truckList, supirList, ruteList, materialList, pelangganList = [], currentUser,
@@ -13,6 +23,17 @@ const MasterDataManagement = ({
 }) => {
   const [masterTab, setMasterTab] = useState('truck');
   const [alertMessage, setAlertMessage] = useState('');
+  const [searchTruck, setSearchTruck] = useState('');
+  const [searchSupir, setSearchSupir] = useState('');
+  const [searchRute, setSearchRute] = useState('');
+  const [searchMaterial, setSearchMaterial] = useState('');
+  const [searchPelanggan, setSearchPelanggan] = useState('');
+
+  const filteredTruck = useSearchFilter(truckList, searchTruck, TRUCK_SEARCH_FIELDS);
+  const filteredSupir = useSearchFilter(supirList, searchSupir, SUPIR_SEARCH_FIELDS);
+  const filteredRute = useSearchFilter(ruteList, searchRute, RUTE_SEARCH_FIELDS);
+  const filteredMaterial = useSearchFilter(materialList, searchMaterial, MATERIAL_SEARCH_FIELDS);
+  const filteredPelanggan = useSearchFilter(pelangganList, searchPelanggan, PELANGGAN_SEARCH_FIELDS);
 
   const handleFileUpload = (e, type) => {
     const file = e.target.files[0];
@@ -69,7 +90,10 @@ const MasterDataManagement = ({
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-bold text-gray-800">Master Data Truck</h2>
-                <p className="text-sm text-gray-600">Total: {truckList.length} truck</p>
+                <p className="text-sm text-gray-600">
+                  Total: {truckList.length} truck
+                  {searchTruck && ` · ${filteredTruck.length} cocok`}
+                </p>
               </div>
               <div className="flex gap-2">
                 <button
@@ -100,14 +124,29 @@ const MasterDataManagement = ({
             </div>
           </div>
 
+          {truckList.length > 0 && (
+            <div className="mb-4">
+              <SearchInput
+                value={searchTruck}
+                onChange={setSearchTruck}
+                placeholder="Cari nomor polisi..."
+              />
+            </div>
+          )}
+
           <div className="space-y-3">
             {truckList.length === 0 ? (
               <div className="bg-white rounded-lg shadow-md p-8 text-center">
                 <Truck className="w-16 h-16 mx-auto text-gray-300 mb-4" />
                 <p className="text-gray-500">Belum ada data truck</p>
               </div>
+            ) : filteredTruck.length === 0 ? (
+              <div className="bg-white rounded-lg shadow-md p-8 text-center">
+                <Truck className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-500">Tidak ada truck yang cocok dengan pencarian.</p>
+              </div>
             ) : (
-              truckList.map(truck => (
+              filteredTruck.map(truck => (
                 <div key={truck.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -157,7 +196,10 @@ const MasterDataManagement = ({
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-bold text-gray-800">Master Data Supir</h2>
-                <p className="text-sm text-gray-600">Total: {supirList.length} supir</p>
+                <p className="text-sm text-gray-600">
+                  Total: {supirList.length} supir
+                  {searchSupir && ` · ${filteredSupir.length} cocok`}
+                </p>
               </div>
               <div className="flex gap-2">
                 <button
@@ -188,14 +230,29 @@ const MasterDataManagement = ({
             </div>
           </div>
 
+          {supirList.length > 0 && (
+            <div className="mb-4">
+              <SearchInput
+                value={searchSupir}
+                onChange={setSearchSupir}
+                placeholder="Cari nama supir atau PT..."
+              />
+            </div>
+          )}
+
           <div className="space-y-3">
             {supirList.length === 0 ? (
               <div className="bg-white rounded-lg shadow-md p-8 text-center">
                 <Users className="w-16 h-16 mx-auto text-gray-300 mb-4" />
                 <p className="text-gray-500">Belum ada data supir</p>
               </div>
+            ) : filteredSupir.length === 0 ? (
+              <div className="bg-white rounded-lg shadow-md p-8 text-center">
+                <Users className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-500">Tidak ada supir yang cocok dengan pencarian.</p>
+              </div>
             ) : (
-              supirList.map(supir => (
+              filteredSupir.map(supir => (
                 <div key={supir.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -254,7 +311,10 @@ const MasterDataManagement = ({
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-bold text-gray-800">Master Data Rute</h2>
-                <p className="text-sm text-gray-600">Total: {ruteList.length} rute</p>
+                <p className="text-sm text-gray-600">
+                  Total: {ruteList.length} rute
+                  {searchRute && ` · ${filteredRute.length} cocok`}
+                </p>
               </div>
               <div className="flex gap-2">
                 <button
@@ -285,14 +345,29 @@ const MasterDataManagement = ({
             </div>
           </div>
 
+          {ruteList.length > 0 && (
+            <div className="mb-4">
+              <SearchInput
+                value={searchRute}
+                onChange={setSearchRute}
+                placeholder="Cari nama rute..."
+              />
+            </div>
+          )}
+
           <div className="space-y-3">
             {ruteList.length === 0 ? (
               <div className="bg-white rounded-lg shadow-md p-8 text-center">
                 <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
                 <p className="text-gray-500">Belum ada data rute</p>
               </div>
+            ) : filteredRute.length === 0 ? (
+              <div className="bg-white rounded-lg shadow-md p-8 text-center">
+                <FileText className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-500">Tidak ada rute yang cocok dengan pencarian.</p>
+              </div>
             ) : (
-              ruteList.map(rute => (
+              filteredRute.map(rute => (
                 <div key={rute.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -344,7 +419,10 @@ const MasterDataManagement = ({
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-bold text-gray-800">Master Data Material</h2>
-                <p className="text-sm text-gray-600">Total: {materialList.length} material</p>
+                <p className="text-sm text-gray-600">
+                  Total: {materialList.length} material
+                  {searchMaterial && ` · ${filteredMaterial.length} cocok`}
+                </p>
               </div>
               <div className="flex gap-2">
                 <button
@@ -375,14 +453,29 @@ const MasterDataManagement = ({
             </div>
           </div>
 
+          {materialList.length > 0 && (
+            <div className="mb-4">
+              <SearchInput
+                value={searchMaterial}
+                onChange={setSearchMaterial}
+                placeholder="Cari nama material atau satuan..."
+              />
+            </div>
+          )}
+
           <div className="space-y-3">
             {materialList.length === 0 ? (
               <div className="bg-white rounded-lg shadow-md p-8 text-center">
                 <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
                 <p className="text-gray-500">Belum ada data material</p>
               </div>
+            ) : filteredMaterial.length === 0 ? (
+              <div className="bg-white rounded-lg shadow-md p-8 text-center">
+                <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-500">Tidak ada material yang cocok dengan pencarian.</p>
+              </div>
             ) : (
-              materialList.map(material => (
+              filteredMaterial.map(material => (
                 <div key={material.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -434,7 +527,10 @@ const MasterDataManagement = ({
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-bold text-gray-800">Master Data Pelanggan</h2>
-                <p className="text-sm text-gray-600">Total: {pelangganList.length} pelanggan</p>
+                <p className="text-sm text-gray-600">
+                  Total: {pelangganList.length} pelanggan
+                  {searchPelanggan && ` · ${filteredPelanggan.length} cocok`}
+                </p>
               </div>
               <div className="flex gap-2">
                 {pelangganList.length === 0 && (
@@ -457,6 +553,16 @@ const MasterDataManagement = ({
             </div>
           </div>
 
+          {pelangganList.length > 0 && (
+            <div className="mb-4">
+              <SearchInput
+                value={searchPelanggan}
+                onChange={setSearchPelanggan}
+                placeholder="Cari nama pelanggan, alamat, atau NPWP..."
+              />
+            </div>
+          )}
+
           <div className="space-y-3">
             {pelangganList.length === 0 ? (
               <div className="bg-white rounded-lg shadow-md p-8 text-center">
@@ -464,8 +570,13 @@ const MasterDataManagement = ({
                 <p className="text-gray-500 mb-2">Belum ada data pelanggan</p>
                 <p className="text-sm text-gray-400">Klik "Import dari Data Supir" untuk mengisi otomatis dari data PT supir yang sudah ada.</p>
               </div>
+            ) : filteredPelanggan.length === 0 ? (
+              <div className="bg-white rounded-lg shadow-md p-8 text-center">
+                <Users className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-500">Tidak ada pelanggan yang cocok dengan pencarian.</p>
+              </div>
             ) : (
-              pelangganList.map(pelanggan => (
+              filteredPelanggan.map(pelanggan => (
                 <div key={pelanggan.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Package, CheckCircle, XCircle, Search } from 'lucide-react';
+import { Package, CheckCircle } from 'lucide-react';
 import SearchableSelect from './SearchableSelect.jsx';
 import TruckFormFields from './modals/TruckFormFields.jsx';
 import SupirFormFields from './modals/SupirFormFields.jsx';
@@ -9,9 +9,43 @@ import MaterialFormFields from './modals/MaterialFormFields.jsx';
 import InvoiceImportPanel from './modals/InvoiceImportPanel.jsx';
 import { isSJEligibleForInvoice } from '../utils/invoiceEligibility.js';
 import { hitungPotonganUJ } from '../utils/invoiceTotals.js';
+import SearchInput from './SearchInput.jsx';
+import { filterBySearch } from '../utils/searchFilter.js';
+
+// Konstanta level-modul: referensi array stabil antar-render.
+const MODAL_SJ_SEARCH_FIELDS = ['nomorSJ', 'rute', 'material', 'nomorPolisi'];
 
 const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [], supirList = [], ruteList = [], materialList = [], suratJalanList = [], pelangganList = [], onClose, onSubmit }) => {
+  /**
+   * DISENGAJA: perubahan kata kunci di modal ini TIDAK mengosongkan
+   * `formData.selectedSJIds`.
+   *
+   * Ini sengaja ASIMETRIS dengan `App.jsx` (handleSearchSJChange) dan
+   * `InvoiceManagement.jsx` (handleSearchChange), yang justru mengosongkan
+   * seleksi tiap kata kunci berubah demi mencegah pengiriman SJ/invoice yang
+   * tidak lagi terlihat ke Accounting.
+   *
+   * Alasannya berbeda di sini: user sedang merakit SATU invoice secara
+   * bertahap — cari "citeureup", centang beberapa, ganti kata kunci jadi
+   * "balaraja", centang beberapa lagi. Mengosongkan seleksi akan MERUSAK alur
+   * itu, dan kerusakannya senyap: tidak ada test yang gagal, build tetap
+   * hijau, user hanya mendapati invoice tak bisa lagi dirakit dari lebih dari
+   * satu pencarian.
+   *
+   * Jadi `onChange` memang di-wire langsung ke setter di bawah. Jangan
+   * "konsisten-kan" dengan dua file itu.
+   */
   const [searchInvoiceSJ, setSearchInvoiceSJ] = useState('');
+  // Dihitung sekali lalu dipakai ulang untuk gerbang empty-state dan iterasi.
+  // Sebelumnya rantai filter yang sama ditulis dua kali.
+  const sjEligibleTerfilter = filterBySearch(
+    suratJalanList.filter(sj => isSJEligibleForInvoice(sj, {
+      isEdit: type === 'editInvoice',
+      editingInvoiceId: selectedItem?.id,
+    })),
+    searchInvoiceSJ,
+    MODAL_SJ_SEARCH_FIELDS
+  );
   const initializedRef = React.useRef(false);
   const [biayaTambahanItems, setBiayaTambahanItems] = useState([]);
   const [biayaInput, setBiayaInput] = useState({ jenisBiaya: '', nominal: '', keteranganBiaya: '' });
@@ -614,42 +648,15 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                 
                 {/* Search Bar */}
                 <div className="mb-3">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Cari Nomor SJ, Rute, Material, atau Nomor Polisi..."
-                      value={searchInvoiceSJ}
-                      onChange={(e) => setSearchInvoiceSJ(e.target.value)}
-                      className="w-full px-3 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                    />
-                    <Search className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" />
-                    {searchInvoiceSJ && (
-                      <button
-                        onClick={() => setSearchInvoiceSJ('')}
-                        className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
-                      >
-                        <XCircle className="w-5 h-5" />
-                      </button>
-                    )}
-                  </div>
+                  <SearchInput
+                    value={searchInvoiceSJ}
+                    onChange={setSearchInvoiceSJ}
+                    placeholder="Cari Nomor SJ, Rute, Material, atau Nomor Polisi..."
+                  />
                 </div>
                 
                 <div className="border border-gray-300 rounded-lg p-4 max-h-80 overflow-y-auto bg-gray-50">
-                  {suratJalanList
-                    .filter(sj => isSJEligibleForInvoice(sj, {
-                      isEdit: type === 'editInvoice',
-                      editingInvoiceId: selectedItem?.id,
-                    }))
-                    .filter(sj => {
-                      if (!searchInvoiceSJ) return true;
-                      const search = searchInvoiceSJ.toLowerCase();
-                      return (
-                        sj.nomorSJ.toLowerCase().includes(search) ||
-                        sj.rute.toLowerCase().includes(search) ||
-                        sj.material.toLowerCase().includes(search) ||
-                        sj.nomorPolisi.toLowerCase().includes(search)
-                      );
-                    }).length === 0 ? (
+                  {sjEligibleTerfilter.length === 0 ? (
                     <div className="text-center py-8">
                       <Package className="w-12 h-12 mx-auto text-gray-300 mb-2" />
                       <p className="text-gray-500 font-medium">
@@ -661,21 +668,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                     </div>
                   ) : (
                     <div className="space-y-2">
-                      {suratJalanList
-                        .filter(sj => isSJEligibleForInvoice(sj, {
-                          isEdit: type === 'editInvoice',
-                          editingInvoiceId: selectedItem?.id,
-                        }))
-                        .filter(sj => {
-                          if (!searchInvoiceSJ) return true;
-                          const search = searchInvoiceSJ.toLowerCase();
-                          return (
-                            sj.nomorSJ.toLowerCase().includes(search) ||
-                            sj.rute.toLowerCase().includes(search) ||
-                            sj.material.toLowerCase().includes(search) ||
-                            sj.nomorPolisi.toLowerCase().includes(search)
-                          );
-                        })
+                      {sjEligibleTerfilter
                         .map(sj => (
                           <label 
                             key={sj.id} 
