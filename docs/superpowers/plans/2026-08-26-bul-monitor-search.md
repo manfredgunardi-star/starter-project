@@ -362,7 +362,7 @@ git commit -m "feat(bul-monitor): add useSearchFilter hook and SearchInput compo
 - Consumes: `SearchInput` (default export) dan `useSearchFilter` (named export) dari Task 2.
 - Produces: pola penempatan search bar yang diulang Task 4 — konstanta field di level modul, state `searchX`, list `filteredX`, `SearchInput` di antara kartu header dan daftar, plus empty state pencarian.
 
-- [ ] **Step 1: Tambahkan import dan konstanta field di level modul**
+- [x] **Step 1: Tambahkan import dan konstanta field di level modul**
 
 Ganti baris 1-3 `apps/bul-monitor/src/components/MasterDataManagement.jsx`:
 
@@ -390,7 +390,7 @@ const MATERIAL_SEARCH_FIELDS = ['material', 'satuan'];
 const PELANGGAN_SEARCH_FIELDS = ['name', 'address', 'npwp'];
 ```
 
-- [ ] **Step 2: Tambahkan state dan daftar terfilter**
+- [x] **Step 2: Tambahkan state dan daftar terfilter**
 
 Ganti dua baris ini (berada tepat setelah daftar props destructuring):
 
@@ -417,7 +417,7 @@ menjadi:
   const filteredPelanggan = useSearchFilter(pelangganList, searchPelanggan, PELANGGAN_SEARCH_FIELDS);
 ```
 
-- [ ] **Step 3: Tampilkan jumlah hasil pada header Truck**
+- [x] **Step 3: Tampilkan jumlah hasil pada header Truck**
 
 Ganti:
 
@@ -434,7 +434,7 @@ menjadi:
                 </p>
 ```
 
-- [ ] **Step 4: Sisipkan search bar dan empty state pada tab Truck**
+- [x] **Step 4: Sisipkan search bar dan empty state pada tab Truck**
 
 Ganti blok daftar Truck:
 
@@ -477,7 +477,7 @@ menjadi:
               filteredTruck.map(truck => (
 ```
 
-- [ ] **Step 5: Terapkan pola yang sama pada tab Supir**
+- [x] **Step 5: Terapkan pola yang sama pada tab Supir**
 
 Ganti header count Supir:
 
@@ -537,7 +537,7 @@ menjadi:
               filteredSupir.map(supir => (
 ```
 
-- [ ] **Step 6: Verifikasi build**
+- [x] **Step 6: Verifikasi build**
 
 ```bash
 cd apps/bul-monitor && npm run build
@@ -545,7 +545,7 @@ cd apps/bul-monitor && npm run build
 
 Expected: `built in Xs`, tanpa error. Variabel `filteredRute`/`filteredMaterial`/`filteredPelanggan` memang belum dipakai sampai Task 4 — itu disengaja dan tidak menggagalkan build (bul-monitor tidak menjalankan ESLint).
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add apps/bul-monitor/src/components/MasterDataManagement.jsx
@@ -563,7 +563,7 @@ git commit -m "feat(bul-monitor): add search to master data truck and supir tabs
 - Consumes: konstanta `RUTE_SEARCH_FIELDS`, `MATERIAL_SEARCH_FIELDS`, `PELANGGAN_SEARCH_FIELDS`, state `searchRute`/`searchMaterial`/`searchPelanggan`, dan list `filteredRute`/`filteredMaterial`/`filteredPelanggan` yang sudah dideklarasikan di Task 3.
 - Produces: tidak ada yang dikonsumsi task berikutnya.
 
-- [ ] **Step 1: Tab Rute — header count**
+- [x] **Step 1: Tab Rute — header count**
 
 Ganti:
 
@@ -580,7 +580,7 @@ menjadi:
                 </p>
 ```
 
-- [ ] **Step 2: Tab Rute — search bar, empty state, iterasi**
+- [x] **Step 2: Tab Rute — search bar, empty state, iterasi**
 
 Ganti:
 
@@ -625,7 +625,7 @@ menjadi:
               filteredRute.map(rute => (
 ```
 
-- [ ] **Step 3: Tab Material — header count**
+- [x] **Step 3: Tab Material — header count**
 
 Ganti:
 
@@ -642,7 +642,7 @@ menjadi:
                 </p>
 ```
 
-- [ ] **Step 4: Tab Material — search bar, empty state, iterasi**
+- [x] **Step 4: Tab Material — search bar, empty state, iterasi**
 
 Ganti:
 
@@ -687,7 +687,7 @@ menjadi:
               filteredMaterial.map(material => (
 ```
 
-- [ ] **Step 5: Tab Pelanggan — header count**
+- [x] **Step 5: Tab Pelanggan — header count**
 
 Ganti:
 
@@ -704,7 +704,7 @@ menjadi:
                 </p>
 ```
 
-- [ ] **Step 6: Tab Pelanggan — search bar, empty state, iterasi**
+- [x] **Step 6: Tab Pelanggan — search bar, empty state, iterasi**
 
 Sisipkan search bar tepat sebelum wadah daftar Pelanggan. Ganti:
 
@@ -751,7 +751,7 @@ menjadi:
               filteredPelanggan.map(pelanggan => (
 ```
 
-- [ ] **Step 7: Verifikasi build**
+- [x] **Step 7: Verifikasi build**
 
 ```bash
 cd apps/bul-monitor && npm run build
@@ -759,7 +759,7 @@ cd apps/bul-monitor && npm run build
 
 Expected: `built in Xs`, tanpa error.
 
-- [ ] **Step 8: Verifikasi manual di dev server**
+- [x] **Step 8: Verifikasi manual di dev server**
 
 ```bash
 cd apps/bul-monitor && npm run dev
@@ -767,7 +767,7 @@ cd apps/bul-monitor && npm run dev
 
 Cek berurutan di tab Master Data: (a) ketik `bal` di Rute → hanya rute Balaraja tampil dan header menunjukkan `· 2 cocok`; (b) tekan tombol ✕ → seluruh 70 rute kembali; (c) ketik `zzz` → muncul "Tidak ada rute yang cocok dengan pencarian."; (d) ulangi pada Truck, Supir, Material, dan Pelanggan.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add apps/bul-monitor/src/components/MasterDataManagement.jsx
