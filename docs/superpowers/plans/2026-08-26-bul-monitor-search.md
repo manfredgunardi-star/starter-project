@@ -91,7 +91,7 @@ Fase dijalankan **berurutan**. Setiap fase = satu subagent segar per task, denga
   - `matchesSearch(item: object, term: string, fields: string[]) => boolean`
   - `filterBySearch(list: unknown, term: string, fields: string[]) => object[]`
 
-- [ ] **Step 1: Pasang dependensi (sekali saja untuk seluruh plan)**
+- [x] **Step 1: Pasang dependensi (sekali saja untuk seluruh plan)**
 
 ```bash
 cd apps/bul-monitor && npm install
@@ -99,7 +99,7 @@ cd apps/bul-monitor && npm install
 
 Expected: selesai tanpa error, direktori `node_modules` terbentuk.
 
-- [ ] **Step 2: Tulis test yang gagal**
+- [x] **Step 2: Tulis test yang gagal**
 
 Buat `apps/bul-monitor/src/utils/searchFilter.test.js`:
 
@@ -179,7 +179,7 @@ describe('filterBySearch', () => {
 });
 ```
 
-- [ ] **Step 3: Jalankan test, pastikan GAGAL**
+- [x] **Step 3: Jalankan test, pastikan GAGAL**
 
 ```bash
 cd apps/bul-monitor && npx vitest run src/utils/searchFilter.test.js
@@ -187,7 +187,7 @@ cd apps/bul-monitor && npx vitest run src/utils/searchFilter.test.js
 
 Expected: FAIL — `Failed to resolve import "./searchFilter.js"`.
 
-- [ ] **Step 4: Tulis implementasi minimal**
+- [x] **Step 4: Tulis implementasi minimal**
 
 Buat `apps/bul-monitor/src/utils/searchFilter.js`:
 
@@ -229,7 +229,7 @@ export function filterBySearch(list, term, fields) {
 }
 ```
 
-- [ ] **Step 5: Jalankan test, pastikan LULUS**
+- [x] **Step 5: Jalankan test, pastikan LULUS**
 
 ```bash
 cd apps/bul-monitor && npx vitest run src/utils/searchFilter.test.js
@@ -237,7 +237,7 @@ cd apps/bul-monitor && npx vitest run src/utils/searchFilter.test.js
 
 Expected: PASS — 12 test lulus.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add apps/bul-monitor/src/utils/searchFilter.js apps/bul-monitor/src/utils/searchFilter.test.js
@@ -258,7 +258,7 @@ git commit -m "feat(bul-monitor): add pure client-side search filter utility"
   - `useSearchFilter(list, searchTerm, fields) => object[]` — named export dari `src/hooks/useSearchFilter.js`.
   - `SearchInput({ value, onChange, placeholder })` — default export dari `src/components/SearchInput.jsx`. `onChange` menerima **string**, bukan event.
 
-- [ ] **Step 1: Buat hook**
+- [x] **Step 1: Buat hook**
 
 Buat `apps/bul-monitor/src/hooks/useSearchFilter.js`:
 
@@ -281,7 +281,7 @@ export function useSearchFilter(list, searchTerm, fields) {
 }
 ```
 
-- [ ] **Step 2: Buat komponen SearchInput**
+- [x] **Step 2: Buat komponen SearchInput**
 
 Buat `apps/bul-monitor/src/components/SearchInput.jsx`:
 
@@ -322,7 +322,7 @@ export default function SearchInput({ value, onChange, placeholder = 'Cari...' }
 }
 ```
 
-- [ ] **Step 3: Verifikasi build**
+- [x] **Step 3: Verifikasi build**
 
 ```bash
 cd apps/bul-monitor && npm run build
@@ -330,7 +330,7 @@ cd apps/bul-monitor && npm run build
 
 Expected: `built in Xs`, tanpa error.
 
-- [ ] **Step 4: Verifikasi seluruh test masih lulus**
+- [x] **Step 4: Verifikasi seluruh test masih lulus**
 
 ```bash
 cd apps/bul-monitor && npm test
@@ -338,7 +338,7 @@ cd apps/bul-monitor && npm test
 
 Expected: PASS — `searchFilter.test.js`, `invoiceCsvParser.test.js`, `invoiceEligibility.test.js`, `invoiceTotals.test.js`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/bul-monitor/src/hooks/useSearchFilter.js apps/bul-monitor/src/components/SearchInput.jsx
