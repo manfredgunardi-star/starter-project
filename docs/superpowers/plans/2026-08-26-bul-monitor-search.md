@@ -1077,7 +1077,7 @@ git commit -m "feat(bul-monitor): add surat jalan search with pagination and bul
   - `matchesInvoiceSearch(invoice: object, term: string) => boolean`
   - `filterInvoicesBySearch(invoiceList: unknown, term: string) => object[]`
 
-- [ ] **Step 1: Tulis test yang gagal**
+- [x] **Step 1: Tulis test yang gagal**
 
 Buat `apps/bul-monitor/src/utils/invoiceSearch.test.js`:
 
@@ -1157,7 +1157,7 @@ describe('filterInvoicesBySearch', () => {
 });
 ```
 
-- [ ] **Step 2: Jalankan test, pastikan GAGAL**
+- [x] **Step 2: Jalankan test, pastikan GAGAL**
 
 ```bash
 cd apps/bul-monitor && npx vitest run src/utils/invoiceSearch.test.js
@@ -1165,7 +1165,7 @@ cd apps/bul-monitor && npx vitest run src/utils/invoiceSearch.test.js
 
 Expected: FAIL — `Failed to resolve import "./invoiceSearch.js"`.
 
-- [ ] **Step 3: Tulis implementasi**
+- [x] **Step 3: Tulis implementasi**
 
 Buat `apps/bul-monitor/src/utils/invoiceSearch.js`:
 
@@ -1205,7 +1205,7 @@ export function filterInvoicesBySearch(invoiceList, term) {
 }
 ```
 
-- [ ] **Step 4: Jalankan test, pastikan LULUS**
+- [x] **Step 4: Jalankan test, pastikan LULUS**
 
 ```bash
 cd apps/bul-monitor && npx vitest run src/utils/invoiceSearch.test.js
@@ -1213,7 +1213,7 @@ cd apps/bul-monitor && npx vitest run src/utils/invoiceSearch.test.js
 
 Expected: PASS — 10 test lulus.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add apps/bul-monitor/src/utils/invoiceSearch.js apps/bul-monitor/src/utils/invoiceSearch.test.js
@@ -1234,7 +1234,7 @@ git commit -m "feat(bul-monitor): add nested invoice search matcher"
 - Consumes: `SearchInput` (Task 2), `useSearchFilter` (Task 2), `filterInvoicesBySearch` (Task 6).
 - Produces: tidak ada yang dikonsumsi task berikutnya.
 
-- [ ] **Step 1: Import dan konstanta**
+- [x] **Step 1: Import dan konstanta**
 
 Ganti baris 1-3:
 
@@ -1258,7 +1258,7 @@ import { filterInvoicesBySearch } from '../utils/invoiceSearch.js';
 const SJ_INVOICE_SEARCH_FIELDS = ['nomorSJ', 'nomorPolisi', 'rute', 'material'];
 ```
 
-- [ ] **Step 2: Tambahkan state kata kunci dan kosongkan saat pindah tab**
+- [x] **Step 2: Tambahkan state kata kunci dan kosongkan saat pindah tab**
 
 Ganti baris 15-20:
 
@@ -1297,7 +1297,7 @@ menjadi:
   };
 ```
 
-- [ ] **Step 3: Tambahkan lapisan pencarian pada daftar SJ dan daftar invoice**
+- [x] **Step 3: Tambahkan lapisan pencarian pada daftar SJ dan daftar invoice**
 
 Ganti baris 96:
 
@@ -1319,7 +1319,7 @@ menjadi:
   );
 ```
 
-- [ ] **Step 4: Arahkan bulk-select invoice ke daftar yang terlihat**
+- [x] **Step 4: Arahkan bulk-select invoice ke daftar yang terlihat**
 
 Ganti baris 39:
 
@@ -1335,7 +1335,7 @@ menjadi:
 
 **Catatan urutan deklarasi:** `searchedInvoices` dideklarasikan pada baris ~96 (Step 3), sedangkan `eligibleInvoicesInView` berada pada baris 39 — di atasnya. Pindahkan blok `baseSJ` / `filteredSJ` / `searchedInvoices` dari Step 3 ke atas baris 39 (tepat setelah `handleSearchChange` dari Step 2), lalu hapus deklarasi `filteredSJ` yang lama di baris 96. Definisi `sjBelumTerinvoice` dan `sjTerinvoice` juga harus ikut naik bersamanya karena `baseSJ` bergantung padanya. Jalankan build setelah pemindahan untuk membuktikan tidak ada TDZ error.
 
-- [ ] **Step 5: Search bar tab "Belum Terinvoice"**
+- [x] **Step 5: Search bar tab "Belum Terinvoice"**
 
 Ganti:
 
@@ -1385,7 +1385,7 @@ menjadi:
           {baseSJ.length === 0 ? (
 ```
 
-- [ ] **Step 6: Search bar tab "Sudah Terinvoice"**
+- [x] **Step 6: Search bar tab "Sudah Terinvoice"**
 
 Ganti:
 
@@ -1437,7 +1437,7 @@ menjadi:
             searchedInvoices.map(invoice => {
 ```
 
-- [ ] **Step 7: Verifikasi build dan test**
+- [x] **Step 7: Verifikasi build dan test**
 
 ```bash
 cd apps/bul-monitor && npm run build && npm test
@@ -1445,7 +1445,7 @@ cd apps/bul-monitor && npm run build && npm test
 
 Expected: build sukses, seluruh 5 file test lulus.
 
-- [ ] **Step 8: Verifikasi manual**
+- [x] **Step 8: Verifikasi manual**
 
 ```bash
 cd apps/bul-monitor && npm run dev
@@ -1453,7 +1453,7 @@ cd apps/bul-monitor && npm run dev
 
 Di tab Invoicing: (a) tab "Belum Terinvoice", ketik `cikarang` → tabel menyusut, tekan ✕ → 127 SJ kembali; (b) pindah ke tab "Sudah Terinvoice" → kotak pencarian **kosong** (tidak membawa kata kunci tab sebelumnya); (c) ketik `02193` → hanya invoice `SJT/006/06/2026` tampil, membuktikan pencarian bersarang bekerja; (d) ketik `SJT/006` → invoice yang sama tampil; (e) pilih satu invoice eligible → ubah kata kunci → verifikasi seleksi kosong kembali; (f) ketik `zzzz` → muncul "Tidak ada invoice yang cocok dengan pencarian."
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```bash
 git add apps/bul-monitor/src/components/InvoiceManagement.jsx
