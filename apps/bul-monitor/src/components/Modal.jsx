@@ -8,6 +8,7 @@ import RuteFormFields from './modals/RuteFormFields.jsx';
 import MaterialFormFields from './modals/MaterialFormFields.jsx';
 import InvoiceImportPanel from './modals/InvoiceImportPanel.jsx';
 import { isSJEligibleForInvoice } from '../utils/invoiceEligibility.js';
+import { hitungPotonganUJ } from '../utils/invoiceTotals.js';
 
 const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [], supirList = [], ruteList = [], materialList = [], suratJalanList = [], pelangganList = [], onClose, onSubmit }) => {
   const [searchInvoiceSJ, setSearchInvoiceSJ] = useState('');
@@ -756,6 +757,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                   const totalQty = selectedSJs.reduce((s, sj) => s + (Number(sj.qtyBongkar) || 0), 0);
                   const harga = parseFloat(formData.hargaSatuan) || 0;
                   const totalNilai = totalQty * harga;
+                  const potonganUJ = hitungPotonganUJ(selectedSJs);
                   return (
                     <div className="mb-4 p-4 border border-blue-200 rounded-lg bg-blue-50">
                       <label className="block text-sm font-semibold text-blue-800 mb-2">
@@ -771,9 +773,23 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                         placeholder="Contoh: 150000"
                       />
                       {formData.selectedSJIds.length > 0 && harga > 0 && (
-                        <div className="mt-2 flex justify-between text-sm text-blue-700">
-                          <span>Total Qty: <strong>{totalQty.toFixed(2)} {satuan}</strong></span>
-                          <span>Nilai Invoice: <strong>Rp {totalNilai.toLocaleString('id-ID')}</strong></span>
+                        <div className="mt-2 space-y-1 text-sm text-blue-700">
+                          <div className="flex justify-between">
+                            <span>Total Qty</span>
+                            <strong>{totalQty.toFixed(2)} {satuan}</strong>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Sub Total</span>
+                            <strong>Rp {totalNilai.toLocaleString('id-ID')}</strong>
+                          </div>
+                          <div className="flex justify-between text-orange-700">
+                            <span>Potongan Uang Jalan</span>
+                            <strong>− Rp {potonganUJ.toLocaleString('id-ID')}</strong>
+                          </div>
+                          <div className="flex justify-between border-t border-blue-200 pt-1 text-blue-900">
+                            <span className="font-semibold">Total Akhir</span>
+                            <strong>Rp {(totalNilai - potonganUJ).toLocaleString('id-ID')}</strong>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -782,6 +798,7 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
 
                 // Multi-group: per-group harga inputs
                 let totalNilaiAll = 0;
+                const potonganUJAll = hitungPotonganUJ(selectedSJs);
                 const groupRows = groups.map(groupKey => {
                   const [mat, rut] = groupKey.split('|');
                   const groupSJs = selectedSJs.filter(sj => sj.material === mat && sj.rute === rut);
@@ -824,8 +841,19 @@ const Modal = ({ type, selectedItem, currentUser, setAlertMessage, truckList = [
                       </div>
                     ))}
                     {totalNilaiAll > 0 && (
-                      <div className="flex justify-end text-sm text-blue-700 font-semibold border-t border-blue-200 pt-2">
-                        Total Nilai Invoice: Rp {totalNilaiAll.toLocaleString('id-ID')}
+                      <div className="space-y-1 text-sm text-blue-700 border-t border-blue-200 pt-2">
+                        <div className="flex justify-between">
+                          <span>Sub Total</span>
+                          <strong>Rp {totalNilaiAll.toLocaleString('id-ID')}</strong>
+                        </div>
+                        <div className="flex justify-between text-orange-700">
+                          <span>Potongan Uang Jalan</span>
+                          <strong>− Rp {potonganUJAll.toLocaleString('id-ID')}</strong>
+                        </div>
+                        <div className="flex justify-between border-t border-blue-200 pt-1 text-blue-900">
+                          <span className="font-semibold">Total Akhir</span>
+                          <strong>Rp {(totalNilaiAll - potonganUJAll).toLocaleString('id-ID')}</strong>
+                        </div>
                       </div>
                     )}
                   </div>
