@@ -1478,7 +1478,7 @@ Logika filter yang identik saat ini ditulis dua kali di `Modal.jsx` (baris 644-6
 - Consumes: `SearchInput` (Task 2), `filterBySearch` (Task 1).
 - Produces: tidak ada yang dikonsumsi task berikutnya.
 
-- [ ] **Step 1: Perbarui import**
+- [x] **Step 1: Perbarui import**
 
 Ganti baris 2:
 
@@ -1504,7 +1504,7 @@ import { filterBySearch } from '../utils/searchFilter.js';
 const MODAL_SJ_SEARCH_FIELDS = ['nomorSJ', 'rute', 'material', 'nomorPolisi'];
 ```
 
-- [ ] **Step 2: Hitung daftar SJ sekali saja**
+- [x] **Step 2: Hitung daftar SJ sekali saja**
 
 Sisipkan di dalam komponen, setelah deklarasi `const [searchInvoiceSJ, setSearchInvoiceSJ] = useState('');` (baris 14) — pindahkan bila perlu agar berada setelah `type`, `selectedItem`, dan `suratJalanList` tersedia:
 
@@ -1521,7 +1521,7 @@ Sisipkan di dalam komponen, setelah deklarasi `const [searchInvoiceSJ, setSearch
   );
 ```
 
-- [ ] **Step 3: Ganti markup search bar inline dengan `SearchInput`**
+- [x] **Step 3: Ganti markup search bar inline dengan `SearchInput`**
 
 Ganti blok baris 614-634:
 
@@ -1562,7 +1562,7 @@ menjadi:
                 </div>
 ```
 
-- [ ] **Step 4: Ganti kedua rantai filter duplikat dengan variabel tunggal**
+- [x] **Step 4: Ganti kedua rantai filter duplikat dengan variabel tunggal**
 
 Ganti blok gerbang empty-state:
 
@@ -1618,7 +1618,7 @@ menjadi:
                         .map(sj => (
 ```
 
-- [ ] **Step 5: Verifikasi tidak ada sisa duplikasi**
+- [x] **Step 5: Verifikasi tidak ada sisa duplikasi**
 
 ```bash
 cd apps/bul-monitor && grep -c "searchInvoiceSJ.toLowerCase()" src/components/Modal.jsx
@@ -1632,7 +1632,7 @@ cd apps/bul-monitor && grep -n "XCircle\|<Search " src/components/Modal.jsx
 
 Expected: tidak ada keluaran.
 
-- [ ] **Step 6: Verifikasi build dan test**
+- [x] **Step 6: Verifikasi build dan test**
 
 ```bash
 cd apps/bul-monitor && npm run build && npm test
@@ -1640,7 +1640,7 @@ cd apps/bul-monitor && npm run build && npm test
 
 Expected: build sukses, seluruh test lulus.
 
-- [ ] **Step 7: Verifikasi manual — ekuivalensi perilaku**
+- [x] **Step 7: Verifikasi manual — ekuivalensi perilaku**
 
 ```bash
 cd apps/bul-monitor && npm run dev
@@ -1648,7 +1648,7 @@ cd apps/bul-monitor && npm run dev
 
 Buka Invoicing → "Buat Invoice Baru". Verifikasi: (a) daftar SJ eligible tampil sama seperti sebelumnya; (b) ketik `citeureup` → daftar menyusut; (c) centang beberapa SJ, lalu ubah kata kunci → **centang yang sudah ada tetap tersimpan** (perilaku lama dipertahankan; `formData.selectedSJIds` sengaja tidak direset di sini karena user memang membangun satu invoice secara bertahap); (d) tekan ✕ → daftar penuh kembali; (e) ketik `zzzz` → muncul "Tidak ada SJ yang cocok dengan pencarian". Tutup modal tanpa menyimpan.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add apps/bul-monitor/src/components/Modal.jsx
@@ -1666,7 +1666,7 @@ git commit -m "refactor(bul-monitor): reuse SearchInput and filterBySearch in in
 - Consumes: seluruh hasil Task 1-8.
 - Produces: pull request siap review.
 
-- [ ] **Step 1: Jalankan seluruh test**
+- [x] **Step 1: Jalankan seluruh test**
 
 ```bash
 cd apps/bul-monitor && npm test
@@ -1674,7 +1674,7 @@ cd apps/bul-monitor && npm test
 
 Expected: PASS — 5 file test (`searchFilter`, `invoiceSearch`, `invoiceCsvParser`, `invoiceEligibility`, `invoiceTotals`).
 
-- [ ] **Step 2: Jalankan build produksi**
+- [x] **Step 2: Jalankan build produksi**
 
 ```bash
 cd apps/bul-monitor && npm run build
@@ -1682,7 +1682,7 @@ cd apps/bul-monitor && npm run build
 
 Expected: `built in Xs`, tanpa error.
 
-- [ ] **Step 3: Buktikan tidak ada perubahan di luar scope**
+- [x] **Step 3: Buktikan tidak ada perubahan di luar scope**
 
 ```bash
 git diff --stat main...HEAD
@@ -1690,7 +1690,7 @@ git diff --stat main...HEAD
 
 Expected: tepat 8 file — 4 dibuat (`searchFilter.js`, `searchFilter.test.js`, `useSearchFilter.js`, `SearchInput.jsx`), 2 dibuat (`invoiceSearch.js`, `invoiceSearch.test.js`), 4 dimodifikasi (`App.jsx`, `MasterDataManagement.jsx`, `InvoiceManagement.jsx`, `Modal.jsx`). Tidak boleh ada perubahan pada `package.json`, `vite.config.js`, `integrationService.js`, `firestoreWrites.js`, `invoiceTotals.js`, atau `invoiceEligibility.js`.
 
-- [ ] **Step 4: Konfirmasi larangan financial logic terpenuhi**
+- [x] **Step 4: Konfirmasi larangan financial logic terpenuhi**
 
 ```bash
 git diff main...HEAD -- apps/bul-monitor/src/utils/invoiceTotals.js apps/bul-monitor/src/utils/invoiceEligibility.js apps/bul-monitor/src/integrationService.js apps/bul-monitor/src/services/firestoreWrites.js
