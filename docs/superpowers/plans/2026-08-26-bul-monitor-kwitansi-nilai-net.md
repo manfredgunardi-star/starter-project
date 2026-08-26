@@ -286,7 +286,7 @@ Expected: seluruh test PASS, build sukses.
 - [ ] **Step 6: Commit**
 
 ```bash
-git add apps/bul-monitor/src/utils/invoiceTotals.js apps/bul-monitor/src/utils/invoiceTotals.test.js docs/superpowers/specs/2026-08-26-bul-monitor-kwitansi-nilai-net-design.md docs/superpowers/plans/2026-08-26-bul-monitor-kwitansi-nilai-net.md && git commit -m "feat(bul-monitor): add invoiceTotals util for net kwitansi value"
+git add apps/bul-monitor/src/utils/invoiceTotals.js apps/bul-monitor/src/utils/invoiceTotals.test.js && git commit -m "feat(bul-monitor): add invoiceTotals util for net kwitansi value"
 ```
 
 **BERHENTI DI SINI.** Jangan mulai Fase 2. Lapor ke user dan sertakan prompt, model, serta effort untuk Fase 2.
