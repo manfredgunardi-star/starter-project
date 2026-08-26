@@ -311,7 +311,10 @@ const MasterDataManagement = ({
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-bold text-gray-800">Master Data Rute</h2>
-                <p className="text-sm text-gray-600">Total: {ruteList.length} rute</p>
+                <p className="text-sm text-gray-600">
+                  Total: {ruteList.length} rute
+                  {searchRute && ` · ${filteredRute.length} cocok`}
+                </p>
               </div>
               <div className="flex gap-2">
                 <button
@@ -342,14 +345,29 @@ const MasterDataManagement = ({
             </div>
           </div>
 
+          {ruteList.length > 0 && (
+            <div className="mb-4">
+              <SearchInput
+                value={searchRute}
+                onChange={setSearchRute}
+                placeholder="Cari nama rute..."
+              />
+            </div>
+          )}
+
           <div className="space-y-3">
             {ruteList.length === 0 ? (
               <div className="bg-white rounded-lg shadow-md p-8 text-center">
                 <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
                 <p className="text-gray-500">Belum ada data rute</p>
               </div>
+            ) : filteredRute.length === 0 ? (
+              <div className="bg-white rounded-lg shadow-md p-8 text-center">
+                <FileText className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-500">Tidak ada rute yang cocok dengan pencarian.</p>
+              </div>
             ) : (
-              ruteList.map(rute => (
+              filteredRute.map(rute => (
                 <div key={rute.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -401,7 +419,10 @@ const MasterDataManagement = ({
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-bold text-gray-800">Master Data Material</h2>
-                <p className="text-sm text-gray-600">Total: {materialList.length} material</p>
+                <p className="text-sm text-gray-600">
+                  Total: {materialList.length} material
+                  {searchMaterial && ` · ${filteredMaterial.length} cocok`}
+                </p>
               </div>
               <div className="flex gap-2">
                 <button
@@ -432,14 +453,29 @@ const MasterDataManagement = ({
             </div>
           </div>
 
+          {materialList.length > 0 && (
+            <div className="mb-4">
+              <SearchInput
+                value={searchMaterial}
+                onChange={setSearchMaterial}
+                placeholder="Cari nama material atau satuan..."
+              />
+            </div>
+          )}
+
           <div className="space-y-3">
             {materialList.length === 0 ? (
               <div className="bg-white rounded-lg shadow-md p-8 text-center">
                 <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
                 <p className="text-gray-500">Belum ada data material</p>
               </div>
+            ) : filteredMaterial.length === 0 ? (
+              <div className="bg-white rounded-lg shadow-md p-8 text-center">
+                <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-500">Tidak ada material yang cocok dengan pencarian.</p>
+              </div>
             ) : (
-              materialList.map(material => (
+              filteredMaterial.map(material => (
                 <div key={material.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -491,7 +527,10 @@ const MasterDataManagement = ({
             <div className="flex justify-between items-center">
               <div>
                 <h2 className="text-xl font-bold text-gray-800">Master Data Pelanggan</h2>
-                <p className="text-sm text-gray-600">Total: {pelangganList.length} pelanggan</p>
+                <p className="text-sm text-gray-600">
+                  Total: {pelangganList.length} pelanggan
+                  {searchPelanggan && ` · ${filteredPelanggan.length} cocok`}
+                </p>
               </div>
               <div className="flex gap-2">
                 {pelangganList.length === 0 && (
@@ -514,6 +553,16 @@ const MasterDataManagement = ({
             </div>
           </div>
 
+          {pelangganList.length > 0 && (
+            <div className="mb-4">
+              <SearchInput
+                value={searchPelanggan}
+                onChange={setSearchPelanggan}
+                placeholder="Cari nama pelanggan, alamat, atau NPWP..."
+              />
+            </div>
+          )}
+
           <div className="space-y-3">
             {pelangganList.length === 0 ? (
               <div className="bg-white rounded-lg shadow-md p-8 text-center">
@@ -521,8 +570,13 @@ const MasterDataManagement = ({
                 <p className="text-gray-500 mb-2">Belum ada data pelanggan</p>
                 <p className="text-sm text-gray-400">Klik "Import dari Data Supir" untuk mengisi otomatis dari data PT supir yang sudah ada.</p>
               </div>
+            ) : filteredPelanggan.length === 0 ? (
+              <div className="bg-white rounded-lg shadow-md p-8 text-center">
+                <Users className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                <p className="text-gray-500">Tidak ada pelanggan yang cocok dengan pencarian.</p>
+              </div>
             ) : (
-              pelangganList.map(pelanggan => (
+              filteredPelanggan.map(pelanggan => (
                 <div key={pelanggan.id} className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
