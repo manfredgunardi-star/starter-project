@@ -21,6 +21,8 @@ import KeuanganManagement from './components/KeuanganManagement.jsx';
 import InvoiceManagement from './components/InvoiceManagement.jsx';
 import SuratJalanCard from './components/SuratJalanCard.jsx';
 import Modal from './components/Modal.jsx';
+import SearchInput from './components/SearchInput.jsx';
+import { useSearchFilter } from './hooks/useSearchFilter.js';
 import { C, softDeleteItemInFirestore, resolveSuratJalanDocRef, softDeactivateTransaksiInFirestore, deactivateUangJalanTransaksiForSJ, upsertItemToFirestore, chunkedBatchWrite } from './services/firestoreWrites.js';
 
 
@@ -49,6 +51,10 @@ async function runWithConcurrencyLimit(items, limit, worker) {
 const HISTORY_LOG_PAGE_SIZE = 300;
 
 const EMPTY_BIAYA = [];
+
+// Field yang dicari pada daftar Surat Jalan. Konstanta level-modul agar
+// referensinya stabil antar-render dan useMemo di useSearchFilter efektif.
+const SJ_SEARCH_FIELDS = ['nomorSJ', 'nomorPolisi', 'namaSupir', 'pt', 'rute', 'material'];
 
 const getStatusColor = (status) => {
   const colors = {
@@ -106,6 +112,7 @@ const SuratJalanMonitor = () => {
   const [modalType, setModalType] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
   const [filter, setFilter] = useState('all');
+  const [searchSJ, setSearchSJ] = useState('');
   const [sjPage, setSjPage] = useState(1);
   const SJ_PAGE_SIZE = 10;
   const [showSJRecapPanel, setShowSJRecapPanel] = useState(false);
@@ -2342,9 +2349,14 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
       : suratJalanList.filter(sj => filter === 'all' || sj.status === filter),
     [filter, gagalSuratJalanList, suratJalanList]);
 
-  const sjTotalPages = Math.max(1, Math.ceil(filteredSuratJalan.length / SJ_PAGE_SIZE));
+  // Lapisan pencarian di atas filter tab. searchedSuratJalan adalah "apa yang
+  // dilihat user" dan menjadi satu-satunya sumber untuk paginasi, empty state,
+  // dan kedua bulk-select di bawah.
+  const searchedSuratJalan = useSearchFilter(filteredSuratJalan, searchSJ, SJ_SEARCH_FIELDS);
+
+  const sjTotalPages = Math.max(1, Math.ceil(searchedSuratJalan.length / SJ_PAGE_SIZE));
   const sjPageClamped = Math.min(sjPage, sjTotalPages);
-  const paginatedSuratJalan = filteredSuratJalan.slice((sjPageClamped - 1) * SJ_PAGE_SIZE, sjPageClamped * SJ_PAGE_SIZE);
+  const paginatedSuratJalan = searchedSuratJalan.slice((sjPageClamped - 1) * SJ_PAGE_SIZE, sjPageClamped * SJ_PAGE_SIZE);
 
   const pendingReviewCount = suratJalanList.filter(sj => sj.status === 'menunggu_review').length;
 
@@ -2353,7 +2365,7 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
   const isSJEligibleForBulkKirim = useCallback((sj) =>
     sj.status === 'terkirim' && Number(sj.uangJalan || 0) > 0, []);
 
-  const eligibleInView = useMemo(() => filteredSuratJalan.filter(isSJEligibleForBulkKirim), [filteredSuratJalan, isSJEligibleForBulkKirim]);
+  const eligibleInView = useMemo(() => searchedSuratJalan.filter(isSJEligibleForBulkKirim), [searchedSuratJalan, isSJEligibleForBulkKirim]);
   const selectedInView = useMemo(() => eligibleInView.filter(sj => selectedSJIds.has(sj.id)), [eligibleInView, selectedSJIds]);
   const allInViewSelected = eligibleInView.length > 0 && selectedInView.length === eligibleInView.length;
 
@@ -2387,7 +2399,7 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
   const isSJEligibleForBulkBatalkan = useCallback((sj) =>
     !['gagal', 'menunggu_review', 'terkunci'].includes(sj.status) && sj.isActive !== false, []);
 
-  const eligibleBatalInView = useMemo(() => filteredSuratJalan.filter(isSJEligibleForBulkBatalkan), [filteredSuratJalan, isSJEligibleForBulkBatalkan]);
+  const eligibleBatalInView = useMemo(() => searchedSuratJalan.filter(isSJEligibleForBulkBatalkan), [searchedSuratJalan, isSJEligibleForBulkBatalkan]);
   const selectedBatalInView = useMemo(() => eligibleBatalInView.filter(sj => selectedBatalSJIds.has(sj.id)), [eligibleBatalInView, selectedBatalSJIds]);
   const allBatalInViewSelected = eligibleBatalInView.length > 0 && selectedBatalInView.length === eligibleBatalInView.length;
 
@@ -2414,6 +2426,22 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
       });
     }
   };
+
+  /**
+   * Perubahan kata kunci mereset halaman DAN mengosongkan kedua seleksi bulk.
+   *
+   * Alasan seleksi ikut dikosongkan: eligibleInView / eligibleBatalInView kini
+   * bersumber dari searchedSuratJalan. Tanpa reset, user bisa menekan "Pilih
+   * Semua" di bawah satu kata kunci, menghapus kata kuncinya, lalu mengirim SJ
+   * yang tidak lagi terlihat ke Accounting — SJ tersebut akan terkunci dan
+   * masuk antrean review akuntan. Perilaku ini sama dengan tombol filter tab.
+   */
+  const handleSearchSJChange = useCallback((value) => {
+    setSearchSJ(value);
+    setSjPage(1);
+    setSelectedSJIds(new Set());
+    setSelectedBatalSJIds(new Set());
+  }, []);
 
     // SETTINGS (login branding) - readable without auth (for login page branding)
   useEffect(() => {
@@ -3307,6 +3335,19 @@ useEffect(() => {
                 )}
               </button>
             </div>
+
+            <div className="mt-4">
+              <SearchInput
+                value={searchSJ}
+                onChange={handleSearchSJChange}
+                placeholder="Cari nomor SJ, nomor polisi, supir, PT, rute, atau material..."
+              />
+              {searchSJ && (
+                <p className="mt-2 text-sm text-gray-600">
+                  {searchedSuratJalan.length} dari {filteredSuratJalan.length} Surat Jalan cocok
+                </p>
+              )}
+            </div>
           </div>
         </div>
 
@@ -3378,7 +3419,12 @@ useEffect(() => {
 
         {/* Surat Jalan List */}
         <div className="space-y-4">
-          {filteredSuratJalan.length === 0 ? (
+          {filteredSuratJalan.length > 0 && searchedSuratJalan.length === 0 ? (
+            <div className="bg-white rounded-lg shadow-md p-8 text-center">
+              <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+              <p className="text-gray-500">Tidak ada Surat Jalan yang cocok dengan pencarian.</p>
+            </div>
+          ) : filteredSuratJalan.length === 0 ? (
             <div className="bg-white rounded-lg shadow-md p-8 text-center">
               <Package className="w-16 h-16 mx-auto text-gray-300 mb-4" />
               <p className="text-gray-500">Belum ada data Surat Jalan</p>
@@ -3432,7 +3478,7 @@ useEffect(() => {
           )}
         </div>
 
-        {filteredSuratJalan.length > SJ_PAGE_SIZE && (
+        {searchedSuratJalan.length > SJ_PAGE_SIZE && (
           <div className="flex items-center justify-center space-x-3 mt-4">
             <button
               onClick={() => setSjPage(Math.max(1, sjPageClamped - 1))}
