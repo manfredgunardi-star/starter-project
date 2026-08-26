@@ -1,0 +1,511 @@
+﻿Tanggal,Bulan_File,Deskripsi,Debit,Kredit,Saldo_Berjalan_Terkoreksi,Kode_Akun_Lawan_Saran,Nama_Akun_Lawan_Saran,Confidence,Catatan
+,Maret,"(Saldo Kas Kecil akhir Februari 2026, sesuai ledger bul-accounting.web.app)",1800000,,1800000,,,Tidak Berlaku (baris saldo/memo),"REVISI: anchor sebelumnya (Rp49.280.000, dari keterangan '(Saldo FEBRUARI 2026)' di Excel) TERNYATA SALAH - Excel Februari melebih-hitungkan pengeluaran Lakalantas B 9592 KIU dgn menggabungkan baris bertanggal Maret ke dalam total Februari, membuat saldo akhir Feb tercatat -Rp49.280.000 (deficit semu). Ledger resmi di web app (yg sudah menggabungkan Oprasional + Lakalantas dgn tanggal benar) menunjukkan saldo akhir Februari yang benar = Rp1.800.000 - dipakai sbg anchor baru per 1 Maret 2026. Transaksi 1-6 Maret sendiri diambil dari web app (bukan Excel Oprasional) krn Excel-nya tidak mencakup baris Lakalantas."
+2026-03-01,Maret (sumber: web app bul-accounting),Penambahan Uang Kas,35000000,,36800000,2153,Hutang Pemegang Saham,Tinggi (dikonfirmasi user),"Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung. Dana untuk menutup biaya Lakalantas B 9592 KIU (santunan keluarga korban Rp35.000.000 & transport Rp1.000.000), dikonfirmasi user sbg dana dari pemegang saham."
+2026-03-01,Maret (sumber: web app bul-accounting),Penambahan Uang Kas,1000000,,37800000,2153,Hutang Pemegang Saham,Tinggi (dikonfirmasi user),"Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung. Dana untuk menutup biaya Lakalantas B 9592 KIU (santunan keluarga korban Rp35.000.000 & transport Rp1.000.000), dikonfirmasi user sbg dana dari pemegang saham."
+2026-03-01,Maret (sumber: web app bul-accounting),Biaya Tambahan Santunan ke keluarga Korban (Laka B 9592 KIU),,35000000,2800000,6360,Beban Lain-lain Operasional,Sedang,"Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung. Biaya terkait Lakalantas B 9592 KIU (Feb-Mar 2026) - CoA belum punya akun spesifik utk klaim/santunan kecelakaan pihak ketiga, disarankan buat akun baru jika berulang."
+2026-03-01,Maret (sumber: web app bul-accounting),"Pembayaran Biaya Perbaikan B 9939 FYZ (Penggantian Bushing, Stopper, Pembelian stopper 2, Lass, Griss)",,1270000,1530000,5210,Servis & Perbaikan Berkala,Sedang,Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung.
+2026-03-01,Maret (sumber: web app bul-accounting),Biaya Transport Team Pak Dekky (Laka B 9592 KIU),,1000000,530000,6360,Beban Lain-lain Operasional,Sedang,"Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung. Biaya terkait Lakalantas B 9592 KIU (Feb-Mar 2026) - CoA belum punya akun spesifik utk klaim/santunan kecelakaan pihak ketiga, disarankan buat akun baru jika berulang."
+2026-03-01,Maret (sumber: web app bul-accounting),Pembelian Materai 12 di Kantin @15ribu perlembar. (Laka B 9592 KIU),,180000,350000,6360,Beban Lain-lain Operasional,Sedang,"Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung. Biaya terkait Lakalantas B 9592 KIU (Feb-Mar 2026) - CoA belum punya akun spesifik utk klaim/santunan kecelakaan pihak ketiga, disarankan buat akun baru jika berulang."
+2026-03-01,Maret (sumber: web app bul-accounting),Biaya makan @4 orang (Laka B 9592 KIU),,150000,200000,6360,Beban Lain-lain Operasional,Sedang,"Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung. Biaya terkait Lakalantas B 9592 KIU (Feb-Mar 2026) - CoA belum punya akun spesifik utk klaim/santunan kecelakaan pihak ketiga, disarankan buat akun baru jika berulang."
+2026-03-02,Maret (sumber: web app bul-accounting),Penambahan Uang Kas Masuk,10000000,,10200000,1112,Bank BCA Operasional,Tinggi,Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung.
+2026-03-02,Maret (sumber: web app bul-accounting),Penggantian Toll Driver Sukma,,150000,10050000,5160,Tol Parkir & Retribusi Jalan,Tinggi,Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung.
+2026-03-02,Maret (sumber: web app bul-accounting),Uang Makan Sukma Selama di Bengkel Penggantian Bemper,,50000,10000000,5150,"Uang Jalan, Makan & Penginapan Sopir",Sedang,Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung.
+2026-03-03,Maret (sumber: web app bul-accounting),Biaya Pengeluaran Unit kendaraan di Polres Tigaraksa (Laka B 9592 KIU),,10000000,0,6360,Beban Lain-lain Operasional,Sedang,"Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung. Biaya terkait Lakalantas B 9592 KIU (Feb-Mar 2026) - CoA belum punya akun spesifik utk klaim/santunan kecelakaan pihak ketiga, disarankan buat akun baru jika berulang."
+2026-03-03,Maret (sumber: web app bul-accounting),Uang makan Driver dari tanggal 18 Feb - 3 Maret 2026 (14 hari) (Laka B 9592 KIU),,1400000,-1400000,6360,Beban Lain-lain Operasional,Sedang,"Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung. Biaya terkait Lakalantas B 9592 KIU (Feb-Mar 2026) - CoA belum punya akun spesifik utk klaim/santunan kecelakaan pihak ketiga, disarankan buat akun baru jika berulang."
+2026-03-03,Maret (sumber: web app bul-accounting),Pembayaran Uang Sewa Kontrakan bulan Maret 2026,,1100000,-2500000,6170,Sewa Kantor/Gudang,Sedang,Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung.
+2026-03-03,Maret (sumber: web app bul-accounting),Biaya transport BBM Ari  (Laka B 9592 KIU),,300000,-2800000,6360,Beban Lain-lain Operasional,Sedang,"Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung. Biaya terkait Lakalantas B 9592 KIU (Feb-Mar 2026) - CoA belum punya akun spesifik utk klaim/santunan kecelakaan pihak ketiga, disarankan buat akun baru jika berulang."
+2026-03-03,Maret (sumber: web app bul-accounting),"Uang Jasa titip Ban dan Aki, berseta Yatno tinggal (Laka B 9592 KIU)",,300000,-3100000,6360,Beban Lain-lain Operasional,Sedang,"Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung. Biaya terkait Lakalantas B 9592 KIU (Feb-Mar 2026) - CoA belum punya akun spesifik utk klaim/santunan kecelakaan pihak ketiga, disarankan buat akun baru jika berulang."
+2026-03-03,Maret (sumber: web app bul-accounting),Pembelian BBM B 9140 SAL Ari,,300000,-3400000,5110,BBM Armada,Tinggi,Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung.
+2026-03-03,Maret (sumber: web app bul-accounting),Tambahan Solar Yatno ke Pool Ancol dan Bengkel Legok,,300000,-3700000,5110,BBM Armada,Tinggi,Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung.
+2026-03-03,Maret (sumber: web app bul-accounting),Biaya Makan dan Rokok bersama team Penyidik @5orang (Laka B 9592 KIU),,250000,-3950000,6360,Beban Lain-lain Operasional,Sedang,"Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung. Biaya terkait Lakalantas B 9592 KIU (Feb-Mar 2026) - CoA belum punya akun spesifik utk klaim/santunan kecelakaan pihak ketiga, disarankan buat akun baru jika berulang."
+2026-03-04,Maret (sumber: web app bul-accounting),Biaya Ops dan Fee Team Pak Dekky,2500000,,-1450000,2153,Hutang Pemegang Saham,Tinggi (dikonfirmasi user),"Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung. Dana untuk menutup biaya Fee Team Pak Dekky (Lakalantas B 9592 KIU), dikonfirmasi user sbg dana dari pemegang saham."
+2026-03-04,Maret (sumber: web app bul-accounting),Biaya Oprasional dan Fee Team Pak Dekky (Laka B 9592 KIU),,2500000,-3950000,6360,Beban Lain-lain Operasional,Sedang,"Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung. Biaya terkait Lakalantas B 9592 KIU (Feb-Mar 2026) - CoA belum punya akun spesifik utk klaim/santunan kecelakaan pihak ketiga, disarankan buat akun baru jika berulang."
+2026-03-04,Maret (sumber: web app bul-accounting),Penggantian Toll Driver Aril,,525000,-4475000,5160,Tol Parkir & Retribusi Jalan,Tinggi,Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung.
+2026-03-04,Maret (sumber: web app bul-accounting),Penggantian Toll Driver Sukma/Randy,,325000,-4800000,5160,Tol Parkir & Retribusi Jalan,Tinggi,Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung.
+2026-03-04,Maret (sumber: web app bul-accounting),Toll Ari Ancol PP,,100000,-4900000,5160,Tol Parkir & Retribusi Jalan,Tinggi,Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung.
+2026-03-04,Maret (sumber: web app bul-accounting),Uang makan Yatno di bengkel pasang Bemper dan Penggantian Toll dari Bengkel Legok ke Poll,,100000,-5000000,5160,Tol Parkir & Retribusi Jalan,Tinggi,Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung.
+2026-03-04,Maret (sumber: web app bul-accounting),"Penggantian Toll Driver ASEP (SJ 4812, SJ 5073, SJ 4711)",,50000,-5050000,5160,Tol Parkir & Retribusi Jalan,Tinggi,Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung.
+2026-03-04,Maret (sumber: web app bul-accounting),"Penggantian Toll Driver ASEP (SJ 4812, SJ 5073, SJ 4711)",,50000,-5100000,5160,Tol Parkir & Retribusi Jalan,Tinggi,Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung.
+2026-03-04,Maret (sumber: web app bul-accounting),"Penggantian Toll Driver ASEP (SJ 4812, SJ 5073, SJ 4711)",,50000,-5150000,5160,Tol Parkir & Retribusi Jalan,Tinggi,Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung.
+2026-03-04,Maret (sumber: web app bul-accounting),"Penggantian Toll Driver Arill SJ 4813, SJ 4925, SJ 5074)",,50000,-5200000,5160,Tol Parkir & Retribusi Jalan,Tinggi,Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung.
+2026-03-04,Maret (sumber: web app bul-accounting),"Penggantian Toll Driver Arill SJ 4813, SJ 4925, SJ 5074)",,50000,-5250000,5160,Tol Parkir & Retribusi Jalan,Tinggi,Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung.
+2026-03-04,Maret (sumber: web app bul-accounting),"Penggantian Toll Driver Arill SJ 4813, SJ 4925, SJ 5074)",,50000,-5300000,5160,Tol Parkir & Retribusi Jalan,Tinggi,Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung.
+2026-03-04,Maret (sumber: web app bul-accounting),"Penggantian Toll Driver Sukma (SJ 5075, SJ 4703)",,48000,-5348000,5160,Tol Parkir & Retribusi Jalan,Tinggi,Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung.
+2026-03-04,Maret (sumber: web app bul-accounting),"Penggantian Toll Driver Sukma (SJ 5075, SJ 4703)",,48000,-5396000,5160,Tol Parkir & Retribusi Jalan,Tinggi,Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung.
+2026-03-04,Maret (sumber: web app bul-accounting),Toll PP ke Pulomas Ari,,22000,-5418000,5160,Tol Parkir & Retribusi Jalan,Tinggi,Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung.
+2026-03-04,Maret (sumber: web app bul-accounting),Parkir di Pulo Mas JX Ari,,17000,-5435000,5160,Tol Parkir & Retribusi Jalan,Sedang,Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung.
+2026-03-04,Maret,Stemplet atau Grease Mobil B 9592 KIU,,150000,-5585000,5240,Cuci Grease & Aksesoris Kecil,Tinggi,GAP DITEMUKAN saat verifikasi Jan-Feb-Maret vs Excel sumber (2026-08-21): baris ini ADA di 'LAPORAN UANG KAS OPRASIONAL dan ASET - MARET 2026.xlsx' tapi TIDAK PERNAH masuk ke ledger bul-accounting.web.app. Klasifikasi akun 5240 mengikuti pola baris sejenis ('Stempet kendaraan...') yg sudah ada di ledger ini pada tanggal lain.
+2026-03-06,Maret (sumber: web app bul-accounting),Penambahan Uang Kas Masuk,5435000,,-150000,1112,Bank BCA Operasional,Tinggi,Sumber: ledger Kas Kecil yang SUDAH ADA di bul-accounting.web.app (bukan dari Excel Oprasional) - mencakup transaksi normal + Lakalantas B 9592 KIU yang tergabung.
+2026-03-06,Maret,Pembelian Materai @12000 x 4 dan Print,,52500,-202500,6220,Biaya Transfer & Materai,Tinggi,"GAP DITEMUKAN saat verifikasi Jan-Feb-Maret vs Excel sumber (2026-08-21): baris ini ADA di 'LAPORAN UANG KAS OPRASIONAL dan ASET - MARET 2026.xlsx' tapi TIDAK PERNAH masuk ke ledger bul-accounting.web.app. Klasifikasi akun 6220 mengikuti pola baris materai+print gabungan sejenis (11 Maret, 16 April, dst) yg sudah ada di ledger ini."
+2026-03-08,Maret,Toll Ari PP Ancol,,100000,-302500,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-03-08,Maret,"Penggantian uang Toll Reza ( SJ 05351, SJ 5292, 05420, 05689)",,200000,-502500,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-03-08,Maret,"Pembelian Sparepart untuk B 9593 KIU, B 9939 FYZ",,910000,-1412500,5220,Sparepart Armada,Tinggi,
+2026-03-08,Maret,Bikin kuncian Bak B 9939 FYZ,,50000,-1462500,5210,Servis & Perbaikan Berkala,Sedang,
+2026-03-08,Maret,Pembelian Ban Perut  B 9549 CYU - Aril,,130000,-1592500,5230,Ban & Vulkanisir,Tinggi,
+2026-03-08,Maret,"Biaya Jasa Ganti oli B 9593 KIU, B 9939 FYZ dan Biaya Pengecekan Mobil B 9550 CYU, B 9549 CYU",,700000,-2292500,5210,Servis & Perbaikan Berkala,Tinggi,
+2026-03-09,Maret,"Penggantian Tol Riko 3 SJ Clay (00958, 05368, 05438)",,160000,-2452500,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-03-10,Maret,Penambahan Uang Kas Masuk,5000000,,2547500,1112,Bank BCA Operasional,Tinggi,
+2026-03-10,Maret,"Penggantian Tol Sukma 3 SJ Clay (00812, 00961, 05681)",,170000,2377500,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-03-10,Maret,"Penggantian Tol Arill 4 SJ Clay (00832, 00997, 00958, 05935)",,230000,2147500,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-03-10,Maret,"Penggantian Tol Reza 4 SJ (05420, 05292, 05940, 5689)",,200000,1947500,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-03-10,Maret,"Penggantian Tol Asep 7 SJ (05598, 05436, 05680, 05946, 00809, 00821, 00955 )",,430000,1517500,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-03-10,Maret,"Penggantian Tol Yatno 3 SJ Clay (00818, 00954, 00982)",,180000,1337500,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-03-10,Maret,Uang Jalan Siang Yatno ( SJ 05595 ),,50000,1287500,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-03-10,Maret,Uang Jalan Siang Reza ( SJ 05966 ),,50000,1237500,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-03-11,Maret,Bongkar Pasang Ban dan Las Knalpot B 9549 CYU - Arill,,150000,1087500,5210,Servis & Perbaikan Berkala,Sedang,
+2026-03-11,Maret,Pembelian Materai @12000 x 4 dan print + Amplop A3,,62500,1025000,6220,Biaya Transfer & Materai,Sedang,Baris gabungan materai + ATK/print - dominan materai
+2026-03-12,Maret,Toll Ari PP Ancol,,100000,925000,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-03-12,Maret,Uang Nginap ke Brik Alam Sutera Asep SJ 06217,,50000,875000,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-03-13,Maret,Uang Makan dan Nginap di Alex/Acon Bogor Gunung Sindur,,100000,775000,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-03-13,Maret,Uang Penggantian Balik Siang Reza (SJ 06085 ),,50000,725000,5150,"Uang Jalan, Makan & Penginapan Sopir",Tinggi (dikonfirmasi user),Deskripsi tidak cocok dengan pola akun manapun - PERLU VERIFIKASI manual | Dikonfirmasi user: perlakukan sama seperti uang makan karyawan.
+2026-03-13,Maret,Uang Nginap ke Brik Balaraja Yatno SJ 06371,,50000,675000,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-03-13,Maret,Uang Nginap ke Brik Balaraja Asep SJ 06372,,50000,625000,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-03-13,Maret,Penggantian Tol Reza  (SJ 06085),,50000,575000,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-03-14,Maret,"Penggantian Tol Asep  (SJ 06308,)",,50000,525000,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-03-14,Maret,"Penggantian Tol Arill  (SJ 06520, 06122)",,100000,425000,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-03-14,Maret,"Penggantian Tol Yatno (SJ 05948, 6307)",,100000,325000,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-03-14,Maret,"Penggantian Jalan Siang Reza SJ 06525, 06473",,100000,225000,5150,"Uang Jalan, Makan & Penginapan Sopir",Tinggi (dikonfirmasi user),Deskripsi tidak cocok dengan pola akun manapun - PERLU VERIFIKASI manual | Dikonfirmasi user: perlakukan sama seperti uang makan karyawan.
+2026-03-15,Maret,Pembelian BBM B 9140 SAL,,300000,-75000,5110,BBM Armada,Tinggi,
+2026-03-15,Maret,Toll Ari PP Ancol,,100000,-175000,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-03-15,Maret,Uang THR Yatno,,150000,-325000,5150,Uang Jalan Makan & Penginapan Sopir,Sedang,"THR untuk sopir - dikelompokkan sbg tunjangan sopir, PERLU VERIFIKASI klasifikasi akun THR yang lebih tepat"
+2026-03-15,Maret,Uang THR Sukma,,150000,-475000,5150,Uang Jalan Makan & Penginapan Sopir,Sedang,"THR untuk sopir - dikelompokkan sbg tunjangan sopir, PERLU VERIFIKASI klasifikasi akun THR yang lebih tepat"
+2026-03-15,Maret,Uang THR Asep,,150000,-625000,5150,Uang Jalan Makan & Penginapan Sopir,Sedang,"THR untuk sopir - dikelompokkan sbg tunjangan sopir, PERLU VERIFIKASI klasifikasi akun THR yang lebih tepat"
+2026-03-15,Maret,Uang THR Arill,,150000,-775000,5150,Uang Jalan Makan & Penginapan Sopir,Sedang,"THR untuk sopir - dikelompokkan sbg tunjangan sopir, PERLU VERIFIKASI klasifikasi akun THR yang lebih tepat"
+2026-03-15,Maret,Uang THR Reza,,150000,-925000,5150,Uang Jalan Makan & Penginapan Sopir,Sedang,"THR untuk sopir - dikelompokkan sbg tunjangan sopir, PERLU VERIFIKASI klasifikasi akun THR yang lebih tepat"
+2026-03-15,Maret,"Uang THR untuk Staff STR Tunas Maju ( Sony, Wesly, Jali )",,1000000,-1925000,6120,Tunjangan & Lembur Staf,Sedang,THR untuk staff kantor
+2026-03-15,Maret,Uang THR Pak Kevin,,500000,-2425000,5150,Uang Jalan Makan & Penginapan Sopir,Sedang,"THR untuk sopir - dikelompokkan sbg tunjangan sopir, PERLU VERIFIKASI klasifikasi akun THR yang lebih tepat"
+2026-03-15,Maret,Uang THR Ari,,500000,-2925000,5150,Uang Jalan Makan & Penginapan Sopir,Sedang,"THR untuk sopir - dikelompokkan sbg tunjangan sopir, PERLU VERIFIKASI klasifikasi akun THR yang lebih tepat"
+2026-03-15,Maret,Uang Keamanan Ke Security Tunas Maju,,250000,-3175000,6320,Jamuan & Representasi,Sedang,Uang keamanan/security - dikelompokkan sbg representasi
+2026-03-15,Maret,Uang Penggantian Balik Siang dari Legok Sukma (SJ 06330),,50000,-3225000,5150,"Uang Jalan, Makan & Penginapan Sopir",Tinggi (dikonfirmasi user),Deskripsi tidak cocok dengan pola akun manapun - PERLU VERIFIKASI manual | Dikonfirmasi user: perlakukan sama seperti uang makan karyawan.
+2026-03-18,April,Penambahan Uang Kas Masuk,6000000,,2775000,1112,Bank BCA Operasional,Tinggi,Tanggal transaksi (2026-03-18) di luar bulan nominal file (April) - kemungkinan input terlambat/carry-over dari periode sebelumnya
+2026-03-18,April,"Biaya Jasa Bongkar Pasang Unit B 9550 CYU, B 9549 CYU, B 9939 FYZ, stel Rem dll unit B 9592 KIU, B 9593 KIU",,2800000,-25000,5210,Servis & Perbaikan Berkala,Tinggi,Tanggal transaksi (2026-03-18) di luar bulan nominal file (April) - kemungkinan input terlambat/carry-over dari periode sebelumnya
+2026-03-18,April,Bensin B 9140 SAL,,150000,-175000,5110,BBM Armada,Tinggi,Tanggal transaksi (2026-03-18) di luar bulan nominal file (April) - kemungkinan input terlambat/carry-over dari periode sebelumnya
+2026-03-18,April,penggantian uang tol,,104000,-279000,5160,Tol Parkir & Retribusi Jalan,Tinggi,Tanggal transaksi (2026-03-18) di luar bulan nominal file (April) - kemungkinan input terlambat/carry-over dari periode sebelumnya
+2026-03-28,April,"Penggantian uang Toll Yatno (Sj 06604, 330019)",,136000,-415000,5160,Tol Parkir & Retribusi Jalan,Tinggi,Tanggal transaksi (2026-03-28) di luar bulan nominal file (April) - kemungkinan input terlambat/carry-over dari periode sebelumnya
+2026-03-29,April,penggantian uang tol,,92000,-507000,5160,Tol Parkir & Retribusi Jalan,Tinggi,Tanggal transaksi (2026-03-29) di luar bulan nominal file (April) - kemungkinan input terlambat/carry-over dari periode sebelumnya
+2026-03-31,April,Pembelian BBM B 9140 SAL,,305000,-812000,5110,BBM Armada,Tinggi,Tanggal transaksi (2026-03-31) di luar bulan nominal file (April) - kemungkinan input terlambat/carry-over dari periode sebelumnya
+2026-03-31,April,Toll Ari PP Ancol,,100000,-912000,5160,Tol Parkir & Retribusi Jalan,Tinggi,Tanggal transaksi (2026-03-31) di luar bulan nominal file (April) - kemungkinan input terlambat/carry-over dari periode sebelumnya
+2026-03-31,April,Penggantian uang Toll Aril (Sj 06596),,50000,-962000,5160,Tol Parkir & Retribusi Jalan,Tinggi,Tanggal transaksi (2026-03-31) di luar bulan nominal file (April) - kemungkinan input terlambat/carry-over dari periode sebelumnya
+2026-04-02,April,Penambahan Uang Kas Masuk,5000000,,4038000,1112,Bank BCA Operasional,Tinggi,
+2026-04-02,April,Penggantian Ban Dalam dan ongkos bongkar pasang B 9939 FYZ - Asep,,150000,3888000,5210,Servis & Perbaikan Berkala,Sedang,
+2026-04-02,April,Penggantian uang Toll Yatno (Sj 6734),,57000,3831000,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-02,April,"Penggantian uang Toll Arill ( Sj 6741, 6820)",,114000,3717000,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-02,April,Penggantian Uang Jalan Siang dari Barat Supir Sukma - b 9593 kiu (Balaraja),,50000,3667000,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-04-02,April,Biaya Jasa Bongkar pasang Seal Roda Kanan dan lain-lain unit B 9939 FYZ - Asep,,300000,3367000,5210,Servis & Perbaikan Berkala,Tinggi,
+2026-04-02,April,Biaya Makan dan Minum Mekanik saat Bongkar Pasang / Stooring B 9939 FYZ,,50000,3317000,5210,Servis & Perbaikan Berkala,Sedang,Konsumsi terkait pekerjaan servis
+2026-04-03,April,Pembayaran uang Sewa kontrakan 1 bulan April,,1100000,2217000,6120,Tunjangan & Lembur Staf,"Sedang (dikonfirmasi user, klasifikasi akun oleh Claude)","Sewa kontrakan/rumah - tidak ada akun sewa properti spesifik di CoA yang diberikan | Dikonfirmasi user: sewa mess untuk pengurus (Arie) - tidak ada akun 'sewa mess karyawan' spesifik di CoA, dipetakan ke Tunjangan & Lembur Staf."
+2026-04-05,April,"Penggantian uang Toll Clay 5 SJ ( 1185, 1906, 1938, 1994, 2065)  - b 9549 cyu",,325000,1892000,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-05,April,"Penggantian uang Toll Clay 6 SJ ( 1912, 1935, 1964, 2057, 2067, 2096) - b 9592 kiu",,390000,1502000,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-05,April,"Penggantian uang Toll Clay 3 SJ ( 1902, 1981, 2068 )  - b 9939 fyz",,195000,1307000,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-05,April,"Penggantian uang Toll Clay 4 SJ ( 1903, 1940, 1980, 2069 )  - b 9593 kiu",,260000,1047000,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-05,April,"Penggantian uang Toll Clay 4 SJ ( 1922, 1948, 2054, 2086 )  - b 9550 cyu",,260000,787000,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-06,April,Toll Ari PP Ancol,,100000,687000,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-06,April,"Penggantian uang Toll CMU Reza (SJ 6768, 7157)",,110000,577000,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-06,April,"Penggantian uang Toll CMU Sukma (SJ 6608, 6729, 6902, 7152, 7168)",,275000,302000,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-06,April,"Penggantian uang Toll CMU Asep ( SJ 6730, 6903, 7155, 7166)",,220000,82000,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-06,April,"Penggantian uang Toll CMU Aril ( SJ 06606, 6769, 7163, 7175)",,220000,-138000,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-06,April,"Penggantian uang Toll CMU Yatno ( SJ 06607, 6766, 7153, 7169)",,220000,-358000,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-06,April,Pembelian Oli Hidrolik 5ltr dan Air Aki 6btl,,200000,-558000,5120,Oli & Pelumas Armada,Tinggi,
+2026-04-08,April,Biaya Jasa Bongkar pasang Seal Roda Kanan dan lain-lain unit B 9939 FYZ - Asep,,950000,-1508000,5210,Servis & Perbaikan Berkala,Tinggi,
+2026-04-08,April,Biaya Makan dan Minum Mekanik saat Bongkar Pasang / Stooring B 9939 FYZ,,100000,-1608000,5210,Servis & Perbaikan Berkala,Sedang,Konsumsi terkait pekerjaan servis
+2026-04-08,April,Penggantian Toll Jatiasih Asep ( Sj 6764 ),,50000,-1658000,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-08,April,Penggantian Toll Jatiasih Reza ( Sj 6849 ),,50000,-1708000,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-08,April,"Penggantian Toll Jatiasih Sukma ( Sj 7110, 7318)",,100000,-1808000,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-08,April,Penggantian Toll Jatiasih Aril ( SJ 7450 ),,50000,-1858000,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-08,April,Penggantian Toll Jatiasih Yatno ( SJ 7213 ),,50000,-1908000,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-08,April,"Penggantian Uang Toll Cikampek Reza (330020, 330038, 330039, 330055)",,344000,-2252000,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-08,April,Penggantian Uang Toll Cikampek Aril (330037),,86000,-2338000,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-08,April,Penggantian Uang Toll Cikampek Asep (330054),,86000,-2424000,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-08,April,Pembayaran Grab untuk Pengiriman Seal Roda dan Grease 1 Pael/ember,,25000,-2449000,6140,ATK & Cetakan Surat Jalan,Sedang,
+2026-04-09,April,Biaya Jasa Bongkar pasang Seal Roda Kiri dan lain-lain unit B 9939 FYZ - Asep,,300000,-2749000,5210,Servis & Perbaikan Berkala,Tinggi,
+2026-04-09,April,Biaya Makan dan Minum Mekanik saat Bongkar Pasang / Stooring B 9939 FYZ,,50000,-2799000,5210,Servis & Perbaikan Berkala,Sedang,Konsumsi terkait pekerjaan servis
+2026-04-09,April,"Uang Jalan Siang ke Kasablanka Yatno (Sj 7099, 7268 )",,100000,-2899000,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-04-09,April,Uang Jalan Siang ke Kasablanka Reza (Sj 7105),,50000,-2949000,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-04-09,April,Uang Jalan Siang ke Kasablanka Sukma ( Sj 7207),,50000,-2999000,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-04-09,April,Uang Jalan Siang ke Kasablanka Aril ( Sj 7261),,50000,-3049000,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-04-09,April,Penggantian uang tol yatno B 9592 KIU ke cibitung,,37500,-3086500,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-10,April,Penggantian uang tol asep ke ci bitung B 9939 FYZ,,72000,-3158500,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-10,April,Pembelian Ban Dalam dan Ongkos bongkar pasang velg ban - B 9939 FYZ Asep,,150000,-3308500,5210,Servis & Perbaikan Berkala,Sedang,
+2026-04-13,April,Uang Jalan Siang ke Kasablanka Asep (Sj 7555),,50000,-3358500,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-04-13,April,Pembelian PHD untuk Orang kantor Tunas Maju,,487000,-3845500,6320,Jamuan & Representasi,Tinggi (dikonfirmasi user),Deskripsi tidak cocok dengan pola akun manapun - PERLU VERIFIKASI manual | Dikonfirmasi user: perlakukan seperti biaya hiburan/jamuan klien.
+2026-04-13,April,Penggantian uang Toll CMU Sukma (SJ 7361),,55000,-3900500,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-13,April,"Penggantian uang Toll CMU Aril (SJ 7373, 7568)",,110000,-4010500,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-13,April,Penggantian uang Toll CMU Yatno ( SJ 7372),,55000,-4065500,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-13,April,Penggantian uang Toll CMU Asep (SJ 7581),,55000,-4120500,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-13,April,Toll Ari PP Ancol,,100000,-4220500,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-13,April,pembelian Atk Pulpen dan Print,,10000,-4230500,6140,ATK & Cetakan Surat Jalan,Sedang,
+2026-04-14,April,"Penambahan Uang Kas Masuk 2x @2.500.000,-",5000000,,769500,1112,Bank BCA Operasional,Tinggi,
+2026-04-14,April,Penggantian Uang Toll Anton BPK 2SJ,,136000,633500,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-14,April,Penggantian Uang Toll Cikampek Asep 1SJ,,86000,547500,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-14,April,Penggantian Uang Toll Cikampek Yatno 1SJ,,86000,461500,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-14,April,Jasa dan Ganti Per belakang No 1 dan No 7 unit B 9939 FYZ,,2125000,-1663500,5210,Servis & Perbaikan Berkala,Tinggi,
+2026-04-14,April,Penggantian Uang Solar ke Bengkel per Pulogadung - B 9939 FYZ,,50000,-1713500,5110,BBM Armada,Tinggi,
+2026-04-14,April,Biaya Jasa Bongkar pasang Seal Roda Kiri dan lain-lain unit B 9939 FYZ - Asep,,300000,-2013500,5210,Servis & Perbaikan Berkala,Tinggi,
+2026-04-14,April,Biaya pembelian makan dan minum Mekanik B 9939 FYZ,,50000,-2063500,5210,Servis & Perbaikan Berkala,Sedang,Konsumsi terkait pekerjaan servis
+2026-04-14,April,Pembelian BBM B 9140 SAL,,302000,-2365500,5110,BBM Armada,Tinggi,
+2026-04-14,April,Pembelian Materai 10000 @8 ,,96200,-2461700,6220,Biaya Transfer & Materai,Tinggi,
+2026-04-16,April,"Pembelian Matrai 10.000 @12.000x4 dan pembelian ATK, Print",,104000,-2565700,6220,Biaya Transfer & Materai,Sedang,Baris gabungan materai + ATK/print - dominan materai
+2026-04-16,April,Toll Ari PP Ancol,,100000,-2665700,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-17,April,Penambahan Uang Kas Masuk,5000000,,2334300,1112,Bank BCA Operasional,Tinggi,
+2026-04-18,April,Stempet kendaraan B 9549 CYU,,150000,2184300,5240,Cuci Grease & Aksesoris Kecil,Sedang,
+2026-04-20,April,Pembelian Air Coolen 3 Galon,,120000,2064300,5220,Sparepart Armada,Sedang,
+2026-04-20,April,Biaya Jasa Cuci Steam B 9549 CYU,,100000,1964300,5240,Cuci Grease & Aksesoris Kecil,Sedang,
+2026-04-20,April,Biaya Jasa Stempet dan Las B 9550 CYU,,150000,1814300,5240,Cuci Grease & Aksesoris Kecil,Sedang,
+2026-04-20,April,"Biaya Jasa Stempet kendaraan B 9592 KIU, B 9593 KIU, B 9939 FYZ",,300000,1514300,5240,Cuci Grease & Aksesoris Kecil,Sedang,
+2026-04-20,April,Toll Ari PP Ancol,,100000,1414300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-22,April,Pembelian sparepart B 9939 FYZ (Plat Kopling dan Oli Power Stering),,2196000,-781700,5220,Sparepart Armada,Tinggi,
+2026-04-22,April,Jasa Perbaikan B 9939 FYZ untuk Bongkar Pasang Plat Kopling di Alsut,,1700000,-2481700,5210,Servis & Perbaikan Berkala,Tinggi,
+2026-04-22,April,Pembelian Makan dan Minum saat bongkar Pasang Kendaraan B 9939 FYZ di Alsut,,150000,-2631700,5210,Servis & Perbaikan Berkala,Sedang,Konsumsi terkait pekerjaan servis
+2026-04-22,April,Top Up dari Rekening Pribadi Boss,5000000,,2368300,2153,Hutang Pemegang Saham,Tinggi (dikonfirmasi user),"Dana masuk dari rekening pribadi pemilik - mungkin kontribusi modal/prive pemilik, cek klasifikasi dengan pemilik | Dikonfirmasi user: bukan prive (krn berbentuk PT), ini pinjaman dari pemegang saham. [Koreksi: sebelumnya salah dicoba diterapkan ke bank_ledger, row ini sebenarnya di kas_ledger]"
+2026-04-22,April,Jasa ganti oli transmisi dan cek unit asep B 9959 FYZ,,150000,2218300,5210,Servis & Perbaikan Berkala,Tinggi,
+2026-04-22,April,"Tiga mobil muatan batu split ke cipayung TMII B 9592 KIU, B 9593 KIU B 9549 CYU",4500000,,6718300,4100,Pendapatan Usaha,Sedang,Kemungkinan pendapatan jasa angkut/muatan
+2026-04-22,April,Pembelian minum dan gorengan kopi saat perbaikan dan pengecekan unit asep B 9959 FYZ,,50000,6668300,5150,Uang Jalan Makan & Penginapan Sopir,Sedang,
+2026-04-23,April,Pembelian BBM B 9140 SAL,,305000,6363300,5110,BBM Armada,Tinggi,
+2026-04-23,April,Toll Ari PP Ancol,,100000,6263300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-26,April,Pembelian sparepart,,339000,5924300,5220,Sparepart Armada,Tinggi,
+2026-04-26,April,"Pembayaran Jasa Bongkar pasang dan Service rutin B 9592 KIU, B 9550 CYU, B 9549 CYU",,1750000,4174300,5210,Servis & Perbaikan Berkala,Tinggi,
+2026-04-26,April,Pembelian Makan dan Minum saat Bongkar pasang dari Pagi sampai Malam Hari,,258000,3916300,5210,Servis & Perbaikan Berkala,Sedang,Konsumsi terkait pekerjaan servis
+2026-04-26,April,Toll Ari PP Ancol,,100000,3816300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-26,April,"Pembelian minum, gorengan kopi es dll",,100000,3716300,5150,Uang Jalan Makan & Penginapan Sopir,Sedang,
+2026-04-26,April,"Jasa service ganti oli mesin, oli transmisi, ganti filter oli, solar filter, filter transmisi, dll. B 9549 CYU, B 9550 CYU, B 9542 KIU",,1500000,2216300,5110,BBM Armada,Tinggi,
+2026-04-27,April,"Penggantian uang tol ke jatiasih B 9550 CYU SJ 08601,08575",,131000,2085300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-27,April,Penggantian uang tol cikampek anton/rendi,,131000,1954300,5160,Tol Parkir & Retribusi Jalan,Tinggi (dikonfirmasi user),"DIKONFIRMASI USER (2026-08-21): BUKAN duplikat, memang 2 transaksi terpisah."
+2026-04-27,April,Penggantian uang tol cikampek anton/yatno,,131000,1823300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-27,April,Penggantian uang tol cikampek anton/rendi,,131000,1692300,5160,Tol Parkir & Retribusi Jalan,Tinggi (dikonfirmasi user),"DIKONFIRMASI USER (2026-08-21): BUKAN duplikat, memang 2 transaksi terpisah."
+2026-04-27,April,Penggantian uang tol cikampek anton/aril,,114000,1578300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-27,April,Penggantian uang tol cikampek anton/sukma,,131000,1447300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-27,April,Penggantian uang tol yatno B 9592 KIU antar pasir ke jatiasih,,50000,1397300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-27,April,Penggantian uang tol yatno B 9549 CYU antar pasir ke jatiasih,,50000,1347300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-28,April,Penambahan Uang Kas Masuk,5000000,,6347300,1112,Bank BCA Operasional,Tinggi,
+2026-04-28,April,Penggantian uang tol Rendy kiirm tanah 2252,,97000,6250300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-28,April,Penggantian uang tol Rendy kiirm tanah 2296,,97000,6153300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-28,April,Penggantian uang tol cikampek anton/sukma,,131000,6022300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-28,April,Bon makan,,130000,5892300,5150,Uang Jalan Makan & Penginapan Sopir,Sedang,
+2026-04-28,April,Penggantian uang tol cikampek anton/aril,,131000,5761300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-28,April,Penggantian uang tol cikampek anton/yatno,,131000,5630300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-28,April,Penggantian uang tol yatno kirim tanah 1945,,73500,5556800,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-28,April,Penggantian uang tol reza kirim tanah 1928 ke cikarang,,97000,5459800,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-28,April,Penggantian uang tol sukma kirim tanah 2251,,97000,5362800,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-28,April,Penggantian uang tol,,45500,5317300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-29,April,Penggantian uang tol sukma kirim tanah 2293,,97000,5220300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-29,April,Penggantian uang tol  reza kirim tanah 2335,,97000,5123300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-29,April,Penggantian uang tol  reza kirim platinum 2308,,97000,5026300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-29,April,Penggantian uang tol  yatno kirim tanah 2287,,97000,4929300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-29,April,Penggantian uang tol  yatno kirim tanah 2342,,97000,4832300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-29,April,"pembelian makan,minum untuk teknisi, supir, dll saat perbaikan B 9549 CYU",,150000,4682300,5150,Uang Jalan Makan & Penginapan Sopir,Sedang,
+2026-04-29,April,Jasa bongkar pasang plat kopling unit Aril B 9549 CYU,,1300000,3382300,5210,Servis & Perbaikan Berkala,Tinggi,
+2026-04-29,April,Penggantian uang tol Sukma B 9593 KIU SJ 08649,,78000,3304300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-29,April,Penggantian uang tol Sukma B 9939 FYZ SJ 08648,,78000,3226300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-29,April,Penggantian uang tol  randykirim tanah 2331,,72000,3154300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-29,April,Penggantian uang tol sukma kirim tanah 2332,,72000,3082300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-29,April,Bongkar pasang ipx,,120000,2962300,5210,Servis & Perbaikan Berkala,Sedang,
+2026-04-29,April,Bayar Pasir,,9425000,-6462700,2153,Hutang Pemegang Saham,Tinggi (dikonfirmasi user),"Transaksi jual-beli pasir/material - tidak ada akun spesifik di CoA yang diberikan | MENUNGGU KLARIFIKASI: user minta diabaikan & dinetkan dengan transaksi 'Terima pembayaran Pasir' sbg hutang pemegang saham, tapi angka selisih yg disebut (9.425.000) tidak cocok secara aritmatika dgn 2 transaksi ini - lihat pertanyaan #2 di pesan chat. | Dikonfirmasi user (revisi jawaban): diperlakukan sbg transaksi Hutang Pemegang Saham terpisah (bukan netting) - pelunasan sebagian hutang (Debit 2153)."
+2026-04-29,April,Terima pembayaran Pasir,10990000,,4527300,2153,Hutang Pemegang Saham,Tinggi (dikonfirmasi user),Transaksi jual-beli pasir/material - tidak ada akun spesifik di CoA yang diberikan | MENUNGGU KLARIFIKASI: sama seperti baris 'Bayar Pasir' - lihat pertanyaan #2 di pesan chat. | Dikonfirmasi user (revisi jawaban): diperlakukan sbg transaksi Hutang Pemegang Saham terpisah (bukan netting) - tambahan pinjaman baru dari pemegang saham (Kredit 2153).
+2026-04-29,April,Penambahan Uang Kas Masuk,15000000,,19527300,1112,Bank BCA Operasional,Tinggi,
+2026-04-30,April,Penggantian uang tol B 9593 KIU antar pasir,,202500,19324800,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-30,April,Penggantian uang tol randi B 9939 FYZ antar pasir ke purwakarta,,115500,19209300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-04-30,April,"penggantian uang tol , + bensin B 9140SAL",,246000,18963300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-01,Mei,FUSO B 9939 FYZ Randi,,110000,18853300,5150,"Uang Jalan, Makan & Penginapan Sopir",Tinggi (dikonfirmasi user),Deskripsi tidak cocok dengan pola akun manapun - PERLU VERIFIKASI manual | Dikonfirmasi user: perlakukan sama seperti uang makan karyawan.
+2026-05-01,Mei,Fuso B 9593 KIU ,,110000,18743300,5150,"Uang Jalan, Makan & Penginapan Sopir",Tinggi (dikonfirmasi user),Deskripsi tidak cocok dengan pola akun manapun - PERLU VERIFIKASI manual | Dikonfirmasi user: perlakukan sama seperti uang makan karyawan.
+2026-05-02,Mei,Sewa kontrakan Mei,,1100000,17643300,6120,Tunjangan & Lembur Staf,"Sedang (dikonfirmasi user, klasifikasi akun oleh Claude)",Sewa kontrakan/rumah - tidak ada akun sewa properti spesifik di CoA yang diberikan | Dikonfirmasi user: sewa mess untuk pengurus (Arie).
+2026-05-04,Mei,Transfer dari BCA Kas Besar,15000000,,32643300,1112,Bank BCA Operasional,Tinggi,
+2026-05-04,Mei,Gaji Supir (Pengurus ditransfer pribadi oleh pak Santo),,16926500,15716800,5130,Upah Sopir,Tinggi,
+2026-05-04,Mei,Penggantian uang tol,,46000,15670800,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-04,Mei,Pengisian BBM B 9140 SAL,,305000,15365800,5110,BBM Armada,Tinggi,
+2026-05-05,Mei,Penggantian uang tol Aril B 9549 CYU antar pasir SJ 09118,,64000,15301800,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-05,Mei,"print, paperclip, materai",,69500,15232300,6220,Biaya Transfer & Materai,Sedang,Baris gabungan materai + ATK/print - dominan materai
+2026-05-06,Mei,Tol PP B 9592 KIU SJ 260000033,,75500,15156800,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-06,Mei,Penggantian uang Toll Yatno B 9592 KIU antar pasir ke cibitung SJ 08984 ,,64000,15092800,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-06,Mei,Penggantian uang Toll Asep B 9939 FYZ antar pasir ke cibitung SJ 08985 ,,64000,15028800,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-06,Mei,Penggantian uang tol Randi B 9549 CYU Antar pasir SJ 260000019,,65500,14963300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-06,Mei,Bongkar pasang dingdong dan trunion 1 set / rumah Bugi. storing Asep B 9939 FYZ,,1000000,13963300,5210,Servis & Perbaikan Berkala,Sedang,
+2026-05-06,Mei,penggantian uang tol,,62500,13900800,5160,Tol Parkir & Retribusi Jalan,Tinggi,Tanggal tidak tercantum di sumber (baris 23) - diasumsikan 2026-05-06 berdasarkan posisi baris berdekatan - PERLU VERIFIKASI tanggal aktual
+2026-05-06,Mei,Penggantian uang tol B 9593 KIU Sukma antar pasir ke cisauk SJ 260000018,,133200,13767600,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-06,Mei,Pembelian miinum makan dan uang keamanan security rest area karang tengah Asep B 9939 FYZ,,150000,13617600,5150,Uang Jalan Makan & Penginapan Sopir,Sedang,
+2026-05-06,Mei,Penggantian uang tol Apriadi B 9550 CYU Antar pasir ke cibitung SJ 260000057,,78000,13539600,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-07,Mei,Penggantian uang tol Aril B 9549 CYU antar pasir SJ 260000021,,39000,13500600,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-07,Mei,Air zuur,,90000,13410600,5220,Sparepart Armada,Sedang,Tanggal tidak tercantum di sumber (baris 31) - diasumsikan 2026-05-07 berdasarkan posisi baris berdekatan - PERLU VERIFIKASI tanggal aktual
+2026-05-07,Mei,Penggantian uang tol antar pasir cikampek SJ SR 260000020,,67000,13343600,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-07,Mei,Penggantian uang tol antar pasir cikampek SJ SR 260000025,,131000,13212600,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-07,Mei,"uang koordinasi ke PIK3 Pioneer SJ 09045, SJ 09089, SJ 09100",,240000,12972600,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-05-08,Mei,Penggantian uang tol Apridi B 9550CYU antar pasir SJ 09084,,53000,12919600,5160,Tol Parkir & Retribusi Jalan,Tinggi,"Tanggal tertulis 2026-08-05 kemungkinan besar typo untuk 2026-05-08 (posisi baris berada di antara transaksi 6-7 Mei) - diurutkan berdasarkan posisi baris asli di sumber (bukan tanggal literal) - PERLU VERIFIKASI tanggal aktual | Tanggal transaksi (2026-08-05) di luar bulan nominal file (Mei) - kemungkinan input terlambat/carry-over dari periode sebelumnya | DIKOREKSI: tanggal asli 2026-08-05 adalah salah ketik, dikonfirmasi user seharusnya 2026-05-08."
+2026-05-08,Mei,Penggantian uang tol Apridi B 9550 CYU antar pasir ke purwakarta SJ 09051,,131000,12788600,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-08,Mei,Penggantian uang tol Asep B 9939 FYZ antar pasir ke purwakarta SJ 09066,,131000,12657600,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-08,Mei,Penggantian uang Toll Yatno B 9592 KIU antar pasir ke purwakarta SJ 09067,,131000,12526600,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-08,Mei,Penggantian uang tol Sukma b 9593 KIU SJ BUL0526-000018,,131000,12395600,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-08,Mei,penggantian uang tol randi SJ BUL 0526-00002 B 9549 CYU,,131000,12264600,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-08,Mei,"Uang Koordinasi ke Pioneer Beton PIK 2 unit mobil B 9593 KIU, B 9592 KIU",,160000,12104600,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-05-08,Mei,Penggantian Uang Toll SJ 9186,,268500,11836100,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-09,Mei,Penggantian uang tol Asep B 9939 FYZ antart pasir ke cibitung SJ 09113,,78000,11758100,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-09,Mei,Penggantian uang Toll Yatno B 9592 KIU antar pasir ke cibitung SJ 09114,,53000,11705100,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-09,Mei,Penggantian uang toll Randi B 9593 KIU antar pasir ke cibitung SJ 09117,,86500,11618600,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-10,Mei,Penggantian uang tol Yatno B 9592 KIU SJ BUL0526-00003,,131000,11487600,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-10,Mei,Penggantian uang tol Aril B 9549 CYU SJ BUL0526-00007,,139500,11348100,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-10,Mei,Penggantian uang tol Reza B 9550 CYU SJ BUL0526-000009,,131000,11217100,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-11,Mei,Penggantian uang tol + bensin B 9140 SAL,,304000,10913100,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-11,Mei,Penggantian uang tol Randi B 9592 KIU SJ BUL0526-00004,,131000,10782100,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-11,Mei,Penggantian uang tol Asep B 9939 FYZ SJ BUL0526-00005,,131000,10651100,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-11,Mei,Penggantian uang tol Asep B 9939 FYZ SJ BUL0526-00006,,131000,10520100,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-11,Mei,Penggantian uang tol Randi B 9539 KIU SJ BUL0526-00001,,131000,10389100,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-11,Mei,Penggantian uang tol Reza B 9550 CYU SJ BUL0526-000010,,131000,10258100,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-11,Mei,Ganti ban + Velg,,3050000,7208100,5230,Ban & Vulkanisir,Tinggi,"Kandidat aset, cek kebijakan kapitalisasi"
+2026-05-12,Mei,Penggantian uang tol Randi B 9539 KIU SJ BUL0526-00008,,131000,7077100,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-12,Mei,Materai 10.000,,46800,7030300,6220,Biaya Transfer & Materai,Tinggi,
+2026-05-12,Mei,Penggantian uang tol B 9593 KIU Randy SJ 09186,,293500,6736800,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-12,Mei,Penggantian uang tol Aril B 9549 CYU SJ BUL0526-000011,,131000,6605800,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-12,Mei,Makan Siang di Pizza Hut,,659000,5946800,5150,Uang Jalan Makan & Penginapan Sopir,Sedang,
+2026-05-12,Mei,Tarik dari ATM,2500000,,8446800,1112,Bank BCA Operasional,Tinggi,
+2026-05-13,Mei,ganti ban ,,150000,8296800,5230,Ban & Vulkanisir,Tinggi,
+2026-05-13,Mei,Penggantian uang tol kirim ke bandung B 9549 CYU Aril SJ 09187,,293500,8003300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-13,Mei,Penggantian uang tol Yatno B 9592 KIU SJ BUL0526-000016,,131000,7872300,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-13,Mei,Penggantian uang tol Asep B 9939 FYZ SJ BUL0526-000017,,65500,7806800,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-13,Mei,Penggantian uang tol ,,92000,7714800,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-15,Mei,Penggantian uang tol Reza B 9550 CYU SJ BUL0526-000015,,131000,7583800,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-15,Mei,Penggantian uang tol Aril B 9549 CYU SJ BUL0526-000014,,114000,7469800,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-15,Mei,Tarik dari ATM,1500000,,8969800,1112,Bank BCA Operasional,Tinggi,
+2026-05-17,Mei,"Uang makan 3 mekanik ganti ban, unit reza B 9550 CYU",,150000,8819800,5210,Servis & Perbaikan Berkala,Sedang,Konsumsi/uang makan terkait pekerjaan servis - dikelompokkan sbg biaya perbaikan
+2026-05-17,Mei,"Ongkos modal ke cilegon 2 unit dan uang makan yatno, reza @ 50.000. B 9592 KIU, B 9550 CYU",,800000,8019800,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-05-17,Mei,"Uang jalan supir ke cilincing B 9593 KIU, B 9549 CYU, B 9939 FYZ",,3900000,4119800,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-05-17,Mei,"Tambahan uang jalan Rendy, Aril, Asep untuk balik cilegon @ 150.000",,450000,3669800,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-05-17,Mei,Tarik dari ATM,5800000,,9469800,1112,Bank BCA Operasional,Tinggi,
+2026-05-17,Mei,penggantian uang tol,,82000,9387800,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-17,Mei,penggantian uang tol,,83000,9304800,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-18,Mei,"Uang jalan untuk ngepok 2 unit B 9593 KIU, B 9550 CYU",,360000,8944800,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-05-18,Mei,Tarik dari ATM,2000000,,10944800,1112,Bank BCA Operasional,Tinggi,
+2026-05-19,Mei,Penggantian uang tol Aril B 9549 CYU SJ BUL0526-000013,,114000,10830800,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-19,Mei,Penggantian uang tol Sukma B 9593 KIU SJ BUL0526-000012,,131000,10699800,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-19,Mei,Tarik dari ATM,6500000,,17199800,1112,Bank BCA Operasional,Tinggi,
+2026-05-20,Mei,Penggantian uang tol dan pengisian BBM B 9140 SAL,,385000,16814800,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-21,Mei,"uang jalan ke cilegon dan uang makan (350+50) 3 Driver B 9593 KIU, B 9939 FYZ, B 9549 CYU",,1200000,15614800,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-05-21,Mei,Uang jalan ke cilegon 350 dan uang makan 50 untuk supir Yatno B 9592 KIU,,400000,15214800,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-05-21,Mei,Penggantian uang tol,,131000,15083800,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-21,Mei,Penggantian uang tol Aril B 9549 CYU ,,131000,14952800,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-21,Mei,Uang jalan ke bengkel Jatake untuk perbaikan B 9550 CYU,,250000,14702800,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-05-22,Mei,Tarik dari ATM,2500000,,17202800,1112,Bank BCA Operasional,Tinggi,
+2026-05-23,Mei,Tarik dari ATM,5000000,,22202800,1112,Bank BCA Operasional,Tinggi,
+2026-05-24,Mei,"Uang jalan ngerok tongkang 3 Unit B 9593 KIU, B 9549 CYU, B 9939 FYZ",,300000,21902800,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-05-25,Mei,Penggantian BBM Arie untuk cek Unit Cikupa dan HINO Jatake,,250000,21652800,5110,BBM Armada,Tinggi,
+2026-05-26,Mei,"pembelian makan minum, kopi saat storing B 9939 FYZ",,100000,21552800,5210,Servis & Perbaikan Berkala,Sedang,Konsumsi terkait pekerjaan servis
+2026-05-26,Mei,"jasa ganti, dan pembelian Per 7&6, jasa ganti dan storing B 9939 FYZ",,1300000,20252800,5210,Servis & Perbaikan Berkala,Tinggi,
+2026-05-26,Mei,Jasa service dan ganti sparepart B 9550 CYU,,2941056,17311744,5220,Sparepart Armada,Tinggi,
+2026-05-27,Mei,Uang makan Asep B 9439 FYZ,,50000,17261744,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-05-28,Mei,"uang makan 3 driver sukma, reza, rendy dari cilegon",,150000,17111744,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-05-28,Mei,uang makan mobil bull tengah tm,,108000,17003744,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-05-29,Mei,Kirim dokumen,,10000,16993744,6140,ATK & Cetakan Surat Jalan,Sedang,
+2026-05-30,Mei,Penggantian uang tol Aril B 9549 CYU,,114000,16879744,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-05-30,Mei,Tarik dari ATM,4000000,,20879744,1112,Bank BCA Operasional,Tinggi,
+2026-06-01,Juni,Tarik ATM,4000000,,24879744,1112,Bank BCA Operasional,Tinggi,
+2026-06-01,Juni,"Uang jalan ke cilincing B 9593 KIU sukma, B 9939 FYZ Rendy",,2600000,22279744,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-06-01,Juni,Uang Tambahan untuk Koordinasi ke Teluk Naga,,400000,21879744,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-06-02,Juni,matrai + print,,75000,21804744,6220,Biaya Transfer & Materai,Sedang,Baris gabungan materai + ATK/print - dominan materai
+2026-06-02,Juni,Ban Dalam + Angin,,210000,21594744,5230,Ban & Vulkanisir,Tinggi,
+2026-06-03,Juni,"Uang jalan ke marunda cilincing B 9549 CYU, B 9550 CYU",,2600000,18994744,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-06-03,Juni,Penggantian uang tol B 9593 KIU Sukma ke cibitung antar pasir SJ 09660,,78000,18916744,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-03,Juni,Penggantian uang tol B 9593 KIU Sukma ke cibitung antar pasir SJ 09634,,78000,18838744,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-03,Juni,Penggantian uang tol B 9939 FYZ Randy ke cibitung antar pasir SJ 09635,,78000,18760744,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-03,Juni,Penggantian uang tol B 9939 FYZ Randy ke cibitung antar pasir SJ 09661,,78000,18682744,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-03,Juni,Tarik ATM,4000000,,22682744,1112,Bank BCA Operasional,Tinggi,
+2026-06-04,Juni,Penggantian uang tol B 9593 KIU Sukma ke cibitung antar pasir SJ 09724,,78000,22604744,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-04,Juni,Penggantian uang tol B 9593 KIU Sukma ke cibitung antar pasir SJ 09704,,78000,22526744,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-04,Juni,Penggantian uang tol B 9939 FYZ Randy ke cibitung antar pasir SJ 09703,,78000,22448744,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-04,Juni,Penggantian uang tol B Ke Cibitung CMU SJ 09725,,64000,22384744,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-04,Juni,Pembelian BBM B 9140 SAL,,200000,22184744,5110,BBM Armada,Tinggi,
+2026-06-04,Juni,Tarik ATM,5000000,,27184744,1112,Bank BCA Operasional,Tinggi,
+2026-06-05,Juni,Penggantian uang tol B 9939 FYZ Randy ke cibitung antar pasir SJ 09760,,64000,27120744,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-05,Juni,Penggantian uang tol B 9593 KIU Sukma ke cibitung antar pasir SJ 09761,,78000,27042744,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-06,Juni,Pembayaran jasa service dan cek mobil Reza B 9550 CYU Di cilegon,,500000,26542744,5210,Servis & Perbaikan Berkala,Tinggi,
+2026-06-07,Juni,Penggantian uang tol B 9593 KIU Sukma ke cibitung SJ 00649,,108000,26434744,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-07,Juni,Penggantian uang tol B 9939 FYZ Randy ke cibitung SJ 00648,,97000,26337744,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-08,Juni,Penggantian uang tol B 9549 CYU Aril,,83000,26254744,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-08,Juni,Penggantian uang tol Reza B 9550 CYU ,,131000,26123744,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-08,Juni,Penggantian uang tol B 9939 FYZ Randy ke cibitung SJ 00731,,97000,26026744,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-08,Juni,Penggantian uang tol B 9593 KIU Sukma ke cibitung SJ 00686,,97000,25929744,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-08,Juni,Penggantian uang tol B 9550 CYU Reza ke cibitung SJ 00732,,97000,25832744,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-08,Juni,Penggantian uang tol B 9593 KIU Sukma ke cibitung SJ 00733,,97000,25735744,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-08,Juni,Penggantian uang tol,,131000,25604744,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-08,Juni,Tarik ATM,2500000,,28104744,1112,Bank BCA Operasional,Tinggi,
+2026-06-09,Juni,Tarik ATM,10000000,,38104744,1112,Bank BCA Operasional,Tinggi,
+2026-06-09,Juni,Pembelian BBM B 9140 SAL,,310000,37794744,5110,BBM Armada,Tinggi,
+2026-06-10,Juni,"Uang jalan ke Jasinga bogor B 9550 CYU, B 9592 KIU",,2800000,34994744,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-06-10,Juni,"Uang jalan ke BSD 3 mobil B 9593 KIU, B 9939 FYZ, B 9549 CYU",,3300000,31694744,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-06-10,Juni,"Uang jalan ngepok B 9550 CYU, B 9549 CYU",,360000,31334744,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-06-10,Juni,"Uang jalan ke BSD B 9550 CYU, B 9549 CYU",,2200000,29134744,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-06-10,Juni,Uang jalan ke matraman 1 mobil B 9550 CYU Reza,,1350000,27784744,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-06-11,Juni,"Uang jalan ke BYD Subang B 9939 FYZ, B 9593 KIU, B 9592 KIU, B 9550 CYU",,8000000,19784744,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-06-11,Juni,"Cover Dingdong Lohan, Dus Bohlam, dan Air Aki",,258000,19526744,5220,Sparepart Armada,Sedang,
+2026-06-12,Juni,Tarik ATM,2500000,,22026744,1112,Bank BCA Operasional,Tinggi,
+2026-06-14,Juni,Tol Ari,,91500,21935244,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-14,Juni,Jasa Service 2 Mobil & Cek +stel rem 3 mobil,,1200000,20735244,5210,Servis & Perbaikan Berkala,Tinggi,
+2026-06-14,Juni,Penggantian uang tol B 9939 FYZ Asep ke cibitung SJ 010066,,58800,20676444,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-14,Juni,Konsumsi saat service dari pagi - sore + Supir,,150000,20526444,5210,Servis & Perbaikan Berkala,Sedang,
+2026-06-14,Juni,"Konsumsi saat Storing untuk 2 supir, Arie + Mekanik",,150000,20376444,5210,Servis & Perbaikan Berkala,Sedang,
+2026-06-14,Juni,Pembayaran Jasa dan Sparepart Storing Malam Hari B 9939 FYZ,,1500000,18876444,5220,Sparepart Armada,Tinggi,
+2026-06-14,Juni,Pembelian Oli,,2624000,16252444,5120,Oli & Pelumas Armada,Tinggi,
+2026-06-14,Juni,Pembayaran Jasa Service dan Cek Mobil B 9550 CYU di Cilegon,,500000,15752444,5210,Servis & Perbaikan Berkala,Tinggi,Tanggal tidak tercantum di sumber (baris 59) - diasumsikan 2026-06-14 berdasarkan posisi baris berdekatan - PERLU VERIFIKASI tanggal aktual
+2026-06-15,Juni,Penggantian uang tol ke cikampek Rendi B 9593 KIU Antar pasir SJ BUL0626-00003,,131000,15621444,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-15,Juni,Penggantian uang tol ke cibitung CMU B 9939 FYZ Asep SJ,,78000,15543444,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-15,Juni,Penggantian uang tol Asep B 9939 FYZ Ke jatiasih SJ 010170,,50000,15493444,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-15,Juni,Penggantian uang tol ke cikampek Rendi B 9593 KIU Antar pasir SJ BUL0626-00004,,131000,15362444,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-15,Juni,Penggantian uang tol ke cikampek Asep B 9939 FYZ Antar pasir SJ BUL0626-00005,,131000,15231444,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-15,Juni,Penggantian uang tol ke cibitung Rendi B 9593 KIU Antar pasir SJ 010200,,78000,15153444,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-16,Juni,Ban dalam,,180000,14973444,5230,Ban & Vulkanisir,Tinggi,
+2026-06-16,Juni,Penggantian uang tol ke cibitung Asep B 9939 FYZ Antar pasir SJ 010233,,78000,14895444,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-16,Juni,Penggantian uang tol ke cibitung Rendi B 9593 KIU Antar pasir SJ 010234,,78000,14817444,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-16,Juni,Tarik ATM,5000000,,19817444,1112,Bank BCA Operasional,Tinggi,
+2026-06-17,Juni,Penggantian uang tol ke cikampek Rendi B 9593 KIU Antar pasir SJ BUL0626-00006,,131000,19686444,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-18,Juni,Penggantian uang tol dan pembelian BBM B 9140 SAL,,382000,19304444,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-18,Juni,Penggantian uang tol ke cibitung Rendi B 9593 KIU Antar pasir SJ 010320,,64000,19240444,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-18,Juni,Fotokopi + matrai + ATK,,47300,19193144,6220,Biaya Transfer & Materai,Sedang,Baris gabungan materai + ATK/print - dominan materai
+2026-06-18,Juni,Penggantian uang tol Asep ke cikampek B 9939 FYZ Antar pasir SJ BUL0626-000007,,131000,19062144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-18,Juni,Penggantian uang tol Asep ke cibitungB 9939 FYZ Antar pasir SJ 010321,,78000,18984144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-18,Juni,Tarik ATM,2500000,,21484144,1112,Bank BCA Operasional,Tinggi,
+2026-06-19,Juni,Ban Dalam + Angin,,270000,21214144,5230,Ban & Vulkanisir,Tinggi,
+2026-06-19,Juni,Penggantian uang tol ke cikampek Anton B 9593 KIU Antar pasir SJ BUL0626-00001,,131000,21083144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-19,Juni,Penggantian uang tol ke cikampek Asep B 9939 FYZ antar pasir SJ BUL0626-00002,,131000,20952144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-20,Juni,Tol Ari,,91000,20861144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-21,Juni,Penggantian uang tol ke cikampek Asep  B 9939 FYZ  Acon,,131000,20730144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-21,Juni,Penggantian uang tol ke cikampek Randi B 9593 Ke Acon ,,131000,20599144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-21,Juni,Uang tambahan diluar uang jalan 2 mobil B 9939 FYZ B 9593 KIU SJ 010429,,160000,20439144,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-06-22,Juni,Penggantian uang tol antar pasir ke cibitung B 9592 KIU Andri SJ 010437,,78000,20361144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-22,Juni,Penggantian uang tol ke cikampek Asep  B 9939 FYZ  Acon,,131000,20230144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-22,Juni,Penggantian uang tol B 9593 KIU Randi ke cibitung SJ 010444,,78000,20152144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-22,Juni,Penggantian uang tol B 9939 FYZ Asep ke cibitung SJ 010445,,78000,20074144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-23,Juni,Penggantian uang tol B 9592 KIU Randi ke Jatiasih SJ 010502,,50000,20024144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-23,Juni,Materai 10.000,,58500,19965644,6220,Biaya Transfer & Materai,Tinggi,
+2026-06-24,Juni,Penggantian uang tol B 9593 KIU Sukma ke cibitung SJ 010590,,78000,19887644,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-24,Juni,Penggantian uang tol B 9593 KIU Sukma ke cibitung SJ 010570,,78000,19809644,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-24,Juni,Penggantian uang tol B 9939 FYZ Sukma ke cibitung SJ 010569,,78000,19731644,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-24,Juni,Penggantian uang tol Ari + isi BBM B 9140 SAL,,390500,19341144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-24,Juni,Penggantian uang tol B 9939 FYZ  Asep ke cibitung SJ 010591,,53000,19288144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-24,Juni,Penggantian uang tol B 9592 KIU Andri ke cibitung SJ 010593,,78000,19210144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-24,Juni,Penggantian uang tol B 9592 KIU Anton ke cibitung SJ 010568,,64000,19146144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-24,Juni,Tarik ATM,5000000,,24146144,1112,Bank BCA Operasional,Tinggi,
+2026-06-24,Juni,"Beli 6 Ban Dalam, 2 Ban Perut",,2400000,21746144,5230,Ban & Vulkanisir,Tinggi,
+2026-06-24,Juni,Uang Jalan 2 mobil ke Dadap (PIK 2),,2400000,19346144,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-06-25,Juni,Penggantian uang tol B 9593 KIU Sukma ke cibitung SJ 002104,,97000,19249144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-25,Juni,Tarik ATM,5000000,,24249144,1112,Bank BCA Operasional,Tinggi,
+2026-06-25,Juni,Penggantian uang tol B 9592 KIU Andri ke CMU Cibitung SJ 010637,,78000,24171144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-25,Juni,Penggantian uang tol B 9593 KIU Sukma ke cibitung SJ 010614,,78000,24093144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-25,Juni,Penggantian uang tol B 9593 KIU Sukma ke cibitung SJ 010635,,64000,24029144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-25,Juni,Penggantian uang tol B 9939 FYZ  Asep ke cibitung SJ 010636,,78000,23951144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-25,Juni,Penggantian uang tol B 9939 FYZ  Asep ke cibitung SJ 010615,,78000,23873144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-25,Juni,Penggantian uang tol B 9592 KIU Andri ke cibitung SJ 010617,,78000,23795144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-26,Juni,"Uang ganti tol 2 Acon cikampek SJ yang hilang B 9592 KIU, B 9593 KIU",,172000,23623144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-26,Juni,Penggantian uang tol B 9592 KIU Andri ke cibitung SJ 010657,,78000,23545144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-26,Juni,Penggantian uang tol B 9593 KIU Sukma ke cibitung SJ 010662,,53000,23492144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-26,Juni,"Beli 2 Ban Dalam, 2 Ban Perut",,1000000,22492144,5230,Ban & Vulkanisir,Tinggi,
+2026-06-27,Juni,Penggantian uang tol B 9593 KIU Sukma ke cibitung SJ 010701,,78000,22414144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-27,Juni,Penggantian uang tol B 9549 CYU Aril ke cibitung antar pasir SJ 010702,,78000,22336144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-27,Juni,Penggantian uang tol B 9939 FYZ Randy ke cibitung SJ 010700,,78000,22258144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-28,Juni,Penggantian uang tol B 9593 KIU Sukma ke cibitung SJ 010706,,78000,22180144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-28,Juni,Penggantian uang tol B 9593 KIU Sukma ke cibitung SJ 010648,,78000,22102144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-28,Juni,Penggantian uang tol B 9939 FYZ Randy ke cibitung SJ 010707,,78000,22024144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-28,Juni,Penggantian uang tol B 9549 CYU Aril ke cibitung antar pasir SJ 010705,,78000,21946144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-28,Juni,Penggantian uang tol B 9593 KIU Sukma ke cibitung SJ 002145,,97000,21849144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-28,Juni,Penggantian uang tol B 9592 KIU Andri ke cibitung SJ 002148,,97000,21752144,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-28,Juni,Penggantian uang tol B 9592 KIU Andri ke cibitung SJ 002108,,73500,21678644,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-28,Juni,Penggantian uang tol B 9939 FYZ Randy ke cibitung SJ 002105,,72000,21606644,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-28,Juni,Penggantian uang tol B 9549 CYU Aril SJ 002103,,97000,21509644,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-28,Juni,"Beli 2 Ban Dalam, 2 Ban Perut",,1000000,20509644,5230,Ban & Vulkanisir,Tinggi,
+2026-06-29,Juni,Penggantian uang tol Ari + isi BBM B 9140 SAL,,253000,20256644,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-29,Juni,Penggantian uang tol B 9939 FYZ Randy ke cibitung SJ 002197,,97000,20159644,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-29,Juni,Penggantian uang tol B 9549 CYU Aril SJ 002266,,97000,20062644,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-29,Juni,Penggantian uang tol B 9549 CYU Aril SJ 002193,,97000,19965644,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-29,Juni,Penggantian uang tol B 9939 FYZ Randy ke cibitung SJ 010721,,78000,19887644,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-29,Juni,Penggantian uang tol B 9593 KIU Sukma ke cibitung SJ 010720,,78000,19809644,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-29,Juni,Penggantian uang tol B 9549 CYU Aril SJ 002159,,97000,19712644,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-29,Juni,Penggantian uang tol B 9593 KIU Sukma SJ 002196,,97000,19615644,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-30,Juni,Penggantian uang tol + BBM B 9140 SAL,,255000,19360644,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-06-30,Juni (penyesuaian),Transaksi tambahan ditemukan setelah meeting di PIK 2 (belum terinci per transaksi),,13351600,6009044,6360,Beban Lain-lain Operasional,"Sedang (dikonfirmasi user, rincian per-transaksi tidak tersedia)",Sumber: catatan self-flagged file 'Gabungan Transaksi Kas Jan-Jun 2026 (Update).xlsx' baris 497 ('Transaksi yang baru tercatat setelah meeting di PIK 2': Rp13.351.600). Dikonfirmasi user sbg item yang 'sudah ketemu' - dicatat sbg beban operasional lump-sum krn rincian per transaksi tidak tersedia.
+2026-07-02,Juli,"Kas Kecil - keterangan tidak tercantum di sumber (Hutang Pemegang Saham, dikonfirmasi user)",2800000,,8809044,2153,Hutang Pemegang Saham,Tinggi (dikonfirmasi user),"Keterangan tidak tercantum di sumber - PERLU VERIFIKASI deskripsi transaksi | Dikonfirmasi user (kondisional): sudah dicek silang ke mutasi BCA (rek. 5599 & 7800) sekitar 2 Juli 2026, TIDAK ditemukan transaksi senilai Rp2.800.000 - sesuai instruksi user, diklasifikasikan sbg Hutang Pemegang Saham."
+2026-07-02,Juli,Penggantian uang tol Andry B 9592 KIU,,300000,8509044,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-07-02,Juli,Uang makan Reaza 2 hari ( tanggal 1-2),,100000,8409044,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-07-03,Juli,BBM Ari,,200000,8209044,5110,BBM Armada,Tinggi,
+2026-07-03,Juli,Tolll Ari,,96000,8113044,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-07-03,Juli,Uang tol Aril B 9549 CYU,,125000,7988044,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-07-03,Juli,Penggantian uang tol B 9593 KIU Sukma,,300000,7688044,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-07-03,Juli,Penggantian uang tol B 9939 FYZ Rndy @CMU 3X50,,150000,7538044,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-07-03,Juli,Materai,,47600,7490444,6220,Biaya Transfer & Materai,Tinggi,
+2026-07-04,Juli,Uang dorong / UJ Ke cilegon Reza B 9550 CYU,,250000,7240444,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-07-04,Juli,Penggantian tambahans olar buat Reza B 9550 CYU,,100000,7140444,5150,"Uang Jalan, Makan & Penginapan Sopir",Tinggi (dikonfirmasi user),Deskripsi tidak cocok dengan pola akun manapun - PERLU VERIFIKASI manual | Dikonfirmasi user: perlakukan sama seperti uang makan karyawan.
+2026-07-04,Juli,Uang dorong / UJ Ke cilegon Andry B 9542 KIU,,400000,6740444,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-07-04,Juli,Uang jalan ngepok B 9550 CYU Reza,,80000,6660444,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-07-04,Juli,Uang jalan ngepok B 9592 KIU Andry,,80000,6580444,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-07-05,Juli,"Uang jalan ngepok 4 rit * 80.000, B 9592 KIU Andry",,320000,6260444,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-07-07,Juli,ongkir dokumen ke pik,,10000,6250444,6140,ATK & Cetakan Surat Jalan,Sedang,
+2026-07-09,Juli,Tol Storing B 9140 SAL  B 9939 FYZ B 9593 KIU,,61000,6189444,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-07-11,Juli,saldo masuk,2500000,,8689444,1112,Bank BCA Operasional,Sedang,Deskripsi generik untuk dana masuk - diasumsikan top-up dari bank operasional
+2026-07-11,Juli,Penggantian uang tol Randi B 9593 KIU,,172000,8517444,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-07-11,Juli,Penggantian uang tol Asep B 9939 FYZ,,172000,8345444,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-07-11,Juli,Penggantian uang tol Yusuf / Aril B 9549 CYU,,210000,8135444,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-07-12,Juli,Pembelian BBM B 9140 SAL,,202000,7933444,5110,BBM Armada,Tinggi,
+2026-07-12,Juli,Tol storing ke cilegon sekali jalan pergi,,103500,7829944,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-07-13,Juli,Tol storing ke cilegon sekali jalan pulang,,103500,7726444,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-07-13,Juli,BBM B 9140 SAL,,150000,7576444,5110,BBM Armada,Tinggi,
+2026-07-13,Juli,Biaya storing ke cilegon untuk mekanik pengerjaan B 9550 CYU,,800000,6776444,5210,Servis & Perbaikan Berkala,Sedang,
+2026-07-13,Juli,Pembelian makan minum untuk storing B 9550 cyu,,200000,6576444,5210,Servis & Perbaikan Berkala,Sedang,Konsumsi terkait pekerjaan servis
+2026-07-15,Juli,ongkir dokumen ke pak memen,,10000,6566444,6140,ATK & Cetakan Surat Jalan,Sedang,
+2026-07-16,Juli,Jasa bongkar ban B 9592 KIU,,100000,6466444,5210,Servis & Perbaikan Berkala,Tinggi,
+2026-07-16,Juli,Jasa bongkar ban B 9939 FYZ,,100000,6366444,5210,Servis & Perbaikan Berkala,Tinggi,
+2026-07-16,Juli,penambahan saldo,2500000,,8866444,1112,Bank BCA Operasional,Sedang,Deskripsi generik untuk dana masuk - diasumsikan top-up dari bank operasional
+2026-07-16,Juli,uang makan reza 3 hari B 9550 CYU,,150000,8716444,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-07-16,Juli,Pembelian sparepart B 9550 CYU,,509000,8207444,5220,Sparepart Armada,Tinggi,
+2026-07-16,Juli,Admin bank,,2500,8204944,6210,Administrasi Bank,Tinggi,
+2026-07-16,Juli,Pembelian WD untuk pasang mapel B 9550 CYU,,80000,8124944,5220,Sparepart Armada,Sedang,
+2026-07-16,Juli,Pembelian ATK,,35000,8089944,6140,ATK & Cetakan Surat Jalan,Sedang,
+2026-07-16,Juli,Pembelian makan minum saat sotirng di cilegon,,150000,7939944,5210,Servis & Perbaikan Berkala,Sedang,Konsumsi terkait pekerjaan servis
+2026-07-16,Juli,pembelian BBM B 9140 SAL,,150000,7789944,5110,BBM Armada,Tinggi,
+2026-07-16,Juli,Tol B 9140 SAL PP,,251500,7538444,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-07-16,Juli,Pembelian BBM B 9140 SAL,,250000,7288444,5110,BBM Armada,Tinggi,
+2026-07-16,Juli,Pembayaran pengurussan SJ hilang oleh kurir rahma dari Tunas,,200000,7088444,6140,ATK & Cetakan Surat Jalan,Sedang,
+2026-07-17,Juli,Pembelian sparepart filter oli solar B 9550 CYU,,265000,6823444,5110,BBM Armada,Tinggi,
+2026-07-17,Juli,Uj ngepok 1x rit B 9550 CYU Reza,,180000,6643444,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-07-18,Juli,Tol B 9140 SAL,,124500,6518944,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-07-18,Juli,Pembelian BBM B 9140 SAL,,200000,6318944,5110,BBM Armada,Tinggi,
+2026-07-18,Juli,Pembelian makan dan minum dan bayar akomsmi di kalimalang storing B 9592 KIU,,50000,6268944,5210,Servis & Perbaikan Berkala,Sedang,Konsumsi terkait pekerjaan servis
+2026-07-18,Juli,Uang masuk,2500000,,8768944,2153,Hutang Pemegang Saham,Tinggi (dikonfirmasi user),"DIKONFIRMASI USER (2026-08-21): BUKAN duplikat, memang 2 transaksi terpisah. | Deskripsi generik untuk dana masuk - diasumsikan top-up dari bank operasional | MENUNGGU KLARIFIKASI: sudah dicek silang ke mutasi BCA sekitar 18 Juli 2026, TIDAK ditemukan transaksi senilai Rp2.500.000 (tidak seperti item 2 Juli, tidak ada aturan default utk kasus ini) - lihat pertanyaan #3 di pesan chat. | Dikonfirmasi user: sudah dicek silang ke bank (tidak ketemu), diperlakukan sbg Hutang Pemegang Saham."
+2026-07-18,Juli,uang masuk,2500000,,11268944,2153,Hutang Pemegang Saham,Tinggi (dikonfirmasi user),"DIKONFIRMASI USER (2026-08-21): BUKAN duplikat, memang 2 transaksi terpisah. | Deskripsi generik untuk dana masuk - diasumsikan top-up dari bank operasional | MENUNGGU KLARIFIKASI: sudah dicek silang ke mutasi BCA sekitar 18 Juli 2026, TIDAK ditemukan transaksi senilai Rp2.500.000 (tidak seperti item 2 Juli, tidak ada aturan default utk kasus ini) - lihat pertanyaan #3 di pesan chat. | Dikonfirmasi user: sudah dicek silang ke bank (tidak ketemu), diperlakukan sbg Hutang Pemegang Saham."
+2026-07-18,Juli,Pembelian e toll u/ supir ke jatiasih B 9592 KIU,,100000,11168944,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-07-18,Juli,Uang bongkaran dari pioneer jatiasih B 9592 KIU,,70000,11098944,5170,Jasa Bongkar Muat/Loader,Sedang,PERLU VERIFIKASI - kemungkinan jasa bongkar muat di lokasi pelanggan
+2026-07-18,Juli,Pembelian galon kosong 20L,,25000,11073944,6190,Bahan Kebersihan,Sedang,
+2026-07-18,Juli,Pemblian solar ecer 40L B 9592 KIU,,320000,10753944,5110,BBM Armada,Tinggi,
+2026-07-19,Juli,Grease 2 unit B 9550 CYU B 9939 FYZ,,200000,10553944,5240,Cuci Grease & Aksesoris Kecil,Sedang,
+2026-07-19,Juli,Uang bongkaran di farika cakung B 9592 KIU,,50000,10503944,5170,Jasa Bongkar Muat/Loader,Sedang,PERLU VERIFIKASI - kemungkinan jasa bongkar muat di lokasi pelanggan
+2026-07-19,Juli,"Pembelian sparepart untuks ervice B 9592 KIU, B 9549 CYU",,763500,9740444,5220,Sparepart Armada,Tinggi,
+2026-07-19,Juli,Pembelian mapel angin jember B 9550 CYU,,25000,9715444,5220,Sparepart Armada,Sedang,
+2026-07-19,Juli,Service 4 unit,,2200000,7515444,5210,Servis & Perbaikan Berkala,Tinggi,
+2026-07-19,Juli,Pembelian makan dan minum untuk mekanik supir dll,,150000,7365444,5210,Servis & Perbaikan Berkala,Sedang,Konsumsi terkait pekerjaan servis
+2026-07-19,Juli,Tol Ari PP B 9140 SAL,,92000,7273444,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-07-19,Juli,Penggantiain toll B 9593 KIU Sukma,,200000,7073444,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-07-19,Juli,Tambahan uang koordinasi / UJ ke betamix B 9550 CYU,,80000,6993444,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-07-20,Juli,UJ Ngepok 2x rit B 9593 KIU Sukma,,360000,6633444,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-07-20,Juli,Penggantian uang toll B 9549 CYU Yusuf,,630000,6003444,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-07-20,Juli,Penggantian uang tol B 9593 kiu rENDY,,380000,5623444,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-07-20,Juli,Penggantian uang tol B 9939 FYZ Asep,,580000,5043444,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-07-20,Juli,Tambahan uang koordinasi / UJ ke JMP B 9592 KIU,,80000,4963444,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-07-20,Juli,Tambahan uang koordinasi / UJ Ke jmp B 9549 CYU,,80000,4883444,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-07-21,Juli,Tol Yusuf tujuan CMU SJ 012153,,50000,4833444,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-07-22,Juli,Uang masuk,3500000,,8333444,1112,Bank BCA Operasional,Sedang,Deskripsi generik untuk dana masuk - diasumsikan top-up dari bank operasional
+2026-07-22,Juli,BBM B 9140 SAL,,300000,8033444,5110,BBM Armada,Tinggi,
+2026-07-22,Juli,Jasa ganti ban / bongkar pasang,,205000,7828444,5210,Servis & Perbaikan Berkala,Tinggi,
+2026-07-22,Juli,Tol Ari PP B 9140 SAL,,92000,7736444,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-07-22,Juli,Tambahan Uang koordinasi. UJ ke PIK 3 B 9550 CYU,,800000,6936444,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-07-22,Juli,"Penggantian uang tol Aril B 9549 CYU SJ 5751, tiket 5722, Sj 58143, sj 10659, sj 10446, sj 10510",,360000,6576444,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-07-23,Juli,Uang berobat Reza + Admin bank,,152500,6423944,5150,"Uang Jalan, Makan & Penginapan Sopir",Tinggi (dikonfirmasi user),Baris gabungan (uang berobat + admin bank) - split manual disarankan | Dikonfirmasi user: perlakukan sama seperti uang makan karyawan (meski deskripsi 'uang berobat').
+2026-07-24,Juli,Uang jalan kosongan ke cilegon Aril B 9549 CYU,,400000,6023944,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-07-24,Juli,Uang jalan kosongan ke cilegon Yusuf B 9592 KIU,,400000,5623944,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-07-24,Juli,Pemasangan kaca film B 9592 KIU Yusuf,,250000,5373944,5220,Sparepart Armada,Sedang,
+2026-07-24,Juli,"Uang jalan kosongan ke cilegon B 9593 KIU sUKMA, B 9939 FYZ Randy",,800000,4573944,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-07-25,Juli,Uang jalan kosongan ke cilegon B 9592 KIU,,400000,4173944,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-07-26,Juli,Uang jalan kosongan ke cilegon Randy B 9939 FYZ,,300000,3873944,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-07-26,Juli,Uang jalan kosongan ke cilegon Sukma B 9593 KIU,,300000,3573944,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-07-26,Juli,Uang jalan kosongan ke cilegon  Yusuf B 9593 KIU,,300000,3273944,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-07-26,Juli,Uang jalan kosongan ke cilegon Reza B 9550 CYU,,400000,2873944,5150,Uang Jalan Makan & Penginapan Sopir,Tinggi,
+2026-07-27,Juli,SALDO masuk,5000000,,7873944,1112,Bank BCA Operasional,Sedang,Deskripsi generik untuk dana masuk - diasumsikan top-up dari bank operasional
+2026-07-27,Juli,Tol B 9140 SAL,,92000,7781944,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-07-29,Juli,Penggantian tol Sukma B 9593 KIU,,180000,7601944,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-07-29,Juli,Penggantian uang grease sukma B 9593 KIU,,100000,7501944,5240,Cuci Grease & Aksesoris Kecil,Sedang,
+2026-07-29,Juli,Penggantian nuang tilang di BSD Randy B 9939 FYZ,,100000,7401944,8120,Denda & Penalti,Tinggi (dikonfirmasi user),Denda tilang - tidak ada akun spesifik di CoA | Dikonfirmasi user: perlakukan sama seperti denda/pinalti.
+2026-07-30,Juli,Penggantian uang tol Randy B 9939 FYZ,,130000,7271944,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-07-30,Juli,Penggantian tol Reza / Asep B 9550 CYU,,150000,7121944,5160,Tol Parkir & Retribusi Jalan,Tinggi,
+2026-07-31,Juli (penyesuaian),"Piutang Pengurus (Antonius Arie) - selisih kas kecil belum terjelaskan per 31 Juli 2026, saldo fisik kas Arie = 0",,7000000,121944,1181,Piutang Karyawan,Tinggi (dikonfirmasi user),"Jurnal penyesuaian (bukan transaksi kas fisik) - dikonfirmasi user: karena saldo kas kecil di tangan pengurus (Arie) sudah 0 sementara pembukuan seharusnya masih ada Rp7.000.000, direktur menganggap ini piutang pengurus kepada perusahaan."

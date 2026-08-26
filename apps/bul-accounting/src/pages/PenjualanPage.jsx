@@ -15,6 +15,7 @@ import {
   CheckCircle, AlertCircle, FileText, ChevronDown, ChevronUp, Wallet
 } from 'lucide-react'
 import { KAS_ACCOUNTS, getKasAccountName, getJournalType } from '../data/kasAccounts'
+import { describeInvoiceGross } from '../utils/invoiceAmounts'
 
 // ─── Status helpers ─────────────────────────────────────────────────────────
 const STATUS_LABEL = { draft: 'Draft', unpaid: 'Belum Lunas', partial: 'Sebagian', paid: 'Lunas', cancelled: 'Dibatalkan' }
@@ -218,6 +219,12 @@ function PembayaranModal({ invoice, onSaved, onClose }) {
             <div className="flex justify-between text-brand-600">
               <span>Total tagihan</span><span>{formatCurrency(invoice.amount)}</span>
             </div>
+            {describeInvoiceGross(invoice) && (
+              <div className="flex justify-between text-xs text-brand-500">
+                <span>Bruto {formatCurrency(describeInvoiceGross(invoice).gross)} − uang jalan</span>
+                <span>({formatCurrency(describeInvoiceGross(invoice).uj)})</span>
+              </div>
+            )}
             {(invoice.totalPaid || 0) > 0 && (
               <div className="flex justify-between text-brand-600">
                 <span>Sudah dibayar</span><span>{formatCurrency(invoice.totalPaid)}</span>
@@ -433,6 +440,11 @@ export default function PenjualanPage() {
                     {inv.description && <p className="text-sm text-gray-500 mt-0.5">{inv.description}</p>}
                     <div className="flex items-center gap-4 mt-2 flex-wrap">
                       <span className="text-lg font-bold text-brand-700">{formatCurrency(inv.amount)}</span>
+                      {describeInvoiceGross(inv) && (
+                        <span className="text-xs text-gray-500">
+                          Bruto {formatCurrency(describeInvoiceGross(inv).gross)} − UJ {formatCurrency(describeInvoiceGross(inv).uj)}
+                        </span>
+                      )}
                       {inv.status === 'partial' && (
                         <span className="text-sm text-orange-600">
                           Sisa: {formatCurrency(inv.amount - (inv.totalPaid || 0))}

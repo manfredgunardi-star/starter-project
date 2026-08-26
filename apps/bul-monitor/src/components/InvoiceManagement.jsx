@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Send, Lock, Plus, Clock, CheckCircle, FileText, Package, XCircle } from 'lucide-react';
+import { hitungTotalInvoice, resolveSJInvoice } from '../utils/invoiceTotals.js';
 
 const InvoiceManagement = ({
   invoiceList,
@@ -96,9 +97,10 @@ const InvoiceManagement = ({
   
   // Export to Excel function
   const exportInvoiceToExcel = (invoice) => {
-    const headers = ['No SJ', 'Tgl SJ', 'No. Polisi', 'Nama Supir', 'Rute', 'Material', 'Qty Bongkar', 'Satuan', 'Harga/Satuan', 'Nilai'];
+    const headers = ['No SJ', 'Tgl SJ', 'No. Polisi', 'Nama Supir', 'Rute', 'Material', 'Qty Bongkar', 'Satuan', 'Harga/Satuan', 'Nilai', 'Uang Jalan'];
     const hargaSatuan = Number(invoice.hargaSatuan) || 0;
-    const rows = invoice.suratJalanList.map(sj => [
+    const { list } = resolveSJInvoice(invoice, suratJalanList);
+    const rows = list.map(({ sj }) => [
       sj.nomorSJ,
       new Date(sj.tanggalSJ).toLocaleDateString('id-ID'),
       sj.nomorPolisi,
@@ -108,15 +110,20 @@ const InvoiceManagement = ({
       sj.qtyBongkar,
       sj.satuan,
       hargaSatuan,
-      (Number(sj.qtyBongkar) || 0) * hargaSatuan
+      (Number(sj.qtyBongkar) || 0) * hargaSatuan,
+      Number(sj.uangJalan) || 0
     ]);
 
     let csvContent = headers.join(';') + '\n';
     rows.forEach(row => {
       csvContent += row.join(';') + '\n';
     });
-    const totalNilai = Number(invoice.totalNilai) || (invoice.totalQty * hargaSatuan);
-    csvContent += `\nTOTAL;;;;;${invoice.totalQty.toFixed(2)};;;${totalNilai}`;
+    const t = hitungTotalInvoice(invoice, suratJalanList);
+    // 11 kolom: Qty Bongkar di kolom 7, Nilai di kolom 10.
+    // Baris TOTAL yang lama meleset satu kolom; penomoran di bawah sudah dikoreksi.
+    csvContent += `\nSUB TOTAL;;;;;;${invoice.totalQty.toFixed(2)};;;${t.subTotal}\n`;
+    csvContent += `POTONGAN UANG JALAN;;;;;;;;;${t.potonganUJ}\n`;
+    csvContent += `TOTAL AKHIR;;;;;;;;;${t.totalAkhir}`;
     
     const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
@@ -372,10 +379,37 @@ const InvoiceManagement = ({
                             )}
                           </div>
                           <div>
-                            <p className="text-gray-600">Nilai Invoice:</p>
-                            <p className="font-bold text-blue-700">
-                              Rp {Number(invoice.totalNilai || 0).toLocaleString('id-ID')}
-                            </p>
+                            {(() => {
+                              const t = hitungTotalInvoice(invoice, suratJalanList);
+                              return (
+                                <>
+                                  <div className="flex justify-between text-gray-600">
+                                    <span>Sub Total:</span>
+                                    <span className="font-semibold text-gray-800">
+                                      Rp {t.subTotal.toLocaleString('id-ID')}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between text-gray-600">
+                                    <span>Potongan Uang Jalan:</span>
+                                    <span className="font-semibold text-orange-700">
+                                      − Rp {t.potonganUJ.toLocaleString('id-ID')}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between border-t border-gray-200 mt-1 pt-1">
+                                    <span className="text-gray-700 font-semibold">Total Akhir:</span>
+                                    <span className="font-bold text-blue-700">
+                                      Rp {t.totalAkhir.toLocaleString('id-ID')}
+                                    </span>
+                                  </div>
+                                  {(t.sumberUJ !== 'live' || t.sjHilang > 0) && (
+                                    <p className="text-xs text-amber-700 mt-1">
+                                      ⚠️ Sebagian uang jalan diambil dari data arsip
+                                      {t.sjHilang > 0 ? ` — ${t.sjHilang} Surat Jalan tidak ditemukan` : ''}.
+                                    </p>
+                                  )}
+                                </>
+                              );
+                            })()}
                           </div>
                         </>
                       )}
