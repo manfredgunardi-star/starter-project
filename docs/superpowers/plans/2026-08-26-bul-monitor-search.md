@@ -799,7 +799,7 @@ Fase paling berisiko. `App.jsx` berukuran 3.597 baris dan daftar Surat Jalan ber
 - Consumes: `SearchInput` (default export dari `./components/SearchInput.jsx`) dan `useSearchFilter` (named export dari `./hooks/useSearchFilter.js`).
 - Produces: `searchedSuratJalan` — daftar SJ yang sudah difilter tab **dan** kata kunci; menjadi satu-satunya sumber untuk paginasi, empty state, `eligibleInView`, dan `eligibleBatalInView`.
 
-- [ ] **Step 1: Tambahkan import**
+- [x] **Step 1: Tambahkan import**
 
 Ganti baris 22-24:
 
@@ -817,7 +817,7 @@ import SearchInput from './components/SearchInput.jsx';
 import { useSearchFilter } from './hooks/useSearchFilter.js';
 ```
 
-- [ ] **Step 2: Tambahkan konstanta field di level modul**
+- [x] **Step 2: Tambahkan konstanta field di level modul**
 
 Sisipkan tepat sebelum deklarasi komponen `App` (setelah seluruh blok import di bagian atas file, sejajar dengan konstanta level-modul lain seperti `EMPTY_BIAYA`):
 
@@ -827,7 +827,7 @@ Sisipkan tepat sebelum deklarasi komponen `App` (setelah seluruh blok import di 
 const SJ_SEARCH_FIELDS = ['nomorSJ', 'nomorPolisi', 'namaSupir', 'pt', 'rute', 'material'];
 ```
 
-- [ ] **Step 3: Tambahkan state kata kunci**
+- [x] **Step 3: Tambahkan state kata kunci**
 
 Ganti baris 108-110:
 
@@ -846,7 +846,7 @@ menjadi:
   const SJ_PAGE_SIZE = 10;
 ```
 
-- [ ] **Step 4: Sisipkan lapisan pencarian di antara filter tab dan paginasi**
+- [x] **Step 4: Sisipkan lapisan pencarian di antara filter tab dan paginasi**
 
 Ganti blok baris 2339-2347:
 
@@ -881,7 +881,7 @@ menjadi:
   const paginatedSuratJalan = searchedSuratJalan.slice((sjPageClamped - 1) * SJ_PAGE_SIZE, sjPageClamped * SJ_PAGE_SIZE);
 ```
 
-- [ ] **Step 5: Arahkan bulk-select "Kirim" ke daftar yang benar-benar terlihat**
+- [x] **Step 5: Arahkan bulk-select "Kirim" ke daftar yang benar-benar terlihat**
 
 Ganti baris 2356:
 
@@ -895,7 +895,7 @@ menjadi:
   const eligibleInView = useMemo(() => searchedSuratJalan.filter(isSJEligibleForBulkKirim), [searchedSuratJalan, isSJEligibleForBulkKirim]);
 ```
 
-- [ ] **Step 6: Arahkan bulk-select "Batalkan" ke daftar yang benar-benar terlihat**
+- [x] **Step 6: Arahkan bulk-select "Batalkan" ke daftar yang benar-benar terlihat**
 
 Ganti baris 2390:
 
@@ -909,7 +909,7 @@ menjadi:
   const eligibleBatalInView = useMemo(() => searchedSuratJalan.filter(isSJEligibleForBulkBatalkan), [searchedSuratJalan, isSJEligibleForBulkBatalkan]);
 ```
 
-- [ ] **Step 7: Tambahkan handler yang mereset paginasi dan seleksi**
+- [x] **Step 7: Tambahkan handler yang mereset paginasi dan seleksi**
 
 Sisipkan tepat setelah penutup fungsi `toggleSelectAllBatal` (sekitar baris 2415). Penempatan ini penting: `setSelectedBatalSJIds` baru dideklarasikan pada baris 2385, sehingga handler tidak boleh berada di atasnya.
 
@@ -931,7 +931,7 @@ Sisipkan tepat setelah penutup fungsi `toggleSelectAllBatal` (sekitar baris 2415
   }, []);
 ```
 
-- [ ] **Step 8: Sisipkan search bar di JSX**
+- [x] **Step 8: Sisipkan search bar di JSX**
 
 Cari penutup wadah tombol filter (`<div className="flex gap-2 flex-wrap">` yang berisi tombol Semua sampai Gagal, sekitar baris 3309). Ganti:
 
@@ -968,7 +968,7 @@ menjadi:
         {/* Bulk Kirim Bar — hanya tampil untuk superadmin jika ada SJ eligible di view */}
 ```
 
-- [ ] **Step 9: Tambahkan empty state pencarian**
+- [x] **Step 9: Tambahkan empty state pencarian**
 
 Ganti baris 3378 dan sekitarnya:
 
@@ -997,7 +997,7 @@ menjadi:
 
 Sisa blok (tombol "Tambah Surat Jalan Pertama", penutup `) : (`, dan `paginatedSuratJalan.map(...)`) tidak berubah.
 
-- [ ] **Step 10: Perbaiki gerbang paginasi**
+- [x] **Step 10: Perbaiki gerbang paginasi**
 
 Ganti baris 3435:
 
@@ -1011,7 +1011,7 @@ menjadi:
         {searchedSuratJalan.length > SJ_PAGE_SIZE && (
 ```
 
-- [ ] **Step 11: Verifikasi build**
+- [x] **Step 11: Verifikasi build**
 
 ```bash
 cd apps/bul-monitor && npm run build
@@ -1019,7 +1019,7 @@ cd apps/bul-monitor && npm run build
 
 Expected: `built in Xs`, tanpa error. Bila muncul `Cannot access 'setSelectedBatalSJIds' before initialization`, `handleSearchSJChange` diletakkan terlalu tinggi — pindahkan ke bawah baris 2385.
 
-- [ ] **Step 12: Verifikasi seluruh test masih lulus**
+- [x] **Step 12: Verifikasi seluruh test masih lulus**
 
 ```bash
 cd apps/bul-monitor && npm test
@@ -1027,7 +1027,16 @@ cd apps/bul-monitor && npm test
 
 Expected: PASS — 4 file test, tidak ada regresi.
 
-- [ ] **Step 13: Verifikasi manual — wajib, ini gerbang keamanan fase ini**
+- [~] **Step 13: Verifikasi manual — wajib, ini gerbang keamanan fase ini**
+
+> **Status 2026-08-26: 5 dari 6 skenario LULUS. Skenario #5 (pengaman bulk-select) TERBUKA.**
+> Data produksi saat ini punya Pending=0 dan Terkirim=0, sehingga seluruh 1.273 SJ berstatus
+> `terkunci`. Bulk Kirim menuntut status `terkirim`; bulk Batalkan mengecualikan `terkunci`.
+> Akibatnya kedua bar bulk tidak pernah ter-render dan skenario #5 tidak dapat dijalankan di UI.
+> Bukti pengganti: (a) `setSearchSJ` hanya punya satu call site — di dalam `handleSearchSJChange`
+> ([App.jsx:2440](apps/bul-monitor/src/App.jsx:2440)), tanpa cabang kondisional; (b) skenario #2
+> membuktikan handler itu benar-benar dieksekusi tiap perubahan kata kunci (paginasi ter-reset
+> dari halaman 9 ke 1). Uji ulang di UI saat ada SJ berstatus `terkirim` di produksi.
 
 ```bash
 cd apps/bul-monitor && npm run dev
@@ -1042,7 +1051,7 @@ Login sebagai superadmin, buka tab Surat Jalan, lalu jalankan enam pemeriksaan b
 5. **Pengaman bulk-select (paling penting).** Cari `citeureup` → tekan "Pilih Semua" → hapus kata kunci dengan ✕ → **verifikasi bar bulk kembali ke keadaan tidak ada yang dipilih** (tidak muncul teks "N dipilih" dan tombol "Kirim N SJ ke Accounting" hilang). Jangan menekan tombol kirim selama pengujian.
 6. **Empty state.** Ketik `zzzz` → muncul "Tidak ada Surat Jalan yang cocok dengan pencarian.", bukan "Belum ada data Surat Jalan".
 
-- [ ] **Step 14: Commit**
+- [x] **Step 14: Commit**
 
 ```bash
 git add apps/bul-monitor/src/App.jsx
