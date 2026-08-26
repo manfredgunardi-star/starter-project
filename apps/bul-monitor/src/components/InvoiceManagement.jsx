@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Send, Lock, Plus, Clock, CheckCircle, FileText, Package, XCircle } from 'lucide-react';
+import { hitungTotalInvoice } from '../utils/invoiceTotals.js';
 
 const InvoiceManagement = ({
   invoiceList,
@@ -372,10 +373,37 @@ const InvoiceManagement = ({
                             )}
                           </div>
                           <div>
-                            <p className="text-gray-600">Nilai Invoice:</p>
-                            <p className="font-bold text-blue-700">
-                              Rp {Number(invoice.totalNilai || 0).toLocaleString('id-ID')}
-                            </p>
+                            {(() => {
+                              const t = hitungTotalInvoice(invoice, suratJalanList);
+                              return (
+                                <>
+                                  <div className="flex justify-between text-gray-600">
+                                    <span>Sub Total:</span>
+                                    <span className="font-semibold text-gray-800">
+                                      Rp {t.subTotal.toLocaleString('id-ID')}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between text-gray-600">
+                                    <span>Potongan Uang Jalan:</span>
+                                    <span className="font-semibold text-orange-700">
+                                      − Rp {t.potonganUJ.toLocaleString('id-ID')}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between border-t border-gray-200 mt-1 pt-1">
+                                    <span className="text-gray-700 font-semibold">Total Akhir:</span>
+                                    <span className="font-bold text-blue-700">
+                                      Rp {t.totalAkhir.toLocaleString('id-ID')}
+                                    </span>
+                                  </div>
+                                  {(t.sumberUJ !== 'live' || t.sjHilang > 0) && (
+                                    <p className="text-xs text-amber-700 mt-1">
+                                      ⚠️ Sebagian uang jalan diambil dari data arsip
+                                      {t.sjHilang > 0 ? ` — ${t.sjHilang} Surat Jalan tidak ditemukan` : ''}.
+                                    </p>
+                                  )}
+                                </>
+                              );
+                            })()}
                           </div>
                         </>
                       )}
