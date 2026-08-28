@@ -13,8 +13,9 @@ money figures. `InvoiceManagement.jsx` gets a new button + click handler that la
 package (`await import('xlsx')`), calls the utility, and writes the workbook via
 `XLSX.writeFile`. No new Firestore reads, no new props, no schema change.
 
-**Tech Stack:** React (existing component), `xlsx` (SheetJS, already a dependency, currently unused —
-this is its first use in bul-monitor), Vitest (existing test runner, `environment: 'node'`, no
+**Tech Stack:** React (existing component), `xlsx` (SheetJS, already a dependency and already used in
+bul-monitor by `downloadSJRecapToExcel` in `src/utils/formatters.js:55-127` — this feature is its
+second call site, not its first), Vitest (existing test runner, `environment: 'node'`, no
 component-testing library installed — this app tests utilities, not components, so this plan follows
 that convention).
 
@@ -27,6 +28,9 @@ that convention).
   flat `invoice.hargaSatuan` that the existing per-invoice CSV export incorrectly uses for that case.
 - `xlsx` MUST be imported dynamically (`await import('xlsx')`) inside the click handler, not as a
   static top-level import — keeps it out of the main bundle for users who never click the button.
+  This mirrors the existing precedent in `downloadSJRecapToExcel`
+  (`src/utils/formatters.js:55-127`), which already lazy-loads `xlsx` the same way for its own
+  "Download Excel" button.
 - No new Firestore queries, no new component props, no role/permission gate beyond what already
   exists on this component.
 - No changes to the existing per-invoice "Export Excel" (CSV) button or its `exportInvoiceToExcel`

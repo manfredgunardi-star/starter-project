@@ -91,11 +91,19 @@ kotak pencarian yang sedang aktif. Ini pilihan yang sengaja paling sederhana —
 ini secara eksplisit saat brainstorming.
 
 ### 5. Library & bundle size
-Pakai `xlsx` (SheetJS) — sudah terdaftar di `package.json` tapi belum dipakai di mana pun pada
-`bul-monitor`. Di-import secara **dinamis** (`await import('xlsx')`) di dalam handler klik tombol,
-bukan static import di top-level file, supaya bundle utama tidak membengkak untuk user yang tidak
-pernah memakai fitur ini — pola yang sama yang sudah dipakai di `bul-accounting`
-(`handoff_laporan_export_suite`, 1.734KB→902KB setelah lazy-load).
+Pakai `xlsx` (SheetJS) — sudah terdaftar di `package.json` DAN sudah dipakai di `bul-monitor`:
+`downloadSJRecapToExcel` di [`src/utils/formatters.js:55-127`](../../../src/utils/formatters.js#L55)
+sudah meng-`await import('xlsx')` dan sudah terhubung ke tombol "Download Excel" yang sudah ada di
+area rekap Surat Jalan (`App.jsx`). Fitur ini jadi call-site kedua `xlsx` di aplikasi ini, bukan yang
+pertama.
+
+Tetap wajib di-import secara **dinamis** (`await import('xlsx')`) di dalam handler klik tombol, bukan
+static import di top-level file — kalau di-static-import, `xlsx` tetap akan masuk ke bundle utama
+untuk semua user, terlepas dari apakah mereka pernah memakai fitur ini. Keputusan lazy-load ini tetap
+benar terlepas dari precedent yang sudah ada. Namun angka bundle-size spesifik dari precedent
+`bul-accounting` (`handoff_laporan_export_suite`, 1.734KB→902KB setelah lazy-load) TIDAK berlaku di
+sini — chunk `xlsx` di `bul-monitor` sudah ter-split keluar dari bundle utama sejak
+`downloadSJRecapToExcel` ada, sebelum task ini dikerjakan.
 
 ### 6. Permission / role gate
 Tidak ada role gate baru. Tombol export per-invoice yang sudah ada tidak dibatasi role; tombol baru
@@ -177,3 +185,9 @@ Ditemukan saat eksplorasi codebase untuk task ini — dicatat untuk task terpisa
    di fitur baru ini memakai pola yang benar tersebut, sehingga TIDAK mewarisi bug ini. Perbaikan
    tombol CSV lama di luar scope task ini karena menyentuh output finansial yang sudah berjalan —
    perlu keputusan/izin user terpisah sebelum diubah.
+5. **Dua pemanggil `XLSX.writeFile` independen** — `downloadSJRecapToExcel`
+   (`src/utils/formatters.js:55-127`) dan `handleDownloadSemuaInvoice` baru
+   (`src/components/InvoiceManagement.jsx`) sekarang sama-sama meng-`await import('xlsx')` dan
+   memanggil `XLSX.writeFile` sendiri-sendiri, dengan boilerplate `book_new()`/`book_append_sheet()`
+   yang mirip. Kandidat baik untuk satu helper kecil "workbook writer" bersama di task terpisah di
+   masa depan — tidak dikonsolidasikan di task ini.
