@@ -57,6 +57,8 @@ selisih AR-bruto-vs-GL-net di `bul-accounting`.
 | Sub Total | `hitungTotalInvoice(...).subTotal` |
 | Potongan Uang Jalan | `hitungTotalInvoice(...).potonganUJ` |
 | Total Akhir | `hitungTotalInvoice(...).totalAkhir` |
+| SJ Tidak Ditemukan | `hitungTotalInvoice(...).sjHilang` — jumlah SJ yang direferensikan invoice tapi tidak ditemukan di live maupun snapshot |
+| Sumber UJ | `hitungTotalInvoice(...).sumberUJ` (`'live'`\|`'campuran'`\|`'snapshot'`) — transparansi kalau Potongan Uang Jalan sebagian/semua diambil dari data arsip |
 | Status Integrasi | `invoice.integrationStatus` (map ke label: kosong→"Belum Dikirim", `menunggu_review`→"Menunggu Review Akuntan", `terkunci`→"Sudah Masuk Accounting") |
 | Dibuat Oleh | `invoice.createdBy` |
 | Tanggal Dibuat | `invoice.createdAt` |
@@ -83,7 +85,10 @@ difilter/pivot di Excel), diresolusi lewat `resolveSJInvoice()`:
 Kalau `resolveSJInvoice` melaporkan `sjHilang > 0` untuk suatu invoice, baris ringkasan tetap
 ditulis apa adanya (total tetap dari `hitungTotalInvoice`, yang sudah menangani kasus ini) — tidak
 ada baris khusus tambahan untuk SJ yang hilang di sheet Detail SJ, karena memang tidak ada data SJ
-untuk ditulis.
+untuk ditulis. Sinyalnya tetap terlihat lewat kolom **SJ Tidak Ditemukan** dan **Sumber UJ** di
+sheet Rekap Invoice (lihat tabel di atas) — mencerminkan peringatan "⚠️ Sebagian uang jalan diambil
+dari data arsip" yang sudah ditampilkan di UI ([InvoiceManagement.jsx:509-514](../../../src/components/InvoiceManagement.jsx#L509)),
+supaya file yang diunduh tidak kehilangan sinyal itu.
 
 ### 4. Cakupan data
 Semua invoice di `invoiceList` (tab "Sudah Terinvoice"), tanpa filter tanggal, tanpa mengikuti
