@@ -74,14 +74,14 @@ const sjB = {
 
 const invoiceFlat = {
   id: 'INV-1', noInvoice: 'INV/2026/001', tglInvoice: '2026-08-05',
-  totalNilai: 2000000, hargaSatuan: 100000, hargaPerGroup: null,
+  totalNilai: 1500000, hargaSatuan: 100000, hargaPerGroup: null,
   suratJalanIds: ['sj-a', 'sj-b'], suratJalanList: [sjA, sjB],
   integrationStatus: null, createdBy: 'admin1', createdAt: '2026-08-05T10:00:00.000Z',
 };
 
 const invoiceGroup = {
   id: 'INV-2', noInvoice: 'INV/2026/002', tglInvoice: '2026-08-06',
-  totalNilai: 1500000, hargaSatuan: null,
+  totalNilai: 1250000, hargaSatuan: null,
   hargaPerGroup: [
     { material: 'Pasir', rute: 'Jakarta-Bandung', hargaSatuan: 90000 },
     { material: 'Batu', rute: 'Jakarta-Bogor', hargaSatuan: 70000 },
@@ -105,9 +105,11 @@ describe('buildInvoiceWorkbookData', () => {
       'No Invoice': 'INV/2026/001',
       'Tanggal Invoice': '2026-08-05',
       'Jumlah SJ': 2,
-      'Sub Total': 2000000,
+      'Sub Total': 1500000,
       'Potongan Uang Jalan': 800000,
-      'Total Akhir': 1200000,
+      'Total Akhir': 700000,
+      'SJ Tidak Ditemukan': 0,
+      'Sumber UJ': 'live',
       'Status Integrasi': 'Belum Dikirim',
       'Dibuat Oleh': 'admin1',
       'Tanggal Dibuat': '2026-08-05T10:00:00.000Z',
@@ -164,6 +166,28 @@ describe('buildInvoiceWorkbookData', () => {
     const { detail } = buildInvoiceWorkbookData([invoiceHilang], [sjA]);
     expect(detail).toHaveLength(1);
     expect(detail[0]['No SJ']).toBe('330002');
+  });
+
+  it('melaporkan SJ Tidak Ditemukan dan Sumber UJ di sheet rekap saat ada SJ hilang', () => {
+    const invoiceHilang = {
+      ...invoiceFlat,
+      suratJalanIds: ['sj-a', 'sj-b', 'sj-hantu'],
+      suratJalanList: [sjA, sjB],
+    };
+    const { rekap } = buildInvoiceWorkbookData([invoiceHilang], [sjA, sjB]);
+    expect(rekap[0]['Jumlah SJ']).toBe(3);
+    expect(rekap[0]['SJ Tidak Ditemukan']).toBe(1);
+    expect(rekap[0]['Sumber UJ']).toBe('live');
+  });
+
+  it('sub total di rekap sama dengan jumlah kolom Nilai di detail SJ saat tidak ada SJ hilang', () => {
+    const { rekap, detail } = buildInvoiceWorkbookData([invoiceFlat, invoiceGroup], [sjA, sjB]);
+    for (const baris of rekap) {
+      const jumlahNilaiDetail = detail
+        .filter((d) => d['No Invoice'] === baris['No Invoice'])
+        .reduce((sum, d) => sum + d['Nilai'], 0);
+      expect(jumlahNilaiDetail).toBe(baris['Sub Total']);
+    }
   });
 
   it('menggabungkan detail dari banyak invoice jadi satu array', () => {
@@ -234,6 +258,8 @@ export function buildInvoiceWorkbookData(invoiceList = [], suratJalanList = []) 
       'Sub Total': t.subTotal,
       'Potongan Uang Jalan': t.potonganUJ,
       'Total Akhir': t.totalAkhir,
+      'SJ Tidak Ditemukan': t.sjHilang,
+      'Sumber UJ': t.sumberUJ,
       'Status Integrasi': labelStatusIntegrasi(invoice.integrationStatus),
       'Dibuat Oleh': invoice.createdBy || '',
       'Tanggal Dibuat': invoice.createdAt || '',
@@ -270,7 +296,7 @@ export function buildInvoiceWorkbookData(invoiceList = [], suratJalanList = []) 
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `npm test -- src/utils/invoiceWorkbook.test.js`
-Expected: PASS — all 9 tests green.
+Expected: PASS — all 11 tests green.
 
 - [ ] **Step 5: Commit**
 
