@@ -47,6 +47,8 @@ export function buildInvoiceWorkbookData(invoiceList = [], suratJalanList = []) 
       'Sub Total': t.subTotal,
       'Potongan Uang Jalan': t.potonganUJ,
       'Total Akhir': t.totalAkhir,
+      'SJ Tidak Ditemukan': t.sjHilang,
+      'Sumber UJ': t.sumberUJ,
       'Status Integrasi': labelStatusIntegrasi(invoice.integrationStatus),
       'Dibuat Oleh': invoice.createdBy || '',
       'Tanggal Dibuat': invoice.createdAt || '',
