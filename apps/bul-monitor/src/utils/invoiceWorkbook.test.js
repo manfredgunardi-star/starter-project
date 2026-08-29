@@ -52,7 +52,7 @@ describe('buildInvoiceWorkbookData', () => {
       'Sumber UJ': 'live',
       'Status Integrasi': 'Belum Dikirim',
       'Dibuat Oleh': 'admin1',
-      'Tanggal Dibuat': '2026-08-05T10:00:00.000Z',
+      'Tanggal Dibuat': '2026-08-05',
     }]);
   });
 
@@ -128,6 +128,12 @@ describe('buildInvoiceWorkbookData', () => {
         .reduce((sum, d) => sum + d['Nilai'], 0);
       expect(jumlahNilaiDetail).toBe(baris['Sub Total']);
     }
+  });
+
+  it('menormalisasi Tanggal Dibuat dari ISO datetime penuh jadi YYYY-MM-DD', () => {
+    const invoiceIsoPenuh = { ...invoiceFlat, createdAt: '2026-08-05T23:45:12.345Z' };
+    const { rekap } = buildInvoiceWorkbookData([invoiceIsoPenuh], [sjA, sjB]);
+    expect(rekap[0]['Tanggal Dibuat']).toBe('2026-08-05');
   });
 
   it('menggabungkan detail dari banyak invoice jadi satu array', () => {

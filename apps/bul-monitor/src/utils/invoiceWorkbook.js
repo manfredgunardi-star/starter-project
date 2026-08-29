@@ -1,4 +1,5 @@
 import { hitungTotalInvoice, resolveSJInvoice } from './invoiceTotals.js';
+import { normDate } from './formatters.js';
 
 /**
  * Label status integrasi untuk sheet Rekap Invoice. Sama dengan label yang
@@ -42,7 +43,7 @@ export function buildInvoiceWorkbookData(invoiceList = [], suratJalanList = []) 
     const t = hitungTotalInvoice(invoice, suratJalanList);
     return {
       'No Invoice': invoice.noInvoice || '',
-      'Tanggal Invoice': invoice.tglInvoice || '',
+      'Tanggal Invoice': normDate(invoice.tglInvoice),
       'Jumlah SJ': (invoice.suratJalanIds || []).length,
       'Sub Total': t.subTotal,
       'Potongan Uang Jalan': t.potonganUJ,
@@ -51,7 +52,7 @@ export function buildInvoiceWorkbookData(invoiceList = [], suratJalanList = []) 
       'Sumber UJ': t.sumberUJ,
       'Status Integrasi': labelStatusIntegrasi(invoice.integrationStatus),
       'Dibuat Oleh': invoice.createdBy || '',
-      'Tanggal Dibuat': invoice.createdAt || '',
+      'Tanggal Dibuat': normDate(invoice.createdAt),
     };
   });
 
@@ -63,7 +64,7 @@ export function buildInvoiceWorkbookData(invoiceList = [], suratJalanList = []) 
       detail.push({
         'No Invoice': invoice.noInvoice || '',
         'No SJ': sj.nomorSJ || '',
-        'Tgl SJ': sj.tanggalSJ || '',
+        'Tgl SJ': normDate(sj.tanggalSJ),
         'No Polisi': sj.nomorPolisi || '',
         'Nama Supir': sj.namaSupir || '',
         'Rute': sj.rute || '',
