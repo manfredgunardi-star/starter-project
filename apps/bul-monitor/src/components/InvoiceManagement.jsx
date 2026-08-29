@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Send, Lock, Plus, Clock, CheckCircle, FileText, Package, XCircle } from 'lucide-react';
 import { hitungTotalInvoice, resolveSJInvoice } from '../utils/invoiceTotals.js';
+import { buildInvoiceWorkbookData } from '../utils/invoiceWorkbook.js';
 import SearchInput from './SearchInput.jsx';
 import { useSearchFilter } from '../hooks/useSearchFilter.js';
 import { filterInvoicesBySearch } from '../utils/invoiceSearch.js';
@@ -180,7 +181,24 @@ const InvoiceManagement = ({
     link.click();
     document.body.removeChild(link);
   };
-  
+
+  // Download Semua Invoice: satu workbook .xlsx, 2 sheet (Rekap + Detail SJ),
+  // dari data yang sudah ada di memory — tidak ada query Firestore baru.
+  const handleDownloadSemuaInvoice = async () => {
+    try {
+      const XLSX = await import('xlsx');
+      const { rekap, detail } = buildInvoiceWorkbookData(invoiceList, suratJalanList);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rekap), 'Rekap Invoice');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detail), 'Detail SJ');
+      const tanggal = new Date().toISOString().split('T')[0];
+      XLSX.writeFile(wb, `Invoice_Semua_${tanggal}.xlsx`);
+    } catch (err) {
+      console.error('Gagal membuat file Download Semua Invoice:', err);
+      alert('Gagal memuat modul export, coba lagi.');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow-md p-6">
@@ -367,17 +385,26 @@ const InvoiceManagement = ({
           )}
 
           {invoiceList.length > 0 && (
-            <div className="mb-4">
-              <SearchInput
-                value={search}
-                onChange={handleSearchChange}
-                placeholder="Cari nomor invoice atau nomor SJ di dalamnya..."
-              />
-              {search && (
-                <p className="mt-2 text-sm text-gray-600">
-                  {searchedInvoices.length} dari {invoiceList.length} invoice cocok
-                </p>
-              )}
+            <div className="mb-4 flex flex-col sm:flex-row sm:items-start gap-3">
+              <div className="flex-1">
+                <SearchInput
+                  value={search}
+                  onChange={handleSearchChange}
+                  placeholder="Cari nomor invoice atau nomor SJ di dalamnya..."
+                />
+                {search && (
+                  <p className="mt-2 text-sm text-gray-600">
+                    {searchedInvoices.length} dari {invoiceList.length} invoice cocok
+                  </p>
+                )}
+              </div>
+              <button
+                onClick={handleDownloadSemuaInvoice}
+                className="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition shrink-0"
+              >
+                <FileText className="w-4 h-4" />
+                <span>Download Semua Invoice</span>
+              </button>
             </div>
           )}
 
