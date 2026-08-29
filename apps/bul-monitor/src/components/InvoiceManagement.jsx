@@ -9,6 +9,19 @@ import { filterInvoicesBySearch } from '../utils/invoiceSearch.js';
 // Konstanta level-modul: referensi array stabil antar-render.
 const SJ_INVOICE_SEARCH_FIELDS = ['nomorSJ', 'nomorPolisi', 'rute', 'material'];
 
+// Format angka ribuan (#,##0) pada kolom uang di sheet xlsx — mengikuti pola
+// yang sama dengan downloadSJRecapToExcel (formatters.js), supaya kedua
+// export xlsx di aplikasi ini konsisten.
+function applyMoneyColumnFormat(XLSX, ws, colIndexes) {
+  const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+  for (let r = 1; r <= range.e.r; r++) {
+    colIndexes.forEach((c) => {
+      const cell = ws[XLSX.utils.encode_cell({ r, c })];
+      if (cell && typeof cell.v === 'number') cell.z = '#,##0';
+    });
+  }
+}
+
 const InvoiceManagement = ({
   invoiceList,
   suratJalanList,
@@ -22,6 +35,7 @@ const InvoiceManagement = ({
   const [activeFilter, setActiveFilter] = useState('belum-terinvoice');
   const [selectedInvoiceIds, setSelectedInvoiceIds] = useState(new Set());
   const [search, setSearch] = useState('');
+  const [isDownloadingInvoice, setIsDownloadingInvoice] = useState(false);
   const effectiveRole = (currentUser?.role === 'owner' ? 'reader' : currentUser?.role) || 'reader';
 
   // Reset seleksi dan kata kunci saat pindah tab — kedua tab mencari entitas
@@ -185,17 +199,40 @@ const InvoiceManagement = ({
   // Download Semua Invoice: satu workbook .xlsx, 2 sheet (Rekap + Detail SJ),
   // dari data yang sudah ada di memory — tidak ada query Firestore baru.
   const handleDownloadSemuaInvoice = async () => {
+    if (isDownloadingInvoice) return;
+    setIsDownloadingInvoice(true);
     try {
       const XLSX = await import('xlsx');
       const { rekap, detail } = buildInvoiceWorkbookData(invoiceList, suratJalanList);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rekap), 'Rekap Invoice');
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(detail), 'Detail SJ');
+
+      const wsRekap = XLSX.utils.json_to_sheet(rekap);
+      // No Invoice, Tanggal Invoice, Jumlah SJ, Sub Total, Potongan Uang Jalan,
+      // Total Akhir, SJ Tidak Ditemukan, Sumber UJ, Status Integrasi, Dibuat Oleh, Tanggal Dibuat
+      wsRekap['!cols'] = [
+        { wch: 16 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 18 },
+        { wch: 14 }, { wch: 16 }, { wch: 10 }, { wch: 24 }, { wch: 14 }, { wch: 14 },
+      ];
+      applyMoneyColumnFormat(XLSX, wsRekap, [3, 4, 5]);
+      XLSX.utils.book_append_sheet(wb, wsRekap, 'Rekap Invoice');
+
+      const wsDetail = XLSX.utils.json_to_sheet(detail);
+      // No Invoice, No SJ, Tgl SJ, No Polisi, Nama Supir, Rute, Material,
+      // Qty Bongkar, Satuan, Harga Satuan, Nilai, Uang Jalan, Sumber Data
+      wsDetail['!cols'] = [
+        { wch: 16 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 16 }, { wch: 24 },
+        { wch: 16 }, { wch: 10 }, { wch: 8 }, { wch: 14 }, { wch: 14 }, { wch: 14 }, { wch: 10 },
+      ];
+      applyMoneyColumnFormat(XLSX, wsDetail, [9, 10, 11]);
+      XLSX.utils.book_append_sheet(wb, wsDetail, 'Detail SJ');
+
       const tanggal = new Date().toISOString().split('T')[0];
       XLSX.writeFile(wb, `Invoice_Semua_${tanggal}.xlsx`);
     } catch (err) {
       console.error('Gagal membuat file Download Semua Invoice:', err);
-      alert('Gagal memuat modul export, coba lagi.');
+      alert(`Gagal membuat file Download Semua Invoice: ${err?.message || 'Unknown error'}`);
+    } finally {
+      setIsDownloadingInvoice(false);
     }
   };
 
@@ -400,10 +437,11 @@ const InvoiceManagement = ({
               </div>
               <button
                 onClick={handleDownloadSemuaInvoice}
-                className="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition shrink-0"
+                disabled={isDownloadingInvoice}
+                className="bg-emerald-700 hover:bg-emerald-800 disabled:bg-emerald-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm flex items-center gap-2 transition shrink-0"
               >
                 <FileText className="w-4 h-4" />
-                <span>Download Semua Invoice</span>
+                <span>{isDownloadingInvoice ? 'Sedang mengunduh…' : 'Download Semua Invoice'}</span>
               </button>
             </div>
           )}
