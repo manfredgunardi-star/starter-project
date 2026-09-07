@@ -24,6 +24,7 @@ import Modal from './components/Modal.jsx';
 import SearchInput from './components/SearchInput.jsx';
 import { useSearchFilter } from './hooks/useSearchFilter.js';
 import { C, softDeleteItemInFirestore, resolveSuratJalanDocRef, softDeactivateTransaksiInFirestore, deactivateUangJalanTransaksiForSJ, upsertItemToFirestore, chunkedBatchWrite } from './services/firestoreWrites.js';
+import { isMasterActive, normalizeMasterItem, buildMasterUpdatePayload, buildMasterActivatePayload } from './utils/masterData.js';
 
 
 
@@ -108,6 +109,14 @@ const SuratJalanMonitor = () => {
   const [ruteList, setRuteList] = useState([]);
   const [materialList, setMaterialList] = useState([]);
   const [pelangganList, setPelangganList] = useState([]);
+  // Varian tak-terfilter (termasuk item nonaktif / soft-deleted) — KHUSUS halaman Master Data
+  // supaya item yang dinonaktifkan tetap terlihat dan bisa diaktifkan kembali.
+  // Semua konsumen lain (dropdown SJ, import CSV, dsb.) tetap memakai list aktif-saja di atas.
+  const [truckListAll, setTruckListAll] = useState([]);
+  const [supirListAll, setSupirListAll] = useState([]);
+  const [ruteListAll, setRuteListAll] = useState([]);
+  const [materialListAll, setMaterialListAll] = useState([]);
+  const [pelangganListAll, setPelangganListAll] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState('');
   const [selectedItem, setSelectedItem] = useState(null);
@@ -541,7 +550,7 @@ return newList;
   };
 
   const updateTruck = async (id, updates) => {
-    const payload = { id, ...updates, isActive: true, updatedAt: new Date().toISOString(), updatedBy: currentUser.name };
+    const payload = buildMasterUpdatePayload(id, updates, { updatedBy: currentUser?.name || 'system' });
 
     setTruckList((prevList) => {
       const newList = prevList.map((t) => (t.id === id ? { ...t, ...payload } : t));
@@ -559,7 +568,7 @@ return newList;
   const deleteTruck = async (id) => {
     setConfirmDialog({
       show: true,
-      message: "Yakin ingin menghapus truck ini?",
+      message: "Nonaktifkan truck ini? Data tidak dihapus permanen dan bisa diaktifkan kembali dari Master Data.",
       onConfirm: async () => {
         await softDeleteItemInFirestore(db, "trucks", id, currentUser?.name || "system").catch(() => {});
 
@@ -571,6 +580,15 @@ return newList;
         setConfirmDialog({ show: false, message: "", onConfirm: null });
       },
     });
+  };
+
+  const activateTruck = async (id) => {
+    try {
+      await upsertItemToFirestore(db, "trucks", buildMasterActivatePayload(id, { updatedBy: currentUser?.name || 'system' }));
+    } catch (err) {
+      console.error("[activateTruck] Firestore error:", err);
+      setAlertMessage("⚠️ Gagal mengaktifkan Truck. Cek koneksi / Console (F12).");
+    }
   };
 
   // Master Data Supir Functions
@@ -594,12 +612,12 @@ return newList;
 };
 
   const updateSupir = async (id, updates) => {
-    const payload = { id, ...updates, isActive: true, updatedAt: new Date().toISOString(), updatedBy: currentUser.name };
+    const payload = buildMasterUpdatePayload(id, updates, { updatedBy: currentUser?.name || 'system' });
     setSupirList((prevList) =>
       prevList.map((s) => (s.id === id ? { ...s, ...payload } : s))
     );
     try {
-      await upsertItemToFirestore(db, "supir", { ...payload, isActive: true });
+      await upsertItemToFirestore(db, "supir", payload);
     } catch (err) {
       console.error("[updateSupir] Firestore error:", err);
       setAlertMessage("⚠️ Gagal update Supir ke Firebase. Cek koneksi / Console (F12).");
@@ -609,7 +627,7 @@ return newList;
   const deleteSupir = async (id) => {
     setConfirmDialog({
       show: true,
-      message: "Yakin ingin menghapus supir ini?",
+      message: "Nonaktifkan supir ini? Data tidak dihapus permanen dan bisa diaktifkan kembali dari Master Data.",
       onConfirm: async () => {
         try {
           await softDeleteItemInFirestore(db, "supir", id, currentUser?.name || "system").catch(() => {});
@@ -621,6 +639,15 @@ return newList;
         setConfirmDialog({ show: false, message: "", onConfirm: null });
       },
     });
+  };
+
+  const activateSupir = async (id) => {
+    try {
+      await upsertItemToFirestore(db, "supir", buildMasterActivatePayload(id, { updatedBy: currentUser?.name || 'system' }));
+    } catch (err) {
+      console.error("[activateSupir] Firestore error:", err);
+      setAlertMessage("⚠️ Gagal mengaktifkan Supir. Cek koneksi / Console (F12).");
+    }
   };
 
   // Master Data Rute Functions
@@ -643,7 +670,7 @@ return newList;
   };
 
   const updateRute = async (id, updates) => {
-    const payload = { id, ...updates, isActive: true, updatedAt: new Date().toISOString(), updatedBy: currentUser.name };
+    const payload = buildMasterUpdatePayload(id, updates, { updatedBy: currentUser?.name || 'system' });
     setRuteList((prevList) => {
       const newList = prevList.map(r => r.id === id ? { ...r, ...payload } : r);
       return newList;
@@ -659,7 +686,7 @@ return newList;
   const deleteRute = async (id) => {
     setConfirmDialog({
       show: true,
-      message: 'Yakin ingin menghapus rute ini?',
+      message: 'Nonaktifkan rute ini? Data tidak dihapus permanen dan bisa diaktifkan kembali dari Master Data.',
       onConfirm: async () => {
         try {
           await softDeleteItemInFirestore(db, "rute", id, currentUser?.name || "system");
@@ -674,6 +701,15 @@ return newList;
 setConfirmDialog({ show: false, message: '', onConfirm: null });
       }
     });
+  };
+
+  const activateRute = async (id) => {
+    try {
+      await upsertItemToFirestore(db, "rute", buildMasterActivatePayload(id, { updatedBy: currentUser?.name || 'system' }));
+    } catch (err) {
+      console.error("[activateRute] Firestore error:", err);
+      setAlertMessage("⚠️ Gagal mengaktifkan Rute. Cek koneksi / Console (F12).");
+    }
   };
 
   // Master Data Material Functions
@@ -696,7 +732,7 @@ setConfirmDialog({ show: false, message: '', onConfirm: null });
   };
 
   const updateMaterial = async (id, updates) => {
-    const payload = { id, ...updates, isActive: true, updatedAt: new Date().toISOString(), updatedBy: currentUser.name };
+    const payload = buildMasterUpdatePayload(id, updates, { updatedBy: currentUser?.name || 'system' });
     setMaterialList((prevList) => {
       const newList = prevList.map(m => m.id === id ? { ...m, ...payload } : m);
       return newList;
@@ -712,7 +748,7 @@ setConfirmDialog({ show: false, message: '', onConfirm: null });
   const deleteMaterial = async (id) => {
     setConfirmDialog({
       show: true,
-      message: 'Yakin ingin menghapus material ini?',
+      message: 'Nonaktifkan material ini? Data tidak dihapus permanen dan bisa diaktifkan kembali dari Master Data.',
       onConfirm: async () => {
         try {
           await softDeleteItemInFirestore(db, "material", id, currentUser?.name || "system");
@@ -727,6 +763,15 @@ setConfirmDialog({ show: false, message: '', onConfirm: null });
 setConfirmDialog({ show: false, message: '', onConfirm: null });
       }
     });
+  };
+
+  const activateMaterial = async (id) => {
+    try {
+      await upsertItemToFirestore(db, "material", buildMasterActivatePayload(id, { updatedBy: currentUser?.name || 'system' }));
+    } catch (err) {
+      console.error("[activateMaterial] Firestore error:", err);
+      setAlertMessage("⚠️ Gagal mengaktifkan Material. Cek koneksi / Console (F12).");
+    }
   };
 
   // ===== Master Data Pelanggan Functions =====
@@ -750,7 +795,7 @@ setConfirmDialog({ show: false, message: '', onConfirm: null });
   };
 
   const updatePelanggan = async (id, updates) => {
-    const payload = { id, ...updates, isActive: true, updatedAt: new Date().toISOString(), updatedBy: currentUser?.name || 'User' };
+    const payload = buildMasterUpdatePayload(id, updates, { updatedBy: currentUser?.name || 'User' });
     try {
       await upsertItemToFirestore(db, "pelanggan", payload);
       // onSnapshot akan update state secara otomatis
@@ -763,7 +808,7 @@ setConfirmDialog({ show: false, message: '', onConfirm: null });
   const deletePelanggan = async (id) => {
     setConfirmDialog({
       show: true,
-      message: 'Yakin ingin menghapus pelanggan ini?',
+      message: 'Nonaktifkan pelanggan ini? Data tidak dihapus permanen dan bisa diaktifkan kembali dari Master Data.',
       onConfirm: async () => {
         try {
           await softDeleteItemInFirestore(db, "pelanggan", id, currentUser?.name || "system");
@@ -774,6 +819,15 @@ setConfirmDialog({ show: false, message: '', onConfirm: null });
         setConfirmDialog({ show: false, message: '', onConfirm: null });
       },
     });
+  };
+
+  const activatePelanggan = async (id) => {
+    try {
+      await upsertItemToFirestore(db, "pelanggan", buildMasterActivatePayload(id, { updatedBy: currentUser?.name || 'User' }));
+    } catch (err) {
+      console.error("[activatePelanggan] Firestore error:", err);
+      setAlertMessage("⚠️ Gagal mengaktifkan Pelanggan. Cek koneksi / Console (F12).");
+    }
   };
 
   // Migrate: seed bul_pelanggan dari unique pt di bul_supir (jalankan sekali jika collection kosong)
@@ -2499,10 +2553,9 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
   
 // Real-time updates dari Firestore untuk Master Data (sekaligus cache ke local storage)
   const unsubTrucks = onSnapshot(collection(db, C("trucks")), (snap) => {
-    const data = snap.docs
-      .map((d) => ({ ...(d.data() || {}), id: (d.data() || {}).id || d.id }))
-      .filter((x) => x?.isActive !== false && !x?.deletedAt);
-    setTruckList(data);
+    const all = snap.docs.map((d) => normalizeMasterItem(d.data(), d.id));
+    setTruckList(all.filter(isMasterActive));
+    setTruckListAll(all);
   });
 
   // INVOICE: listen only to canonical collection bul_invoices
@@ -2530,57 +2583,34 @@ if (canWriteTransaksi && selectedRute && Number(selectedRute.uangJalan || 0) > 0
   const unsubInvoiceLegacy = null;
 
   const unsubMaterial = onSnapshot(collection(db, C("material")), (snap) => {
-  const data = snap.docs
-    .map((d) => {
-      const row = d.data() || {};
-      const id = row.id || d.id;
-      return {
-        ...row,
-        id,
-        // Normalisasi field umum agar UI tidak error
-        isActive: row.isActive !== false,
-      };
-    })
-    .filter((x) => x?.isActive !== false && !x?.deletedAt);
-  setMaterialList(data);
-});
+    // normalizeMasterItem juga menormalkan field isActive agar UI tidak error
+    const all = snap.docs.map((d) => normalizeMasterItem(d.data(), d.id));
+    setMaterialList(all.filter(isMasterActive));
+    setMaterialListAll(all);
+  });
 
   // Master Data: Supir
   const unsubSupir = onSnapshot(collection(db, C("supir")), (snap) => {
-    const data = snap.docs
-      .map((d) => {
-        const row = d.data() || {};
-        const id = row.id || d.id;
-        return { ...row, id, isActive: row.isActive !== false };
-      })
-      .filter((x) => x?.isActive !== false && !x?.deletedAt);
-    data.sort((a, b) => (a.namaSupir || '').localeCompare(b.namaSupir || ''));
-    setSupirList(data);
+    const all = snap.docs.map((d) => normalizeMasterItem(d.data(), d.id));
+    all.sort((a, b) => (a.namaSupir || '').localeCompare(b.namaSupir || ''));
+    setSupirList(all.filter(isMasterActive));
+    setSupirListAll(all);
   });
 
   // Master Data: Rute
   const unsubRute = onSnapshot(collection(db, C("rute")), (snap) => {
-    const data = snap.docs
-      .map((d) => {
-        const row = d.data() || {};
-        const id = row.id || d.id;
-        return { ...row, id, isActive: row.isActive !== false };
-      })
-      .filter((x) => x?.isActive !== false && !x?.deletedAt);
-    data.sort((a, b) => (a.rute || '').localeCompare(b.rute || ''));
-    setRuteList(data);
+    const all = snap.docs.map((d) => normalizeMasterItem(d.data(), d.id));
+    all.sort((a, b) => (a.rute || '').localeCompare(b.rute || ''));
+    setRuteList(all.filter(isMasterActive));
+    setRuteListAll(all);
   });
 
   // Master Data: Pelanggan
   const unsubPelanggan = onSnapshot(collection(db, C("pelanggan")), (snap) => {
-    const data = snap.docs
-      .map((d) => {
-        const row = d.data() || {};
-        return { ...row, id: row.id || d.id, isActive: row.isActive !== false };
-      })
-      .filter((x) => x?.isActive !== false && !x?.deletedAt);
-    data.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-    setPelangganList(data);
+    const all = snap.docs.map((d) => normalizeMasterItem(d.data(), d.id));
+    all.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    setPelangganList(all.filter(isMasterActive));
+    setPelangganListAll(all);
   });
 
 // DATA OPERASIONAL: source of truth dari Firestore
@@ -3061,11 +3091,11 @@ useEffect(() => {
           />
         ) : activeTab === 'master-data' && effectiveRole === 'superadmin' ? (
           <MasterDataManagement
-            truckList={truckList}
-            supirList={supirList}
-            ruteList={ruteList}
-            materialList={materialList}
-            pelangganList={pelangganList}
+            truckList={truckListAll}
+            supirList={supirListAll}
+            ruteList={ruteListAll}
+            materialList={materialListAll}
+            pelangganList={pelangganListAll}
             currentUser={currentUser}
             onAddTruck={() => {
               setModalType('addTruck');
@@ -3078,6 +3108,7 @@ useEffect(() => {
               setShowModal(true);
             }}
             onDeleteTruck={deleteTruck}
+            onActivateTruck={activateTruck}
             onAddSupir={() => {
               setModalType('addSupir');
               setSelectedItem(null);
@@ -3089,6 +3120,7 @@ useEffect(() => {
               setShowModal(true);
             }}
             onDeleteSupir={deleteSupir}
+            onActivateSupir={activateSupir}
             onAddRute={() => {
               setModalType('addRute');
               setSelectedItem(null);
@@ -3100,6 +3132,7 @@ useEffect(() => {
               setShowModal(true);
             }}
             onDeleteRute={deleteRute}
+            onActivateRute={activateRute}
             onAddMaterial={() => {
               setModalType('addMaterial');
               setSelectedItem(null);
@@ -3111,9 +3144,11 @@ useEffect(() => {
               setShowModal(true);
             }}
             onDeleteMaterial={deleteMaterial}
+            onActivateMaterial={activateMaterial}
             onAddPelanggan={() => { setModalType('addPelanggan'); setSelectedItem(null); setShowModal(true); }}
             onEditPelanggan={(p) => { setModalType('editPelanggan'); setSelectedItem(p); setShowModal(true); }}
             onDeletePelanggan={deletePelanggan}
+            onActivatePelanggan={activatePelanggan}
             onMigratePelanggan={migratePelangganFromSupir}
             onDownloadTemplate={downloadTemplate}
             onImportData={importData}
