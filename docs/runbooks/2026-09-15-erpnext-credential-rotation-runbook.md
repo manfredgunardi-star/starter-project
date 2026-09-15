@@ -202,13 +202,13 @@ cd /opt/erpnext && cp .env .env.bak-20260915
 ```
 
 ```bash
-docker compose exec -T backend cp sites/erpnext.local/site_config.json sites/erpnext.local/site_config.json.bak-20260915
+cd /opt/erpnext && docker compose exec -T backend cp sites/erpnext.local/site_config.json sites/erpnext.local/site_config.json.bak-20260915
 ```
 
 **Gerbang:**
 
 ```bash
-ls -l /opt/erpnext/.env.bak-20260915 && docker compose exec -T backend ls -l sites/erpnext.local/site_config.json.bak-20260915
+cd /opt/erpnext && ls -l .env.bak-20260915 && docker compose exec -T backend ls -l sites/erpnext.local/site_config.json.bak-20260915
 ```
 
 Kedua file ada dan ukurannya bukan nol.
@@ -437,15 +437,23 @@ Opsional tapi disarankan — intip dulu aksi yang akan diambil Compose (bukan wa
 Compose versi lama tidak mendukung flag ini):
 
 ```bash
-docker compose up -d --dry-run 2>&1 || echo "--dry-run tidak didukung versi Compose ini, lewati, lanjut ke apply langsung"
+docker compose up -d --dry-run 2>&1 | sed 's/=.*/=<redacted>/'
+if [ ${PIPESTATUS[0]} -ne 0 ]; then
+  echo "--dry-run tidak didukung versi Compose ini, lewati, lanjut ke apply langsung"
+fi
 ```
 
-> Ini aman dipakai — `--dry-run` melaporkan **aksi** per service (create/recreate/no-change),
-> bukan nilai environment variable yang di-resolve. Beda dengan `docker compose config`, yang
-> **tetap ditolak** dipakai di sini maupun di variannya (diff dua hasil `docker compose config`
-> dengan redaksi `sed`) — pola redaksi seperti itu cuma menangkap key literal `password:`
-> huruf kecil, meleset dari `MYSQL_ROOT_PASSWORD:`/`ADMIN_PASSWORD:` dan membuka celah bocor yang
-> sama seperti sebelum Langkah 0e diperbaiki.
+> `--dry-run` seharusnya cuma melaporkan **aksi** per service (create/recreate/no-change), bukan
+> nilai environment variable yang di-resolve — tapi belum diverifikasi konkret di versi Compose
+> yang terpasang di VPS ini, jadi output di atas **tetap diredaksi** (`sed 's/=.*/'`) sebagai
+> defense-in-depth, bukan karena sudah terbukti bocor. `${PIPESTATUS[0]}` dipakai (bukan `||`
+> langsung) karena exit status pipeline di bash ikut command terakhir (`sed`, yang hampir selalu
+> sukses) — kalau pakai `||` biasa, fallback "tidak didukung" tidak akan pernah kedeteksi dengan
+> benar. Beda dengan `docker compose config`, yang **tetap ditolak** dipakai di sini maupun di
+> variannya (diff dua hasil `docker compose config` dengan redaksi `sed 's/password:.*/'`) — pola
+> redaksi seperti itu cuma menangkap key literal `password:` huruf kecil, meleset dari
+> `MYSQL_ROOT_PASSWORD:`/`ADMIN_PASSWORD:` dan membuka celah bocor yang sama seperti sebelum
+> Langkah 0e diperbaiki.
 
 Bandingkan hasil dry-run dengan prediksi 0e sebelum lanjut. Kalau ada service tak terduga yang
 akan di-recreate, STOP dan cross-check dulu sebelum apply.
@@ -576,6 +584,10 @@ kenapa 2e harus segera, bukan ditunda — begitu 2e lulus, skenario ini tidak mu
 memulihkan akses darurat; ulangi rotasi dari awal setelah akses pulih, jangan biarkan password
 lama berlaku permanen.)
 
+```bash
+unset OLDROOTPW NEWROOTPW
+```
+
 ### Site DB user (Langkah 3) gagal setelah 3c tapi sebelum 3e sukses
 
 ```bash
@@ -593,6 +605,10 @@ Kalau `$OLDSITEPW` sudah hilang dari sesi, baca ulang dari backup container (Lan
 
 ```bash
 OLDSITEPW=$(docker compose exec -T backend python3 -c "import json;print(json.load(open('sites/erpnext.local/site_config.json.bak-20260915'))['db_password'])")
+```
+
+```bash
+unset OLDSITEPW NEWSITEPW
 ```
 
 ### Admin (Langkah 4) — jangan rollback ke password lama
