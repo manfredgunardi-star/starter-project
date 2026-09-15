@@ -61,14 +61,27 @@ Baca ini sebelum mengetik perintah pertama.
    dari Langkah 0 sampai Langkah 6 tanpa terputus.** Variabel seperti `$NEWROOTPW`, `$NEWSITEPW`,
    `$NEWADMINPW`, `$OLDROOTPW` dipakai lintas beberapa blok kode di Langkah berbeda. Kalau sesi
    shell terputus di tengah jalan, variabel hilang — baca ulang nilai LAMA dari file `.bak` (lihat
-   Langkah 1), dan untuk nilai BARU yang sudah sempat digenerate tapi belum tercatat: nilai itu
-   hilang permanen kalau belum ditulis ke `.env`/`site_config.json`, jadi ulangi generate password
-   baru untuk kredensial yang belum sempat diverifikasi (gerbangnya belum lulus = belum berlaku).
+   Langkah 1). Untuk nilai BARU: begitu gerbang suatu kredensial lulus, nilainya **sudah live**
+   walau variabel shell-nya hilang — tapi cara memulihkan **nilai plaintext**-nya beda per
+   kredensial:
+   - **Root (`$NEWROOTPW`):** sejak Langkah 2e, selalu bisa dibaca ulang dari `.env`
+     (`grep '^DB_ROOT_PASSWORD=' .env`) — inilah kenapa 2e tidak boleh ditunda ke Langkah 5.
+   - **Site DB user (`$NEWSITEPW`):** sejak 3d, bisa dibaca ulang dari `site_config.json` yang
+     hidup, persis pola 3a (`docker compose exec -T backend python3 -c "import json;
+     print(json.load(open('sites/erpnext.local/site_config.json'))['db_password'])"`).
+   - **Admin (`$NEWADMINPW`):** begitu 4b jalan, password-nya tersimpan hash di database — **tidak
+     ada mekanisme untuk membaca ulang nilai plaintext-nya**. Kalau hilang dari sesi sebelum
+     dicatat ke password manager, satu-satunya jalan adalah ulangi 4a-4c dengan password baru lagi
+     (aman dilakukan berkali-kali, bukan operasi berisiko seperti root).
+   Untuk kredensial yang gerbangnya **belum lulus** saat sesi terputus: nilai itu hilang permanen,
+   ulangi generate password baru untuk kredensial tersebut dari awal langkahnya.
 1. **Setiap gerbang wajib disertai output perintah apa adanya.** Klaim "✅ Done" tanpa output
    dianggap belum dikerjakan.
 2. **Gagal di gerbang mana pun = BERHENTI.** Laporkan, jangan lanjut, jangan berimprovisasi.
-3. **Password baru HANYA dari generator** (`openssl rand -base64 24` atau setara). Jangan pernah
-   dipilih manual.
+3. **Password baru HANYA dari generator** (`openssl rand -hex 24` atau setara — hex dipilih
+   spesifik supaya karakternya `0-9a-f` saja, tidak ada `+ / =` dari base64 yang rawan salah kutip
+   kalau ada revisi ceroboh di masa depan; entropinya sama, 192-bit, cuma representasinya beda).
+   Jangan pernah dipilih manual.
 4. **Password — lama maupun baru — tidak pernah ditulis plaintext** ke laporan, commit, chat,
    atau file selain lokasi resminya (`.env`, `site_config.json`). Baca dan simpan lewat variabel
    shell (`$VAR`), jangan `echo`/`cat`/`print` isinya ke terminal yang akan disalin ke laporan.
@@ -220,7 +233,7 @@ ini bukti independen dari `ls -l` bahwa isi file benar-benar terbaca utuh, bukan
 ### 2a. Bangkitkan password baru
 
 ```bash
-NEWROOTPW=$(openssl rand -base64 24)
+NEWROOTPW=$(openssl rand -hex 24)
 ```
 
 Jangan `echo $NEWROOTPW`.
@@ -258,6 +271,34 @@ diam-diam — **STOP dan lapor**, jangan lanjut ke Langkah 3 dengan asumsi root 
 unset OLDROOTPW
 ```
 
+### 2e. Simpan `DB_ROOT_PASSWORD` baru ke `.env` SEKARANG — jangan tunggu Langkah 5
+
+`$NEWROOTPW` baru saja lulus verifikasi (2c/2d) tapi sampai titik ini cuma ada di memori shell.
+Kalau sesi terputus sebelum Langkah 5, root MariaDB sudah punya password baru yang **tidak
+diketahui siapa pun** — satu-satunya jalan pulih jadi restore snapshot untuk masalah yang
+seharusnya sepele. `.env` memang sudah jadi tempat permanen kredensial ini — tulis sekarang,
+bukan file sementara baru yang cuma menambah permukaan plaintext-di-disk:
+
+```bash
+cd /opt/erpnext && sed -i "s|^DB_ROOT_PASSWORD=.*|DB_ROOT_PASSWORD=${NEWROOTPW}|" .env
+```
+
+**Gerbang:**
+
+```bash
+grep -c "^DB_ROOT_PASSWORD=${NEWROOTPW}$" .env
+```
+
+**Gerbang:** keluar `1` — bukti `.env` sudah cocok dengan password yang live. Sejak titik ini,
+kalau sesi terputus, `DB_ROOT_PASSWORD` yang berlaku sekarang **selalu bisa dibaca ulang dari
+`.env`** (`grep '^DB_ROOT_PASSWORD=' .env`) — bukan cuma dari memori shell. Ini tidak berlaku
+untuk `$NEWSITEPW`/`$NEWADMINPW`: keduanya sudah durable di tempat aslinya begitu gerbang 3d/4c
+masing-masing lulus (`site_config.json` lewat `bench set-config`, dan hash password di doctype
+User lewat `bench set-admin-password`) — cuma **nilai plaintext**-nya yang hilang dari memori
+kalau sesi terputus setelah itu, bukan aksesnya. Root berbeda: begitu password lama ditolak
+MariaDB (2d), tidak ada mekanisme lain untuk membaca ulang nilai barunya selain `.env` — makanya
+langkah ini eksklusif untuk root, dan harus segera, bukan ditunda.
+
 ---
 
 ## Langkah 3 — Rotasi password DB user site (`_ebde57cb5cf2199a`, live)
@@ -271,7 +312,7 @@ OLDSITEPW=$(docker compose exec -T backend python3 -c "import json;print(json.lo
 ### 3b. Bangkitkan password baru
 
 ```bash
-NEWSITEPW=$(openssl rand -base64 24)
+NEWSITEPW=$(openssl rand -hex 24)
 ```
 
 ### 3c. `ALTER USER` — pakai host dari 0d, root password BARU dari Langkah 2
@@ -315,7 +356,7 @@ unset OLDSITEPW
 ### 4a. Bangkitkan password baru
 
 ```bash
-NEWADMINPW=$(openssl rand -base64 24)
+NEWADMINPW=$(openssl rand -hex 24)
 ```
 
 ### 4b. Set lewat `bench` — ini mekanisme yang SESUNGGUHNYA berlaku
@@ -350,13 +391,13 @@ perubahan.
 
 ### 5a. Tulis ulang `.env`
 
-`DB_ROOT_PASSWORD` dan `ADMIN_PASSWORD` diganti nilainya (dokumentasi, sudah live berlaku).
-`ALLOWED_HOSTS` **dihapus barisnya sepenuhnya** — sudah dikonfirmasi 0c tidak dikonsumsi container
-manapun, jadi mempertahankan variabel ini di `.env` hanya menyesatkan pembaca berikutnya.
+`DB_ROOT_PASSWORD` **sudah ditulis di Langkah 2e** — tidak diulang di sini. Yang tersisa:
+`ADMIN_PASSWORD` diganti nilainya (dokumentasi, sudah live berlaku sejak 4b), dan `ALLOWED_HOSTS`
+**dihapus barisnya sepenuhnya** — sudah dikonfirmasi 0c tidak dikonsumsi container manapun, jadi
+mempertahankan variabel ini di `.env` hanya menyesatkan pembaca berikutnya.
 
 ```bash
 cd /opt/erpnext && sed -i \
-  -e "s|^DB_ROOT_PASSWORD=.*|DB_ROOT_PASSWORD=${NEWROOTPW}|" \
   -e "s|^ADMIN_PASSWORD=.*|ADMIN_PASSWORD=${NEWADMINPW}|" \
   -e "/^ALLOWED_HOSTS=/d" \
   .env
@@ -365,11 +406,12 @@ cd /opt/erpnext && sed -i \
 **Gerbang:**
 
 ```bash
-grep -E "^(DB_ROOT_PASSWORD|ADMIN_PASSWORD)=" .env | sed 's/=.*/=<redacted>/'; echo ---; grep -c "^ALLOWED_HOSTS=" .env
+grep -c "^DB_ROOT_PASSWORD=${NEWROOTPW}$" .env; grep -E "^ADMIN_PASSWORD=" .env | sed 's/=.*/=<redacted>/'; echo ---; grep -c "^ALLOWED_HOSTS=" .env
 ```
 
-Dua baris redacted muncul untuk `DB_ROOT_PASSWORD`/`ADMIN_PASSWORD`. Baris kedua (`grep -c`) harus
-keluar `0` — bukti `ALLOWED_HOSTS` sudah tidak ada di `.env` sama sekali.
+Baris pertama harus `1` (regresi-check: 2e belum tertimpa). Baris kedua (redacted) muncul untuk
+`ADMIN_PASSWORD`. Baris ketiga (`grep -c ALLOWED_HOSTS`) harus keluar `0` — bukti `ALLOWED_HOSTS`
+sudah tidak ada di `.env` sama sekali.
 
 ### 5b. Validasi sintaks compose sebelum apply
 
@@ -380,6 +422,23 @@ docker compose config > /dev/null && echo "COMPOSE OK"
 **Gerbang:** `COMPOSE OK`.
 
 ### 5c. Apply — HANYA service yang konfigurasinya berubah
+
+Opsional tapi disarankan — intip dulu aksi yang akan diambil Compose (bukan wajib, lewati kalau
+Compose versi lama tidak mendukung flag ini):
+
+```bash
+docker compose up -d --dry-run 2>&1 || echo "--dry-run tidak didukung versi Compose ini, lewati, lanjut ke apply langsung"
+```
+
+> Ini aman dipakai — `--dry-run` melaporkan **aksi** per service (create/recreate/no-change),
+> bukan nilai environment variable yang di-resolve. Beda dengan `docker compose config`, yang
+> **tetap ditolak** dipakai di sini maupun di variannya (diff dua hasil `docker compose config`
+> dengan redaksi `sed`) — pola redaksi seperti itu cuma menangkap key literal `password:`
+> huruf kecil, meleset dari `MYSQL_ROOT_PASSWORD:`/`ADMIN_PASSWORD:` dan membuka celah bocor yang
+> sama seperti sebelum Langkah 0e diperbaiki.
+
+Bandingkan hasil dry-run dengan prediksi 0e sebelum lanjut. Kalau ada service tak terduga yang
+akan di-recreate, STOP dan cross-check dulu sebelum apply.
 
 ```bash
 docker compose up -d
@@ -484,16 +543,24 @@ Aturan main #0), baca ulang dari backup:
 cd /opt/erpnext && OLDROOTPW=$(grep '^DB_ROOT_PASSWORD=' .env.bak-20260915 | cut -d= -f2-) && docker compose exec -T db mariadb -u root -p"$NEWROOTPW" -e "ALTER USER 'root'@'%' IDENTIFIED BY '$OLDROOTPW'; FLUSH PRIVILEGES;"
 ```
 
+Kalau `$NEWROOTPW` juga sudah hilang dari sesi: cek dulu apakah Langkah 2e sempat jalan sebelum
+terputus — kalau ya, baca dari `.env` yang hidup (**bukan** `.env.bak`, itu untuk password LAMA):
+
+```bash
+NEWROOTPW=$(grep '^DB_ROOT_PASSWORD=' .env | cut -d= -f2-)
+```
+
 **Gerbang wajib — verifikasi rollback benar-benar berhasil, jangan asumsikan:**
 
 ```bash
 docker compose exec -T db mariadb -u root -p"$OLDROOTPW" -e "SELECT 1;" && echo "ROLLBACK ROOT OK" || echo "ROLLBACK ROOT GAGAL — STOP, jangan lanjut, eskalasi ke user"
 ```
 
-Kalau `$NEWROOTPW` **juga** sudah hilang (2b sempat sukses tapi sesi terputus sebelum dicatat ke
-mana pun): tidak ada jalan mundur lewat password — satu-satunya opsi adalah restore snapshot VPS
-(lihat catatan di bawah), karena root MariaDB sekarang punya password yang tidak diketahui siapa
-pun. Ini alasan Aturan main #0 mewajibkan satu sesi shell yang sama.
+Kalau Langkah 2e **belum sempat jalan** saat sesi terputus (jendela sempit: antara 2b/2c sukses
+dan 2d/2e selesai) — tidak ada jalan mundur lewat password sama sekali, karena root MariaDB sudah
+punya password baru yang tidak tercatat di mana pun. Satu-satunya opsi adalah restore snapshot VPS
+(lihat catatan di bawah). Ini alasan Aturan main #0 mewajibkan satu sesi shell yang sama **dan**
+kenapa 2e harus segera, bukan ditunda — begitu 2e lulus, skenario ini tidak mungkin terjadi lagi.
 
 (Sesuaikan host sesuai 0d. Ini mengembalikan ke password lama yang sudah bocor — hanya untuk
 memulihkan akses darurat; ulangi rotasi dari awal setelah akses pulih, jangan biarkan password
@@ -563,9 +630,11 @@ Langkah 1  Backup                : <output ls -l, ukuran file>
 Langkah 1a Checksum backup       : <output sha256sum, dua hash>
 Langkah 2c Root login BARU       : <output SELECT 1>
 Langkah 2d Root login LAMA ditolak: <exit code>
+Langkah 2e DB_ROOT_PASSWORD di .env: <grep -c hasil, harus 1>
 Langkah 3e DB OK (site user baru): <output>
 Langkah 4c Admin login BARU      : <HTTP code + message>
-Langkah 5a .env tersinkron       : <2 baris ter-redact + ALLOWED_HOSTS count=0>
+Langkah 5a .env tersinkron       : <DB_ROOT_PASSWORD regresi-check=1, ADMIN_PASSWORD redacted, ALLOWED_HOSTS count=0>
+Langkah 5c Dry-run (opsional)    : <output, atau "tidak didukung, dilewati">
 Langkah 5c Ready + compose ps    : <detik sampai READY, output ps penuh, service mana saja yang di-recreate — bandingkan dengan 0e>
 Langkah 6  Ping setelah restart  : <HTTP code>
 Langkah 6  DB OK setelah restart : <output>
