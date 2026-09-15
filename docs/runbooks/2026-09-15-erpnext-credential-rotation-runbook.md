@@ -24,8 +24,21 @@ pernah dirotasi meski disebut di beberapa sesi berturut-turut:
 | 2 | `ADMIN_PASSWORD` | `/opt/erpnext/.env` | Login user **Administrator** ERPNext |
 | 3 | Password DB user site (`_ebde57cb5cf2199a`) | `site_config.json` (volume `erpnext_sites`) | Koneksi backend ↔ database |
 
-Sekalian dikunci di file yang sama: `ALLOWED_HOSTS=*` di `.env` → daftar eksplisit
-(`erpnext.local,localhost,127.0.0.1,erp.vibeakuntan.com`).
+Sekalian dibereskan di file yang sama: `ALLOWED_HOSTS` di `.env` (nilai aktual saat ini
+`erpnext.local,localhost,127.0.0.1,*` — **bukan** `*` polos seperti dugaan awal).
+
+> **Update pasca-verifikasi SirJarvis (2026-09-15 09:18 UTC):** `ALLOWED_HOSTS` **inert** — nol
+> referensi literal `${ALLOWED_HOSTS}` dan nol `env_file` di `compose.yaml`, dikonfirmasi lewat
+> grep langsung di VPS. Tidak ada container yang membacanya, jadi mengganti nilainya tidak
+> mengunci apa pun secara fungsional. **Keputusan (disetujui user):** hapus baris ini dari `.env`
+> sepenuhnya (bukan diganti nilainya) — lihat Langkah 5a. Mekanisme host-lock yang sesungguhnya
+> (kemungkinan nginx config atau Frappe `site_config.json`) adalah **task terpisah**, di luar
+> scope runbook ini.
+>
+> Verifikasi SirJarvis juga menemukan service `configurator` **tidak ada** di `docker compose ps`
+> aktual — beda dari klaim recovery runbook Agustus. Tidak ada langkah di runbook ini yang
+> bergantung pada `configurator`, jadi ini tidak menghalangi eksekusi, tapi dicatat karena sumber
+> referensi (branch `be2cd3`) sudah tidak 100% cocok dengan kenyataan VPS.
 
 **Dua hal yang WAJIB dipahami sebelum eksekusi — kesalahan urutan di sini bisa mengunci akses ke
 seluruh sistem:**
@@ -89,7 +102,9 @@ snapshot, bukan improvisasi lebih lanjut.
 cd /opt/erpnext && docker compose ps
 ```
 
-**Gerbang:** nol container berstatus `Restarting`. `configurator` boleh `Exited (0)`.
+**Gerbang:** nol container berstatus `Restarting`. Kalau ada service `configurator` di output,
+boleh `Exited (0)` — tapi jangan asumsikan ia ada; verifikasi terakhir (2026-09-15) menunjukkan
+service ini tidak muncul sama sekali di `docker compose ps` aktual.
 
 ```bash
 curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/api/method/ping
@@ -117,10 +132,12 @@ mengarah ke `.env` — service tipe (b) tetap kandidat penerima variabel ini wal
 grep pertama.
 
 **Gerbang:** minimal satu service teridentifikasi lewat salah satu dari dua grep di atas. Kalau
-**keduanya** kosong (tidak ada referensi literal maupun `env_file`), catat temuan ini apa adanya
-di laporan — berarti mengubah nilainya di `.env` murni dokumentasi, tidak mengubah perilaku apa
-pun di container manapun, dan ini perlu ditindaklanjuti terpisah (bukan diperbaiki diam-diam di
-runbook ini). **Jangan STOP** karena ini, lanjutkan runbook — tapi laporkan temuannya dengan jelas.
+**keduanya** kosong (tidak ada referensi literal maupun `env_file`) — **ini sudah dikonfirmasi
+jadi kasusnya** per verifikasi SirJarvis 2026-09-15 09:18 UTC — jangan STOP, lanjut ke Langkah 5a
+dengan rencana **hapus baris `ALLOWED_HOSTS` dari `.env`**, bukan mengganti nilainya. Kalau
+dijalankan ulang di masa depan dan ternyata TIDAK kosong lagi (mis. `compose.yaml` sudah diubah
+orang lain), STOP dan laporkan — asumsi runbook ini sudah tidak berlaku, jangan lanjutkan mengikuti
+Langkah 5a apa adanya.
 
 ### 0d. Host pattern user MariaDB yang akan dirotasi
 
@@ -133,6 +150,27 @@ cd /opt/erpnext && OLDROOTPW=$(grep '^DB_ROOT_PASSWORD=' .env | cut -d= -f2-) &&
 **Gerbang:** query berhasil (tidak ada `Access denied`), dan baris `User='root'` maupun
 `User='_ebde57cb5cf2199a'` muncul dengan kolom `Host`-nya. **Catat kombinasi `user`@`host` yang
 benar-benar ada** — ini dipakai persis di Langkah 2 dan 3, jangan diasumsikan `'%'` begitu saja.
+
+### 0e. Petakan service mana yang akan ikut recreate di Langkah 5c
+
+`.env` menyimpan lebih dari sekadar tiga kredensial ini. Sebelum mengubahnya, ketahui service mana
+saja yang benar-benar mengonsumsi variabel darinya (lewat `environment:` maupun `env_file:`) —
+supaya "service tak terduga ikut recreate" di Langkah 5c tidak jadi kejutan.
+
+> **JANGAN pakai `docker compose config` untuk ini** — perintah itu me-resolve `${VAR}` jadi
+> **nilai sesungguhnya**, termasuk password, dan akan mencetaknya plaintext ke terminal (melanggar
+> Aturan main #4). Grep di bawah ini membaca `compose.yaml` mentah (belum di-resolve), jadi yang
+> muncul cuma nama variabel (`${DB_ROOT_PASSWORD}`, `MYSQL_ROOT_PASSWORD`, dst.), bukan nilainya.
+
+```bash
+cd /opt/erpnext && grep -n -B5 "DB_ROOT_PASSWORD\|MYSQL_ROOT_PASSWORD\|ADMIN_PASSWORD\|ALLOWED_HOSTS" compose.yaml
+```
+
+**Gerbang:** tidak wajib nol temuan — cukup catat, dari baris `-B5` di atas tiap match, service
+apa (blok `services:` mana) yang menyerap variabel itu (utamanya `db` untuk
+`MYSQL_ROOT_PASSWORD`). Bandingkan dengan hasil `docker compose ps` setelah 5c nanti; kalau ada
+service tambahan yang ikut recreate di luar daftar ini, itu **bukan gagal**, tapi wajib dicatat di
+laporan.
 
 ---
 
@@ -153,6 +191,16 @@ ls -l /opt/erpnext/.env.bak-20260915 && docker compose exec -T backend ls -l sit
 ```
 
 Kedua file ada dan ukurannya bukan nol.
+
+### 1a. Checksum backup — bukti file tidak korup
+
+```bash
+sha256sum /opt/erpnext/.env.bak-20260915 && docker compose exec -T backend sha256sum sites/erpnext.local/site_config.json.bak-20260915
+```
+
+**Gerbang:** kedua perintah keluar hash (bukan error I/O / disk full). Tempelkan hash di laporan —
+ini bukti independen dari `ls -l` bahwa isi file benar-benar terbaca utuh, bukan cuma metadata
+"ada".
 
 > `.env.bak-20260915` adalah satu-satunya tempat password root **lama** bisa dipulihkan setelah
 > Langkah 2 — begitu `ALTER USER` jalan, MariaDB tidak lagi mengenali password lama sama sekali.
@@ -286,30 +334,34 @@ rm -f /tmp/login-test.json /tmp/login-cookie.txt
 
 ---
 
-## Langkah 5 — Sinkronkan `.env`, kunci `ALLOWED_HOSTS`, satu kali restart
+## Langkah 5 — Sinkronkan `.env`, buang `ALLOWED_HOSTS` yang inert, satu kali restart
 
 Ketiga kredensial di atas **sudah live berlaku** di Langkah 2–4. Langkah ini hanya membuat `.env`
-konsisten dengan kenyataan dan menerapkan `ALLOWED_HOSTS` — **satu siklus restart**, tidak ada
-downtime terpisah untuk tiap perubahan.
+konsisten dengan kenyataan — **satu siklus restart**, tidak ada downtime terpisah untuk tiap
+perubahan.
 
 ### 5a. Tulis ulang `.env`
+
+`DB_ROOT_PASSWORD` dan `ADMIN_PASSWORD` diganti nilainya (dokumentasi, sudah live berlaku).
+`ALLOWED_HOSTS` **dihapus barisnya sepenuhnya** — sudah dikonfirmasi 0c tidak dikonsumsi container
+manapun, jadi mempertahankan variabel ini di `.env` hanya menyesatkan pembaca berikutnya.
 
 ```bash
 cd /opt/erpnext && sed -i \
   -e "s|^DB_ROOT_PASSWORD=.*|DB_ROOT_PASSWORD=${NEWROOTPW}|" \
   -e "s|^ADMIN_PASSWORD=.*|ADMIN_PASSWORD=${NEWADMINPW}|" \
-  -e "s|^ALLOWED_HOSTS=.*|ALLOWED_HOSTS=erpnext.local,localhost,127.0.0.1,erp.vibeakuntan.com|" \
+  -e "/^ALLOWED_HOSTS=/d" \
   .env
 ```
 
 **Gerbang:**
 
 ```bash
-grep -E "^(DB_ROOT_PASSWORD|ADMIN_PASSWORD|ALLOWED_HOSTS)=" .env | sed 's/=.*/=<redacted>/'
+grep -E "^(DB_ROOT_PASSWORD|ADMIN_PASSWORD)=" .env | sed 's/=.*/=<redacted>/'; echo ---; grep -c "^ALLOWED_HOSTS=" .env
 ```
 
-Tiga baris muncul (nilainya jangan ditempel ke laporan — perintah di atas sudah menyembunyikannya).
-`ALLOWED_HOSTS` harus persis daftar eksplisit, bukan `*`.
+Dua baris redacted muncul untuk `DB_ROOT_PASSWORD`/`ADMIN_PASSWORD`. Baris kedua (`grep -c`) harus
+keluar `0` — bukti `ALLOWED_HOSTS` sudah tidak ada di `.env` sama sekali.
 
 ### 5b. Validasi sintaks compose sebelum apply
 
@@ -325,15 +377,21 @@ docker compose config > /dev/null && echo "COMPOSE OK"
 docker compose up -d
 ```
 
-Tunggu 60 detik, lalu:
+Jangan tunggu waktu tetap — poll sampai benar-benar siap (maksimum ~100 detik):
 
 ```bash
+for i in $(seq 1 20); do
+  STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/api/method/ping)
+  if [ "$STATUS" = "200" ]; then echo "READY setelah $((i*5)) detik"; break; fi
+  sleep 5
+done
 docker compose ps
 ```
 
-**Gerbang:** nol container `Restarting`. Bandingkan service yang di-recreate dengan dugaan dari
-0c — kalau ada service tak terduga yang ikut recreate, catat di laporan (bukan berarti gagal,
-tapi perlu diketahui).
+**Gerbang:** "READY" muncul (bukan habis loop tanpa pernah `200`), dan nol container `Restarting`
+di `docker compose ps`. Bandingkan service yang di-recreate dengan dugaan dari 0e — kalau ada
+service tak terduga yang ikut recreate, catat di laporan (bukan berarti gagal, tapi perlu
+diketahui).
 
 > `db` wajar ikut recreate karena `MYSQL_ROOT_PASSWORD` (dari `DB_ROOT_PASSWORD`) berubah di
 > `.env` — ini **aman**: volume `db-data` tidak disentuh, dan password root yang sesungguhnya
@@ -366,17 +424,17 @@ restart.
 rm -f /tmp/login-test2.json /tmp/login-cookie2.txt
 ```
 
-Kalau 0c menemukan service yang mengonsumsi `ALLOWED_HOSTS`:
+### 6a. Cek log untuk error tersembunyi
+
+`docker compose ps` "Up" tidak membuktikan aplikasi benar-benar sehat — worker bisa hidup tapi
+gagal connect DB berulang di background. Cek log backend eksplisit:
 
 ```bash
-docker compose exec -T <service_dari_0c> printenv ALLOWED_HOSTS
+docker compose logs --tail=50 backend | grep -iE "(error|exception|denied)" || echo "Tidak ada error di 50 baris terakhir log backend"
 ```
 
-**Gerbang:** nilai keluar persis `erpnext.local,localhost,127.0.0.1,erp.vibeakuntan.com`. Ini
-membuktikan environment variable-nya berubah di dalam container — **bukan** bukti bahwa aplikasi
-benar-benar menegakkannya (itu tergantung apakah kode aplikasi/nginx membaca variabel ini).
-Laporkan sebagai "env var confirmed, application-level enforcement unverified" — jangan diklaim
-lebih dari itu.
+**Gerbang:** kalau ada baris error terkait koneksi DB atau auth, **STOP dan lapor** — walau ping
+dan login test di atas lolos, ini sinyal ada worker/proses lain yang masih pakai kredensial lama.
 
 ```bash
 unset NEWROOTPW NEWSITEPW NEWADMINPW
@@ -463,19 +521,21 @@ Isi apa adanya. Kolom output tidak boleh kosong. **Jangan tempel nilai password 
 ```
 Langkah 0a Snapshot VPS dikonfirmasi : ya/tidak
 Langkah 0b Baseline ps/ping      : <output>
-Langkah 0c ALLOWED_HOSTS service : <service yang ditemukan, atau "tidak direferensikan di compose.yaml/env_file">
+Langkah 0c ALLOWED_HOSTS service : <service yang ditemukan, atau "kosong — sesuai dugaan, lanjut hapus di 5a">
 Langkah 0d Host pattern root/site: <output SELECT User,Host>
+Langkah 0e Peta konsumsi .env    : <service yang menyerap variabel .env, terutama db>
 Langkah 1  Backup                : <output ls -l, ukuran file>
+Langkah 1a Checksum backup       : <output sha256sum, dua hash>
 Langkah 2c Root login BARU       : <output SELECT 1>
 Langkah 2d Root login LAMA ditolak: <exit code>
 Langkah 3e DB OK (site user baru): <output>
 Langkah 4c Admin login BARU      : <HTTP code + message>
-Langkah 5a .env tersinkron       : <3 baris ter-redact>
-Langkah 5c compose ps            : <output penuh, service mana saja yang di-recreate>
+Langkah 5a .env tersinkron       : <2 baris ter-redact + ALLOWED_HOSTS count=0>
+Langkah 5c Ready + compose ps    : <detik sampai READY, output ps penuh, service mana saja yang di-recreate — bandingkan dengan 0e>
 Langkah 6  Ping setelah restart  : <HTTP code>
 Langkah 6  DB OK setelah restart : <output>
 Langkah 6  Admin login setelah restart: <HTTP code + message>
-Langkah 6  ALLOWED_HOSTS di container: <output printenv, atau "tidak diverifikasi — 0c kosong">
+Langkah 6a Log backend           : <output grep error, atau "tidak ada error">
 Langkah 7  Password diserahkan ke operator: ya/tidak
 
 Gerbang yang gagal        : <sebutkan, atau "tidak ada">
