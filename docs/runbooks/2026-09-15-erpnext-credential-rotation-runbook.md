@@ -283,14 +283,15 @@ bukan file sementara baru yang cuma menambah permukaan plaintext-di-disk:
 cd /opt/erpnext && sed -i "s|^DB_ROOT_PASSWORD=.*|DB_ROOT_PASSWORD=${NEWROOTPW}|" .env
 ```
 
-**Gerbang:**
+**Gerbang — exact-match, bukan pattern-match:**
 
 ```bash
-grep -c "^DB_ROOT_PASSWORD=${NEWROOTPW}$" .env
+STOREDROOTPW=$(grep '^DB_ROOT_PASSWORD=' .env | cut -d= -f2-) && [ "$STOREDROOTPW" = "$NEWROOTPW" ] && echo "DB_ROOT_PASSWORD MATCH" || echo "DB_ROOT_PASSWORD MISMATCH — STOP, jangan lanjut"
+unset STOREDROOTPW
 ```
 
-**Gerbang:** keluar `1` — bukti `.env` sudah cocok dengan password yang live. Sejak titik ini,
-kalau sesi terputus, `DB_ROOT_PASSWORD` yang berlaku sekarang **selalu bisa dibaca ulang dari
+**Gerbang:** `DB_ROOT_PASSWORD MATCH` — bukti `.env` sudah cocok dengan password yang live. Sejak
+titik ini, kalau sesi terputus, `DB_ROOT_PASSWORD` yang berlaku sekarang **selalu bisa dibaca ulang dari
 `.env`** (`grep '^DB_ROOT_PASSWORD=' .env`) — bukan cuma dari memori shell. Ini tidak berlaku
 untuk `$NEWSITEPW`/`$NEWADMINPW`: keduanya sudah durable di tempat aslinya begitu gerbang 3d/4c
 masing-masing lulus (`site_config.json` lewat `bench set-config`, dan hash password di doctype
@@ -403,15 +404,24 @@ cd /opt/erpnext && sed -i \
   .env
 ```
 
-**Gerbang:**
+**Gerbang — exact-match untuk kedua password, bukan pattern-match:**
 
 ```bash
-grep -c "^DB_ROOT_PASSWORD=${NEWROOTPW}$" .env; grep -E "^ADMIN_PASSWORD=" .env | sed 's/=.*/=<redacted>/'; echo ---; grep -c "^ALLOWED_HOSTS=" .env
+STOREDROOTPW=$(grep '^DB_ROOT_PASSWORD=' .env | cut -d= -f2-) && [ "$STOREDROOTPW" = "$NEWROOTPW" ] && echo "DB_ROOT_PASSWORD MATCH (regresi-check: 2e belum tertimpa)" || echo "DB_ROOT_PASSWORD MISMATCH — STOP"
+STOREDADMINPW=$(grep '^ADMIN_PASSWORD=' .env | cut -d= -f2-) && [ "$STOREDADMINPW" = "$NEWADMINPW" ] && echo "ADMIN_PASSWORD MATCH" || echo "ADMIN_PASSWORD MISMATCH — STOP"
+unset STOREDROOTPW STOREDADMINPW
+grep -c "^ALLOWED_HOSTS=" .env
 ```
 
-Baris pertama harus `1` (regresi-check: 2e belum tertimpa). Baris kedua (redacted) muncul untuk
-`ADMIN_PASSWORD`. Baris ketiga (`grep -c ALLOWED_HOSTS`) harus keluar `0` — bukti `ALLOWED_HOSTS`
-sudah tidak ada di `.env` sama sekali.
+Dua baris pertama harus `MATCH`. Baris ketiga (`grep -c ALLOWED_HOSTS`) harus keluar `0` — bukti
+`ALLOWED_HOSTS` sudah tidak ada di `.env` sama sekali.
+
+> `ADMIN_PASSWORD` di `.env` murni dokumentasi (Gotcha di awal runbook — sudah inert sejak site
+> dibuat), jadi kalau baris ini `MISMATCH`, itu **bukan** insiden keamanan — admin yang
+> sesungguhnya sudah live lewat `bench set-admin-password` di 4b, independen dari `.env`. Tetap
+> STOP dan perbaiki, supaya dokumentasi tidak menyesatkan pembaca berikutnya, tapi jangan panik
+> seperti kalau `DB_ROOT_PASSWORD` yang mismatch (itu baru relevan untuk disaster-recovery kalau
+> volume `db-data` pernah di-wipe ulang).
 
 ### 5b. Validasi sintaks compose sebelum apply
 
@@ -630,10 +640,10 @@ Langkah 1  Backup                : <output ls -l, ukuran file>
 Langkah 1a Checksum backup       : <output sha256sum, dua hash>
 Langkah 2c Root login BARU       : <output SELECT 1>
 Langkah 2d Root login LAMA ditolak: <exit code>
-Langkah 2e DB_ROOT_PASSWORD di .env: <grep -c hasil, harus 1>
+Langkah 2e DB_ROOT_PASSWORD di .env: <MATCH/MISMATCH>
 Langkah 3e DB OK (site user baru): <output>
 Langkah 4c Admin login BARU      : <HTTP code + message>
-Langkah 5a .env tersinkron       : <DB_ROOT_PASSWORD regresi-check=1, ADMIN_PASSWORD redacted, ALLOWED_HOSTS count=0>
+Langkah 5a .env tersinkron       : <DB_ROOT_PASSWORD MATCH/MISMATCH, ADMIN_PASSWORD MATCH/MISMATCH, ALLOWED_HOSTS count=0>
 Langkah 5c Dry-run (opsional)    : <output, atau "tidak didukung, dilewati">
 Langkah 5c Ready + compose ps    : <detik sampai READY, output ps penuh, service mana saja yang di-recreate — bandingkan dengan 0e>
 Langkah 6  Ping setelah restart  : <HTTP code>
