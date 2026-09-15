@@ -159,18 +159,26 @@ supaya "service tak terduga ikut recreate" di Langkah 5c tidak jadi kejutan.
 
 > **JANGAN pakai `docker compose config` untuk ini** — perintah itu me-resolve `${VAR}` jadi
 > **nilai sesungguhnya**, termasuk password, dan akan mencetaknya plaintext ke terminal (melanggar
-> Aturan main #4). Grep di bawah ini membaca `compose.yaml` mentah (belum di-resolve), jadi yang
-> muncul cuma nama variabel (`${DB_ROOT_PASSWORD}`, `MYSQL_ROOT_PASSWORD`, dst.), bukan nilainya.
+> Aturan main #4), **termasuk kalau outputnya di-pipe ke `grep`/`awk`** — resolusi nilainya sudah
+> terjadi sebelum filter apa pun sempat jalan. `-B5` (grep context) juga tidak reliable kalau blok
+> service di `compose.yaml` panjang. Pakai `awk` di bawah — ia membaca `compose.yaml` **mentah**
+> (belum di-resolve sama sekali) dan melacak nama service secara stateful, jadi akurat berapa pun
+> panjang bloknya, tanpa pernah memanggil `docker compose config`:
 
 ```bash
-cd /opt/erpnext && grep -n -B5 "DB_ROOT_PASSWORD\|MYSQL_ROOT_PASSWORD\|ADMIN_PASSWORD\|ALLOWED_HOSTS" compose.yaml
+cd /opt/erpnext && awk '
+/^  [A-Za-z0-9_-]+:[[:space:]]*$/ { svc=$0; sub(/^  /,"",svc); sub(/:.*/,"",svc) }
+/DB_ROOT_PASSWORD|MYSQL_ROOT_PASSWORD|ADMIN_PASSWORD|ALLOWED_HOSTS|env_file:/ { print svc": "$0 }
+' compose.yaml
 ```
 
-**Gerbang:** tidak wajib nol temuan — cukup catat, dari baris `-B5` di atas tiap match, service
-apa (blok `services:` mana) yang menyerap variabel itu (utamanya `db` untuk
-`MYSQL_ROOT_PASSWORD`). Bandingkan dengan hasil `docker compose ps` setelah 5c nanti; kalau ada
-service tambahan yang ikut recreate di luar daftar ini, itu **bukan gagal**, tapi wajib dicatat di
-laporan.
+(Asumsi indentasi standar frappe_docker: service di bawah `services:` berindentasi 2 spasi, key di
+dalamnya 4+ spasi — sama seperti struktur yang dipakai Langkah 5 di runbook pemulihan 2026-08-11.)
+
+**Gerbang:** tidak wajib nol temuan — cukup catat, dari kolom `svc:` di tiap baris output, service
+apa yang menyerap variabel itu (utamanya `db` untuk `MYSQL_ROOT_PASSWORD`). Bandingkan dengan hasil
+`docker compose ps` setelah 5c nanti; kalau ada service tambahan yang ikut recreate di luar daftar
+ini, itu **bukan gagal**, tapi wajib dicatat di laporan.
 
 ---
 
@@ -424,17 +432,23 @@ restart.
 rm -f /tmp/login-test2.json /tmp/login-cookie2.txt
 ```
 
-### 6a. Cek log untuk error tersembunyi
+### 6a. Cek log untuk error tersembunyi — semua service yang connect DB
 
 `docker compose ps` "Up" tidak membuktikan aplikasi benar-benar sehat — worker bisa hidup tapi
-gagal connect DB berulang di background. Cek log backend eksplisit:
+gagal connect DB berulang di background. `backend` saja tidak cukup: `queue-default`,
+`queue-long`, `queue-short`, dan `scheduler` sama-sama connect DB pakai `site_config.json` yang
+sama, dan salah satunya bisa masih pegang koneksi lama.
 
 ```bash
-docker compose logs --tail=50 backend | grep -iE "(error|exception|denied)" || echo "Tidak ada error di 50 baris terakhir log backend"
+for svc in backend queue-default queue-long queue-short scheduler; do
+  echo "=== $svc ==="
+  docker compose logs --tail=20 "$svc" 2>/dev/null | grep -iE "(error|exception|denied|access denied)" || echo "OK — tidak ada error"
+done
 ```
 
-**Gerbang:** kalau ada baris error terkait koneksi DB atau auth, **STOP dan lapor** — walau ping
-dan login test di atas lolos, ini sinyal ada worker/proses lain yang masih pakai kredensial lama.
+**Gerbang:** kalau ada baris error terkait koneksi DB atau auth di service manapun, **STOP dan
+lapor** — walau ping dan login test di atas lolos, ini sinyal ada worker yang masih pakai
+kredensial lama.
 
 ```bash
 unset NEWROOTPW NEWSITEPW NEWADMINPW
@@ -470,6 +484,12 @@ Aturan main #0), baca ulang dari backup:
 cd /opt/erpnext && OLDROOTPW=$(grep '^DB_ROOT_PASSWORD=' .env.bak-20260915 | cut -d= -f2-) && docker compose exec -T db mariadb -u root -p"$NEWROOTPW" -e "ALTER USER 'root'@'%' IDENTIFIED BY '$OLDROOTPW'; FLUSH PRIVILEGES;"
 ```
 
+**Gerbang wajib — verifikasi rollback benar-benar berhasil, jangan asumsikan:**
+
+```bash
+docker compose exec -T db mariadb -u root -p"$OLDROOTPW" -e "SELECT 1;" && echo "ROLLBACK ROOT OK" || echo "ROLLBACK ROOT GAGAL — STOP, jangan lanjut, eskalasi ke user"
+```
+
 Kalau `$NEWROOTPW` **juga** sudah hilang (2b sempat sukses tapi sesi terputus sebelum dicatat ke
 mana pun): tidak ada jalan mundur lewat password — satu-satunya opsi adalah restore snapshot VPS
 (lihat catatan di bawah), karena root MariaDB sekarang punya password yang tidak diketahui siapa
@@ -486,6 +506,12 @@ cd /opt/erpnext && docker compose exec -T db mariadb -u root -p"$NEWROOTPW" -e "
 docker compose exec -T backend bench --site erpnext.local set-config db_password "$OLDSITEPW"
 ```
 
+**Gerbang wajib — verifikasi rollback benar-benar berhasil:**
+
+```bash
+docker compose exec -T backend python -c "import pymysql,json;c=json.load(open('sites/erpnext.local/site_config.json'));pymysql.connect(host='db',user=c['db_name'],password=c['db_password'],database=c['db_name']);print('ROLLBACK SITE OK')" || echo "ROLLBACK SITE GAGAL — STOP, jangan lanjut, eskalasi ke user"
+```
+
 Kalau `$OLDSITEPW` sudah hilang dari sesi, baca ulang dari backup container (Langkah 1):
 
 ```bash
@@ -500,8 +526,17 @@ lain**, bukan mengembalikan yang lama.
 ### `.env` / `ALLOWED_HOSTS` (Langkah 5) menyebabkan akses terkunci
 
 ```bash
-cd /opt/erpnext && cp .env.bak-20260915 .env && docker compose up -d
+cd /opt/erpnext && cp .env.bak-20260915 .env && docker compose config > /dev/null && echo "COMPOSE SYNTAX OK" || echo "COMPOSE SYNTAX ERROR — .env.bak korup, jangan docker compose up -d, eskalasi ke user"
 ```
+
+**Gerbang:** `COMPOSE SYNTAX OK` — baru lanjutkan:
+
+```bash
+docker compose up -d && for i in $(seq 1 20); do STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/api/method/ping); [ "$STATUS" = "200" ] && echo "ROLLBACK ENV OK, ready $((i*5))s" && break; sleep 5; done
+```
+
+**Gerbang:** "ROLLBACK ENV OK" muncul. Kalau tidak, STOP dan eskalasi — jangan improvisasi
+perubahan lain di atas rollback yang sudah gagal.
 
 Database tidak pernah di-`DROP`/`DELETE` sepanjang runbook ini, jadi tidak ada data yang perlu
 dipulihkan — rollback di atas murni mengembalikan konfigurasi.
@@ -535,7 +570,7 @@ Langkah 5c Ready + compose ps    : <detik sampai READY, output ps penuh, service
 Langkah 6  Ping setelah restart  : <HTTP code>
 Langkah 6  DB OK setelah restart : <output>
 Langkah 6  Admin login setelah restart: <HTTP code + message>
-Langkah 6a Log backend           : <output grep error, atau "tidak ada error">
+Langkah 6a Log 5 service DB-consumer: <output grep error per service, atau "OK" semua>
 Langkah 7  Password diserahkan ke operator: ya/tidak
 
 Gerbang yang gagal        : <sebutkan, atau "tidak ada">
