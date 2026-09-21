@@ -1,0 +1,17 @@
+{
+  "name": "bul",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "db:reset": "node db/reset-db.mjs",
+    "test:db": "vitest run --config db/vitest.config.mjs"
+  },
+  "devDependencies": {
+    "pg": "^8.13.1",
+    "supabase": "^2.117.0",
+    "vitest": "^5.0.0"
+  }
+}
