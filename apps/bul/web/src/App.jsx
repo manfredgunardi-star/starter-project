@@ -11,6 +11,8 @@ import InvoicePage from './halaman/invoice/InvoicePage.jsx';
 import InvoiceBaruPage from './halaman/invoice/InvoiceBaruPage.jsx';
 import InvoiceDetailPage from './halaman/invoice/InvoiceDetailPage.jsx';
 import Kwitansi from './halaman/invoice/Kwitansi.jsx';
+import PembayaranPage from './halaman/pembayaran/PembayaranPage.jsx';
+import KasPage from './halaman/kas/KasPage.jsx';
 
 export const ROUTE = [
   { path: '/', element: <div>Beranda</div> },
@@ -21,6 +23,8 @@ export const ROUTE = [
   { path: '/invoice/baru', element: <InvoiceBaruPage /> },
   { path: '/invoice/:id', element: <InvoiceDetailPage /> },
   { path: '/invoice/:id/cetak', element: <Kwitansi /> },
+  { path: '/pembayaran', element: <PembayaranPage /> },
+  { path: '/kas', element: <KasPage /> },
 ];
 
 export default function AppRoot() {
