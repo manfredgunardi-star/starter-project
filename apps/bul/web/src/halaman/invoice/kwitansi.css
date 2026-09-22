@@ -1,0 +1,11 @@
+.kwitansi { max-width: 800px; margin: 0 auto; background: #fff; padding: 24px; font-size: 13px; color: #000; }
+.kwitansi table { width: 100%; border-collapse: collapse; }
+.kwitansi th, .kwitansi td { border: 1px solid #000; padding: 4px 6px; }
+.kwitansi td.angka { text-align: right; white-space: nowrap; }
+.kwitansi .ringkas td { border: none; }
+@media print {
+  .tanpa-cetak { display: none !important; }
+  .ant-layout-sider, .ant-layout-header { display: none !important; }
+  .ant-layout-content { padding: 0 !important; }
+  @page { size: A4; margin: 12mm; }
+}

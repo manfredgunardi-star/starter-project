@@ -7,12 +7,20 @@ import AppLayout from './layout/AppLayout.jsx';
 import MasterPage from './halaman/master/MasterPage.jsx';
 import PenggunaPage from './halaman/PenggunaPage.jsx';
 import SuratJalanPage from './halaman/sj/SuratJalanPage.jsx';
+import InvoicePage from './halaman/invoice/InvoicePage.jsx';
+import InvoiceBaruPage from './halaman/invoice/InvoiceBaruPage.jsx';
+import InvoiceDetailPage from './halaman/invoice/InvoiceDetailPage.jsx';
+import Kwitansi from './halaman/invoice/Kwitansi.jsx';
 
 export const ROUTE = [
   { path: '/', element: <div>Beranda</div> },
   { path: '/master/:entitas', element: <MasterPage /> },
   { path: '/pengguna', element: <PenggunaPage /> },
   { path: '/sj', element: <SuratJalanPage /> },
+  { path: '/invoice', element: <InvoicePage /> },
+  { path: '/invoice/baru', element: <InvoiceBaruPage /> },
+  { path: '/invoice/:id', element: <InvoiceDetailPage /> },
+  { path: '/invoice/:id/cetak', element: <Kwitansi /> },
 ];
 
 export default function AppRoot() {
