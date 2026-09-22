@@ -43,3 +43,11 @@ export async function buatSjSelesai(uid, m, opsi = {}) {
   await sebagai(uid, 'select public.selesaikan_sj($1, $2, $3, $4)', [id, qtyBongkar, tanggalSelesai, upah]);
   return id;
 }
+
+export async function terbitkan(uid, m, sjIds, opsi = {}) {
+  const { tanggal = '2026-02-10', nomor = null } = opsi;
+  const [r] = await sebagai(uid,
+    'select public.terbitkan_invoice(p_lini_kode => $1, p_pelanggan_id => $2, p_tanggal => $3, p_sj_ids => $4, p_nomor => $5) as id',
+    [m.lini, m.pelanggan, tanggal, sjIds, nomor]);
+  return r.id;
+}
