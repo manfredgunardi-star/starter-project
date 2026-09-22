@@ -27,5 +27,10 @@ additional_redirect_urls = ["http://localhost:5173"]
 enable_signup = false
 
 [auth.email]
-enable_signup = false
+# PERHATIAN: di supabase CLI 2.117.0, `enable_signup` DI SINI memetakan ke
+# GOTRUE_EXTERNAL_EMAIL_ENABLED -- yaitu saklar provider email itu sendiri,
+# bukan saklar pendaftaran. Menyetelnya false membuat login kata sandi MUSTAHIL
+# bagi siapa pun. Pendaftaran mandiri ditutup oleh `enable_signup = false`
+# pada blok [auth] di atas (GOTRUE_DISABLE_SIGNUP=true).
+enable_signup = true
 enable_confirmations = false

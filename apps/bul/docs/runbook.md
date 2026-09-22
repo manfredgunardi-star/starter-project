@@ -14,7 +14,7 @@ npm install && npm run dev
 
 ## 2. Membuat project produksi [USER]
 1. Supabase dashboard → org "Manfred's Organization" → New project **bul**, region Singapore, catat password DB di password manager.
-2. Authentication → Sign In / Providers → Email: matikan "Allow new users to sign up". URL Configuration → Site URL = URL Cloudflare Pages.
+2. Authentication → Sign In / Providers → Email: pastikan provider **Email** dalam keadaan ENABLED, dan hanya matikan "Allow new users to sign up" — kalau providernya ikut dimatikan, tidak ada seorang pun yang bisa login. URL Configuration → Site URL = URL Cloudflare Pages.
 3. Terapkan migrasi dari laptop (setelah review):
    ```bash
    cd apps/bul
