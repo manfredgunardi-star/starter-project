@@ -50,6 +50,7 @@ language sql stable set search_path = '' as $$
     union all
     select 'ekuitas', null, 'Laba (rugi) tahun lalu belum ditutup', pl.lalu from pl
   ) x
+  where public.peran_saya() is not null
   order by case x.bagian when 'aset' then 1 when 'kewajiban' then 2 else 3 end, x.kode nulls last, x.nama
 $$;
 
@@ -142,6 +143,7 @@ language sql stable set search_path = '' as $$
   select p_tahun, o.omzet::numeric(18,2), pj.batas_omzet, round(o.omzet / pj.batas_omzet * 100, 2), pj.pp55_aktif
     from o
     left join lateral public.pajak_berlaku(make_date(p_tahun, 12, 31)) pj on true
+   where public.peran_saya() is not null
 $$;
 
 select internal.terapkan_hak_akses();
