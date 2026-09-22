@@ -4,8 +4,14 @@ import { useAuth } from './auth/AuthProvider.jsx';
 import LoginPage from './auth/LoginPage.jsx';
 import BelumAktifPage from './auth/BelumAktifPage.jsx';
 import AppLayout from './layout/AppLayout.jsx';
+import MasterPage from './halaman/master/MasterPage.jsx';
+import PenggunaPage from './halaman/PenggunaPage.jsx';
 
-export const ROUTE = [{ path: '/', element: <div>Beranda</div> }];
+export const ROUTE = [
+  { path: '/', element: <div>Beranda</div> },
+  { path: '/master/:entitas', element: <MasterPage /> },
+  { path: '/pengguna', element: <PenggunaPage /> },
+];
 
 export default function AppRoot() {
   const { session, peran, loading } = useAuth();
