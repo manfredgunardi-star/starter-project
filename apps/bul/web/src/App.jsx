@@ -6,11 +6,13 @@ import BelumAktifPage from './auth/BelumAktifPage.jsx';
 import AppLayout from './layout/AppLayout.jsx';
 import MasterPage from './halaman/master/MasterPage.jsx';
 import PenggunaPage from './halaman/PenggunaPage.jsx';
+import SuratJalanPage from './halaman/sj/SuratJalanPage.jsx';
 
 export const ROUTE = [
   { path: '/', element: <div>Beranda</div> },
   { path: '/master/:entitas', element: <MasterPage /> },
   { path: '/pengguna', element: <PenggunaPage /> },
+  { path: '/sj', element: <SuratJalanPage /> },
 ];
 
 export default function AppRoot() {
