@@ -13,6 +13,11 @@ import InvoiceDetailPage from './halaman/invoice/InvoiceDetailPage.jsx';
 import Kwitansi from './halaman/invoice/Kwitansi.jsx';
 import PembayaranPage from './halaman/pembayaran/PembayaranPage.jsx';
 import KasPage from './halaman/kas/KasPage.jsx';
+import AkunPage from './halaman/akuntansi/AkunPage.jsx';
+import PengaturanPage from './halaman/akuntansi/PengaturanPage.jsx';
+import JurnalPage from './halaman/akuntansi/JurnalPage.jsx';
+import BukuBesarPage from './halaman/akuntansi/BukuBesarPage.jsx';
+import SaldoAwalPage from './halaman/akuntansi/SaldoAwalPage.jsx';
 
 export const ROUTE = [
   { path: '/', element: <div>Beranda</div> },
@@ -25,6 +30,11 @@ export const ROUTE = [
   { path: '/invoice/:id/cetak', element: <Kwitansi /> },
   { path: '/pembayaran', element: <PembayaranPage /> },
   { path: '/kas', element: <KasPage /> },
+  { path: '/akun', element: <AkunPage /> },
+  { path: '/pengaturan', element: <PengaturanPage /> },
+  { path: '/jurnal', element: <JurnalPage /> },
+  { path: '/buku-besar', element: <BukuBesarPage /> },
+  { path: '/saldo-awal', element: <SaldoAwalPage /> },
 ];
 
 export default function AppRoot() {
