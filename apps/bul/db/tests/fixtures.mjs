@@ -27,3 +27,19 @@ export async function siapkanMaster(owner, opsi = {}) {
     [unik('UPAH-'), rute, tanggal, basis, upah]);
   return { lini, pelanggan, rute, material, truk, supir };
 }
+
+export async function buatSj(uid, m, opsi = {}) {
+  const { nomor = unik('SJ'), tanggal = '2026-02-02', qty = '10', uangJalan = null } = opsi;
+  const [r] = await sebagai(uid,
+    `select public.buat_sj(p_lini_kode => $1, p_nomor => $2, p_tanggal => $3, p_pelanggan_id => $4, p_rute_id => $5,
+       p_material_id => $6, p_truk_id => $7, p_supir_id => $8, p_qty_muat => $9, p_uang_jalan => $10) as id`,
+    [m.lini, nomor, tanggal, m.pelanggan, m.rute, m.material, m.truk, m.supir, qty, uangJalan]);
+  return r.id;
+}
+
+export async function buatSjSelesai(uid, m, opsi = {}) {
+  const { qtyBongkar = opsi.qty ?? '10', tanggalSelesai = opsi.tanggal ?? '2026-02-02', upah = null } = opsi;
+  const id = await buatSj(uid, m, opsi);
+  await sebagai(uid, 'select public.selesaikan_sj($1, $2, $3, $4)', [id, qtyBongkar, tanggalSelesai, upah]);
+  return id;
+}
