@@ -18,9 +18,11 @@ import PengaturanPage from './halaman/akuntansi/PengaturanPage.jsx';
 import JurnalPage from './halaman/akuntansi/JurnalPage.jsx';
 import BukuBesarPage from './halaman/akuntansi/BukuBesarPage.jsx';
 import SaldoAwalPage from './halaman/akuntansi/SaldoAwalPage.jsx';
+import Beranda from './halaman/Beranda.jsx';
+import LaporanPage from './halaman/laporan/LaporanPage.jsx';
 
 export const ROUTE = [
-  { path: '/', element: <div>Beranda</div> },
+  { path: '/', element: <Beranda /> },
   { path: '/master/:entitas', element: <MasterPage /> },
   { path: '/pengguna', element: <PenggunaPage /> },
   { path: '/sj', element: <SuratJalanPage /> },
@@ -35,6 +37,8 @@ export const ROUTE = [
   { path: '/jurnal', element: <JurnalPage /> },
   { path: '/buku-besar', element: <BukuBesarPage /> },
   { path: '/saldo-awal', element: <SaldoAwalPage /> },
+  { path: '/laporan', element: <LaporanPage /> },
+  { path: '/laporan/:kunci', element: <LaporanPage /> },
 ];
 
 export default function AppRoot() {
