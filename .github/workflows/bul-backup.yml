@@ -1,0 +1,59 @@
+name: bul-backup
+
+on:
+  schedule:
+    - cron: '0 18 * * *' # 01:00 WIB setiap hari
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bul-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      BUL_DB_URL: ${{ secrets.BUL_DB_URL }}
+      BUL_BACKUP_PASSPHRASE: ${{ secrets.BUL_BACKUP_PASSPHRASE }}
+      RCLONE_CONFIG_GDRIVE_TYPE: drive
+      RCLONE_CONFIG_GDRIVE_SCOPE: drive.file
+      RCLONE_CONFIG_GDRIVE_TOKEN: ${{ secrets.BUL_RCLONE_DRIVE_TOKEN }}
+      RCLONE_CONFIG_GDRIVE_ROOT_FOLDER_ID: ${{ secrets.BUL_DRIVE_FOLDER_ID }}
+    steps:
+      - name: Cek secret
+        run: |
+          for v in BUL_DB_URL BUL_BACKUP_PASSPHRASE RCLONE_CONFIG_GDRIVE_TOKEN RCLONE_CONFIG_GDRIVE_ROOT_FOLDER_ID; do
+            if [ -z "${!v}" ]; then echo "::error::Secret untuk $v belum diatur"; exit 1; fi
+          done
+
+      - name: Pasang pg_dump 17 dan rclone
+        run: |
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl -fsSo /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc
+          echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" | sudo tee /etc/apt/sources.list.d/pgdg.list
+          sudo apt-get update -q
+          sudo apt-get install -y -q postgresql-client-17 rclone
+          pg_dump --version
+
+      - name: Dump & enkripsi
+        run: |
+          set -euo pipefail
+          nama="bul-$(date -u +%Y%m%d-%H%M).dump"
+          /usr/lib/postgresql/17/bin/pg_dump "$BUL_DB_URL" -Fc --no-owner --no-privileges \
+            -n public -n internal -n auth -f "$nama"
+          gpg --batch --yes --pinentry-mode loopback --passphrase "$BUL_BACKUP_PASSPHRASE" \
+            --symmetric --cipher-algo AES256 -o "$nama.gpg" "$nama"
+          rm -f "$nama"
+          echo "BERKAS=$nama.gpg" >> "$GITHUB_ENV"
+          ls -l "$nama.gpg"
+
+      - name: Unggah ke Google Drive & buang yang > 60 hari
+        run: |
+          set -euo pipefail
+          rclone copy "$BERKAS" gdrive: --drive-use-trash=false
+          rclone delete gdrive: --min-age 60d --include "bul-*.dump.gpg"
+          rclone lsl gdrive: --include "bul-*.dump.gpg" | tail -n 5

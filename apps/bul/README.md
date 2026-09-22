@@ -14,3 +14,4 @@ npm run test:db         # seluruh tes database
 
 `npm run db:reset` dan tes hanya mau berjalan terhadap `127.0.0.1`/`localhost`.
 Frontend ada di `apps/bul/web` (lihat README di sana).
+Operasional produksi, backup, dan restore: [docs/runbook.md](docs/runbook.md).
