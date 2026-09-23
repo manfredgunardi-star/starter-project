@@ -75,6 +75,23 @@ describe('pelanggan dan material', () => {
   });
 });
 
+describe('rute', () => {
+  it('nama boleh berulang selama asal atau tujuan berbeda', async () => {
+    const nama = unik('KLIEN-');
+    const a = await satu(ops, 'select public.simpan_rute(p_id => null, p_nama => $1, p_asal => $2, p_tujuan => $3) as id', [nama, 'Gudang A', 'Lokasi 1']);
+    const b = await satu(ops, 'select public.simpan_rute(p_id => null, p_nama => $1, p_asal => $2, p_tujuan => $3) as id', [nama, 'Gudang A', 'Lokasi 2']);
+    const c = await satu(ops, 'select public.simpan_rute(p_id => null, p_nama => $1, p_asal => $2, p_tujuan => $3) as id', [nama, 'Gudang B', 'Lokasi 1']);
+    expect(new Set([a.id, b.id, c.id]).size).toBe(3);
+  });
+  it('nama+asal+tujuan identik ditolak sebagai duplikat', async () => {
+    const nama = unik('KLIEN-');
+    await sebagai(ops, 'select public.simpan_rute(p_id => null, p_nama => $1, p_asal => $2, p_tujuan => $3)', [nama, 'Gudang A', 'Lokasi 1']);
+    await expect(
+      sebagai(ops, 'select public.simpan_rute(p_id => null, p_nama => $1, p_asal => $2, p_tujuan => $3)', [nama, 'Gudang A', 'Lokasi 1']),
+    ).rejects.toMatchObject({ code: '23505' });
+  });
+});
+
 describe('nilai berlaku menurut tanggal', () => {
   it('uang jalan rute mengikuti tanggal berlaku', async () => {
     const { id: rute } = await satu(ops, 'select public.simpan_rute(p_id => null, p_nama => $1) as id', [unik('R')]);
