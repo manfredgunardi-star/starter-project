@@ -1,10 +1,10 @@
-import { formatRupiah, formatTanggal, keTanggalDb } from '../../lib/format.js';
+import { formatRupiah, formatRute, formatTanggal, keTanggalDb } from '../../lib/format.js';
 
 const kosongNull = (v) => (v === undefined || v === '' ? null : v);
 const AKTIF = { name: 'aktif', label: 'Aktif', tipe: 'saklar', bawaan: true };
 const OPSI_LINI = { tabel: 'lini', label: 'nama', value: 'kode' };
 const OPSI_PELANGGAN = { tabel: 'pelanggan', label: 'nama' };
-const OPSI_RUTE = { tabel: 'rute', label: 'nama' };
+const OPSI_RUTE = { tabel: 'rute', label: formatRute, order: 'nama' };
 const OPSI_MATERIAL = { tabel: 'material', label: (r) => `${r.lini_kode} · ${r.nama} (${r.satuan})`, order: 'nama' };
 
 export const KONFIG_MASTER = {
@@ -33,7 +33,7 @@ export const KONFIG_MASTER = {
     kunci: 'rute', judul: 'Rute', tabel: 'rute', order: { kolom: 'nama' },
     hak: 'master.operasional', rpc: 'simpan_rute',
     kolom: [
-      { title: 'Nama', dataIndex: 'nama' },
+      { title: 'Rute', render: (_, r) => formatRute(r) },
       { title: 'Asal', dataIndex: 'asal' },
       { title: 'Tujuan', dataIndex: 'tujuan' },
     ],
@@ -50,7 +50,7 @@ export const KONFIG_MASTER = {
     select: '*, rute(nama)', order: { kolom: 'berlaku_mulai', naik: false },
     hak: 'master.operasional', rpc: 'simpan_uang_jalan_rute', bolehUbah: false,
     kolom: [
-      { title: 'Rute', dataIndex: ['rute', 'nama'] },
+      { title: 'Rute', render: (_, r) => formatRute(r.rute) },
       { title: 'Berlaku mulai', dataIndex: 'berlaku_mulai', render: formatTanggal },
       { title: 'Nominal', dataIndex: 'nominal', align: 'right', render: formatRupiah },
     ],
@@ -105,7 +105,7 @@ export const KONFIG_MASTER = {
     hak: 'tarif.simpan', rpc: 'simpan_tarif', bolehUbah: false,
     kolom: [
       { title: 'Pelanggan', dataIndex: ['pelanggan', 'nama'] },
-      { title: 'Rute', dataIndex: ['rute', 'nama'] },
+      { title: 'Rute', render: (_, r) => formatRute(r.rute) },
       { title: 'Material', dataIndex: ['material', 'nama'] },
       { title: 'Berlaku mulai', dataIndex: 'berlaku_mulai', render: formatTanggal },
       { title: 'Harga/satuan', dataIndex: 'harga_satuan', align: 'right', render: formatRupiah },
@@ -128,7 +128,7 @@ export const KONFIG_MASTER = {
     hak: 'tarif.simpan', rpc: 'simpan_aturan_upah',
     kolom: [
       { title: 'Nama', dataIndex: 'nama' },
-      { title: 'Rute', dataIndex: ['rute', 'nama'], render: (v) => v ?? 'Semua' },
+      { title: 'Rute', render: (_, r) => (r.rute ? formatRute(r.rute) : 'Semua') },
       { title: 'Material', dataIndex: ['material', 'nama'], render: (v) => v ?? 'Semua' },
       { title: 'Berlaku mulai', dataIndex: 'berlaku_mulai', render: formatTanggal },
       { title: 'Basis', dataIndex: 'basis', render: (v) => (v === 'per_sj' ? 'Per SJ' : 'Per satuan') },
