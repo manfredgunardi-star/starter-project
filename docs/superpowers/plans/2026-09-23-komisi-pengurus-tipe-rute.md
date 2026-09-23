@@ -864,7 +864,7 @@ begin
   if v_uj is null then
     raise exception 'Uang jalan rute belum diatur untuk tanggal %', p_tanggal using errcode = 'P0001';
   end if;
-  select count(*), min(id) into v_jumlah_pengurus, v_pengurus_id from public.pengurus where aktif;
+  select count(*), min(id::text)::uuid into v_jumlah_pengurus, v_pengurus_id from public.pengurus where aktif;
   if v_jumlah_pengurus <> 1 then
     v_pengurus_id := null;
   end if;
