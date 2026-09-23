@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import dayjs from 'dayjs';
-import { formatRupiah, formatQty, formatTanggal, keTanggalDb } from './format.js';
+import { formatRupiah, formatQty, formatTanggal, formatRute, keTanggalDb } from './format.js';
 
 describe('format', () => {
   it('formatRupiah', () => {
@@ -19,5 +19,12 @@ describe('format', () => {
     expect(formatTanggal(null)).toBe('');
     expect(keTanggalDb(dayjs('2026-02-03'))).toBe('2026-02-03');
     expect(keTanggalDb(null)).toBeNull();
+  });
+  it('formatRute', () => {
+    expect(formatRute({ nama: 'Pasir JB', asal: 'Pasir JB', tujuan: 'Bogor' })).toBe('Pasir JB, Pasir JB - Bogor');
+    expect(formatRute({ nama: 'Rute X', asal: '', tujuan: '' })).toBe('Rute X');
+    expect(formatRute({ nama: 'Rute Y', asal: 'A', tujuan: '' })).toBe('Rute Y, A');
+    expect(formatRute(null)).toBe('');
+    expect(formatRute(undefined)).toBe('');
   });
 });

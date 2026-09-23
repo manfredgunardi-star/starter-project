@@ -26,3 +26,9 @@ export function formatTanggal(v) {
 export function keTanggalDb(d) {
   return d ? dayjs(d).format('YYYY-MM-DD') : null;
 }
+
+export function formatRute(r) {
+  if (!r) return '';
+  const bagian = [r.asal, r.tujuan].filter(Boolean).join(' - ');
+  return bagian ? `${r.nama}, ${bagian}` : r.nama;
+}
