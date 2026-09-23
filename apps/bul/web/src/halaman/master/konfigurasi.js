@@ -6,6 +6,7 @@ const OPSI_LINI = { tabel: 'lini', label: 'nama', value: 'kode' };
 const OPSI_PELANGGAN = { tabel: 'pelanggan', label: 'nama' };
 const OPSI_RUTE = { tabel: 'rute', label: formatRute, order: 'nama' };
 const OPSI_MATERIAL = { tabel: 'material', label: (r) => `${r.lini_kode} · ${r.nama} (${r.satuan})`, order: 'nama' };
+const OPSI_TIPE_RUTE = { tabel: 'tipe_rute', label: 'nama' };
 
 export const KONFIG_MASTER = {
   pelanggan: {
@@ -41,9 +42,13 @@ export const KONFIG_MASTER = {
       { name: 'nama', label: 'Nama', tipe: 'teks', wajib: true },
       { name: 'asal', label: 'Asal', tipe: 'teks' },
       { name: 'tujuan', label: 'Tujuan', tipe: 'teks' },
+      { name: 'tipe_rute_id', label: 'Tipe Rute', tipe: 'pilihan', sumber: OPSI_TIPE_RUTE },
       AKTIF,
     ],
-    keArgs: (v, b) => ({ p_id: b?.id ?? null, p_nama: v.nama, p_asal: v.asal ?? '', p_tujuan: v.tujuan ?? '', p_aktif: v.aktif ?? true }),
+    keArgs: (v, b) => ({
+      p_id: b?.id ?? null, p_nama: v.nama, p_asal: v.asal ?? '', p_tujuan: v.tujuan ?? '', p_aktif: v.aktif ?? true,
+      p_tipe_rute_id: kosongNull(v.tipe_rute_id),
+    }),
   },
   'uang-jalan': {
     kunci: 'uang-jalan', judul: 'Uang Jalan Rute', tabel: 'uang_jalan_rute',
@@ -98,6 +103,49 @@ export const KONFIG_MASTER = {
       AKTIF,
     ],
     keArgs: (v, b) => ({ p_id: b?.id ?? null, p_nama: v.nama, p_telepon: v.telepon ?? '', p_aktif: v.aktif ?? true }),
+  },
+  pengurus: {
+    kunci: 'pengurus', judul: 'Pengurus', tabel: 'pengurus', order: { kolom: 'nama' },
+    hak: 'master.operasional', rpc: 'simpan_pengurus',
+    kolom: [{ title: 'Nama', dataIndex: 'nama' }, { title: 'Telepon', dataIndex: 'telepon' }],
+    field: [
+      { name: 'nama', label: 'Nama', tipe: 'teks', wajib: true },
+      { name: 'telepon', label: 'Telepon', tipe: 'teks' },
+      AKTIF,
+    ],
+    keArgs: (v, b) => ({ p_id: b?.id ?? null, p_nama: v.nama, p_telepon: v.telepon ?? '', p_aktif: v.aktif ?? true }),
+  },
+  'tipe-rute': {
+    kunci: 'tipe-rute', judul: 'Tipe Rute', tabel: 'tipe_rute', order: { kolom: 'nama' },
+    hak: 'master.operasional', rpc: 'simpan_tipe_rute',
+    kolom: [{ title: 'Nama', dataIndex: 'nama' }],
+    field: [
+      { name: 'nama', label: 'Nama', tipe: 'teks', wajib: true },
+      AKTIF,
+    ],
+    keArgs: (v, b) => ({ p_id: b?.id ?? null, p_nama: v.nama, p_aktif: v.aktif ?? true }),
+  },
+  'aturan-komisi': {
+    kunci: 'aturan-komisi', judul: 'Aturan Komisi Pengurus', tabel: 'aturan_komisi',
+    select: '*, tipe_rute(nama)', order: { kolom: 'berlaku_mulai', naik: false },
+    hak: 'tarif.simpan', rpc: 'simpan_aturan_komisi',
+    kolom: [
+      { title: 'Nama', dataIndex: 'nama' },
+      { title: 'Tipe Rute', dataIndex: ['tipe_rute', 'nama'] },
+      { title: 'Berlaku mulai', dataIndex: 'berlaku_mulai', render: formatTanggal },
+      { title: 'Nominal', dataIndex: 'nominal', align: 'right', render: formatRupiah },
+    ],
+    field: [
+      { name: 'nama', label: 'Nama aturan', tipe: 'teks', wajib: true },
+      { name: 'tipe_rute_id', label: 'Tipe Rute', tipe: 'pilihan', sumber: OPSI_TIPE_RUTE, wajib: true },
+      { name: 'berlaku_mulai', label: 'Berlaku mulai', tipe: 'tanggal', wajib: true, bawaan: 'hari_ini' },
+      { name: 'nominal', label: 'Nominal', tipe: 'uang', wajib: true },
+      AKTIF,
+    ],
+    keArgs: (v, b) => ({
+      p_id: b?.id ?? null, p_nama: v.nama, p_tipe_rute_id: v.tipe_rute_id,
+      p_berlaku_mulai: keTanggalDb(v.berlaku_mulai), p_nominal: v.nominal, p_aktif: v.aktif ?? true,
+    }),
   },
   tarif: {
     kunci: 'tarif', judul: 'Tarif', tabel: 'tarif',

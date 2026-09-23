@@ -29,4 +29,12 @@ describe('konfigurasi master', () => {
     }, { id: 'x' });
     expect(a).toEqual({ p_id: 'x', p_nama: 'Default', p_rute_id: null, p_material_id: null, p_berlaku_mulai: '2026-01-01', p_basis: 'per_sj', p_nominal: '150000', p_aktif: true });
   });
+  it('pengurus: baris baru mengirim p_id null', () => {
+    expect(KONFIG_MASTER.pengurus.keArgs({ nama: 'Budi', telepon: '0811', aktif: true }, null))
+      .toEqual({ p_id: null, p_nama: 'Budi', p_telepon: '0811', p_aktif: true });
+  });
+  it('rute: tipe_rute_id kosong jadi null', () => {
+    expect(KONFIG_MASTER.rute.keArgs({ nama: 'X', asal: 'A', tujuan: 'B', tipe_rute_id: undefined, aktif: true }, null))
+      .toEqual({ p_id: null, p_nama: 'X', p_asal: 'A', p_tujuan: 'B', p_aktif: true, p_tipe_rute_id: null });
+  });
 });
