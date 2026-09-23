@@ -52,20 +52,27 @@ export const formatTanggalID = (value) => {
   }
 };
 
+/**
+ * Normalisasi nilai tanggal (string "YYYY-MM-DD", ISO datetime, atau Date)
+ * jadi string "YYYY-MM-DD" untuk sel Excel yang konsisten dan bisa
+ * diurutkan/difilter. Dipakai oleh downloadSJRecapToExcel dan
+ * buildInvoiceWorkbookData (invoiceWorkbook.js) supaya semua kolom tanggal
+ * di file xlsx yang diekspor aplikasi ini berformat sama.
+ */
+export const normDate = (v) => {
+  if (!v) return '';
+  if (typeof v === 'string') return v.slice(0, 10);
+  try {
+    return new Date(v).toISOString().slice(0, 10);
+  } catch {
+    return '';
+  }
+};
+
 export const downloadSJRecapToExcel = async (suratJalanList = [], options = {}) => {
   try {
     const XLSX = await import('xlsx');
     const { startDate = '', endDate = '', dateField = 'tanggalSJ' } = options || {};
-
-    const normDate = (v) => {
-      if (!v) return '';
-      if (typeof v === 'string') return v.slice(0, 10);
-      try {
-        return new Date(v).toISOString().slice(0, 10);
-      } catch {
-        return '';
-      }
-    };
 
     const start = normDate(startDate);
     const end = normDate(endDate);

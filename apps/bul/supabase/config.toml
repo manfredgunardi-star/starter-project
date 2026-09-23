@@ -1,0 +1,36 @@
+project_id = "bul"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 17
+
+[studio]
+enabled = true
+port = 54323
+
+[inbucket]
+enabled = true
+port = 54324
+
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+additional_redirect_urls = ["http://localhost:5173"]
+enable_signup = false
+
+[auth.email]
+# PERHATIAN: di supabase CLI 2.117.0, `enable_signup` DI SINI memetakan ke
+# GOTRUE_EXTERNAL_EMAIL_ENABLED -- yaitu saklar provider email itu sendiri,
+# bukan saklar pendaftaran. Menyetelnya false membuat login kata sandi MUSTAHIL
+# bagi siapa pun. Pendaftaran mandiri ditutup oleh `enable_signup = false`
+# pada blok [auth] di atas (GOTRUE_DISABLE_SIGNUP=true).
+enable_signup = true
+enable_confirmations = false

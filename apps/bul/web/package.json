@@ -1,0 +1,30 @@
+{
+  "name": "bul-web",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "type": "module",
+  "dependencies": {
+    "@ant-design/icons": "^6.3.4",
+    "@supabase/supabase-js": "^2.116.0",
+    "@tanstack/react-query": "^5.103.2",
+    "antd": "^6.6.5",
+    "dayjs": "^1.11.23",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-router-dom": "^7.18.4"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
+    "@vitejs/plugin-react": "^6.1.1",
+    "jsdom": "^29.1.1",
+    "vite": "^8.3.0",
+    "vitest": "^5.0.1"
+  },
+  "private": true
+}
