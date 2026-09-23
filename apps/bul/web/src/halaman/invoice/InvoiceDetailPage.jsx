@@ -4,7 +4,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../../auth/AuthProvider.jsx';
 import { boleh } from '../../layout/menu.js';
 import { useDaftar, useRpc } from '../../lib/data.js';
-import { formatQty, formatRupiah, formatTanggal } from '../../lib/format.js';
+import { formatQty, formatRupiah, formatRute, formatTanggal } from '../../lib/format.js';
 import { keSen } from '../../lib/uang.js';
 import ModalAlasan from '../../komponen/ModalAlasan.jsx';
 
@@ -16,7 +16,7 @@ export default function InvoiceDetailPage() {
   const inv = useDaftar('v_invoice_saldo', { filter: [['eq', 'id', id]] });
   const meta = useDaftar('invoice', { select: 'jurnal_id, jurnal_batal_id, alasan_batal, jatuh_tempo', filter: [['eq', 'id', id]] });
   const baris = useDaftar('invoice_baris', {
-    select: '*, surat_jalan(nomor, tanggal, rute(nama), material(nama, satuan), truk(nopol))',
+    select: '*, surat_jalan(nomor, tanggal, rute(nama, asal, tujuan), material(nama, satuan), truk(nopol))',
     filter: [['eq', 'invoice_id', id]],
   });
   const batalkan = useRpc('batalkan_invoice', { invalidate: ['v_invoice_saldo', 'invoice', 'invoice_baris', 'surat_jalan'], pesanSukses: 'Invoice dibatalkan' });
@@ -53,7 +53,7 @@ export default function InvoiceDetailPage() {
         columns={[
           { title: 'SJ', dataIndex: ['surat_jalan', 'nomor'] },
           { title: 'Tanggal', dataIndex: ['surat_jalan', 'tanggal'], render: formatTanggal },
-          { title: 'Rute', dataIndex: ['surat_jalan', 'rute', 'nama'] },
+          { title: 'Rute', render: (_, r) => formatRute(r.surat_jalan.rute) },
           { title: 'Material', dataIndex: ['surat_jalan', 'material', 'nama'] },
           { title: 'Truk', dataIndex: ['surat_jalan', 'truk', 'nopol'] },
           { title: 'Qty', dataIndex: 'qty', align: 'right', render: formatQty },

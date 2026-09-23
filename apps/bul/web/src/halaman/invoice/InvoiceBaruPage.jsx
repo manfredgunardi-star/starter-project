@@ -3,7 +3,7 @@ import { Form, Select, Table, DatePicker, Input, Flex, Alert, Typography, Descri
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
 import { useDaftar, useFungsi, useOpsi, useRpc } from '../../lib/data.js';
-import { formatQty, formatRupiah, formatTanggal, keTanggalDb } from '../../lib/format.js';
+import { formatQty, formatRupiah, formatRute, formatTanggal, keTanggalDb } from '../../lib/format.js';
 import TombolAksi from '../../komponen/TombolAksi.jsx';
 import { hitungRingkasan } from './ringkasan.js';
 
@@ -17,7 +17,7 @@ export default function InvoiceBaruPage() {
   const opsiPelanggan = useOpsi({ tabel: 'pelanggan', label: 'nama' });
   const sj = useDaftar('surat_jalan', {
     enabled: Boolean(pelanggan),
-    select: 'id, nomor, tanggal, qty_bongkar, uang_jalan, rute(nama), material(nama, satuan), truk(nopol)',
+    select: 'id, nomor, tanggal, qty_bongkar, uang_jalan, rute(nama, asal, tujuan), material(nama, satuan), truk(nopol)',
     order: { kolom: 'tanggal' },
     filter: [['eq', 'lini_kode', lini], ['eq', 'pelanggan_id', pelanggan ?? ''], ['eq', 'status', 'selesai'], ['is', 'invoice_id', null]],
   });
@@ -52,7 +52,7 @@ export default function InvoiceBaruPage() {
           columns={[
             { title: 'Nomor', dataIndex: 'nomor' },
             { title: 'Tanggal', dataIndex: 'tanggal', render: formatTanggal },
-            { title: 'Rute', dataIndex: ['rute', 'nama'] },
+            { title: 'Rute', render: (_, r) => formatRute(r.rute) },
             { title: 'Material', dataIndex: ['material', 'nama'] },
             { title: 'Truk', dataIndex: ['truk', 'nopol'] },
             { title: 'Qty', dataIndex: 'qty_bongkar', align: 'right', render: formatQty },

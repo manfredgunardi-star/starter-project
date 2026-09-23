@@ -1,7 +1,7 @@
 import { Button, Flex, Spin } from 'antd';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDaftar } from '../../lib/data.js';
-import { formatQty, formatRupiah, formatTanggal } from '../../lib/format.js';
+import { formatQty, formatRupiah, formatRute, formatTanggal } from '../../lib/format.js';
 import { terbilang } from './terbilang.js';
 import './kwitansi.css';
 
@@ -10,7 +10,7 @@ export default function Kwitansi() {
   const nav = useNavigate();
   const inv = useDaftar('invoice', { select: '*, pelanggan(nama, alamat, npwp)', filter: [['eq', 'id', id]] });
   const baris = useDaftar('invoice_baris', {
-    select: '*, surat_jalan(nomor, tanggal, rute(nama), material(nama, satuan), truk(nopol))',
+    select: '*, surat_jalan(nomor, tanggal, rute(nama, asal, tujuan), material(nama, satuan), truk(nopol))',
     filter: [['eq', 'invoice_id', id], ['eq', 'aktif', true]],
   });
   const i = inv.data?.[0];
@@ -35,7 +35,7 @@ export default function Kwitansi() {
             {urut.map((b, n) => (
               <tr key={b.id}>
                 <td>{n + 1}</td><td>{formatTanggal(b.surat_jalan.tanggal)}</td><td>{b.surat_jalan.nomor}</td>
-                <td>{b.surat_jalan.truk.nopol}</td><td>{b.surat_jalan.rute.nama}</td><td>{b.surat_jalan.material.nama}</td>
+                <td>{b.surat_jalan.truk.nopol}</td><td>{formatRute(b.surat_jalan.rute)}</td><td>{b.surat_jalan.material.nama}</td>
                 <td className="angka">{formatQty(b.qty)} {b.surat_jalan.material.satuan}</td>
                 <td className="angka">{formatRupiah(b.harga_satuan)}</td>
                 <td className="angka">{formatRupiah(b.jumlah)}</td>
