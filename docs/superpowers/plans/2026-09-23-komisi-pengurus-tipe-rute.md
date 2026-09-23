@@ -968,15 +968,96 @@ Expected: sukses tanpa error SQL. Kalau ada error sintaks/urutan objek, perbaiki
 Run: `npx vitest run --config db/vitest.config.mjs db/tests/komisi-pengurus.test.mjs`
 Expected: PASS — 16 test (3 pengurus + 2 tipe_rute + 3 aturan_komisi + 3 auto-fill pengurus + 3 komisi posting + 1 pembalikan + 1 view).
 
-- [ ] **Step 6: Jalankan seluruh suite DB, pastikan tidak ada regresi**
+- [ ] **Step 6: Jalankan seluruh suite DB — EKSPEKTASI 4 kegagalan katalog, bukan regresi**
 
 Run: `npm run test:db`
-Expected: PASS — 127 test total (111 lama + 16 baru), tanpa satu pun assertion lama diubah.
+Expected: 123 lulus, **4 gagal** di `db/tests/akuntansi.test.mjs` dan `db/tests/keamanan.test.mjs`. Keempatnya adalah gerbang inventaris yang SENGAJA membandingkan daftar akun/pengaturan_posting/fungsi/view secara persis — Task 5 menambah objek baru, jadi keempatnya WAJIB diperbarui secara sadar di Step 6a, bukan tanda migrasi salah. Jangan ubah assertion lain di kedua file ini.
+
+- [ ] **Step 6a: Perbarui 4 assertion katalog di test lama sesuai daftar berikut (persis, jangan menyusun ulang selain yang disebut)**
+
+Di `apps/bul/db/tests/akuntansi.test.mjs`:
+```js
+// sebelum
+expect(n).toBe(160);
+// sesudah
+expect(n).toBe(161);
+```
+```js
+// sebelum
+    expect(rows).toEqual([
+      { kunci: 'beban_pph_final', akun_kode: '6251' },
+      { kunci: 'beban_uang_jalan', akun_kode: '5150' },
+      { kunci: 'beban_upah_sopir', akun_kode: '5130' },
+      { kunci: 'hutang_upah_sopir', akun_kode: '2121' },
+      { kunci: 'pendapatan_jasa', akun_kode: '4100' },
+      { kunci: 'piutang_usaha', akun_kode: '1121' },
+    ]);
+// sesudah
+    expect(rows).toEqual([
+      { kunci: 'beban_komisi_pengurus', akun_kode: '5180' },
+      { kunci: 'beban_pph_final', akun_kode: '6251' },
+      { kunci: 'beban_uang_jalan', akun_kode: '5150' },
+      { kunci: 'beban_upah_sopir', akun_kode: '5130' },
+      { kunci: 'hutang_komisi_pengurus', akun_kode: '2125' },
+      { kunci: 'hutang_upah_sopir', akun_kode: '2121' },
+      { kunci: 'pendapatan_jasa', akun_kode: '4100' },
+      { kunci: 'piutang_usaha', akun_kode: '1121' },
+    ]);
+```
+
+Di `apps/bul/db/tests/keamanan.test.mjs`:
+```js
+// sebelum
+const RPC_TULIS = [
+  'atur_kunci_periode', 'atur_pengaturan_posting', 'atur_profil', 'batalkan_invoice', 'batalkan_jurnal_manual',
+  'batalkan_kas', 'batalkan_pembayaran', 'batalkan_saldo_awal', 'batalkan_sj', 'buat_jurnal_manual',
+  'buat_piutang_saldo_awal', 'buat_sj', 'catat_kas', 'catat_pembayaran', 'posting_saldo_awal', 'pratinjau_invoice',
+  'selesaikan_sj', 'simpan_akun', 'simpan_aturan_upah', 'simpan_lini', 'simpan_material', 'simpan_pelanggan',
+  'simpan_pengaturan_pajak', 'simpan_rute', 'simpan_supir', 'simpan_tarif', 'simpan_truk', 'simpan_uang_jalan_rute',
+  'terbitkan_invoice', 'transfer_kas', 'ubah_sj',
+];
+// sesudah
+const RPC_TULIS = [
+  'atur_kunci_periode', 'atur_pengaturan_posting', 'atur_profil', 'batalkan_invoice', 'batalkan_jurnal_manual',
+  'batalkan_kas', 'batalkan_pembayaran', 'batalkan_saldo_awal', 'batalkan_sj', 'buat_jurnal_manual',
+  'buat_piutang_saldo_awal', 'buat_sj', 'catat_kas', 'catat_pembayaran', 'posting_saldo_awal', 'pratinjau_invoice',
+  'selesaikan_sj', 'simpan_akun', 'simpan_aturan_komisi', 'simpan_aturan_upah', 'simpan_lini', 'simpan_material',
+  'simpan_pelanggan', 'simpan_pengaturan_pajak', 'simpan_pengurus', 'simpan_rute', 'simpan_supir', 'simpan_tarif',
+  'simpan_tipe_rute', 'simpan_truk', 'simpan_uang_jalan_rute', 'terbitkan_invoice', 'transfer_kas', 'ubah_sj',
+];
+```
+```js
+// sebelum
+const FUNGSI_BACA = [
+  'cek_saldo_awal_piutang', 'kategori_akun', 'laporan_laba_dimensi', 'laporan_laba_rugi', 'laporan_neraca',
+  'laporan_omzet', 'laporan_saldo_akun', 'laporan_umur_piutang', 'pajak_berlaku', 'peran_saya', 'saran_pph_invoice',
+  'tarif_berlaku', 'uang_jalan_berlaku', 'upah_berlaku',
+];
+// sesudah
+const FUNGSI_BACA = [
+  'cek_saldo_awal_piutang', 'kategori_akun', 'komisi_berlaku', 'laporan_laba_dimensi', 'laporan_laba_rugi', 'laporan_neraca',
+  'laporan_omzet', 'laporan_saldo_akun', 'laporan_umur_piutang', 'pajak_berlaku', 'peran_saya', 'saran_pph_invoice',
+  'tarif_berlaku', 'uang_jalan_berlaku', 'upah_berlaku',
+];
+```
+```js
+// sebelum
+    expect(rows.map((r) => r.relname).sort()).toEqual(['v_buku_besar', 'v_hutang_upah_supir', 'v_invoice_saldo']);
+// sesudah
+    expect(rows.map((r) => r.relname).sort()).toEqual(['v_buku_besar', 'v_hutang_komisi_pengurus', 'v_hutang_upah_supir', 'v_invoice_saldo']);
+```
+
+Alasan penempatan `komisi_berlaku` di `FUNGSI_BACA` (bukan `RPC_TULIS`): fungsi ini `language sql stable`, tanpa `security definer` dan tanpa panggilan `internal.wajib_peran(`, persis pola `upah_berlaku` yang sudah ada di array yang sama. Menaruhnya di `RPC_TULIS` akan membuat test terpisah `'setiap RPC tulis adalah SECURITY DEFINER dan memanggil wajib_peran'` gagal karena test itu meng-assert `prosecdef=true` dan `prosrc like '%internal.wajib_peran(%'` untuk setiap entri `RPC_TULIS`.
+
+- [ ] **Step 6b: Jalankan ulang seluruh suite DB, pastikan 127/127 lulus**
+
+Run: `npm run test:db`
+Expected: PASS — 127 test total (111 lama + 16 baru), 0 gagal.
 
 - [ ] **Step 7: Commit**
 
 ```bash
-git add apps/bul/supabase/migrations/20260923000100_komisi_pengurus.sql apps/bul/db/tests/komisi-pengurus.test.mjs
+git add apps/bul/supabase/migrations/20260923000100_komisi_pengurus.sql apps/bul/db/tests/komisi-pengurus.test.mjs apps/bul/db/tests/akuntansi.test.mjs apps/bul/db/tests/keamanan.test.mjs
 git commit -m "feat(bul-db): add pengurus, tipe rute, aturan komisi with posting on SJ completion"
 ```
 
