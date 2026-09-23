@@ -4,13 +4,13 @@ import { useEffect } from 'react';
 import FieldDinamis from '../../komponen/FieldDinamis.jsx';
 import TombolAksi from '../../komponen/TombolAksi.jsx';
 import { useFungsi, useRpc } from '../../lib/data.js';
-import { formatRupiah, keTanggalDb } from '../../lib/format.js';
+import { formatRupiah, formatRute, keTanggalDb } from '../../lib/format.js';
 import { argsBuatSj, argsUbahSj } from './argsSj.js';
 
 const OPSI = {
   lini: { tabel: 'lini', label: 'nama', value: 'kode' },
   pelanggan: { tabel: 'pelanggan', label: 'nama' },
-  rute: { tabel: 'rute', label: 'nama' },
+  rute: { tabel: 'rute', label: formatRute, order: 'nama' },
   material: { tabel: 'material', label: (r) => `${r.lini_kode} · ${r.nama} (${r.satuan})`, order: 'nama' },
   truk: { tabel: 'truk', label: 'nopol', order: 'nopol' },
   supir: { tabel: 'supir', label: 'nama' },

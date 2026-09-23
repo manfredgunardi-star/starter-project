@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import { useAuth } from '../../auth/AuthProvider.jsx';
 import { boleh } from '../../layout/menu.js';
 import { useDaftar, useRpc } from '../../lib/data.js';
-import { formatQty, formatRupiah, formatTanggal, keTanggalDb } from '../../lib/format.js';
+import { formatQty, formatRupiah, formatRute, formatTanggal, keTanggalDb } from '../../lib/format.js';
 import ModalAlasan from '../../komponen/ModalAlasan.jsx';
 import FormSj from './FormSj.jsx';
 import ModalSelesai from './ModalSelesai.jsx';
@@ -27,7 +27,7 @@ export default function SuratJalanPage() {
   if (lini) filter.push(['eq', 'lini_kode', lini]);
   if (status) filter.push(['eq', 'status', status]);
   const q = useDaftar('surat_jalan', {
-    select: '*, pelanggan(nama), rute(nama), material(nama, satuan), truk(nopol), supir(nama), invoice(nomor)',
+    select: '*, pelanggan(nama), rute(nama, asal, tujuan), material(nama, satuan), truk(nopol), supir(nama), invoice(nomor)',
     order: { kolom: 'tanggal', naik: false }, filter,
   });
   const data = (q.data ?? []).filter((r) => !cari || r.nomor.toLowerCase().includes(cari.toLowerCase()));
@@ -54,7 +54,7 @@ export default function SuratJalanPage() {
           { title: 'Nomor', dataIndex: 'nomor' },
           { title: 'Tanggal', dataIndex: 'tanggal', render: formatTanggal },
           { title: 'Pelanggan', dataIndex: ['pelanggan', 'nama'] },
-          { title: 'Rute', dataIndex: ['rute', 'nama'] },
+          { title: 'Rute', render: (_, r) => formatRute(r.rute) },
           { title: 'Material', dataIndex: ['material', 'nama'] },
           { title: 'Truk', dataIndex: ['truk', 'nopol'] },
           { title: 'Supir', dataIndex: ['supir', 'nama'] },
