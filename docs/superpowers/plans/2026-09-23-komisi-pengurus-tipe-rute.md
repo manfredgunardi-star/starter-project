@@ -1231,6 +1231,80 @@ Fase 2 selesai.
 
 ---
 
+### Task 8 (Fase 3 — temuan QA manual): Rute — nama boleh berulang, keunikan pindah ke (nama, asal, tujuan)
+
+**Latar belakang:** ditemukan saat verifikasi manual browser Fase 2 (2026-09-23). Beberapa client BUL punya lebih dari satu lokasi pengiriman, tapi `public.rute.nama` saat ini `unique` sendirian ([20260918000200_master_data.sql:31](../../../apps/bul/supabase/migrations/20260918000200_master_data.sql)), jadi rute kedua dengan nama client yang sama selalu ditolak `23505` walau tujuannya beda. Tidak ada bagian lain sistem yang bergantung pada `nama` unik global — semua referensi rute pakai `rute_id` (uuid), dan `simpan_rute` tidak punya validasi duplikat sendiri (murni mengandalkan constraint tabel). Diverifikasi terhadap DB lokal (transaksi di-rollback, tidak mengubah state): constraint lama bernama `rute_nama_key` (auto-generated Postgres untuk `unique` kolom tunggal).
+
+**Keputusan (disetujui user):** kunci unik baru adalah kombinasi **`(nama, asal, tujuan)`** — nama boleh berulang, bahkan nama+tujuan boleh berulang selama asal (titik muat) berbeda. Hanya kombinasi ketiganya yang identik persis yang ditolak sebagai duplikat.
+
+**Files:**
+- Create: `apps/bul/supabase/migrations/20260923000200_rute_unik_nama_asal_tujuan.sql`
+- Test: `apps/bul/db/tests/master.test.mjs`
+
+**Interfaces:**
+- Tidak mengubah signature `simpan_rute` (Task 5) — murni perubahan constraint tabel.
+- Tidak ada perubahan frontend — `errors.js` sudah punya mapping generik untuk `23505` ("Data dengan nomor/kode yang sama sudah ada."), tetap valid untuk constraint baru.
+
+- [ ] **Step 1: Tulis test yang gagal**
+
+Tambahkan `describe` baru di `apps/bul/db/tests/master.test.mjs`, setelah `describe('pelanggan dan material', ...)` (baris 76, sebelum `describe('nilai berlaku menurut tanggal', ...)`):
+
+```js
+describe('rute', () => {
+  it('nama boleh berulang selama asal atau tujuan berbeda', async () => {
+    const nama = unik('KLIEN-');
+    const a = await satu(ops, 'select public.simpan_rute(p_id => null, p_nama => $1, p_asal => $2, p_tujuan => $3) as id', [nama, 'Gudang A', 'Lokasi 1']);
+    const b = await satu(ops, 'select public.simpan_rute(p_id => null, p_nama => $1, p_asal => $2, p_tujuan => $3) as id', [nama, 'Gudang A', 'Lokasi 2']);
+    const c = await satu(ops, 'select public.simpan_rute(p_id => null, p_nama => $1, p_asal => $2, p_tujuan => $3) as id', [nama, 'Gudang B', 'Lokasi 1']);
+    expect(new Set([a.id, b.id, c.id]).size).toBe(3);
+  });
+  it('nama+asal+tujuan identik ditolak sebagai duplikat', async () => {
+    const nama = unik('KLIEN-');
+    await sebagai(ops, 'select public.simpan_rute(p_id => null, p_nama => $1, p_asal => $2, p_tujuan => $3)', [nama, 'Gudang A', 'Lokasi 1']);
+    await expect(
+      sebagai(ops, 'select public.simpan_rute(p_id => null, p_nama => $1, p_asal => $2, p_tujuan => $3)', [nama, 'Gudang A', 'Lokasi 1']),
+    ).rejects.toMatchObject({ code: '23505' });
+  });
+});
+
+```
+
+- [ ] **Step 2: Jalankan test, pastikan gagal**
+
+Run (dari `apps/bul`): `npx vitest run --config db/vitest.config.mjs db/tests/master.test.mjs`
+Expected: FAIL pada test pertama (`nama boleh berulang...`) dengan error `23505` dari constraint `rute_nama_key` lama — test kedua kemungkinan tetap lulus (constraint lama juga menolak duplikat identik), itu wajar.
+
+- [ ] **Step 3: Tulis migrasi**
+
+Buat file `apps/bul/supabase/migrations/20260923000200_rute_unik_nama_asal_tujuan.sql`:
+
+```sql
+-- Rute: nama boleh berulang untuk client dengan banyak lokasi; keunikan sekarang di (nama, asal, tujuan).
+alter table public.rute drop constraint rute_nama_key;
+alter table public.rute add constraint rute_nama_asal_tujuan_key unique (nama, asal, tujuan);
+```
+
+- [ ] **Step 4: Terapkan migrasi**
+
+Run (dari `apps/bul`): `npm run db:reset`
+Expected: sukses tanpa error SQL.
+
+- [ ] **Step 5: Jalankan seluruh suite DB, pastikan lulus tanpa regresi**
+
+Run: `npm run test:db`
+Expected: PASS — 129 test total (127 dari Task 5 + 2 baru), tanpa satu pun assertion lama diubah. Tidak ada gerbang katalog yang terpengaruh (perubahan ini tidak menambah/mengubah akun, pengaturan_posting, fungsi, atau view — murni ganti nama+definisi 1 constraint tabel).
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add apps/bul/supabase/migrations/20260923000200_rute_unik_nama_asal_tujuan.sql apps/bul/db/tests/master.test.mjs
+git commit -m "fix(bul-db): allow duplicate rute nama, unique key moves to (nama, asal, tujuan)"
+```
+
+Task 8 selesai.
+
+---
+
 ## Self-review (dilakukan penulis plan, bukan reviewer terpisah)
 
 **Cakupan spec:** D1 (tabel pengurus) → Task 5. D2 (auto-fill) → Task 5 (`buat_sj`) + test. D3 (tipe_rute nama bebas) → Task 5 (tabel `tipe_rute`, tanpa enum). D4 (nominal flat per SJ dari tipe_rute) → Task 5 (`komisi_berlaku`, `aturan_komisi.nominal`). D5 (posting saat SJ selesai) → Task 5 (`selesaikan_sj`). D6 (skip kalau tidak ada aturan) → Task 5 (`v_komisi is not null and v_komisi > 0`, test "melewati komisi"). D7 (tanpa override manual) → `selesaikan_sj` tidak menerima parameter baru. D8 (Bonus terpisah) → sengaja tidak ada task untuk Bonus di plan ini. §3 skema → Task 5 DDL. §4 posting (termasuk perubahan `internal.posting_jurnal`/`internal.balik_jurnal`) → Task 5. §5 UI/hak akses → Task 6. Format rute (§5 bagian akhir) → Task 1-4. §6 pembagian fase → struktur plan ini (Fase 1 = Task 1-4, Fase 2 = Task 5-7). Tidak ada requirement spec yang belum tercakup task.
