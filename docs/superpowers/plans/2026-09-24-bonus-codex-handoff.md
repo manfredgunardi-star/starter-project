@@ -77,44 +77,62 @@ Skala nyata BUL beberapa ribu SJ per tahun, jadi kueri ini akan selesai dalam mi
 
 ---
 
-## 2. Persiapan worktree (dijalankan user)
+## 2. Persiapan (dijalankan user, sebelum membuka Codex Desktop)
 
-Branch implementer dibuat dari tip branch Claude yang memuat spec dan plan ini. Perintah aman untuk cmd.exe maupun PowerShell, satu baris:
+**Langkah 1 — buat worktree implementer.** Dibuat dari tip branch Claude yang memuat spec dan plan ini. Satu baris, aman di cmd.exe maupun PowerShell:
 
 ```bash
 git -C C:/Project worktree add -b codex/bul/bonus C:/Project/.worktrees/bul/bonus claude/import-data-bonus-calculation-37432a
 ```
 
-Pastikan Docker dan Supabase lokal `bul` menyala (port 54321–54324, 54327). **Agen tidak boleh** menjalankan `npx supabase start`/`stop`.
-
----
-
-## 3. Gortex: cara agar tidak memblokir lagi
-
-Ada tiga kegagalan berbeda yang pernah terjadi, dan penting untuk tidak salah mendiagnosis mana yang sedang dihadapi:
-
-| Babak | Gejala | Sebab | Obat |
-|---|---|---|---|
-| 1 (2026-09-22) | tool `read`/`change`/`edit` tidak tersedia | preset tool salah | `GORTEX_TOOLS = 'facade-v1'` di `[mcp_servers.gortex.env]` pada `C:/Users/m3m31/.codex/config.toml` |
-| 2 (2026-09-23) | idem, padahal preset sudah benar | preset `facade-v1` memang cuma punya 6 tool; 7 verb yang diwajibkan `AGENTS.md` belum dirilis Gortex | blok `gortex:rules` di `~/.codex/AGENTS.md` sudah di-trim ke 6 tool yang ada |
-| 3 (2026-09-22) | Codex kehilangan **seluruh** tool MCP individual, 6 putaran gagal | tidak pernah terpecahkan; satu petunjuk yang belum dikejar: peringatan Codex sendiri "Skill descriptions were shortened to fit the skills context budget" saat plugin superpowers dimuat penuh | — |
-
-Babak 3 tidak punya obat yang terbukti. Karena itu **mitigasi utamanya bukan memperbaiki Gortex, melainkan menghapus ketergantungan padanya**:
-
-1. **Plan ini tidak membutuhkan Gortex sama sekali.** Setiap berkas disebut dengan path lengkap, setiap blok kode ditulis utuh, setiap perintah verifikasi eksplisit. Tidak ada langkah yang menyuruh "cari fungsi X" atau "telusuri pemanggil Y".
-2. **Prompt di §5 memuat instruksi eksplisit** agar Codex mengabaikan Gortex bila tidak tersedia dan melanjutkan dengan baca/tulis berkas biasa — tidak berhenti, tidak mendiagnosis.
-
-Pemeriksaan opsional sebelum mulai (read-only, tidak mengubah apa pun):
+**Langkah 2 — daftarkan worktree itu ke Gortex.** Ini bukan langkah opsional. Daemon melacak repo satu per satu, dan `C:\Project` sendiri **tidak** dilacak; setiap worktree BUL sebelumnya didaftarkan sendiri-sendiri (`C:\Project\.worktrees\bul\fase-1a` ada di daftar, misalnya). Tanpa langkah ini setiap panggilan tool Gortex dari worktree baru balik dengan `repo_not_tracked`, dan `~/.codex/AGENTS.md` memerintahkan Codex **berhenti** begitu tool Gortex tidak bisa dipakai (lihat §3).
 
 ```bash
-gortex tools list --preset facade-v1 --format json
+"C:/Users/m3m31/AppData/Local/Programs/gortex/gortex.exe" track C:/Project/.worktrees/bul/bonus --as-worktree --name bul-bonus --wait
 ```
 
-Kalau tool yang dikeluhkan Codex memang tidak ada di keluaran itu, ini babak 2 — jangan buang waktu mengutak-atik preset. Kalau Codex melaporkan **nol** tool MCP individual sekaligus memunculkan peringatan "skills context budget", ini babak 3: kurangi plugin/skill yang dimuat sesi Codex, lalu jalankan ulang. Jangan menghabiskan lebih dari satu putaran untuk ini — plan sudah dirancang jalan tanpanya.
+**Langkah 3 — pastikan indeksnya benar-benar siap.** Cari baris `bul-bonus` pada tabel `tracked repos`; kalau `files`/`nodes` masih 0, tunggu sampai `state ready`.
+
+```bash
+"C:/Users/m3m31/AppData/Local/Programs/gortex/gortex.exe" daemon status
+```
+
+**Langkah 4 — Docker dan Supabase lokal `bul` menyala** (port 54321–54324, 54327). **Agen tidak boleh** menjalankan `npx supabase start`/`stop`; ini tugas user.
 
 ---
 
-## 4. Pembagian batch, model, dan effort
+## 3. Gortex: kenapa sebelumnya memblokir, dan apa yang berubah
+
+Tiga kegagalan berbeda pernah terjadi. Dua sudah tertutup di konfigurasi; yang ketiga punya penjelasan baru.
+
+| Babak | Gejala | Sebab | Status |
+|---|---|---|---|
+| 1 (2026-09-22) | tool `read`/`change`/`edit` tidak tersedia | preset tool salah | **Sudah tertutup.** `GORTEX_TOOLS = 'facade-v1'` sudah terpasang di `[mcp_servers.gortex.env]` pada `C:/Users/m3m31/.codex/config.toml`. |
+| 2 (2026-09-23) | idem, padahal preset sudah benar | preset `facade-v1` cuma punya 6 tool; 7 verb yang diwajibkan `AGENTS.md` belum dirilis | **Sudah tertutup.** Blok `gortex:rules` di `~/.codex/AGENTS.md` sudah di-trim ke 6 tool yang ada. |
+| 3 (2026-09-22) | Codex berhenti dan melapor "Gortex MCP integration failure", 6 putaran gagal | lihat di bawah | **Punya penjelasan, belum terbukti sembuh.** |
+
+### Apa yang baru ditemukan tentang babak 3
+
+`~/.codex/AGENTS.md` memuat dua kalimat yang selama ini tidak pernah dibaca sebagai penyebab:
+
+> "If the Gortex server is configured but `analyze`, `ask`, `capabilities`, `change`, `edit`, and `explore` are missing from the callable MCP tools, **report a Gortex MCP integration failure and stop. Do not start a daemon or switch to a CLI/shell fallback.**"
+
+> "*cwd is not covered by any tracked repo* means graph tools are unavailable there."
+
+Jadi "Codex berhenti" bukan bug misterius — itu **perilaku yang diperintahkan**. Dan pemicunya bisa sesederhana cwd yang belum dilacak, persis keadaan worktree baru yang belum di-`gortex track`. Ini juga berarti kalimat "abaikan Gortex dan lanjutkan" pada prompt lama **bertabrakan langsung** dengan `AGENTS.md`, dan bukti historis menunjukkan `AGENTS.md` yang menang.
+
+Karena itu mitigasinya sekarang dua lapis:
+
+1. **Hilangkan pemicunya** — Langkah 2 di §2 mendaftarkan worktree, sehingga tool Gortex benar-benar berfungsi dan tidak ada kegagalan untuk dilaporkan.
+2. **Cabut perintah berhentinya secara eksplisit** — blok pembuka prompt di §5 menyebut `AGENTS.md` dengan nama dan menyatakan bahwa instruksi user pada task ini mengesampingkannya. Menulis "abaikan Gortex" saja tidak cukup; yang perlu dicabut adalah kalimat "stop".
+
+Lapis ketiga tetap berlaku seperti sebelumnya: **plan ini tidak membutuhkan Gortex sama sekali.** Setiap berkas disebut dengan path lengkap, setiap blok kode ditulis utuh, tidak ada langkah "cari fungsi X" atau "telusuri pemanggil Y".
+
+Catatan terpisah, bukan soal Gortex: `C:/Users/m3m31/.codex/config.toml` menyimpan **Personal Access Token GitHub dalam teks polos** pada `[mcp_servers.github.http_headers]`. Token itu juga sedang ditolak (HTTP 401) di sesi Claude hari ini, jadi kemungkinan besar sudah mati. Rotasi dan pindahkan ke variabel lingkungan; tidak memblokir pekerjaan bonus.
+
+---
+
+## 4. Pembagian batch, model, dan effort — pengaturan Codex Desktop
 
 `terra` = `gpt-5.6-terra`, `astra` = `gpt-6-astra`. Alasan pemilihan mengikuti pengalaman fase 1a: batch dengan kepadatan logika uang dinaikkan effort-nya, batch yang sebagian besar menyalin blok deklaratif diturunkan.
 
@@ -127,19 +145,27 @@ Kalau tool yang dikeluhkan Codex memang tidak ada di keluaran itu, ini babak 2 �
 | **E** | 5–6 | Master bonus + halaman Bonus | `gpt-5.6-terra` | `high` | Komponen baru dengan state dan mutasi, bukan sekadar konfigurasi |
 | **F** | 7 | Form Kas + Beranda | `gpt-5.6-terra` | `medium` | Tiga sisipan kecil pada berkas yang sudah ada |
 
-Peluncuran (satu baris, aman di cmd.exe):
+### Cara menjalankannya di Desktop
 
-```bash
-codex -C "C:/Project/.worktrees/bul/bonus" -m gpt-6-astra -c model_reasoning_effort="high" --sandbox workspace-write -c sandbox_workspace_write.network_access=true
-```
+Desktop tidak punya flag `-C`, `-m`, atau `-c model_reasoning_effort` seperti CLI. Yang setara:
 
-Ganti `-m` dan `model_reasoning_effort` sesuai tabel. Review Claude dijalankan **di antara batch**, bukan di akhir semuanya.
+| Yang di CLI dulu | Di Desktop |
+|---|---|
+| `-C "C:/Project/.worktrees/bul/bonus"` | Buka folder itu sebagai workspace percakapan. **Jangan** membuka `C:\Project` — Codex harus melihat worktree-nya sendiri, bukan checkout utama. |
+| `-m gpt-6-astra` | Pemilih model di percakapan itu. |
+| `-c model_reasoning_effort="xhigh"` | Pemilih effort di percakapan itu. Kalau build Anda belum menampilkannya per percakapan, ubah `model_reasoning_effort` di `C:/Users/m3m31/.codex/config.toml` **sebelum** membuka percakapan (sekarang nilainya `"medium"`, dan `model = "gpt-5.6-terra"`). |
+| `--sandbox workspace-write` | Mode persetujuan yang mengizinkan tulis di dalam workspace tanpa bertanya tiap berkas. |
+| `-c sandbox_workspace_write.network_access=true` | Izinkan akses jaringan. **Wajib** — uji DB menyambung ke `127.0.0.1:54322` dan `npm` perlu registry; tanpa ini seluruh `test:db` gagal dengan error koneksi yang menyesatkan. |
+
+**Satu percakapan per batch.** Itu yang membuat riwayat Desktop berguna: satu batch = satu utas yang bisa dibuka lagi. Jangan menumpuk enam batch dalam satu percakapan — konteksnya membengkak dan batch berikutnya mulai "mengingat" keputusan batch sebelumnya secara keliru.
+
+Review Claude dijalankan **di antara batch**, bukan di akhir semuanya.
 
 ---
 
 ## 5. Prompt per batch
 
-Prompt di bawah ditulis untuk ditempel apa adanya ke sesi Codex yang sudah berjalan di worktree yang benar. Blok pembuka yang sama dipakai semua batch.
+Prompt di bawah ditulis untuk ditempel apa adanya ke percakapan Codex Desktop yang sudah dibuka pada folder `C:/Project/.worktrees/bul/bonus`. Blok pembuka yang sama dipakai semua batch.
 
 ### Blok pembuka (tempel di awal setiap prompt)
 
@@ -159,10 +185,14 @@ ATURAN MUTLAK:
   ke laporan. Jangan diringkas, jangan ditulis "bersih" tanpa bukti.
 - Laporkan setiap penyimpangan dari plan, sekecil apa pun, termasuk perbedaan format.
 
-TENTANG GORTEX: kalau tool MCP Gortex (read/explore/change/edit/search/...) tidak tersedia, error, atau
-hilang sama sekali — ABAIKAN SEPENUHNYA dan lanjutkan memakai baca/tulis berkas biasa. Plan ini sudah
-ditulis supaya bisa dikerjakan tanpa Gortex: semua path lengkap dan semua kode ada di dalam plan.
-JANGAN berhenti untuk mendiagnosis Gortex. JANGAN melaporkannya sebagai blocker.
+TENTANG GORTEX — BACA SAMPAI HABIS, INI MENCABUT SEBAGIAN AGENTS.md:
+Worktree ini sudah didaftarkan ke daemon Gortex, jadi tool graph seharusnya berfungsi. Pakai kalau jalan.
+Tetapi kalau tool Gortex (analyze/ask/capabilities/change/edit/explore) TIDAK tersedia, error, mengembalikan
+repo_not_tracked, atau hilang sama sekali: ~/.codex/AGENTS.md menyuruhmu "report a Gortex MCP integration
+failure and stop". Untuk task ini, instruksi user MENCABUT kalimat itu. Jangan berhenti. Jangan melaporkannya
+sebagai blocker. Lanjutkan memakai baca/tulis berkas biasa dan shell — plan ini memang ditulis supaya bisa
+dikerjakan tanpa Gortex: semua path lengkap dan semua kode ada di dalam plan. Sebutkan sekali saja di laporan
+akhir bahwa Gortex tidak tersedia, lalu teruskan pekerjaannya.
 
 KEGAGALAN TRANSIEN YANG SUDAH DIKENAL: kalau `npm run test:db` gagal serempak di semua berkas dengan
 "Error: Vitest failed to find the runner" dan 0 tes jalan, itu transien. Jalankan ulang perintah yang
@@ -253,6 +283,10 @@ Di Step 5, harapannya akhir Task 3 + 15 tes, jumlah berkas sama.
 
 Uji TERAKHIR di berkas mengunci periode lewat atur_kunci_periode. Ia harus tetap paling akhir; kalau kamu
 memindahkannya, uji-uji sesudahnya akan gagal karena periodenya terkunci.
+
+Tanggal pada uji Task 4 SENGAJA di masa lalu (Juni 2026 dan Agustus 2026). hitung_bonus menolak bulan yang
+belum berakhir, jadi jangan memajukan tanggal-tanggal itu ke tahun depan "supaya terlihat baru". Satu-satunya
+uji yang memakai tanggal relatif terhadap hari ini adalah yang menguji penolakan bulan berjalan.
 ```
 
 ### Batch E — Task 5–6 (`gpt-5.6-terra`, effort `high`)

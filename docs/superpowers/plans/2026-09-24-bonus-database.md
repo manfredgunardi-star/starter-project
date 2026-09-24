@@ -854,10 +854,10 @@ describe('posting dan pembalikan bonus', () => {
   let supir;
   const hitung = (uid, periode) => satu(uid, 'select public.hitung_bonus($1) as id', [periode]).then((r) => r.id);
   const batalkan = (uid, periode, alasan = 'Koreksi data') =>
-    satu(uid, 'select public.batalkan_bonus($1, $2, $3) as id', [periode, alasan, '2027-04-10']).then((r) => r.id);
+    satu(uid, 'select public.batalkan_bonus($1, $2, $3) as id', [periode, alasan, '2026-07-10']).then((r) => r.id);
 
   beforeAll(async () => {
-    await simpanAturan(keu, { jenis: 'rit_harian_supir', ambang: 2, nominal: '25000', mulai: '2027-03-01' });
+    await simpanAturan(keu, { jenis: 'rit_harian_supir', ambang: 2, nominal: '25000', mulai: '2026-06-01' });
     const r = await satu(owner, 'select public.simpan_supir(p_id => null, p_nama => $1) as id', [unik('SUPIR-')]);
     supir = r.id;
     for (let i = 0; i < 2; i += 1) {
@@ -865,8 +865,8 @@ describe('posting dan pembalikan bonus', () => {
       const sjId = await satu(owner,
         `select public.buat_sj(p_lini_kode => $1, p_nomor => $2, p_tanggal => $3, p_pelanggan_id => $4, p_rute_id => $5,
            p_material_id => $6, p_truk_id => $7, p_supir_id => $8, p_qty_muat => $9) as id`,
-        [m.lini, nomor, '2027-03-04', m.pelanggan, m.rute, m.material, m.truk, supir, '10']);
-      await sebagai(owner, 'select public.selesaikan_sj($1, $2, $3, $4)', [sjId.id, '10', '2027-03-04', null]);
+        [m.lini, nomor, '2026-06-04', m.pelanggan, m.rute, m.material, m.truk, supir, '10']);
+      await sebagai(owner, 'select public.selesaikan_sj($1, $2, $3, $4)', [sjId.id, '10', '2026-06-04', null]);
     }
   });
 
@@ -883,13 +883,13 @@ describe('posting dan pembalikan bonus', () => {
   });
 
   it('operasional tidak boleh menghitung bonus', async () => {
-    await expect(hitung(ops, '2027-03-01')).rejects.toMatchObject({ code: '42501' });
+    await expect(hitung(ops, '2026-06-01')).rejects.toMatchObject({ code: '42501' });
   });
 
   it('posting menghasilkan satu jurnal seimbang bertanggal akhir bulan', async () => {
-    const jurnalId = await hitung(keu, '2027-03-15');
+    const jurnalId = await hitung(keu, '2026-06-15');
     const [j] = await sql('select tanggal, sumber_tipe, sumber_id from public.jurnal where id = $1', [jurnalId]);
-    expect(j).toEqual({ tanggal: '2027-03-31', sumber_tipe: 'bonus', sumber_id: null });
+    expect(j).toEqual({ tanggal: '2026-06-30', sumber_tipe: 'bonus', sumber_id: null });
     const baris = await sql(
       'select akun_kode, debit, kredit, supir_id from public.jurnal_baris where jurnal_id = $1 order by urutan', [jurnalId]);
     expect(baris).toEqual([
@@ -904,43 +904,43 @@ describe('posting dan pembalikan bonus', () => {
   });
 
   it('posting kedua untuk periode yang sama ditolak', async () => {
-    await expect(hitung(keu, '2027-03-01')).rejects.toMatchObject({ code: 'P0001' });
+    await expect(hitung(keu, '2026-06-01')).rejects.toMatchObject({ code: 'P0001' });
   });
 
   it('SJ tidak bisa diselesaikan lagi di bulan yang bonusnya sudah diposting', async () => {
     const sjId = await satu(owner,
       `select public.buat_sj(p_lini_kode => $1, p_nomor => $2, p_tanggal => $3, p_pelanggan_id => $4, p_rute_id => $5,
          p_material_id => $6, p_truk_id => $7, p_supir_id => $8, p_qty_muat => $9) as id`,
-      [m.lini, unik('SJ'), '2027-03-20', m.pelanggan, m.rute, m.material, m.truk, supir, '10']);
-    await expect(sebagai(owner, 'select public.selesaikan_sj($1, $2, $3, $4)', [sjId.id, '10', '2027-03-20', null]))
+      [m.lini, unik('SJ'), '2026-06-20', m.pelanggan, m.rute, m.material, m.truk, supir, '10']);
+    await expect(sebagai(owner, 'select public.selesaikan_sj($1, $2, $3, $4)', [sjId.id, '10', '2026-06-20', null]))
       .rejects.toMatchObject({ code: 'P0001' });
   });
 
   it('SJ yang sudah selesai tidak bisa dibatalkan di bulan yang bonusnya sudah diposting', async () => {
     const [sjLama] = await sql(
-      "select id from public.surat_jalan where supir_id = $1 and status = 'selesai' and tanggal_selesai = '2027-03-04' limit 1",
+      "select id from public.surat_jalan where supir_id = $1 and status = 'selesai' and tanggal_selesai = '2026-06-04' limit 1",
       [supir]);
-    await expect(sebagai(owner, 'select public.batalkan_sj($1, $2, $3)', [sjLama.id, 'Uji', '2027-04-01']))
+    await expect(sebagai(owner, 'select public.batalkan_sj($1, $2, $3)', [sjLama.id, 'Uji', '2026-07-01']))
       .rejects.toMatchObject({ code: 'P0001' });
   });
 
   it('batalkan_bonus membalik jurnal dan mengosongkan hutang bonus', async () => {
-    const pembalik = await batalkan(keu, '2027-03-01');
+    const pembalik = await batalkan(keu, '2026-06-01');
     const [p] = await sql('select sumber_tipe, tanggal from public.jurnal where id = $1', [pembalik]);
-    expect(p).toEqual({ sumber_tipe: 'pembalik', tanggal: '2027-04-10' });
+    expect(p).toEqual({ sumber_tipe: 'pembalik', tanggal: '2026-07-10' });
     expect(await sql('select saldo from public.v_hutang_bonus where penerima_id = $1', [supir])).toEqual([]);
   });
 
   it('batalkan_bonus pada periode yang belum diposting ditolak P0002', async () => {
-    await expect(batalkan(keu, '2027-05-01')).rejects.toMatchObject({ code: 'P0002' });
+    await expect(batalkan(keu, '2026-04-01')).rejects.toMatchObject({ code: 'P0002' });
   });
 
   it('batalkan_bonus tanpa alasan ditolak', async () => {
-    await expect(batalkan(keu, '2027-03-01', '   ')).rejects.toMatchObject({ code: 'P0001' });
+    await expect(batalkan(keu, '2026-06-01', '   ')).rejects.toMatchObject({ code: 'P0001' });
   });
 
   it('setelah dibatalkan, periode boleh dihitung ulang', async () => {
-    const jurnalId = await hitung(keu, '2027-03-01');
+    const jurnalId = await hitung(keu, '2026-06-01');
     expect(jurnalId).toBeTruthy();
     const rows = await sql('select saldo from public.v_hutang_bonus where penerima_id = $1', [supir]);
     expect(rows).toEqual([{ saldo: '25000.00' }]);
@@ -948,37 +948,41 @@ describe('posting dan pembalikan bonus', () => {
 
   it('hutang bonus bisa dilunasi lewat kas dengan dimensi supir', async () => {
     await sebagai(keu, 'select public.catat_kas($1, $2, $3, $4, $5)',
-      ['keluar', '2027-04-15', '1112', 'Bayar bonus', JSON.stringify([{ akun_kode: '2126', jumlah: '25000', supir_id: supir }])]);
+      ['keluar', '2026-07-15', '1112', 'Bayar bonus', JSON.stringify([{ akun_kode: '2126', jumlah: '25000', supir_id: supir }])]);
     expect(await sql('select saldo from public.v_hutang_bonus where penerima_id = $1', [supir])).toEqual([]);
   });
 
   it('pembayaran bonus tanpa dimensi ditolak', async () => {
     await expect(sebagai(keu, 'select public.catat_kas($1, $2, $3, $4, $5)',
-      ['keluar', '2027-04-16', '1112', 'Bayar bonus', JSON.stringify([{ akun_kode: '2126', jumlah: '1000' }])]))
+      ['keluar', '2026-07-16', '1112', 'Bayar bonus', JSON.stringify([{ akun_kode: '2126', jumlah: '1000' }])]))
       .rejects.toMatchObject({ code: 'P0001' });
   });
 
   // Harus menjadi uji TERAKHIR di berkas ini: mengunci periode mempengaruhi seluruh posting sesudahnya.
   it('periode yang sudah dikunci menolak posting bonus', async () => {
+    // Aturan sendiri untuk Agustus 2026 supaya dua SJ di bawah sudah cukup melewati ambang.
+    await simpanAturan(keu, { jenis: 'rit_harian_supir', ambang: 2, nominal: '25000', mulai: '2026-08-01' });
     const sjId = await satu(owner,
       `select public.buat_sj(p_lini_kode => $1, p_nomor => $2, p_tanggal => $3, p_pelanggan_id => $4, p_rute_id => $5,
          p_material_id => $6, p_truk_id => $7, p_supir_id => $8, p_qty_muat => $9) as id`,
-      [m.lini, unik('SJ'), '2027-06-02', m.pelanggan, m.rute, m.material, m.truk, supir, '10']);
-    await sebagai(owner, 'select public.selesaikan_sj($1, $2, $3, $4)', [sjId.id, '10', '2027-06-02', null]);
+      [m.lini, unik('SJ'), '2026-08-03', m.pelanggan, m.rute, m.material, m.truk, supir, '10']);
+    await sebagai(owner, 'select public.selesaikan_sj($1, $2, $3, $4)', [sjId.id, '10', '2026-08-03', null]);
     const sjId2 = await satu(owner,
       `select public.buat_sj(p_lini_kode => $1, p_nomor => $2, p_tanggal => $3, p_pelanggan_id => $4, p_rute_id => $5,
          p_material_id => $6, p_truk_id => $7, p_supir_id => $8, p_qty_muat => $9) as id`,
-      [m.lini, unik('SJ'), '2027-06-02', m.pelanggan, m.rute, m.material, m.truk, supir, '10']);
-    await sebagai(owner, 'select public.selesaikan_sj($1, $2, $3, $4)', [sjId2.id, '10', '2027-06-02', null]);
-    // Ada bonus untuk Juni 2027, jadi penolakan di bawah benar-benar datang dari penguncian periode.
-    expect((await sebagai(keu, 'select * from public.pratinjau_bonus($1)', ['2027-06-01'])).length).toBeGreaterThan(0);
-    await sebagai(owner, 'select public.atur_kunci_periode($1)', ['2027-06-30']);
-    await expect(hitung(keu, '2027-06-01')).rejects.toMatchObject({ code: 'P0001', message: /dikunci/ });
+      [m.lini, unik('SJ'), '2026-08-03', m.pelanggan, m.rute, m.material, m.truk, supir, '10']);
+    await sebagai(owner, 'select public.selesaikan_sj($1, $2, $3, $4)', [sjId2.id, '10', '2026-08-03', null]);
+    // Ada bonus untuk Agustus 2026, jadi penolakan di bawah benar-benar datang dari penguncian periode.
+    expect((await sebagai(keu, 'select * from public.pratinjau_bonus($1)', ['2026-08-01'])).length).toBeGreaterThan(0);
+    await sebagai(owner, 'select public.atur_kunci_periode($1)', ['2026-08-31']);
+    await expect(hitung(keu, '2026-08-01')).rejects.toMatchObject({ code: 'P0001', message: /dikunci/ });
   });
 });
 ```
 
 Catatan: berkas ini sudah mengimpor `beforeAll` di baris pertama, jadi `beforeAll` bersarang di dalam `describe` bisa dipakai tanpa impor tambahan.
+
+**Tanggal pada uji ini WAJIB tetap di masa lalu.** `hitung_bonus` menolak bulan yang belum berakhir (`v_akhir >= current_date`), jadi periode uji harus bulan yang sudah lewat: Juni 2026 untuk skenario posting/pembalikan, Agustus 2026 untuk uji penguncian. Jangan memindahkannya ke tahun depan — seluruh uji posting akan gagal dengan `Bulan ... belum berakhir`. Satu-satunya uji yang memakai tanggal relatif adalah `'bulan yang belum berakhir ditolak'`, dan itu memang disengaja.
 
 - [ ] **Step 2: Jalankan uji untuk memastikan gagal**
 
