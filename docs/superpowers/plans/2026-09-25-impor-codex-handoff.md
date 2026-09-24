@@ -80,23 +80,17 @@ Kalau kelak dirasa lambat, yang pertama diperiksa adalah jumlah `internal.wajib_
 
 Kerjakan berurutan. Baru buka Codex Desktop setelah Langkah 6 hijau.
 
+> ⚠️ **`apps/bul` TIDAK ADA di `C:\Project`.** Aplikasi BUL yang baru belum pernah di-merge ke `main` — PR #83 masih terbuka. Isi `C:\Project\apps\` hanya `bul-monitor`, `bul-accounting`, `erp-acc`, `sj-monitor`. Karena itu **worktree harus dibuat lebih dulu**, dan semua perintah `npm`/`supabase` dijalankan dari dalam worktree, bukan dari checkout utama.
+
 **Langkah 1 — nyalakan Docker Desktop**, tunggu sampai statusnya *Engine running*.
 
-**Langkah 2 — nyalakan Supabase lokal `bul`.** Wajib dijalankan dari `apps/bul`, karena `project_id = "bul"` ada di `apps/bul/supabase/config.toml`. Dari akar repo, CLI akan memakai nama folder dan mencari container yang tidak ada.
-
-```bash
-cd C:/Project/apps/bul && npx supabase start
-```
-
-**Agen tidak boleh** menjalankan `supabase start`/`stop`. Ini memang tugas Anda.
-
-**Langkah 3 — buat worktree implementer.** Dicabangkan dari tip fase Bonus, **bukan** dari `main`, supaya katalog RPC di `keamanan.test.mjs` sudah memuat fungsi-fungsi bonus dan tidak bentrok saat merge nanti.
+**Langkah 2 — buat worktree implementer.** Dicabangkan dari tip fase Bonus, **bukan** dari `main`, supaya `apps/bul` ada sama sekali dan katalog RPC di `keamanan.test.mjs` sudah memuat fungsi-fungsi bonus.
 
 ```bash
 git -C C:/Project worktree add -b codex/bul/impor C:/Project/.worktrees/bul/impor codex/bul/bonus
 ```
 
-**Langkah 4 — pasang dependensi.** Worktree baru tidak mewarisi `node_modules`. Dua tempat, dan pakai `npm ci` bukan `npm install`.
+**Langkah 3 — pasang dependensi.** Worktree baru tidak mewarisi `node_modules`. Dua tempat, dan pakai `npm ci` bukan `npm install`.
 
 ```bash
 cd C:/Project/.worktrees/bul/impor/apps/bul && npm ci
@@ -105,6 +99,14 @@ cd C:/Project/.worktrees/bul/impor/apps/bul && npm ci
 ```bash
 cd C:/Project/.worktrees/bul/impor/apps/bul/web && npm ci
 ```
+
+**Langkah 4 — nyalakan Supabase lokal `bul`.** Wajib dari `apps/bul` **di dalam worktree**, karena di situlah `supabase/config.toml` berisi `project_id = "bul"` berada. Dari akar worktree, CLI memakai nama folder dan mencari container `supabase_db_impor` yang tidak ada.
+
+```bash
+cd C:/Project/.worktrees/bul/impor/apps/bul && npx supabase start
+```
+
+Isi `config.toml` identik di semua worktree BUL, jadi container yang dihasilkan sama (`supabase_*_bul`) — kalau sudah menyala dari worktree lain, perintah ini hanya memakainya kembali. `supabase_vector_bul` yang restart-loop sudah diketahui dan tidak mengganggu. **Agen tidak boleh** menjalankan `supabase start`/`stop`; ini memang tugas Anda.
 
 **Langkah 5 — daftarkan worktree ke Gortex.** Bukan langkah opsional; alasannya di §3.
 
