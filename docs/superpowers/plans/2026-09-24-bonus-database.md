@@ -370,7 +370,10 @@ describe('bonus_berlaku', () => {
       .toEqual([{ ambang: 3, nominal: '45000.00' }]);
     // Sebelum aturan paling awal (2026-01-01, dibuat uji pertama di berkas ini) memang belum ada apa-apa.
     expect(await sql("select * from public.bonus_berlaku('rit_harian_supir', '2025-12-31')")).toEqual([]);
-    expect(await sql("select * from public.bonus_berlaku('tonase_supir', '2026-08-15')")).toEqual([]);
+    // Penyaringan per jenis: tanggal yang sama mengembalikan aturan tonase (ambang null, 10000 dari
+    // uji di describe sebelumnya), bukan aturan rit harian 45000 di atas.
+    expect(await sql("select * from public.bonus_berlaku('tonase_supir', '2026-08-15')"))
+      .toEqual([{ ambang: null, nominal: '10000.00' }]);
   });
 });
 
