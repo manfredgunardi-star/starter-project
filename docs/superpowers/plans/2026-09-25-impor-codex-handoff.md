@@ -120,7 +120,13 @@ Isi `config.toml` identik di semua worktree BUL, jadi container yang dihasilkan 
 "C:/Users/m3m31/AppData/Local/Programs/gortex/gortex.exe" daemon status
 ```
 
-**Langkah 7 — siapkan `.env.local` untuk web** (baru diperlukan pada Batch F, boleh ditunda). Isi `VITE_SUPABASE_ANON_KEY` dengan kunci **Publishable** dari keluaran `npx supabase status`. **Jangan pakai kunci Secret** — semua variabel `VITE_` ikut ke bundel browser dan kunci itu melewati seluruh RLS.
+**Langkah 7 — salin berkas env untuk web** (baru diperlukan pada Batch F, boleh ditunda). Berkas env `gitignore`d, jadi **tidak ikut** ke worktree baru. Salin dari worktree fase Bonus, yang isinya sudah terbukti jalan:
+
+```bash
+cp C:/Project/.worktrees/bul/bonus/apps/bul/web/.env C:/Project/.worktrees/bul/impor/apps/bul/web/.env.local
+```
+
+Kalau harus dibuat sendiri: `VITE_SUPABASE_URL=http://127.0.0.1:54321` dan `VITE_SUPABASE_ANON_KEY` diisi kunci **Publishable** (`sb_publishable_…`) dari `npx supabase status`. **Jangan pakai kunci Secret** — semua variabel `VITE_` ikut ke bundel browser dan kunci itu melewati seluruh RLS. Jangan pula memakai `.env.local` lama di worktree `fase-1a`; kuncinya berbeda dan lebih tua.
 
 **Langkah 8 — setel model dan effort** kalau build Desktop Anda belum menyediakannya per percakapan. Saat ini `C:/Users/m3m31/.codex/config.toml` berisi `model = "gpt-5.6-terra"` dan `model_reasoning_effort = "medium"`; ubah **sebelum** membuka percakapan, sesuai tabel §4.
 
