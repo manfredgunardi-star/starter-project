@@ -121,3 +121,93 @@ language sql stable set search_path = '' as $$
 $$;
 
 select internal.terapkan_hak_akses();
+-- ---------- Mesin perhitungan ----------
+-- Satu sumber kebenaran: pratinjau dan posting sama-sama membaca fungsi ini.
+-- Himpunan dasar: SJ selesai dengan tanggal_selesai di dalam bulan periode.
+-- Aturan harian dan tonase dievaluasi pada tanggal kejadiannya; aturan bulanan pada akhir bulan.
+
+create function internal.hitung_bonus_baris(p_periode date)
+returns table (jenis text, penerima_jenis text, penerima_id uuid, penerima_nama text, dasar numeric, jumlah numeric)
+language sql stable security definer set search_path = '' as $$
+with batas as (
+  select date_trunc('month', p_periode)::date as awal,
+         (date_trunc('month', p_periode) + interval '1 month - 1 day')::date as akhir
+),
+sj as (
+  select s.supir_id, s.pengurus_id, s.material_id, s.qty_bongkar, s.tanggal_selesai
+    from public.surat_jalan s
+    cross join batas b
+   where s.status = 'selesai' and s.tanggal_selesai between b.awal and b.akhir
+),
+harian as (
+  select s.supir_id as sid, s.tanggal_selesai as hari, count(*) as rit
+    from sj s
+   group by s.supir_id, s.tanggal_selesai
+),
+b_harian as (
+  select 'rit_harian_supir'::text as j, 'supir'::text as pj, h.sid as pid,
+         count(*)::numeric as d, sum(ab.nominal)::numeric as n
+    from harian h
+    cross join lateral public.bonus_berlaku('rit_harian_supir', h.hari) ab
+   where h.rit >= ab.ambang
+   group by h.sid
+),
+b_tonase as (
+  select 'tonase_supir'::text as j, 'supir'::text as pj, s.supir_id as pid,
+         count(*)::numeric as d, sum(ab.nominal)::numeric as n
+    from sj s
+    join public.material mt on mt.id = s.material_id
+    cross join lateral public.bonus_berlaku('tonase_supir', s.tanggal_selesai) ab
+   where mt.standar_bongkar is not null and s.qty_bongkar > mt.standar_bongkar
+   group by s.supir_id
+),
+rit_supir as (
+  select s.supir_id as sid, count(*) as rit from sj s group by s.supir_id
+),
+b_bulan_supir as (
+  select 'rit_bulanan_supir'::text as j, 'supir'::text as pj, r.sid as pid,
+         r.rit::numeric as d, ab.nominal::numeric as n
+    from rit_supir r
+    cross join batas b
+    cross join lateral public.bonus_berlaku('rit_bulanan_supir', b.akhir) ab
+   where r.rit >= ab.ambang
+),
+rit_pengurus as (
+  select s.pengurus_id as pgid, count(*) as rit
+    from sj s where s.pengurus_id is not null group by s.pengurus_id
+),
+b_bulan_pengurus as (
+  select 'rit_bulanan_pengurus'::text as j, 'pengurus'::text as pj, r.pgid as pid,
+         r.rit::numeric as d, ab.nominal::numeric as n
+    from rit_pengurus r
+    cross join batas b
+    cross join lateral public.bonus_berlaku('rit_bulanan_pengurus', b.akhir) ab
+   where r.rit >= ab.ambang
+),
+semua as (
+  select * from b_harian
+  union all select * from b_tonase
+  union all select * from b_bulan_supir
+  union all select * from b_bulan_pengurus
+)
+select t.j, t.pj, t.pid, coalesce(sp.nama, pg.nama), t.d, t.n
+  from semua t
+  left join public.supir sp on sp.id = t.pid and t.pj = 'supir'
+  left join public.pengurus pg on pg.id = t.pid and t.pj = 'pengurus'
+ where t.n > 0
+ order by coalesce(sp.nama, pg.nama), t.j
+$$;
+
+create function public.pratinjau_bonus(p_periode date)
+returns table (jenis text, penerima_jenis text, penerima_id uuid, penerima_nama text, dasar numeric, jumlah numeric)
+language plpgsql stable security definer set search_path = '' as $$
+begin
+  perform internal.wajib_peran('owner', 'keuangan');
+  if p_periode is null then
+    raise exception 'Periode wajib diisi' using errcode = 'P0001';
+  end if;
+  return query select * from internal.hitung_bonus_baris(p_periode);
+end;
+$$;
+
+select internal.terapkan_hak_akses();
