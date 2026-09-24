@@ -264,13 +264,25 @@ describe('impor_master', () => {
     expect(rows).toEqual([{ asal: 'Bekasi' }, { asal: 'Bogor' }]);
   });
 
-  it('nama yang tidak ditemukan ditolak dengan nomor baris', async () => {
+  it('nama yang tidak ditemukan ditolak dengan nomor baris, dan seluruh kiriman batal', async () => {
+    // Rute dan material SENGAJA dibuat sah di kiriman yang sama supaya satu-satunya
+    // yang bisa gagal adalah pelanggan. Kalau ketiganya hantu, `cari_rute` yang
+    // meledak lebih dulu (ia statement tersendiri sebelum `simpan_tarif` dipanggil),
+    // sehingga jalur `wajib_ketemu` untuk pelanggan tidak pernah teruji.
+    const rute = unik('RUTE-');
+    const mat = unik('MAT-');
     await expect(imporMaster(owner, {
+      rute: [{ nama: rute, asal: 'Bogor', tujuan: 'Jakarta' }],
+      material: [{ lini: 'SJP', nama: mat, satuan: 'm3', standar_bongkar: '20' }],
       tarif: [
-        { pelanggan: unik('HANTU-'), rute: unik('HANTU-'), lini: 'SJP', material: unik('HANTU-'),
-          berlaku_mulai: '2026-01-01', harga_satuan: '1000' },
+        { pelanggan: unik('HANTU-'), rute, rute_asal: 'Bogor', rute_tujuan: 'Jakarta',
+          lini: 'SJP', material: mat, berlaku_mulai: '2026-01-01', harga_satuan: '1000' },
       ],
-    })).rejects.toThrow(/Baris 1: pelanggan ".*" tidak ditemukan/);
+    })).rejects.toThrow(/Baris 1: pelanggan "HANTU-[^"]*" tidak ditemukan/);
+
+    // Atomisitas: rute dan material yang dibuat di panggilan yang gagal tidak boleh tersisa.
+    expect(await sql('select 1 from public.rute where nama = $1', [rute])).toEqual([]);
+    expect(await sql('select 1 from public.material where nama = $1', [mat])).toEqual([]);
   });
 });
 ```
