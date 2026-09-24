@@ -8,10 +8,10 @@ beforeAll(async () => {
 afterAll(tutup);
 
 const RPC_TULIS = [
-  'atur_kunci_periode', 'atur_pengaturan_posting', 'atur_profil', 'batalkan_invoice', 'batalkan_jurnal_manual',
-  'batalkan_kas', 'batalkan_pembayaran', 'batalkan_saldo_awal', 'batalkan_sj', 'buat_jurnal_manual',
-  'buat_piutang_saldo_awal', 'buat_sj', 'catat_kas', 'catat_pembayaran', 'posting_saldo_awal', 'pratinjau_bonus',
-  'pratinjau_invoice',
+  'atur_kunci_periode', 'atur_pengaturan_posting', 'atur_profil', 'batalkan_bonus', 'batalkan_invoice',
+  'batalkan_jurnal_manual', 'batalkan_kas', 'batalkan_pembayaran', 'batalkan_saldo_awal', 'batalkan_sj',
+  'buat_jurnal_manual', 'buat_piutang_saldo_awal', 'buat_sj', 'catat_kas', 'catat_pembayaran', 'hitung_bonus',
+  'posting_saldo_awal', 'pratinjau_bonus', 'pratinjau_invoice',
   'selesaikan_sj', 'simpan_akun', 'simpan_aturan_bonus', 'simpan_aturan_komisi', 'simpan_aturan_upah', 'simpan_lini',
   'simpan_material', 'simpan_pelanggan', 'simpan_pengaturan_pajak', 'simpan_pengurus', 'simpan_rute', 'simpan_supir',
   'simpan_tarif', 'simpan_tipe_rute', 'simpan_truk', 'simpan_uang_jalan_rute', 'terbitkan_invoice', 'transfer_kas',
@@ -53,7 +53,7 @@ describe('tabel', () => {
       select c.relname, coalesce(c.reloptions, '{}') as opsi, has_table_privilege('anon', c.oid, 'SELECT') as anon_sel
       from pg_class c join pg_namespace n on n.oid = c.relnamespace
       where n.nspname = 'public' and c.relkind = 'v'`);
-    expect(rows.map((r) => r.relname).sort()).toEqual(['v_buku_besar', 'v_hutang_komisi_pengurus', 'v_hutang_upah_supir', 'v_invoice_saldo']);
+    expect(rows.map((r) => r.relname).sort()).toEqual(['v_buku_besar', 'v_hutang_bonus', 'v_hutang_komisi_pengurus', 'v_hutang_upah_supir', 'v_invoice_saldo']);
     for (const r of rows) {
       expect({ v: r.relname, inv: r.opsi.includes('security_invoker=true'), anon: r.anon_sel })
         .toEqual({ v: r.relname, inv: true, anon: false });
