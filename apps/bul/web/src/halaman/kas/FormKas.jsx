@@ -10,8 +10,12 @@ export default function FormKas({ jenis, onTutup }) {
   const akun = useDaftar('akun', { filter: [['eq', 'tipe', 'detail'], ['eq', 'aktif', true]], order: { kolom: 'kode' } });
   const opsiTruk = useOpsi({ tabel: 'truk', label: 'nopol', order: 'nopol' });
   const opsiSupir = useOpsi({ tabel: 'supir', label: 'nama' });
+  const opsiPengurus = useOpsi({ tabel: 'pengurus', label: 'nama' });
   const opsiLini = useOpsi({ tabel: 'lini', label: 'nama', value: 'kode' });
-  const catat = useRpc('catat_kas', { invalidate: ['transaksi_kas'], pesanSukses: 'Transaksi kas tercatat' });
+  const catat = useRpc('catat_kas', {
+    invalidate: ['transaksi_kas', 'v_hutang_bonus', 'v_hutang_komisi_pengurus', 'v_hutang_upah_supir'],
+    pesanSukses: 'Transaksi kas tercatat',
+  });
   const semua = akun.data ?? [];
   const opsiKas = semua.filter((a) => a.kas_bank).map((a) => ({ value: a.kode, label: `${a.kode} ${a.nama}` }));
   // Piutang (1121) dan kas/bank tidak boleh jadi baris; server juga menolak.
@@ -26,6 +30,7 @@ export default function FormKas({ jenis, onTutup }) {
       p_baris: v.baris.map((b) => ({
         akun_kode: b.akun_kode, jumlah: b.jumlah, keterangan: b.keterangan ?? '',
         truk_id: b.truk_id ?? null, supir_id: b.supir_id ?? null, lini_kode: b.lini_kode ?? null,
+        pengurus_id: b.pengurus_id ?? null,
       })),
     });
     form.resetFields();
@@ -63,6 +68,7 @@ export default function FormKas({ jenis, onTutup }) {
                   </Form.Item>
                   <Form.Item name={[f.name, 'truk_id']}><Select allowClear placeholder="Truk" options={opsiTruk.options} style={{ width: 130 }} /></Form.Item>
                   <Form.Item name={[f.name, 'supir_id']}><Select allowClear showSearch optionFilterProp="label" placeholder="Supir" options={opsiSupir.options} style={{ width: 150 }} /></Form.Item>
+                  <Form.Item name={[f.name, 'pengurus_id']}><Select allowClear showSearch optionFilterProp="label" placeholder="Pengurus" options={opsiPengurus.options} style={{ width: 150 }} /></Form.Item>
                   <Form.Item name={[f.name, 'lini_kode']}><Select allowClear placeholder="Lini" options={opsiLini.options} style={{ width: 110 }} /></Form.Item>
                   <Form.Item name={[f.name, 'keterangan']} style={{ flex: 1, minWidth: 140 }}><Input placeholder="Keterangan baris" /></Form.Item>
                   {fields.length > 1 && <Button onClick={() => remove(f.name)}>Hapus</Button>}
