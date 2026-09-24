@@ -11,14 +11,15 @@ const RPC_TULIS = [
   'atur_kunci_periode', 'atur_pengaturan_posting', 'atur_profil', 'batalkan_invoice', 'batalkan_jurnal_manual',
   'batalkan_kas', 'batalkan_pembayaran', 'batalkan_saldo_awal', 'batalkan_sj', 'buat_jurnal_manual',
   'buat_piutang_saldo_awal', 'buat_sj', 'catat_kas', 'catat_pembayaran', 'posting_saldo_awal', 'pratinjau_invoice',
-  'selesaikan_sj', 'simpan_akun', 'simpan_aturan_komisi', 'simpan_aturan_upah', 'simpan_lini', 'simpan_material',
-  'simpan_pelanggan', 'simpan_pengaturan_pajak', 'simpan_pengurus', 'simpan_rute', 'simpan_supir', 'simpan_tarif',
-  'simpan_tipe_rute', 'simpan_truk', 'simpan_uang_jalan_rute', 'terbitkan_invoice', 'transfer_kas', 'ubah_sj',
+  'selesaikan_sj', 'simpan_akun', 'simpan_aturan_bonus', 'simpan_aturan_komisi', 'simpan_aturan_upah', 'simpan_lini',
+  'simpan_material', 'simpan_pelanggan', 'simpan_pengaturan_pajak', 'simpan_pengurus', 'simpan_rute', 'simpan_supir',
+  'simpan_tarif', 'simpan_tipe_rute', 'simpan_truk', 'simpan_uang_jalan_rute', 'terbitkan_invoice', 'transfer_kas',
+  'ubah_sj',
 ];
 const FUNGSI_BACA = [
-  'cek_saldo_awal_piutang', 'kategori_akun', 'komisi_berlaku', 'laporan_laba_dimensi', 'laporan_laba_rugi', 'laporan_neraca',
-  'laporan_omzet', 'laporan_saldo_akun', 'laporan_umur_piutang', 'pajak_berlaku', 'peran_saya', 'saran_pph_invoice',
-  'tarif_berlaku', 'uang_jalan_berlaku', 'upah_berlaku',
+  'bonus_berlaku', 'cek_saldo_awal_piutang', 'kategori_akun', 'komisi_berlaku', 'laporan_laba_dimensi',
+  'laporan_laba_rugi', 'laporan_neraca', 'laporan_omzet', 'laporan_saldo_akun', 'laporan_umur_piutang',
+  'pajak_berlaku', 'peran_saya', 'saran_pph_invoice', 'tarif_berlaku', 'uang_jalan_berlaku', 'upah_berlaku',
 ];
 
 describe('inventaris', () => {
