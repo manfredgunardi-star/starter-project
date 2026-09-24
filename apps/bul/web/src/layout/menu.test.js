@@ -9,6 +9,8 @@ describe('menu & hak', () => {
     expect(boleh('keuangan', 'sj.tulis')).toBe(false);
     expect(boleh('viewer', 'invoice.tulis')).toBe(false);
     expect(boleh(null, 'sj.tulis')).toBe(false);
+    expect(boleh('keuangan', 'bonus.tulis')).toBe(true);
+    expect(boleh('operasional', 'bonus.tulis')).toBe(false);
     expect(() => boleh('owner', 'tidak.ada')).toThrow(/tidak dikenal/);
   });
   it('menu per peran', () => {
@@ -17,6 +19,8 @@ describe('menu & hak', () => {
     expect(kunci('viewer')).not.toContain('pengguna');
     expect(kunci('viewer')).not.toContain('pengaturan');
     expect(kunci('viewer')).toContain('laporan');
+    expect(kunci('keuangan')).toContain('bonus');
+    expect(kunci('operasional')).not.toContain('bonus');
     expect(kunci(null)).toEqual([]);
   });
 });
