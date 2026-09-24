@@ -318,8 +318,12 @@ dan kartu Beranda" — Step 1 s.d. Step 4. Task 1–6 sudah ter-commit.
 Task ini sengaja tanpa uji unit baru: penjagaannya ada di database dan sudah diuji di Task 1 dan Task 4.
 Gerbangnya `npm test` (jumlah tes tetap) dan `npm run build`.
 
-Tiga sisipan kecil saja — satu baris useOpsi, satu Form.Item, satu objek payload di FormKas.jsx; satu
-useDaftar dan satu Card di Beranda.jsx. Jangan merestrukturisasi berkas-berkas itu.
+Sisipan kecil saja — di FormKas.jsx: satu baris useOpsi, daftar invalidate pada useRpc('catat_kas'),
+satu objek payload, dan satu Form.Item; di Beranda.jsx: satu useDaftar dan satu Card. Jangan
+merestrukturisasi berkas-berkas itu.
+
+Jaga spasi kosong: sisipkan tepat di posisi yang disebut plan, jangan menambah baris kosong ekstra
+di sekitar sisipan atau di akhir blok.
 
 Setelah commit, JANGAN menyatakan fase selesai. Bagian "Gerbang akhir fase web" memuat daftar verifikasi
 manual browser yang wajib dijalankan; kerjakan daftar itu dan laporkan hasil tiap butir apa adanya.
