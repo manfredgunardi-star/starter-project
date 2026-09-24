@@ -17,6 +17,7 @@
 - Setiap RPC tulis di schema `public` wajib `security definer`, `set search_path = ''`, dan memanggil `internal.wajib_peran(...)`. Gerbang katalog di `db/tests/keamanan.test.mjs` memeriksa ini untuk semua fungsi.
 - Setiap file migrasi diakhiri `select internal.terapkan_hak_akses();`. Memanggilnya lebih dari sekali dalam satu file tidak berbahaya (idempoten) — saat sebuah task menambahkan blok SQL ke file yang sudah ada, blok baru itu diakhiri pemanggilannya sendiri.
 - `db/tests/keamanan.test.mjs` memuat **daftar tertutup** nama fungsi (`RPC_TULIS`, `FUNGSI_BACA`) dan view. Setiap task yang menambah fungsi/view publik **wajib memperbarui daftar itu di commit yang sama**, kalau tidak seluruh suite langsung merah.
+- `db/tests/akuntansi.test.mjs` juga mematok seed secara harfiah: jumlah baris `public.akun` dan seluruh isi `public.pengaturan_posting`. Menambah akun atau kunci posting **wajib** diikuti di berkas itu pada commit yang sama.
 - Jurnal tidak bisa diubah/dihapus; koreksi selalu lewat jurnal pembalik.
 - Dilarang menjalankan `npx supabase start` / `stop`. `npx supabase status` boleh. `npm run db:reset` aman dan idempoten.
 - Tidak ada `git push`, tidak ada deploy, tidak ada migrasi ke Supabase produksi.
@@ -273,6 +274,7 @@ git commit -m "fix(bul): dimensi pengurus di modul kas agar hutang komisi bisa d
 - Create: `apps/bul/supabase/migrations/20260924000200_bonus.sql`
 - Create: `apps/bul/db/tests/bonus.test.mjs`
 - Modify: `apps/bul/db/tests/keamanan.test.mjs`
+- Modify: `apps/bul/db/tests/akuntansi.test.mjs` — dua assertion seed yang mematok isi COA dan pengaturan posting secara harfiah
 
 **Interfaces:**
 - Consumes: `internal.wajib_peran`, `internal.catat_audit`, `public.material`, `public.pengaturan_posting`, `public.akun`.
@@ -366,7 +368,8 @@ describe('bonus_berlaku', () => {
       .toEqual([{ ambang: 3, nominal: '30000.00' }]);
     expect(await sql("select * from public.bonus_berlaku('rit_harian_supir', '2026-08-15')"))
       .toEqual([{ ambang: 3, nominal: '45000.00' }]);
-    expect(await sql("select * from public.bonus_berlaku('rit_harian_supir', '2026-04-15')")).toEqual([]);
+    // Sebelum aturan paling awal (2026-01-01, dibuat uji pertama di berkas ini) memang belum ada apa-apa.
+    expect(await sql("select * from public.bonus_berlaku('rit_harian_supir', '2025-12-31')")).toEqual([]);
     expect(await sql("select * from public.bonus_berlaku('tonase_supir', '2026-08-15')")).toEqual([]);
   });
 });
@@ -552,6 +555,33 @@ const FUNGSI_BACA = [
 ];
 ```
 
+- [ ] **Step 4b: Perbarui assertion seed COA dan pengaturan posting**
+
+`db/tests/akuntansi.test.mjs` mematok isi seed secara harfiah, jadi menambah dua akun dan dua kunci posting **wajib** diikuti di berkas ini pada commit yang sama. Ini bukan menambal uji supaya hijau — nilai yang dipatok itu memang berubah karena seed-nya bertambah.
+
+Pada `describe('seed akuntansi', ...)`, uji `COA bul-accounting + 6251 tersedia`, ubah satu baris:
+
+```javascript
+    expect(n).toBe(163);
+```
+
+Pada uji `pengaturan posting default` di bawahnya, ganti seluruh array harapannya menjadi (urut `kunci`, sesuai `order by kunci` pada kuerinya):
+
+```javascript
+    expect(rows).toEqual([
+      { kunci: 'beban_bonus', akun_kode: '5135' },
+      { kunci: 'beban_komisi_pengurus', akun_kode: '5180' },
+      { kunci: 'beban_pph_final', akun_kode: '6251' },
+      { kunci: 'beban_uang_jalan', akun_kode: '5150' },
+      { kunci: 'beban_upah_sopir', akun_kode: '5130' },
+      { kunci: 'hutang_bonus', akun_kode: '2126' },
+      { kunci: 'hutang_komisi_pengurus', akun_kode: '2125' },
+      { kunci: 'hutang_upah_sopir', akun_kode: '2121' },
+      { kunci: 'pendapatan_jasa', akun_kode: '4100' },
+      { kunci: 'piutang_usaha', akun_kode: '1121' },
+    ]);
+```
+
 - [ ] **Step 5: Jalankan uji untuk memastikan lulus**
 
 ```bash
@@ -565,7 +595,7 @@ Kalau `keamanan.test.mjs` gagal pada uji `fungsi di schema public persis sesuai 
 - [ ] **Step 6: Commit**
 
 ```bash
-git add apps/bul/supabase/migrations/20260924000200_bonus.sql apps/bul/db/tests/bonus.test.mjs apps/bul/db/tests/keamanan.test.mjs
+git add apps/bul/supabase/migrations/20260924000200_bonus.sql apps/bul/db/tests/bonus.test.mjs apps/bul/db/tests/keamanan.test.mjs apps/bul/db/tests/akuntansi.test.mjs
 git commit -m "feat(bul): skema aturan bonus, standar bongkar material, dan akun bonus"
 ```
 
