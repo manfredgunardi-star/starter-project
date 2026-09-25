@@ -846,12 +846,24 @@ describe('impor_kas', () => {
   });
 
   it('penjagaan dimensi catat_kas tetap berlaku lewat jalur impor', async () => {
-    const hutangUpah = (await sql(
-      `select nilai from public.pengaturan_posting where kunci = 'hutang_upah_sopir'`))[0].nilai;
-    await expect(imporKas(owner, [
+    // Kolomnya akun_kode, bukan nilai. Akun dibaca dari pengaturan_posting sebagai INPUT,
+    // bukan sebagai nilai harapan; yang dipatri adalah pesan galatnya. Ketiga penjagaan
+    // diuji karena dua di antaranya baru ditambahkan fase Bonus, dan jalur impor ini
+    // belum pernah menyentuhnya.
+    const akun = Object.fromEntries((await sql(
+      `select kunci, akun_kode from public.pengaturan_posting
+        where kunci in ('hutang_upah_sopir', 'hutang_komisi_pengurus', 'hutang_bonus')`))
+      .map((r) => [r.kunci, r.akun_kode]));
+    const kirim = (kode) => imporKas(owner, [
       { jenis: 'keluar', tanggal: '2026-04-05', akun_kas: '1111', keterangan: unik('KAS-'),
-        akun: hutangUpah, jumlah: '100000' },
-    ])).rejects.toThrow(/wajib memilih supir/);
+        akun: kode, jumlah: '100000' },
+    ]);
+    await expect(kirim(akun.hutang_upah_sopir))
+      .rejects.toThrow(/Pembayaran upah wajib memilih supir/);
+    await expect(kirim(akun.hutang_komisi_pengurus))
+      .rejects.toThrow(/Pembayaran komisi pengurus wajib memilih pengurus/);
+    await expect(kirim(akun.hutang_bonus))
+      .rejects.toThrow(/Pembayaran bonus wajib memilih supir atau pengurus/);
   });
 
   it('gagal di tengah tidak meninggalkan transaksi kas atau jurnal', async () => {
