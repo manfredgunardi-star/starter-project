@@ -24,3 +24,25 @@ describe('menu & hak', () => {
     expect(kunci(null)).toEqual([]);
   });
 });
+
+describe('hak impor', () => {
+  it('hanya owner yang boleh mengimpor', () => {
+    expect(boleh('owner', 'impor')).toBe(true);
+    for (const peran of ['keuangan', 'operasional', 'viewer']) {
+      expect(boleh(peran, 'impor')).toBe(false);
+    }
+  });
+
+  it('menu Impor hanya muncul untuk owner', () => {
+    const punya = (peran) => menuUntukPeran(peran).some((m) => m.key === 'impor');
+    expect(punya('owner')).toBe(true);
+    expect(punya('keuangan')).toBe(false);
+    expect(punya('operasional')).toBe(false);
+    expect(punya('viewer')).toBe(false);
+  });
+
+  it('entri menu Impor menunjuk ke /impor', () => {
+    const m = menuUntukPeran('owner').find((x) => x.key === 'impor');
+    expect(m).toMatchObject({ label: 'Impor', path: '/impor' });
+  });
+});
