@@ -557,8 +557,18 @@ describe('impor_surat_jalan', () => {
     const plg = unik('PLG-');
     const supir = unik('SUPIR-');
     const nopol = unik('B ');
+    // tipe_rute dan aturan_komisi BUKAN cakupan impor; keduanya dibuat lewat layar master
+    // aplikasi sebelum impor dijalankan. Fixture meniru prasyarat itu, sebab tanpa keduanya
+    // komisi_berlaku(null, tanggal) mengembalikan null dan selesaikan_sj tidak membentuk
+    // satu pun baris jurnal komisi -- diam-diam, tanpa galat.
+    const tipe = unik('TIPE-');
+    const [t] = await sebagai(owner,
+      'select public.simpan_tipe_rute(p_id => null, p_nama => $1) as id', [tipe]);
+    await sebagai(owner,
+      `select public.simpan_aturan_komisi(p_id => null, p_nama => $1, p_tipe_rute_id => $2,
+         p_berlaku_mulai => '2026-01-01'::date, p_nominal => 50000)`, [unik('KOM-'), t.id]);
     await sebagai(owner, 'select public.impor_master($1::jsonb)', [JSON.stringify({
-      rute: [{ nama: rute, asal: 'Bogor', tujuan: 'Jakarta' }],
+      rute: [{ nama: rute, asal: 'Bogor', tujuan: 'Jakarta', tipe_rute: tipe }],
       material: [{ lini: 'SJP', nama: mat, satuan: 'm3' }],
       pelanggan: [{ nama: plg, pemotong_pph: true }],
       truk: [{ nopol }],
@@ -566,7 +576,7 @@ describe('impor_surat_jalan', () => {
       uang_jalan: [{ rute, berlaku_mulai: '2026-01-01', nominal: '111111' }],
       aturan_upah: [{ nama: unik('UPAH-'), rute, berlaku_mulai: '2026-01-01', basis: 'per_sj', nominal: '222222' }],
     })]);
-    return { rute, mat, plg, supir, nopol };
+    return { rute, mat, plg, supir, nopol, tipe };
   }
 
   it('memakai angka dari berkas, bukan dari master', async () => {
@@ -617,11 +627,17 @@ describe('impor_surat_jalan', () => {
         where s.nomor = $1`, [nomor]);
     expect(sj.nama).toBe(pengurus);
 
+    // Cacah baris saja akan lulus walau nominalnya salah. Nilai dipatri, bukan dihitung
+    // ulang lewat internal.akun_posting, supaya tes tidak sekadar mengulang rumus yang diuji.
     const baris = await sql(
-      `select count(*)::int as n from public.surat_jalan s
+      `select b.akun_kode, b.debit, b.kredit from public.surat_jalan s
          join public.jurnal_baris b on b.jurnal_id = s.jurnal_upah_id
-        where s.nomor = $1 and b.pengurus_id = s.pengurus_id`, [nomor]);
-    expect(baris[0].n).toBeGreaterThan(0);
+        where s.nomor = $1 and b.pengurus_id = s.pengurus_id
+        order by b.akun_kode`, [nomor]);
+    expect(baris).toEqual([
+      { akun_kode: '2125', debit: '0.00', kredit: '50000.00' },
+      { akun_kode: '5180', debit: '50000.00', kredit: '0.00' },
+    ]);
   });
 
   it('gagal di tengah tidak meninggalkan satu pun SJ atau jurnal', async () => {
