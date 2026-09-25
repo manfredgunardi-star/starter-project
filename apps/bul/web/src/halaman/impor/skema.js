@@ -1,4 +1,5 @@
-import { dariCsv } from '../../lib/csv.js';
+import { dariCsv, keCsv } from '../../lib/csv.js';
+import { dariSen, jumlahkan } from '../../lib/uang.js';
 
 const T = (nama, wajib = false) => ({ nama, jenis: 'teks', wajib });
 const A = (nama, wajib = false) => ({ nama, jenis: 'angka', wajib });
@@ -101,4 +102,113 @@ export function bacaBerkas(namaBerkas, teks) {
   });
 
   return { kunci: def.kunci, baris, galat };
+}
+
+export function templatCsv() {
+  return BERKAS.map((b) => ({
+    berkas: b.berkas,
+    teks: keCsv(b.kolom.map((k) => ({ title: k.nama, dataIndex: k.nama })), []),
+  }));
+}
+
+// Kolom -> jenis master yang dirujuknya. Material ditangani khusus karena kuncinya
+// gabungan (lini, nama).
+const RUJUKAN = {
+  rute: { tipe_rute: 'tipe_rute' },
+  uang_jalan: { rute: 'rute' },
+  tarif: { pelanggan: 'pelanggan', rute: 'rute', lini: 'lini' },
+  aturan_upah: { rute: 'rute', lini: 'lini' },
+  surat_jalan: { pelanggan: 'pelanggan', rute: 'rute', nopol: 'truk', supir: 'supir', pengurus: 'pengurus', lini: 'lini' },
+  kas: { akun_kas: 'akun', akun: 'akun', nopol: 'truk', supir: 'supir', pengurus: 'pengurus', lini: 'lini' },
+};
+const PUNYA_MATERIAL = ['tarif', 'aturan_upah', 'surat_jalan'];
+const BERKAS_DARI_KUNCI = Object.fromEntries(BERKAS.map((b) => [b.kunci, b.berkas]));
+
+export function namaTakDikenal(kiriman, master) {
+  // Yang sudah ada di database, ditambah yang akan dibuat oleh kiriman ini sendiri.
+  const ada = {};
+  for (const [jenis, daftar] of Object.entries(master)) ada[jenis] = new Set(daftar);
+  for (const [kunci, kolomNama] of [['pelanggan', 'nama'], ['rute', 'nama'], ['supir', 'nama'], ['pengurus', 'nama']]) {
+    for (const b of kiriman[kunci] ?? []) ada[kunci].add(b[kolomNama]);
+  }
+  for (const b of kiriman.truk ?? []) ada.truk.add(b.nopol);
+  for (const b of kiriman.material ?? []) ada.material.add(`${b.lini}|${b.nama}`);
+
+  const galat = [];
+  for (const [kunci, kolom] of Object.entries(RUJUKAN)) {
+    (kiriman[kunci] ?? []).forEach((b, i) => {
+      for (const [nama, jenis] of Object.entries(kolom)) {
+        const v = (b[nama] ?? '').trim();
+        if (v && !ada[jenis].has(v)) {
+          galat.push(`${BERKAS_DARI_KUNCI[kunci]} baris ${i + 1}: ${nama} "${v}" belum ada`);
+        }
+      }
+      if (PUNYA_MATERIAL.includes(kunci)) {
+        const m = (b.material ?? '').trim();
+        if (m && !ada.material.has(`${(b.lini ?? '').trim()}|${m}`)) {
+          galat.push(`${BERKAS_DARI_KUNCI[kunci]} baris ${i + 1}: material "${m}" belum ada`);
+        }
+      }
+    });
+  }
+  return galat;
+}
+
+export function ringkasan(kiriman) {
+  const jumlah = {};
+  for (const [kunci, baris] of Object.entries(kiriman)) if (baris?.length) jumlah[kunci] = baris.length;
+  const sj = kiriman.surat_jalan ?? [];
+  const kas = kiriman.kas ?? [];
+  const jml = (list) => dariSen(jumlahkan(list.filter((v) => v !== '' && v != null)));
+  return {
+    jumlah,
+    uangJalan: jml(sj.map((b) => b.uang_jalan)),
+    upah: jml(sj.map((b) => b.upah)),
+    kasKeluar: jml(kas.filter((b) => b.jenis === 'keluar').map((b) => b.jumlah)),
+    kasMasuk: jml(kas.filter((b) => b.jenis === 'masuk').map((b) => b.jumlah)),
+  };
+}
+
+// Kumpulan hal yang membuat impor TETAP SUKSES tetapi menyimpang dari kebenaran historis
+// tanpa meninggalkan jejak. Semuanya sudah diverifikasi langsung ke database, bukan dugaan:
+//  - komisi tidak punya penimpa per baris di selesaikan_sj, jadi ia selalu dihitung ulang
+//    dari aturan_komisi; tanpa tipe rute atau tanpa aturan, jurnalnya tidak ada sama sekali;
+//  - upah yang dikosongkan membuat selesaikan_sj memakai aturan upah yang berlaku SEKARANG;
+//  - SJ tanpa pengurus tidak menghasilkan baris komisi.
+// Tak satu pun memunculkan galat, dan tak satu pun terlihat dari laporan, karena yang salah
+// bukan angkanya melainkan ketiadaannya.
+export function peringatanImpor(kiriman, master) {
+  const pesan = [];
+  const tipeBaru = new Map();
+  for (const b of kiriman.rute ?? []) tipeBaru.set((b.nama ?? '').trim(), (b.tipe_rute ?? '').trim());
+
+  const kosong = [...tipeBaru].filter(([, t]) => !t).map(([n]) => n);
+  if (kosong.length) {
+    pesan.push(`${kosong.length} rute di rute.csv tidak punya tipe rute, jadi surat jalan pada rute itu tidak akan menghasilkan komisi pengurus: ${kosong.join(', ')}`);
+  }
+
+  const berkomisi = new Set(master.tipeRuteBerkomisi ?? []);
+  const tanpaAturan = [...new Set([...tipeBaru.values()].filter((t) => t && !berkomisi.has(t)))];
+  if (tanpaAturan.length) {
+    pesan.push(`${tanpaAturan.length} tipe rute belum punya aturan komisi yang aktif, jadi komisinya nol: ${tanpaAturan.join(', ')}`);
+  }
+
+  // Rute yang SUDAH ada di master tanpa tipe rute, dan tidak diperbaiki oleh kiriman ini.
+  const lamaTanpaTipe = new Set((master.ruteTanpaTipe ?? []).filter((n) => !tipeBaru.get(n)));
+  const sjKena = (kiriman.surat_jalan ?? []).filter((b) => lamaTanpaTipe.has((b.rute ?? '').trim())).length;
+  if (sjKena) {
+    pesan.push(`${sjKena} surat jalan memakai rute lama yang tipe rutenya masih kosong, jadi tidak akan menghasilkan komisi pengurus`);
+  }
+
+  const sj = kiriman.surat_jalan ?? [];
+  const upahKosong = sj.filter((b) => (b.tanggal_selesai ?? '').trim() && !(b.upah ?? '').trim()).length;
+  if (upahKosong) {
+    pesan.push(`${upahKosong} surat jalan sudah selesai tetapi upahnya kosong, jadi upahnya dihitung dari aturan upah yang berlaku sekarang, bukan dari dokumen lama`);
+  }
+
+  const tanpaPengurus = sj.filter((b) => !(b.pengurus ?? '').trim()).length;
+  if (tanpaPengurus) {
+    pesan.push(`${tanpaPengurus} surat jalan tidak menyebut pengurus, jadi tidak akan menghasilkan komisi pengurus`);
+  }
+  return pesan;
 }

@@ -121,3 +121,149 @@ describe('bacaBerkas', () => {
     expect(belum.galat).toEqual([]);
   });
 });
+
+import { templatCsv, namaTakDikenal, ringkasan, peringatanImpor } from './skema.js';
+import { dariCsv } from '../../lib/csv.js';
+
+describe('templatCsv', () => {
+  it('menghasilkan sebelas berkas berisi baris judul saja', () => {
+    const t = templatCsv();
+    expect(t).toHaveLength(11);
+    const sj = t.find((x) => x.berkas === 'surat-jalan.csv');
+    expect(sj.teks.startsWith('\ufefflini;nomor;tanggal;pelanggan;rute;')).toBe(true);
+    expect(dariCsv(sj.teks)).toEqual([]);
+  });
+});
+
+describe('namaTakDikenal', () => {
+  const master = {
+    pelanggan: ['PT Lama'], rute: ['Rute Lama'], truk: ['B 1 AA'], supir: ['Budi'],
+    pengurus: [], material: ['SJP|Pasir'], lini: ['SJP', 'SJT', 'SJS'], tipe_rute: [], akun: ['1111', '5110'],
+  };
+
+  it('menerima nama yang akan dibuat oleh berkas master dalam kiriman yang sama', () => {
+    const kiriman = {
+      pelanggan: [{ nama: 'PT Baru' }],
+      rute: [{ nama: 'Rute Baru', asal: '', tujuan: '' }],
+      surat_jalan: [{
+        lini: 'SJP', nomor: 'SJ-1', pelanggan: 'PT Baru', rute: 'Rute Baru',
+        material: 'Pasir', nopol: 'B 1 AA', supir: 'Budi', pengurus: '',
+      }],
+    };
+    expect(namaTakDikenal(kiriman, master)).toEqual([]);
+  });
+
+  it('melaporkan SEMUA nama yang tidak dikenal sekaligus, dengan nomor baris', () => {
+    const kiriman = {
+      surat_jalan: [
+        { lini: 'SJP', nomor: 'SJ-1', pelanggan: 'PT Hantu', rute: 'Rute Lama', material: 'Pasir', nopol: 'B 1 AA', supir: 'Budi' },
+        { lini: 'SJP', nomor: 'SJ-2', pelanggan: 'PT Lama', rute: 'Rute Lama', material: 'Pasir', nopol: 'B 1 AA', supir: 'Sukirman' },
+      ],
+      kas: [{ jenis: 'keluar', akun_kas: '1111', akun: '9999', supir: '', nopol: '', pengurus: '' }],
+    };
+    expect(namaTakDikenal(kiriman, master)).toEqual([
+      'surat-jalan.csv baris 1: pelanggan "PT Hantu" belum ada',
+      'surat-jalan.csv baris 2: supir "Sukirman" belum ada',
+      'kas.csv baris 1: akun "9999" belum ada',
+    ]);
+  });
+
+  it('mencocokkan material per lini, bukan hanya namanya', () => {
+    const kiriman = {
+      surat_jalan: [{ lini: 'SJT', nomor: 'SJ-1', pelanggan: 'PT Lama', rute: 'Rute Lama', material: 'Pasir', nopol: 'B 1 AA', supir: 'Budi' }],
+    };
+    expect(namaTakDikenal(kiriman, master)).toEqual(['surat-jalan.csv baris 1: material "Pasir" belum ada']);
+  });
+});
+
+describe('ringkasan', () => {
+  it('menjumlahkan uang jalan, upah, dan kas tanpa float', () => {
+    const r = ringkasan({
+      pelanggan: [{ nama: 'A' }, { nama: 'B' }],
+      surat_jalan: [
+        { uang_jalan: '400000', upah: '150000.55' },
+        { uang_jalan: '400000', upah: '' },
+      ],
+      kas: [
+        { jenis: 'keluar', jumlah: '300000' },
+        { jenis: 'keluar', jumlah: '0.45' },
+        { jenis: 'masuk', jumlah: '50000' },
+      ],
+    });
+    expect(r.jumlah).toEqual({ pelanggan: 2, surat_jalan: 2, kas: 3 });
+    expect(r.uangJalan).toBe('800000.00');
+    expect(r.upah).toBe('150000.55');
+    expect(r.kasKeluar).toBe('300000.45');
+    expect(r.kasMasuk).toBe('50000.00');
+  });
+});
+
+describe('peringatanImpor', () => {
+  const master = { tipeRuteBerkomisi: ['Dalam Kota'], ruteTanpaTipe: ['Rute Lama'] };
+
+  it('menghitung rute di berkas yang tipe rutenya kosong', () => {
+    expect(peringatanImpor({
+      rute: [
+        { nama: 'Rute A', tipe_rute: 'Dalam Kota' },
+        { nama: 'Rute B', tipe_rute: '' },
+        { nama: 'Rute C', tipe_rute: '  ' },
+      ],
+    }, master)).toEqual([
+      '2 rute di rute.csv tidak punya tipe rute, jadi surat jalan pada rute itu tidak akan menghasilkan komisi pengurus: Rute B, Rute C',
+    ]);
+  });
+
+  it('menghitung tipe rute yang belum punya aturan komisi aktif', () => {
+    expect(peringatanImpor({
+      rute: [{ nama: 'Rute A', tipe_rute: 'Luar Kota' }],
+    }, master)).toEqual([
+      '1 tipe rute belum punya aturan komisi yang aktif, jadi komisinya nol: Luar Kota',
+    ]);
+  });
+
+  it('menghitung SJ yang memakai rute lama tanpa tipe rute', () => {
+    expect(peringatanImpor({
+      surat_jalan: [
+        { nomor: 'SJ-1', rute: 'Rute Lama', pengurus: 'Andi' },
+        { nomor: 'SJ-2', rute: 'Rute Lama', pengurus: 'Andi' },
+        { nomor: 'SJ-3', rute: 'Rute A', pengurus: 'Andi' },
+      ],
+    }, master)).toEqual([
+      '2 surat jalan memakai rute lama yang tipe rutenya masih kosong, jadi tidak akan menghasilkan komisi pengurus',
+    ]);
+  });
+
+  it('diam kalau rute lama diberi tipe di kiriman yang sama', () => {
+    expect(peringatanImpor({
+      rute: [{ nama: 'Rute Lama', tipe_rute: 'Dalam Kota' }],
+      surat_jalan: [{ nomor: 'SJ-1', rute: 'Rute Lama', pengurus: 'Andi' }],
+    }, master)).toEqual([]);
+  });
+
+  // Diverifikasi ke database: upah kosong membuat selesaikan_sj menghitung dari
+  // aturan_upah yang berlaku SEKARANG, bukan memakai angka kwitansi lama.
+  it('menghitung SJ selesai yang upahnya dikosongkan', () => {
+    expect(peringatanImpor({
+      rute: [{ nama: 'Rute A', tipe_rute: 'Dalam Kota' }],
+      surat_jalan: [
+        { nomor: 'SJ-1', rute: 'Rute A', pengurus: 'Andi', tanggal_selesai: '2026-03-02', upah: '150000' },
+        { nomor: 'SJ-2', rute: 'Rute A', pengurus: 'Andi', tanggal_selesai: '2026-03-03', upah: '' },
+        { nomor: 'SJ-3', rute: 'Rute A', pengurus: 'Andi', tanggal_selesai: '', upah: '' },
+      ],
+    }, master)).toEqual([
+      '1 surat jalan sudah selesai tetapi upahnya kosong, jadi upahnya dihitung dari aturan upah yang berlaku sekarang, bukan dari dokumen lama',
+    ]);
+  });
+
+  it('menghitung SJ tanpa pengurus', () => {
+    expect(peringatanImpor({
+      rute: [{ nama: 'Rute A', tipe_rute: 'Dalam Kota' }],
+      surat_jalan: [
+        { nomor: 'SJ-1', rute: 'Rute A', pengurus: 'Andi', tanggal_selesai: '2026-03-02', upah: '150000' },
+        { nomor: 'SJ-2', rute: 'Rute A', pengurus: '', tanggal_selesai: '2026-03-03', upah: '150000' },
+      ],
+    }, master)).toEqual([
+      '1 surat jalan tidak menyebut pengurus, jadi tidak akan menghasilkan komisi pengurus',
+    ]);
+  });
+});
