@@ -80,11 +80,15 @@ Catatan kunci alami:
 
 **Tidak ada fungsi lama yang diubah.** `buat_sj`, `selesaikan_sj`, `catat_kas`, `simpan_*`, `terbitkan_invoice` tetap persis seperti sekarang berikut seluruh tesnya.
 
-### Dua risiko yang sudah diidentifikasi
+### Tiga risiko yang sudah diidentifikasi
 
 **`statement_timeout`.** Satu `impor_surat_jalan` berisi 500 baris berarti 500 `buat_sj` + 500 `selesaikan_sj`, masing-masing memposting jurnal. Peran `authenticated` di Supabase memakai `statement_timeout` pendek (umumnya 8 detik) dan impor sebesar itu akan melewatinya. Ketiga RPC karena itu dideklarasikan dengan `set statement_timeout = '600s'`.
 
 **`unique` pada nama supir/pengurus gagal bila sudah ada nama kembar** di database tujuan. Di lokal aman. Sebelum diterapkan ke Supabase produksi, nama kembar harus dibereskan user.
+
+**Komisi pengurus tidak bisa diimpor apa adanya, dan bisa hilang total tanpa jejak.** `tipe_rute` dan `aturan_komisi` ada di luar cakupan, tetapi akibatnya tidak langsung terlihat. `selesaikan_sj` tidak punya penimpa komisi seperti `p_upah`; ia selalu menghitung ulang lewat `komisi_berlaku(tipe_rute_id, tanggal)`. Karena kolom `tipe_rute` di `rute.csv` opsional, impor yang mengosongkannya **tetap sukses tanpa satu pun galat** sementara komisi sepanjang periode itu tidak pernah terbentuk. Cacat ini tidak akan terlihat dari laporan mana pun, sebab jurnalnya tidak ada sama sekali — bukan salah angka. Sama seperti `material.standar_bongkar`, yang membuatnya berbahaya adalah kesunyiannya.
+
+User menegaskan pengurus memang menerima komisi sepanjang 2026 dan nominalnya seragam per tipe rute, sehingga `aturan_komisi` cukup dan `selesaikan_sj` tidak perlu diubah. Penjagaannya: layar impor menghitung rute tanpa tipe rute, tipe rute tanpa aturan komisi aktif, dan surat jalan yang memakai rute lama tanpa tipe, lalu menampilkannya sebagai peringatan yang harus diakui user sebelum tombol impor bisa ditekan. Fungsi murni `peringatanKomisi` di `halaman/impor/skema.js` memegang logika itu supaya bisa diuji terpisah dari komponen.
 
 ## Penanganan galat
 
