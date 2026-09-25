@@ -1022,8 +1022,10 @@ describe('penjagaan lintas-RPC impor', () => {
        order by p.proname`);
     expect(rows.map((r) => r.proname)).toEqual(['impor_kas', 'impor_master', 'impor_surat_jalan']);
     for (const r of rows) {
-      expect(r.cfg).toContain('statement_timeout=600s');
-      expect(r.cfg).toContain('search_path=');
+      // toContain pada array adalah kesamaan ELEMEN, bukan substring. Nilai yang benar-benar
+      // tersimpan adalah search_path="" lengkap dengan tanda kutipnya; 'search_path=' saja
+      // tidak akan pernah cocok. Diverifikasi ke pg_proc.
+      expect(r.cfg).toEqual(['search_path=""', 'statement_timeout=600s']);
     }
   });
 
