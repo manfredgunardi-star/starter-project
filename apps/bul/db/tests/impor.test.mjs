@@ -126,3 +126,131 @@ describe('impor_master', () => {
     expect(await sql('select 1 from public.material where nama = $1', [mat])).toEqual([]);
   });
 });
+
+describe('impor_surat_jalan', () => {
+  const imporSj = (uid, baris) =>
+    sebagai(uid, 'select public.impor_surat_jalan($1::jsonb) as n', [JSON.stringify(baris)]);
+
+  // Master dengan tarif/uang jalan/upah yang SENGAJA berbeda dari angka di berkas,
+  // supaya bisa dibuktikan yang dipakai adalah angka berkas.
+  async function masterUji() {
+    const rute = unik('RUTE-');
+    const mat = unik('MAT-');
+    const plg = unik('PLG-');
+    const supir = unik('SUPIR-');
+    const nopol = unik('B ');
+    // tipe_rute dan aturan_komisi BUKAN cakupan impor; keduanya dibuat lewat layar master
+    // aplikasi sebelum impor dijalankan. Fixture meniru prasyarat itu, sebab tanpa keduanya
+    // komisi_berlaku(null, tanggal) mengembalikan null dan selesaikan_sj tidak membentuk
+    // satu pun baris jurnal komisi -- diam-diam, tanpa galat.
+    const tipe = unik('TIPE-');
+    const [t] = await sebagai(owner,
+      'select public.simpan_tipe_rute(p_id => null, p_nama => $1) as id', [tipe]);
+    await sebagai(owner,
+      `select public.simpan_aturan_komisi(p_id => null, p_nama => $1, p_tipe_rute_id => $2,
+         p_berlaku_mulai => '2026-01-01'::date, p_nominal => 50000)`, [unik('KOM-'), t.id]);
+    await sebagai(owner, 'select public.impor_master($1::jsonb)', [JSON.stringify({
+      rute: [{ nama: rute, asal: 'Bogor', tujuan: 'Jakarta', tipe_rute: tipe }],
+      material: [{ lini: 'SJP', nama: mat, satuan: 'm3' }],
+      pelanggan: [{ nama: plg, pemotong_pph: true }],
+      truk: [{ nopol }],
+      supir: [{ nama: supir }],
+      uang_jalan: [{ rute, berlaku_mulai: '2026-01-01', nominal: '111111' }],
+      aturan_upah: [{ nama: unik('UPAH-'), rute, berlaku_mulai: '2026-01-01', basis: 'per_sj', nominal: '222222' }],
+    })]);
+    return { rute, mat, plg, supir, nopol, tipe };
+  }
+
+  it('memakai angka dari berkas, bukan dari master', async () => {
+    const m = await masterUji();
+    const nomor = unik('SJ');
+    const [r] = await imporSj(owner, [{
+      lini: 'SJP', nomor, tanggal: '2026-03-02', pelanggan: m.plg, rute: m.rute,
+      material: m.mat, nopol: m.nopol, supir: m.supir, qty_muat: '10',
+      uang_jalan: '400000', qty_bongkar: '9.5', tanggal_selesai: '2026-03-03', upah: '175000',
+      keterangan: 'impor uji',
+    }]);
+    expect(r.n).toBe(1);
+
+    const [sj] = await sql(
+      'select status, uang_jalan, upah, qty_bongkar, tanggal_selesai from public.surat_jalan where nomor = $1',
+      [nomor]);
+    expect(sj).toEqual({
+      status: 'selesai', uang_jalan: '400000.00', upah: '175000.00',
+      qty_bongkar: '9.500', tanggal_selesai: '2026-03-03',
+    });
+  });
+
+  it('SJ tanpa tanggal_selesai tetap berstatus berangkat', async () => {
+    const m = await masterUji();
+    const nomor = unik('SJ');
+    await imporSj(owner, [{
+      lini: 'SJP', nomor, tanggal: '2026-03-04', pelanggan: m.plg, rute: m.rute,
+      material: m.mat, nopol: m.nopol, supir: m.supir, qty_muat: '8', uang_jalan: '400000',
+    }]);
+    const [sj] = await sql('select status, upah from public.surat_jalan where nomor = $1', [nomor]);
+    expect(sj).toEqual({ status: 'berangkat', upah: null });
+  });
+
+  it('pengurus dari berkas ikut ke SJ dan ke baris jurnal komisi', async () => {
+    const m = await masterUji();
+    const pengurus = unik('PGR-');
+    await sebagai(owner, 'select public.impor_master($1::jsonb)', [JSON.stringify({
+      pengurus: [{ nama: pengurus }],
+    })]);
+    const nomor = unik('SJ');
+    await imporSj(owner, [{
+      lini: 'SJP', nomor, tanggal: '2026-03-05', pelanggan: m.plg, rute: m.rute,
+      material: m.mat, nopol: m.nopol, supir: m.supir, pengurus, qty_muat: '10',
+      uang_jalan: '400000', qty_bongkar: '10', tanggal_selesai: '2026-03-06', upah: '150000',
+    }]);
+    const [sj] = await sql(
+      `select g.nama from public.surat_jalan s join public.pengurus g on g.id = s.pengurus_id
+        where s.nomor = $1`, [nomor]);
+    expect(sj.nama).toBe(pengurus);
+
+    // Cacah baris saja akan lulus walau nominalnya salah. Nilai dipatri, bukan dihitung
+    // ulang lewat internal.akun_posting, supaya tes tidak sekadar mengulang rumus yang diuji.
+    const baris = await sql(
+      `select b.akun_kode, b.debit, b.kredit from public.surat_jalan s
+         join public.jurnal_baris b on b.jurnal_id = s.jurnal_upah_id
+        where s.nomor = $1 and b.pengurus_id = s.pengurus_id
+        order by b.akun_kode`, [nomor]);
+    expect(baris).toEqual([
+      { akun_kode: '2125', debit: '0.00', kredit: '50000.00' },
+      { akun_kode: '5180', debit: '50000.00', kredit: '0.00' },
+    ]);
+  });
+
+  it('gagal di tengah tidak meninggalkan satu pun SJ atau jurnal', async () => {
+    const m = await masterUji();
+    const awalSj = (await sql('select count(*)::int as n from public.surat_jalan'))[0].n;
+    const awalJurnal = (await sql('select count(*)::int as n from public.jurnal'))[0].n;
+    const nomor = unik('SJ');
+
+    const baris = [1, 2, 3, 4, 5].map((i) => ({
+      lini: 'SJP', nomor: `${nomor}-${i}`, tanggal: '2026-03-10', pelanggan: m.plg, rute: m.rute,
+      material: m.mat, nopol: m.nopol, supir: i === 4 ? 'SUPIR HANTU' : m.supir,
+      qty_muat: '10', uang_jalan: '400000', qty_bongkar: '10',
+      tanggal_selesai: '2026-03-11', upah: '150000',
+    }));
+
+    await expect(imporSj(owner, baris)).rejects.toThrow(/Baris 4: supir "SUPIR HANTU" tidak ditemukan/);
+
+    // Dibaca dari koneksi terpisah: tidak boleh ada sisa apa pun.
+    expect((await sql('select count(*)::int as n from public.surat_jalan'))[0].n).toBe(awalSj);
+    expect((await sql('select count(*)::int as n from public.jurnal'))[0].n).toBe(awalJurnal);
+    expect(await sql('select nomor from public.surat_jalan where nomor like $1', [`${nomor}-%`])).toEqual([]);
+  });
+
+  it('nomor SJ kembar dalam lini yang sama ditolak', async () => {
+    const m = await masterUji();
+    const nomor = unik('SJ');
+    const satu = {
+      lini: 'SJP', nomor, tanggal: '2026-03-12', pelanggan: m.plg, rute: m.rute,
+      material: m.mat, nopol: m.nopol, supir: m.supir, qty_muat: '10', uang_jalan: '400000',
+    };
+    await imporSj(owner, [satu]);
+    await expect(imporSj(owner, [satu])).rejects.toMatchObject({ code: '23505' });
+  });
+});
