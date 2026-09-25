@@ -88,7 +88,16 @@ Catatan kunci alami:
 
 **Komisi pengurus tidak bisa diimpor apa adanya, dan bisa hilang total tanpa jejak.** `tipe_rute` dan `aturan_komisi` ada di luar cakupan, tetapi akibatnya tidak langsung terlihat. `selesaikan_sj` tidak punya penimpa komisi seperti `p_upah`; ia selalu menghitung ulang lewat `komisi_berlaku(tipe_rute_id, tanggal)`. Karena kolom `tipe_rute` di `rute.csv` opsional, impor yang mengosongkannya **tetap sukses tanpa satu pun galat** sementara komisi sepanjang periode itu tidak pernah terbentuk. Cacat ini tidak akan terlihat dari laporan mana pun, sebab jurnalnya tidak ada sama sekali — bukan salah angka. Sama seperti `material.standar_bongkar`, yang membuatnya berbahaya adalah kesunyiannya.
 
-User menegaskan pengurus memang menerima komisi sepanjang 2026 dan nominalnya seragam per tipe rute, sehingga `aturan_komisi` cukup dan `selesaikan_sj` tidak perlu diubah. Penjagaannya: layar impor menghitung rute tanpa tipe rute, tipe rute tanpa aturan komisi aktif, dan surat jalan yang memakai rute lama tanpa tipe, lalu menampilkannya sebagai peringatan yang harus diakui user sebelum tombol impor bisa ditekan. Fungsi murni `peringatanKomisi` di `halaman/impor/skema.js` memegang logika itu supaya bisa diuji terpisah dari komponen.
+User menegaskan pengurus memang menerima komisi sepanjang 2026 dan nominalnya seragam per tipe rute, sehingga `aturan_komisi` cukup dan `selesaikan_sj` tidak perlu diubah.
+
+Audit sesudah Task 3 menemukan dua penyimpangan sunyi lain dari keluarga yang sama, keduanya diverifikasi langsung ke database:
+
+- **`upah` yang dikosongkan diambil dari aturan upah yang berlaku sekarang**, bukan dari kwitansi lama. `impor_surat_jalan` menerjemahkan sel kosong menjadi `null`, dan `selesaikan_sj` lalu menghitung sendiri. Angka yang terposting bukan angka sejarah, dan tidak ada yang menandainya.
+- **Surat jalan tanpa `pengurus` tidak menghasilkan baris komisi.** Di produksi pengurus aktif lebih dari satu, jadi `buat_sj` tidak menebak, dan kolom `pengurus` di `surat-jalan.csv` opsional.
+
+Satu kasus lagi bukan risiko melainkan kesalahan: **`qty_bongkar` yang diisi tanpa `tanggal_selesai` terbuang tanpa jejak**, sebab `impor_surat_jalan` hanya memanggil `selesaikan_sj` di dalam cabang bertanggal selesai. Itu ditolak sebagai galat keras di `bacaBerkas`, bukan diperingatkan.
+
+Penjagaan untuk yang tiga sisanya: fungsi murni `peringatanImpor(kiriman, master)` di `halaman/impor/skema.js` menghitung lima hal — rute tanpa tipe rute, tipe rute tanpa aturan komisi aktif, surat jalan pada rute lama yang tipenya kosong, surat jalan selesai yang upahnya kosong, dan surat jalan tanpa pengurus — lalu layar impor menampilkannya sebagai peringatan yang harus diakui user sebelum tombol impor bisa ditekan. Logikanya ditaruh di fungsi murni supaya bisa diuji terpisah dari komponen.
 
 ## Penanganan galat
 
