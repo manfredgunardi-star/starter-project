@@ -807,9 +807,9 @@ describe('impor_kas', () => {
     const ket = unik('KAS-');
     const [r] = await imporKas(owner, [
       { ref: 'A1', jenis: 'keluar', tanggal: '2026-04-01', akun_kas: '1111', keterangan: ket,
-        akun: '5211', jumlah: '300000', keterangan_baris: 'Solar' },
+        akun: '5110', jumlah: '300000', keterangan_baris: 'Solar' },
       { ref: 'A1', jenis: 'keluar', tanggal: '2026-04-01', akun_kas: '1111', keterangan: ket,
-        akun: '5212', jumlah: '200000', keterangan_baris: 'Tol' },
+        akun: '5160', jumlah: '200000', keterangan_baris: 'Tol' },
     ]);
     expect(r.n).toBe(1);
 
@@ -818,8 +818,8 @@ describe('impor_kas', () => {
     const rincian = await sql(
       'select akun_kode, jumlah from public.transaksi_kas_baris where transaksi_id = $1 order by urutan', [t.id]);
     expect(rincian).toEqual([
-      { akun_kode: '5211', jumlah: '300000.00' },
-      { akun_kode: '5212', jumlah: '200000.00' },
+      { akun_kode: '5110', jumlah: '300000.00' },
+      { akun_kode: '5160', jumlah: '200000.00' },
     ]);
   });
 
@@ -827,8 +827,8 @@ describe('impor_kas', () => {
     const a = unik('KAS-');
     const b = unik('KAS-');
     const [r] = await imporKas(owner, [
-      { jenis: 'keluar', tanggal: '2026-04-02', akun_kas: '1111', keterangan: a, akun: '5211', jumlah: '50000' },
-      { jenis: 'keluar', tanggal: '2026-04-02', akun_kas: '1111', keterangan: b, akun: '5211', jumlah: '60000' },
+      { jenis: 'keluar', tanggal: '2026-04-02', akun_kas: '1111', keterangan: a, akun: '5110', jumlah: '50000' },
+      { jenis: 'keluar', tanggal: '2026-04-02', akun_kas: '1111', keterangan: b, akun: '5110', jumlah: '60000' },
     ]);
     expect(r.n).toBe(2);
     const rows = await sql(
@@ -839,19 +839,31 @@ describe('impor_kas', () => {
   it('satu ref dengan tanggal berbeda ditolak dan menyebut ref-nya', async () => {
     await expect(imporKas(owner, [
       { ref: 'B2', jenis: 'keluar', tanggal: '2026-04-03', akun_kas: '1111', keterangan: unik('KAS-'),
-        akun: '5211', jumlah: '10000' },
+        akun: '5110', jumlah: '10000' },
       { ref: 'B2', jenis: 'keluar', tanggal: '2026-04-04', akun_kas: '1111', keterangan: unik('KAS-'),
-        akun: '5211', jumlah: '10000' },
+        akun: '5110', jumlah: '10000' },
     ])).rejects.toThrow(/ref "B2".*harus sama/);
   });
 
   it('penjagaan dimensi catat_kas tetap berlaku lewat jalur impor', async () => {
-    const hutangUpah = (await sql(
-      `select nilai from public.pengaturan_posting where kunci = 'hutang_upah_sopir'`))[0].nilai;
-    await expect(imporKas(owner, [
+    // Kolomnya akun_kode, bukan nilai. Akun dibaca dari pengaturan_posting sebagai INPUT,
+    // bukan sebagai nilai harapan; yang dipatri adalah pesan galatnya. Ketiga penjagaan
+    // diuji karena dua di antaranya baru ditambahkan fase Bonus, dan jalur impor ini
+    // belum pernah menyentuhnya.
+    const akun = Object.fromEntries((await sql(
+      `select kunci, akun_kode from public.pengaturan_posting
+        where kunci in ('hutang_upah_sopir', 'hutang_komisi_pengurus', 'hutang_bonus')`))
+      .map((r) => [r.kunci, r.akun_kode]));
+    const kirim = (kode) => imporKas(owner, [
       { jenis: 'keluar', tanggal: '2026-04-05', akun_kas: '1111', keterangan: unik('KAS-'),
-        akun: hutangUpah, jumlah: '100000' },
-    ])).rejects.toThrow(/wajib memilih supir/);
+        akun: kode, jumlah: '100000' },
+    ]);
+    await expect(kirim(akun.hutang_upah_sopir))
+      .rejects.toThrow(/Pembayaran upah wajib memilih supir/);
+    await expect(kirim(akun.hutang_komisi_pengurus))
+      .rejects.toThrow(/Pembayaran komisi pengurus wajib memilih pengurus/);
+    await expect(kirim(akun.hutang_bonus))
+      .rejects.toThrow(/Pembayaran bonus wajib memilih supir atau pengurus/);
   });
 
   it('gagal di tengah tidak meninggalkan transaksi kas atau jurnal', async () => {
@@ -859,7 +871,7 @@ describe('impor_kas', () => {
     const awalJurnal = (await sql('select count(*)::int as n from public.jurnal'))[0].n;
     const ket = unik('KAS-');
     await expect(imporKas(owner, [
-      { jenis: 'keluar', tanggal: '2026-04-06', akun_kas: '1111', keterangan: ket, akun: '5211', jumlah: '10000' },
+      { jenis: 'keluar', tanggal: '2026-04-06', akun_kas: '1111', keterangan: ket, akun: '5110', jumlah: '10000' },
       { jenis: 'keluar', tanggal: '2026-04-06', akun_kas: '1111', keterangan: unik('KAS-'),
         akun: '9999', jumlah: '10000' },
     ])).rejects.toThrow(/Akun 9999 tidak ada/);
@@ -1010,8 +1022,10 @@ describe('penjagaan lintas-RPC impor', () => {
        order by p.proname`);
     expect(rows.map((r) => r.proname)).toEqual(['impor_kas', 'impor_master', 'impor_surat_jalan']);
     for (const r of rows) {
-      expect(r.cfg).toContain('statement_timeout=600s');
-      expect(r.cfg).toContain('search_path=');
+      // toContain pada array adalah kesamaan ELEMEN, bukan substring. Nilai yang benar-benar
+      // tersimpan adalah search_path="" lengkap dengan tanda kutipnya; 'search_path=' saja
+      // tidak akan pernah cocok. Diverifikasi ke pg_proc.
+      expect(r.cfg).toEqual(['search_path=""', 'statement_timeout=600s']);
     }
   });
 
@@ -1041,7 +1055,7 @@ describe('penjagaan lintas-RPC impor', () => {
 
       await expect(sebagai(owner, 'select public.impor_kas($1::jsonb)', [JSON.stringify([{
         jenis: 'keluar', tanggal: '2026-05-04', akun_kas: '1111',
-        keterangan: unik('KAS-'), akun: '5211', jumlah: '10000',
+        keterangan: unik('KAS-'), akun: '5110', jumlah: '10000',
       }])])).rejects.toThrow(/Periode sampai 2026-05-31 sudah dikunci/);
     } finally {
       // Kunci WAJIB dilepas: berkas ini berbagi satu database, dan describe
@@ -1053,7 +1067,7 @@ describe('penjagaan lintas-RPC impor', () => {
   it('kiriman di atas 5000 baris ditolak sebelum apa pun ditulis', async () => {
     const baris = Array.from({ length: 5001 }, (_, i) => ({
       jenis: 'keluar', tanggal: '2026-04-20', akun_kas: '1111',
-      keterangan: `Terlalu banyak ${i}`, akun: '5211', jumlah: '1000',
+      keterangan: `Terlalu banyak ${i}`, akun: '5110', jumlah: '1000',
     }));
     await expect(sebagai(owner, 'select public.impor_kas($1::jsonb)', [JSON.stringify(baris)]))
       .rejects.toThrow(/kas\.csv berisi 5001 baris; maksimal 5000 baris per impor/);

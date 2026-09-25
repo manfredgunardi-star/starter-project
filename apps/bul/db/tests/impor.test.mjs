@@ -254,3 +254,85 @@ describe('impor_surat_jalan', () => {
     await expect(imporSj(owner, [satu])).rejects.toMatchObject({ code: '23505' });
   });
 });
+
+describe('impor_kas', () => {
+  const imporKas = (uid, baris) =>
+    sebagai(uid, 'select public.impor_kas($1::jsonb) as n', [JSON.stringify(baris)]);
+
+  it('baris ber-ref sama menjadi satu transaksi multi-rincian', async () => {
+    const ket = unik('KAS-');
+    const [r] = await imporKas(owner, [
+      { ref: 'A1', jenis: 'keluar', tanggal: '2026-04-01', akun_kas: '1111', keterangan: ket,
+        akun: '5110', jumlah: '300000', keterangan_baris: 'Solar' },
+      { ref: 'A1', jenis: 'keluar', tanggal: '2026-04-01', akun_kas: '1111', keterangan: ket,
+        akun: '5160', jumlah: '200000', keterangan_baris: 'Tol' },
+    ]);
+    expect(r.n).toBe(1);
+
+    const [t] = await sql('select id, jenis, total from public.transaksi_kas where keterangan = $1', [ket]);
+    expect({ jenis: t.jenis, total: t.total }).toEqual({ jenis: 'keluar', total: '500000.00' });
+    const rincian = await sql(
+      'select akun_kode, jumlah from public.transaksi_kas_baris where transaksi_id = $1 order by urutan', [t.id]);
+    expect(rincian).toEqual([
+      { akun_kode: '5110', jumlah: '300000.00' },
+      { akun_kode: '5160', jumlah: '200000.00' },
+    ]);
+  });
+
+  it('ref kosong berarti setiap baris berdiri sendiri', async () => {
+    const a = unik('KAS-');
+    const b = unik('KAS-');
+    const [r] = await imporKas(owner, [
+      { jenis: 'keluar', tanggal: '2026-04-02', akun_kas: '1111', keterangan: a, akun: '5110', jumlah: '50000' },
+      { jenis: 'keluar', tanggal: '2026-04-02', akun_kas: '1111', keterangan: b, akun: '5110', jumlah: '60000' },
+    ]);
+    expect(r.n).toBe(2);
+    const rows = await sql(
+      'select total from public.transaksi_kas where keterangan in ($1, $2) order by total', [a, b]);
+    expect(rows).toEqual([{ total: '50000.00' }, { total: '60000.00' }]);
+  });
+
+  it('satu ref dengan tanggal berbeda ditolak dan menyebut ref-nya', async () => {
+    await expect(imporKas(owner, [
+      { ref: 'B2', jenis: 'keluar', tanggal: '2026-04-03', akun_kas: '1111', keterangan: unik('KAS-'),
+        akun: '5110', jumlah: '10000' },
+      { ref: 'B2', jenis: 'keluar', tanggal: '2026-04-04', akun_kas: '1111', keterangan: unik('KAS-'),
+        akun: '5110', jumlah: '10000' },
+    ])).rejects.toThrow(/ref "B2".*harus sama/);
+  });
+
+  it('penjagaan dimensi catat_kas tetap berlaku lewat jalur impor', async () => {
+    // Kolomnya akun_kode, bukan nilai. Akun dibaca dari pengaturan_posting sebagai INPUT,
+    // bukan sebagai nilai harapan; yang dipatri adalah pesan galatnya. Ketiga penjagaan
+    // diuji karena dua di antaranya baru ditambahkan fase Bonus, dan jalur impor ini
+    // belum pernah menyentuhnya.
+    const akun = Object.fromEntries((await sql(
+      `select kunci, akun_kode from public.pengaturan_posting
+        where kunci in ('hutang_upah_sopir', 'hutang_komisi_pengurus', 'hutang_bonus')`))
+      .map((r) => [r.kunci, r.akun_kode]));
+    const kirim = (kode) => imporKas(owner, [
+      { jenis: 'keluar', tanggal: '2026-04-05', akun_kas: '1111', keterangan: unik('KAS-'),
+        akun: kode, jumlah: '100000' },
+    ]);
+    await expect(kirim(akun.hutang_upah_sopir))
+      .rejects.toThrow(/Pembayaran upah wajib memilih supir/);
+    await expect(kirim(akun.hutang_komisi_pengurus))
+      .rejects.toThrow(/Pembayaran komisi pengurus wajib memilih pengurus/);
+    await expect(kirim(akun.hutang_bonus))
+      .rejects.toThrow(/Pembayaran bonus wajib memilih supir atau pengurus/);
+  });
+
+  it('gagal di tengah tidak meninggalkan transaksi kas atau jurnal', async () => {
+    const awalKas = (await sql('select count(*)::int as n from public.transaksi_kas'))[0].n;
+    const awalJurnal = (await sql('select count(*)::int as n from public.jurnal'))[0].n;
+    const ket = unik('KAS-');
+    await expect(imporKas(owner, [
+      { jenis: 'keluar', tanggal: '2026-04-06', akun_kas: '1111', keterangan: ket, akun: '5110', jumlah: '10000' },
+      { jenis: 'keluar', tanggal: '2026-04-06', akun_kas: '1111', keterangan: unik('KAS-'),
+        akun: '9999', jumlah: '10000' },
+    ])).rejects.toThrow(/Akun 9999 tidak ada/);
+    expect((await sql('select count(*)::int as n from public.transaksi_kas'))[0].n).toBe(awalKas);
+    expect((await sql('select count(*)::int as n from public.jurnal'))[0].n).toBe(awalJurnal);
+    expect(await sql('select id from public.transaksi_kas where keterangan = $1', [ket])).toEqual([]);
+  });
+});
