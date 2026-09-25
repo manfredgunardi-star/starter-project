@@ -119,6 +119,7 @@ describe('bacaBerkas', () => {
     // qty_bongkar kosong tanpa tanggal selesai adalah SJ yang memang belum selesai, bukan galat.
     const belum = bacaBerkas('surat-jalan.csv', csv(kolom, sj('', '')));
     expect(belum.galat).toEqual([]);
+    expect(belum.baris).toHaveLength(1);
   });
 });
 
@@ -160,8 +161,13 @@ describe('namaTakDikenal', () => {
         { lini: 'SJP', nomor: 'SJ-2', pelanggan: 'PT Lama', rute: 'Rute Lama', material: 'Pasir', nopol: 'B 1 AA', supir: 'Sukirman' },
       ],
       kas: [{ jenis: 'keluar', akun_kas: '1111', akun: '9999', supir: '', nopol: '', pengurus: '' }],
+      // Lini salah ketik di berkas master sendiri. Tanpa pemeriksaan ini, satu-satunya galat
+      // yang muncul adalah tudingan ke tarif.csv atau surat-jalan.csv pada kolom material yang
+      // ejaannya justru benar, sehingga user dikirim ke berkas, baris, dan kolom yang keliru.
+      material: [{ lini: 'SJX', nama: 'Batu', satuan: 'm3' }],
     };
     expect(namaTakDikenal(kiriman, master)).toEqual([
+      'material.csv baris 1: lini "SJX" belum ada',
       'surat-jalan.csv baris 1: pelanggan "PT Hantu" belum ada',
       'surat-jalan.csv baris 2: supir "Sukirman" belum ada',
       'kas.csv baris 1: akun "9999" belum ada',

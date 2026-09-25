@@ -114,6 +114,10 @@ export function templatCsv() {
 // Kolom -> jenis master yang dirujuknya. Material ditangani khusus karena kuncinya
 // gabungan (lini, nama).
 const RUJUKAN = {
+  // material.csv merujuk lini persis seperti empat berkas lain. Kalau ia dilewati,
+  // lini yang salah ketik lolos, materialnya terdaftar di bawah kunci yang salah, dan
+  // galat yang muncul justru menuding berkas LAIN pada kolom yang ejaannya benar.
+  material: { lini: 'lini' },
   rute: { tipe_rute: 'tipe_rute' },
   uang_jalan: { rute: 'rute' },
   tarif: { pelanggan: 'pelanggan', rute: 'rute', lini: 'lini' },
