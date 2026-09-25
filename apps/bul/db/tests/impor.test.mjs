@@ -336,3 +336,77 @@ describe('impor_kas', () => {
     expect(await sql('select id from public.transaksi_kas where keterangan = $1', [ket])).toEqual([]);
   });
 });
+
+describe('penjagaan lintas-RPC impor', () => {
+  it('hanya owner yang boleh mengimpor', async () => {
+    const keuangan = await buatPengguna('keuangan');
+    const operasional = await buatPengguna('operasional');
+    for (const uid of [keuangan, operasional]) {
+      await expect(sebagai(uid, `select public.impor_master('{}'::jsonb)`))
+        .rejects.toMatchObject({ code: '42501' });
+      await expect(sebagai(uid, `select public.impor_surat_jalan('[]'::jsonb)`))
+        .rejects.toMatchObject({ code: '42501' });
+      await expect(sebagai(uid, `select public.impor_kas('[]'::jsonb)`))
+        .rejects.toMatchObject({ code: '42501' });
+    }
+  });
+
+  it('ketiganya memasang statement_timeout 600s', async () => {
+    const rows = await sql(`
+      select p.proname, p.proconfig::text[] as cfg
+        from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+       where n.nspname = 'public' and p.proname like 'impor\\_%'
+       order by p.proname`);
+    expect(rows.map((r) => r.proname)).toEqual(['impor_kas', 'impor_master', 'impor_surat_jalan']);
+    for (const r of rows) {
+      // toContain pada array adalah kesamaan ELEMEN, bukan substring. Nilai yang benar-benar
+      // tersimpan adalah search_path="" lengkap dengan tanda kutipnya; 'search_path=' saja
+      // tidak akan pernah cocok. Diverifikasi ke pg_proc.
+      expect(r.cfg).toEqual(['search_path=""', 'statement_timeout=600s']);
+    }
+  });
+
+  it('periode terkunci menolak impor SJ dan kas bertanggal di dalamnya', async () => {
+    const rute = unik('RUTE-');
+    const mat = unik('MAT-');
+    const plg = unik('PLG-');
+    const supir = unik('SUPIR-');
+    const nopol = unik('B ');
+    await sebagai(owner, 'select public.impor_master($1::jsonb)', [JSON.stringify({
+      rute: [{ nama: rute }],
+      material: [{ lini: 'SJP', nama: mat, satuan: 'm3' }],
+      pelanggan: [{ nama: plg, pemotong_pph: true }],
+      truk: [{ nopol }],
+      supir: [{ nama: supir }],
+      uang_jalan: [{ rute, berlaku_mulai: '2026-01-01', nominal: '400000' }],
+      aturan_upah: [{ nama: unik('UPAH-'), rute, berlaku_mulai: '2026-01-01', basis: 'per_sj', nominal: '150000' }],
+    })]);
+
+    await sebagai(owner, `select public.atur_kunci_periode('2026-05-31'::date)`);
+    try {
+      await expect(sebagai(owner, 'select public.impor_surat_jalan($1::jsonb)', [JSON.stringify([{
+        lini: 'SJP', nomor: unik('SJ'), tanggal: '2026-05-02', pelanggan: plg, rute,
+        material: mat, nopol, supir, qty_muat: '10', uang_jalan: '400000',
+        qty_bongkar: '10', tanggal_selesai: '2026-05-03', upah: '150000',
+      }])])).rejects.toThrow(/Periode sampai 2026-05-31 sudah dikunci/);
+
+      await expect(sebagai(owner, 'select public.impor_kas($1::jsonb)', [JSON.stringify([{
+        jenis: 'keluar', tanggal: '2026-05-04', akun_kas: '1111',
+        keterangan: unik('KAS-'), akun: '5110', jumlah: '10000',
+      }])])).rejects.toThrow(/Periode sampai 2026-05-31 sudah dikunci/);
+    } finally {
+      // Kunci WAJIB dilepas: berkas ini berbagi satu database, dan describe
+      // berikutnya akan ikut gagal kalau kunci dibiarkan menyala.
+      await sebagai(owner, `select public.atur_kunci_periode(null)`);
+    }
+  });
+
+  it('kiriman di atas 5000 baris ditolak sebelum apa pun ditulis', async () => {
+    const baris = Array.from({ length: 5001 }, (_, i) => ({
+      jenis: 'keluar', tanggal: '2026-04-20', akun_kas: '1111',
+      keterangan: `Terlalu banyak ${i}`, akun: '5110', jumlah: '1000',
+    }));
+    await expect(sebagai(owner, 'select public.impor_kas($1::jsonb)', [JSON.stringify(baris)]))
+      .rejects.toThrow(/kas\.csv berisi 5001 baris; maksimal 5000 baris per impor/);
+  });
+});
