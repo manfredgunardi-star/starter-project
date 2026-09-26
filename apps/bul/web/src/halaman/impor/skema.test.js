@@ -321,4 +321,16 @@ describe('pesan galat surat jalan', () => {
     expect(namaTakDikenal({ surat_jalan: [baris] }, master)[0])
       .toContain('surat-jalan.csv baris 7 (SJ-009) kolom D "pelanggan": "PT B" belum ada di master');
   });
+
+  it('membedakan master non-aktif dari master yang belum ada', () => {
+    // Keduanya dulu berakhir sebagai pesan database yang sama: "tidak ditemukan atau tidak
+    // aktif". Perbaikannya berbeda jauh — yang satu dibuat, yang satu diaktifkan kembali.
+    const master = { pelanggan: [], rute: ['R1'], truk: ['B 1 AA'], supir: [],
+      pengurus: ['Andi'], material: ['SJP|Pasir'], lini: ['SJP'], tipe_rute: [], akun: [] };
+    const baris = { lini: 'SJP', nomor: 'SJ-011', pelanggan: 'PT B', rute: 'R1', rute_asal: 'Bogor',
+      rute_tujuan: 'Jakarta', material: 'Pasir', nopol: 'B 1 AA', supir: 'Sukirman', pengurus: 'Andi', __baris: 3 };
+    const g = namaTakDikenal({ surat_jalan: [baris] }, master, { supir: ['Sukirman'] });
+    expect(g.find((x) => x.includes('"PT B"'))).toContain('belum ada di master');
+    expect(g.find((x) => x.includes('"Sukirman"'))).toContain('TIDAK AKTIF');
+  });
 });

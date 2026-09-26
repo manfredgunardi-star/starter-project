@@ -154,7 +154,7 @@ const RUJUKAN = {
 };
 const PUNYA_MATERIAL = ['tarif', 'aturan_upah', 'surat_jalan'];
 
-export function namaTakDikenal(kiriman, master) {
+export function namaTakDikenal(kiriman, master, takAktif = {}) {
   // Yang sudah ada di database, ditambah yang akan dibuat oleh kiriman ini sendiri.
   const ada = {};
   for (const [jenis, daftar] of Object.entries(master)) ada[jenis] = new Set(daftar);
@@ -172,13 +172,19 @@ export function namaTakDikenal(kiriman, master) {
       for (const [nama, jenis] of Object.entries(kolom)) {
         const v = (b[nama] ?? '').trim();
         if (v && !ada[jenis].has(v)) {
-          galat.push(`${tempat(def, no, b, nama)}: "${v}" belum ada di master. Tambahkan lewat ${kunci === 'kas' ? 'layar Akun' : `${jenis}.csv`} pada kiriman yang sama, atau lewat layar masternya`);
+          const mati = new Set(takAktif[jenis] ?? []).has(v);
+          galat.push(mati
+            ? `${tempat(def, no, b, nama)}: "${v}" ada di master tetapi statusnya TIDAK AKTIF, jadi impor akan menolaknya. Aktifkan kembali lewat layar masternya`
+            : `${tempat(def, no, b, nama)}: "${v}" belum ada di master. Tambahkan lewat ${kunci === 'kas' ? 'layar Akun' : `${jenis}.csv`} pada kiriman yang sama, atau lewat layar masternya`);
         }
       }
       if (PUNYA_MATERIAL.includes(kunci)) {
         const m = (b.material ?? '').trim();
         if (m && !ada.material.has(`${(b.lini ?? '').trim()}|${m}`)) {
-          galat.push(`${tempat(def, no, b, 'material')}: "${m}" belum ada untuk lini "${(b.lini ?? '').trim()}". Material dicocokkan per lini, jadi nama yang sama di lini berbeda dianggap material berbeda`);
+          const mati = new Set(takAktif.material ?? []).has(`${(b.lini ?? '').trim()}|${m}`);
+          galat.push(mati
+            ? `${tempat(def, no, b, 'material')}: "${m}" ada di master untuk lini "${(b.lini ?? '').trim()}" tetapi statusnya TIDAK AKTIF, jadi impor akan menolaknya. Aktifkan kembali lewat layar masternya`
+            : `${tempat(def, no, b, 'material')}: "${m}" belum ada untuk lini "${(b.lini ?? '').trim()}". Material dicocokkan per lini, jadi nama yang sama di lini berbeda dianggap material berbeda`);
         }
       }
     });
