@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { dariCsv, keCsv } from './csv.js';
+import { dariCsv, dariCsvBernomor, keCsv } from './csv.js';
 
 describe('keCsv', () => {
   it('pemisah titik koma, angka desimal koma, kutip untuk teks berisi ;', () => {
@@ -46,5 +46,19 @@ describe('dariCsv', () => {
     const kolom = [{ title: 'nama', dataIndex: 'nama' }, { title: 'alamat', dataIndex: 'alamat' }];
     const asli = [{ nama: 'Budi', alamat: 'Jl. A; No. 1' }];
     expect(dariCsv(keCsv(kolom, asli))).toEqual(asli);
+  });
+
+  it('dariCsvBernomor menyebut baris sumber, bukan urutan sesudah baris kosong dibuang', () => {
+    // Inilah cacatnya: SJ-002 ada di baris 4 berkas, tetapi sesudah judul dan baris kosong
+    // dibuang ia menjadi elemen ke-2. Pesan galat yang memakai urutan itu mengirim user ke
+    // baris yang isinya justru tidak bermasalah.
+    const r = dariCsvBernomor('\ufeffnomor;qty\r\nSJ-001;10\r\n\r\nSJ-002;xx\r\n');
+    expect(r.map((x) => x.no)).toEqual([2, 4]);
+    expect(r[1].nilai).toEqual({ nomor: 'SJ-002', qty: 'xx' });
+  });
+
+  it('dariCsv tetap mengembalikan bentuk lama, tanpa nomor', () => {
+    const teks = '\ufeffnomor;qty\r\nSJ-001;10\r\n';
+    expect(dariCsv(teks)).toEqual([{ nomor: 'SJ-001', qty: '10' }]);
   });
 });

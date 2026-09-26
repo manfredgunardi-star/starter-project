@@ -24,12 +24,11 @@ export function unduhCsv(namaFile, teks) {
 
 // Pembaca untuk berkas impor. Konvensinya sama persis dengan keCsv di atas:
 // BOM, pemisah titik koma, CRLF, dan field berkutip ala RFC 4180.
-export function dariCsv(teks) {
-  // CRLF dinormalkan di awal, TERMASUK yang berada di dalam field berkutip. Excel
-  // menulis CRLF untuk baris baru di dalam sel; \r yang lolos akan tersimpan
-  // diam-diam ke Postgres, lalu merusak pencocokan nama dan muncul sebagai sampah di
-  // ekspor. Sesudah normalisasi \r tidak mungkin ada lagi, jadi penjaga
-  // c !== '\r' di cabang terakhir tidak diperlukan.
+// Nomor baris sumber ikut dibawa supaya pesan galat bisa menunjuk baris yang SAMA dengan
+// yang dilihat user di Excel. Baris judul adalah baris 1, jadi baris data ke-k berada di
+// baris k+1 — dan setiap baris kosong yang dibuang menggeser selisihnya lebih jauh lagi,
+// sehingga user tidak bisa mengoreksinya sendiri dengan menambah satu.
+export function dariCsvBernomor(teks) {
   const s = String(teks ?? '').replace(/^\ufeff/, '').replace(/\r\n?/g, '\n');
   const semua = [];
   let baris = [];
@@ -50,8 +49,18 @@ export function dariCsv(teks) {
   }
   if (sel !== '' || baris.length) { baris.push(sel); semua.push(baris); }
 
-  const isi = semua.filter((r) => r.some((v) => v.trim() !== ''));
+  // Indeks asli dipertahankan SEBELUM menyaring, karena setelah disaring ia hilang.
+  const isi = semua
+    .map((r, i) => ({ no: i + 1, sel: r }))
+    .filter((r) => r.sel.some((v) => v.trim() !== ''));
   if (isi.length < 2) return [];
-  const judul = isi[0].map((h) => h.trim());
-  return isi.slice(1).map((r) => Object.fromEntries(judul.map((h, i) => [h, (r[i] ?? '').trim()])));
+  const judul = isi[0].sel.map((h) => h.trim());
+  return isi.slice(1).map((r) => ({
+    no: r.no,
+    nilai: Object.fromEntries(judul.map((h, i) => [h, (r.sel[i] ?? '').trim()])),
+  }));
+}
+
+export function dariCsv(teks) {
+  return dariCsvBernomor(teks).map((r) => r.nilai);
 }
