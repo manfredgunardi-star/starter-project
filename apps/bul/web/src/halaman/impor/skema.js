@@ -53,11 +53,14 @@ const HURUF = (i) => {
 // Satu tempat untuk menyebut LETAK kesalahan: berkas, baris sebagaimana terlihat di Excel,
 // pengenal baris kalau berkasnya punya, dan huruf kolom. Semua pesan memakainya supaya
 // bentuknya tidak pernah berbeda antar-cabang.
+// Label kolom dipakai dua kali: oleh tempat(), dan oleh pesan yang perlu menyebut kolom
+// LAIN pada baris yang sama.
+const kolomLabel = (def, nama) => `kolom ${HURUF(def.kolom.findIndex((k) => k.nama === nama))} \"${nama}\"`;
 function tempat(def, no, m, kolom) {
   const penanda = def.penanda ? String(m?.[def.penanda] ?? '').trim() : '';
   const dasar = `${def.berkas} baris ${no}${penanda ? ` (${penanda})` : ''}`;
   if (!kolom) return dasar;
-  return `${dasar} kolom ${HURUF(def.kolom.findIndex((k) => k.nama === kolom))} "${kolom}"`;
+  return `${dasar} ${kolomLabel(def, kolom)}`;
 }
 
 export function bacaBerkas(namaBerkas, teks) {
@@ -122,7 +125,7 @@ export function bacaBerkas(namaBerkas, teks) {
     // padahal user jelas mengisinya.
     if (def.kunci === 'surat_jalan' && keluar.qty_bongkar !== ''
         && (m.tanggal_selesai ?? '').trim() === '') {
-      galat.push(`${tempat(def, no, m, 'qty_bongkar')}: diisi tetapi ${tempat(def, no, m, 'tanggal_selesai').split('kolom ')[1]} kosong, jadi qty_bongkar akan terbuang`);
+      galat.push(`${tempat(def, no, m, 'qty_bongkar')}: diisi tetapi ${kolomLabel(def, 'tanggal_selesai')} kosong, jadi qty_bongkar akan terbuang`);
       rusak = true;
     }
     if (!rusak) baris.push({ ...keluar, __baris: no });
@@ -154,6 +157,17 @@ const RUJUKAN = {
 };
 const PUNYA_MATERIAL = ['tarif', 'aturan_upah', 'surat_jalan'];
 
+// Berkas impor dicari dari BERKAS itu sendiri, bukan dari daftar terpisah, supaya pesan ini
+// tidak pernah bisa menyarankan berkas yang tidak ada di templat. lini, akun, dan tipe_rute
+// memang tidak punya berkas impor dan hanya bisa ditambah lewat layar masternya.
+const LAYAR_MASTER = { lini: 'Lini', akun: 'Akun', tipe_rute: 'Tipe Rute' };
+function saranTambah(jenis) {
+  const berkas = BERKAS.find((b) => b.kunci === jenis)?.berkas;
+  return berkas
+    ? `Tambahkan lewat ${berkas} pada kiriman yang sama, atau lewat layar masternya`
+    : `${jenis} tidak punya berkas impor — tambahkan lewat layar ${LAYAR_MASTER[jenis] ?? jenis}`;
+}
+
 export function namaTakDikenal(kiriman, master, takAktif = {}) {
   // Yang sudah ada di database, ditambah yang akan dibuat oleh kiriman ini sendiri.
   const ada = {};
@@ -175,7 +189,7 @@ export function namaTakDikenal(kiriman, master, takAktif = {}) {
           const mati = new Set(takAktif[jenis] ?? []).has(v);
           galat.push(mati
             ? `${tempat(def, no, b, nama)}: "${v}" ada di master tetapi statusnya TIDAK AKTIF, jadi impor akan menolaknya. Aktifkan kembali lewat layar masternya`
-            : `${tempat(def, no, b, nama)}: "${v}" belum ada di master. Tambahkan lewat ${kunci === 'kas' ? 'layar Akun' : `${jenis}.csv`} pada kiriman yang sama, atau lewat layar masternya`);
+            : `${tempat(def, no, b, nama)}: "${v}" belum ada di master. ${saranTambah(jenis)}`);
         }
       }
       if (PUNYA_MATERIAL.includes(kunci)) {

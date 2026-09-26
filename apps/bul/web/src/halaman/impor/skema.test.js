@@ -106,7 +106,7 @@ describe('bacaBerkas', () => {
     const kosong = bacaBerkas('surat-jalan.csv', csv(kolom, sj('9,5', '')));
     expect(kosong.baris).toEqual([]);
     expect(kosong.galat).toEqual([
-      'surat-jalan.csv baris 2 (SJ-1) kolom N "qty_bongkar": diisi tetapi O "tanggal_selesai" kosong, jadi qty_bongkar akan terbuang',
+      'surat-jalan.csv baris 2 (SJ-1) kolom N "qty_bongkar": diisi tetapi kolom O "tanggal_selesai" kosong, jadi qty_bongkar akan terbuang',
     ]);
 
     // Penjaga membaca sel MENTAH. Kalau ia membaca hasil konversi, tanggal yang salah bentuk
@@ -167,10 +167,10 @@ describe('namaTakDikenal', () => {
       material: [{ lini: 'SJX', nama: 'Batu', satuan: 'm3' }],
     };
     expect(namaTakDikenal(kiriman, master)).toEqual([
-      'material.csv baris 1 kolom A "lini": "SJX" belum ada di master. Tambahkan lewat lini.csv pada kiriman yang sama, atau lewat layar masternya',
+      'material.csv baris 1 kolom A "lini": "SJX" belum ada di master. lini tidak punya berkas impor — tambahkan lewat layar Lini',
       'surat-jalan.csv baris 1 (SJ-1) kolom D "pelanggan": "PT Hantu" belum ada di master. Tambahkan lewat pelanggan.csv pada kiriman yang sama, atau lewat layar masternya',
       'surat-jalan.csv baris 2 (SJ-2) kolom J "supir": "Sukirman" belum ada di master. Tambahkan lewat supir.csv pada kiriman yang sama, atau lewat layar masternya',
-      'kas.csv baris 1 kolom F "akun": "9999" belum ada di master. Tambahkan lewat layar Akun pada kiriman yang sama, atau lewat layar masternya',
+      'kas.csv baris 1 kolom F "akun": "9999" belum ada di master. akun tidak punya berkas impor — tambahkan lewat layar Akun',
     ]);
   });
 
@@ -271,6 +271,43 @@ describe('peringatanImpor', () => {
     }, master)).toEqual([
       '1 surat jalan tidak menyebut pengurus, jadi tidak akan menghasilkan komisi pengurus',
     ]);
+  });
+});
+
+describe('saran tempat menambah master', () => {
+  // Tiga pesan sempat menuding tempat yang salah: lini.csv dan tipe_rute.csv tidak ada di
+  // antara sebelas berkas templat, dan supir yang tidak dikenal di kas.csv disuruh
+  // ditambahkan "lewat layar Akun" karena percabangannya memakai kunci berkas, bukan jenis
+  // masternya. Saran kini diambil dari BERKAS sendiri.
+  const kosong = { pelanggan: [], rute: [], truk: [], supir: [], pengurus: [], material: [],
+    lini: [], tipe_rute: [], akun: [] };
+  const sj = (o) => ({ lini: 'SJP', nomor: 'SJ-1', pelanggan: '', rute: '', nopol: '',
+    supir: '', pengurus: '', material: '', __baris: 2, ...o });
+
+  it('menunjuk berkas atau layar yang benar untuk tiap jenis master', () => {
+    expect(namaTakDikenal({ surat_jalan: [sj({ lini: 'SJX' })] }, kosong)[0])
+      .toContain('lini tidak punya berkas impor — tambahkan lewat layar Lini');
+    expect(namaTakDikenal({ rute: [{ nama: 'R9', tipe_rute: 'Luar Kota' }] }, kosong)[0])
+      .toContain('tipe_rute tidak punya berkas impor — tambahkan lewat layar Tipe Rute');
+    expect(namaTakDikenal({ kas: [{ jenis: 'keluar', akun_kas: '', akun: '',
+      supir: 'Sukirman', nopol: '', pengurus: '', lini: '' }] }, kosong)[0])
+      .toContain('Tambahkan lewat supir.csv');
+  });
+
+  it('tidak pernah menyarankan berkas di luar sebelas berkas templat', () => {
+    // Penjaga sifatnya, bukan daftar kasusnya: berkas apa pun yang disebut sebuah saran harus
+    // benar-benar ada di BERKAS, sehingga jenis master baru tidak bisa diam-diam mengulanginya.
+    const adaBerkas = BERKAS.map((b) => b.berkas);
+    const semua = [
+      ...namaTakDikenal({ surat_jalan: [sj({ lini: 'SJX', pelanggan: 'PT B', supir: 'X', nopol: 'Y', material: 'Z' })] }, kosong),
+      ...namaTakDikenal({ rute: [{ nama: 'R9', tipe_rute: 'T' }] }, kosong),
+      ...namaTakDikenal({ kas: [{ jenis: 'keluar', akun_kas: '9999', akun: '8888',
+        supir: 'S', nopol: 'N', pengurus: 'P', lini: 'L' }] }, kosong),
+    ];
+    expect(semua.length).toBeGreaterThan(5);
+    for (const g of semua) {
+      for (const [, f] of g.matchAll(/lewat ([\w-]+\.csv)/g)) expect(adaBerkas).toContain(f);
+    }
   });
 });
 
