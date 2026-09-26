@@ -1,4 +1,4 @@
-import { dariCsv, keCsv } from '../../lib/csv.js';
+import { dariCsvBernomor, keCsv } from '../../lib/csv.js';
 import { dariSen, jumlahkan } from '../../lib/uang.js';
 
 const T = (nama, wajib = false) => ({ nama, jenis: 'teks', wajib });
@@ -21,7 +21,7 @@ export const BERKAS = [
   { berkas: 'uang-jalan.csv', kunci: 'uang_jalan', kolom: [...RUTE_RUJUK, D('berlaku_mulai', true), A('nominal', true)] },
   { berkas: 'tarif.csv', kunci: 'tarif', kolom: [T('pelanggan', true), ...RUTE_RUJUK, T('lini', true), T('material', true), D('berlaku_mulai', true), A('harga_satuan', true)] },
   { berkas: 'aturan-upah.csv', kunci: 'aturan_upah', kolom: [T('nama', true), T('rute'), T('rute_asal'), T('rute_tujuan'), T('lini'), T('material'), D('berlaku_mulai', true), P('basis', ['per_sj', 'per_satuan'], true), A('nominal', true)] },
-  { berkas: 'surat-jalan.csv', kunci: 'surat_jalan', kolom: [T('lini', true), T('nomor', true), D('tanggal', true), T('pelanggan', true), ...RUTE_RUJUK, T('material', true), T('nopol', true), T('supir', true), T('pengurus'), A('qty_muat', true), A('uang_jalan', true), A('qty_bongkar'), D('tanggal_selesai'), A('upah'), T('keterangan')] },
+  { berkas: 'surat-jalan.csv', kunci: 'surat_jalan', penanda: 'nomor', kolom: [T('lini', true), T('nomor', true), D('tanggal', true), T('pelanggan', true), ...RUTE_RUJUK, T('material', true), T('nopol', true), T('supir', true), T('pengurus'), A('qty_muat', true), A('uang_jalan', true), A('qty_bongkar'), D('tanggal_selesai'), A('upah'), T('keterangan')] },
   { berkas: 'kas.csv', kunci: 'kas', kolom: [T('ref'), P('jenis', ['keluar', 'masuk'], true), D('tanggal', true), T('akun_kas', true), T('keterangan', true), T('akun', true), A('jumlah', true), T('keterangan_baris'), T('lini'), T('nopol'), T('supir'), T('pengurus')] },
 ];
 
@@ -42,45 +42,72 @@ function keTanggal(v) {
 const YA = ['ya', 'true', '1', 'y'];
 const TIDAK = ['tidak', 'false', '0', 'n'];
 
+// Huruf kolom seperti yang dilihat user di Excel. surat-jalan.csv punya 17 kolom (A..Q),
+// dan "kolom qty_muat" saja memaksa user menghitung sendiri kolom ke-12 dari 17.
+const HURUF = (i) => {
+  let s = '';
+  for (i += 1; i > 0; i = Math.floor((i - 1) / 26)) s = String.fromCharCode(65 + ((i - 1) % 26)) + s;
+  return s;
+};
+
+// Satu tempat untuk menyebut LETAK kesalahan: berkas, baris sebagaimana terlihat di Excel,
+// pengenal baris kalau berkasnya punya, dan huruf kolom. Semua pesan memakainya supaya
+// bentuknya tidak pernah berbeda antar-cabang.
+function tempat(def, no, m, kolom) {
+  const penanda = def.penanda ? String(m?.[def.penanda] ?? '').trim() : '';
+  const dasar = `${def.berkas} baris ${no}${penanda ? ` (${penanda})` : ''}`;
+  if (!kolom) return dasar;
+  return `${dasar} kolom ${HURUF(def.kolom.findIndex((k) => k.nama === kolom))} "${kolom}"`;
+}
+
 export function bacaBerkas(namaBerkas, teks) {
   const def = BERKAS.find((b) => b.berkas.toLowerCase() === String(namaBerkas).toLowerCase());
   if (!def) return { kunci: null, baris: [], galat: [`${namaBerkas} diabaikan — bukan berkas impor`] };
 
-  const mentah = dariCsv(teks);
+  const mentah = dariCsvBernomor(teks);
   const galat = [];
-  const judul = new Set(Object.keys(mentah[0] ?? {}));
-  for (const k of def.kolom) {
-    if (k.wajib && !judul.has(k.nama)) galat.push(`${def.berkas}: kolom "${k.nama}" tidak ada`);
+  const judul = new Set(Object.keys(mentah[0]?.nilai ?? {}));
+  const hilang = def.kolom.filter((k) => k.wajib && !judul.has(k.nama)).map((k) => k.nama);
+  if (hilang.length) {
+    // Satu baris judul yang salah dulu menghasilkan delapan pesan berturut-turut untuk satu
+    // kesalahan yang sama, sehingga daftar galat terlihat jauh lebih parah daripada keadaannya.
+    return { kunci: def.kunci, baris: [], galat: [
+      `${def.berkas}: ${hilang.length} kolom wajib tidak ada — ${hilang.join(', ')}. Pastikan baris pertama berkas adalah baris judul dari templat dan pemisahnya titik koma.`,
+    ] };
   }
-  if (galat.length) return { kunci: def.kunci, baris: [], galat };
 
   const baris = [];
-  mentah.forEach((m, i) => {
-    const no = i + 1;
+  mentah.forEach(({ no, nilai: m }) => {
     const keluar = {};
     let rusak = false;
     for (const k of def.kolom) {
       const v = (m[k.nama] ?? '').trim();
       if (v === '') {
-        if (k.wajib) { galat.push(`${def.berkas} baris ${no}: ${k.nama} wajib diisi`); rusak = true; }
+        if (k.wajib) { galat.push(`${tempat(def, no, m, k.nama)}: wajib diisi`); rusak = true; }
         keluar[k.nama] = k.jenis === 'boolean' ? null : '';
         continue;
       }
       if (k.jenis === 'angka') {
         const a = keAngka(v);
-        if (a === null) { galat.push(`${def.berkas} baris ${no}: ${k.nama} "${v}" bukan angka`); rusak = true; }
+        if (a === null) {
+          galat.push(`${tempat(def, no, m, k.nama)}: "${v}" bukan angka. Contoh yang benar: 10 atau 10,5 — pakai koma untuk desimal, tanpa titik ribuan dan tanpa "Rp"`);
+          rusak = true;
+        }
         keluar[k.nama] = a ?? '';
       } else if (k.jenis === 'tanggal') {
         const d = keTanggal(v);
-        if (d === null) { galat.push(`${def.berkas} baris ${no}: ${k.nama} "${v}" bukan tanggal YYYY-MM-DD`); rusak = true; }
+        if (d === null) {
+          galat.push(`${tempat(def, no, m, k.nama)}: "${v}" bukan tanggal. Pakai YYYY-MM-DD, contoh 2026-03-01`);
+          rusak = true;
+        }
         keluar[k.nama] = d ?? '';
       } else if (k.jenis === 'boolean') {
         const l = v.toLowerCase();
         if (YA.includes(l)) keluar[k.nama] = true;
         else if (TIDAK.includes(l)) keluar[k.nama] = false;
-        else { galat.push(`${def.berkas} baris ${no}: ${k.nama} "${v}" harus ya atau tidak`); rusak = true; keluar[k.nama] = null; }
+        else { galat.push(`${tempat(def, no, m, k.nama)}: "${v}" harus ya atau tidak`); rusak = true; keluar[k.nama] = null; }
       } else if (k.jenis === 'pilihan' && !k.pilihan.includes(v)) {
-        galat.push(`${def.berkas} baris ${no}: ${k.nama} "${v}" harus salah satu dari ${k.pilihan.join(', ')}`);
+        galat.push(`${tempat(def, no, m, k.nama)}: "${v}" harus salah satu dari ${k.pilihan.join(', ')}`);
         rusak = true;
         keluar[k.nama] = v;
       } else {
@@ -95,10 +122,10 @@ export function bacaBerkas(namaBerkas, teks) {
     // padahal user jelas mengisinya.
     if (def.kunci === 'surat_jalan' && keluar.qty_bongkar !== ''
         && (m.tanggal_selesai ?? '').trim() === '') {
-      galat.push(`${def.berkas} baris ${no}: qty_bongkar diisi tetapi tanggal_selesai kosong, jadi qty_bongkar akan terbuang`);
+      galat.push(`${tempat(def, no, m, 'qty_bongkar')}: diisi tetapi ${tempat(def, no, m, 'tanggal_selesai').split('kolom ')[1]} kosong, jadi qty_bongkar akan terbuang`);
       rusak = true;
     }
-    if (!rusak) baris.push(keluar);
+    if (!rusak) baris.push({ ...keluar, __baris: no });
   });
 
   return { kunci: def.kunci, baris, galat };
@@ -126,7 +153,6 @@ const RUJUKAN = {
   kas: { akun_kas: 'akun', akun: 'akun', nopol: 'truk', supir: 'supir', pengurus: 'pengurus', lini: 'lini' },
 };
 const PUNYA_MATERIAL = ['tarif', 'aturan_upah', 'surat_jalan'];
-const BERKAS_DARI_KUNCI = Object.fromEntries(BERKAS.map((b) => [b.kunci, b.berkas]));
 
 export function namaTakDikenal(kiriman, master) {
   // Yang sudah ada di database, ditambah yang akan dibuat oleh kiriman ini sendiri.
@@ -140,17 +166,19 @@ export function namaTakDikenal(kiriman, master) {
 
   const galat = [];
   for (const [kunci, kolom] of Object.entries(RUJUKAN)) {
+    const def = BERKAS.find((b) => b.kunci === kunci);
     (kiriman[kunci] ?? []).forEach((b, i) => {
+      const no = b.__baris ?? i + 1;
       for (const [nama, jenis] of Object.entries(kolom)) {
         const v = (b[nama] ?? '').trim();
         if (v && !ada[jenis].has(v)) {
-          galat.push(`${BERKAS_DARI_KUNCI[kunci]} baris ${i + 1}: ${nama} "${v}" belum ada`);
+          galat.push(`${tempat(def, no, b, nama)}: "${v}" belum ada di master. Tambahkan lewat ${kunci === 'kas' ? 'layar Akun' : `${jenis}.csv`} pada kiriman yang sama, atau lewat layar masternya`);
         }
       }
       if (PUNYA_MATERIAL.includes(kunci)) {
         const m = (b.material ?? '').trim();
         if (m && !ada.material.has(`${(b.lini ?? '').trim()}|${m}`)) {
-          galat.push(`${BERKAS_DARI_KUNCI[kunci]} baris ${i + 1}: material "${m}" belum ada`);
+          galat.push(`${tempat(def, no, b, 'material')}: "${m}" belum ada untuk lini "${(b.lini ?? '').trim()}". Material dicocokkan per lini, jadi nama yang sama di lini berbeda dianggap material berbeda`);
         }
       }
     });

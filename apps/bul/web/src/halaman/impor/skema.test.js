@@ -25,7 +25,7 @@ describe('bacaBerkas', () => {
 
   it('menyebut kolom wajib yang hilang', () => {
     const h = bacaBerkas('supir.csv', csv('telepon', '0812'));
-    expect(h.galat).toEqual(['supir.csv: kolom "nama" tidak ada']);
+    expect(h.galat).toEqual(['supir.csv: 1 kolom wajib tidak ada — nama. Pastikan baris pertama berkas adalah baris judul dari templat dan pemisahnya titik koma.']);
     expect(h.baris).toEqual([]);
   });
 
@@ -37,7 +37,7 @@ describe('bacaBerkas', () => {
       'Bogor-Depok;2026-01-01;Rp 1.500.000',
     ));
     expect(h.baris.map((b) => b.nominal)).toEqual(['400000', '12500.75']);
-    expect(h.galat).toEqual(['uang-jalan.csv baris 3: nominal "Rp 1.500.000" bukan angka']);
+    expect(h.galat).toEqual(['uang-jalan.csv baris 4 kolom E "nominal": "Rp 1.500.000" bukan angka. Contoh yang benar: 10 atau 10,5 — pakai koma untuk desimal, tanpa titik ribuan dan tanpa "Rp"']);
   });
 
   it('menolak tanggal yang salah bentuk maupun yang tidak ada di kalender', () => {
@@ -49,8 +49,8 @@ describe('bacaBerkas', () => {
     ));
     expect(h.baris.map((b) => b.berlaku_mulai)).toEqual(['2026-06-30']);
     expect(h.galat).toEqual([
-      'uang-jalan.csv baris 1: berlaku_mulai "31/06/2026" bukan tanggal YYYY-MM-DD',
-      'uang-jalan.csv baris 2: berlaku_mulai "2026-06-31" bukan tanggal YYYY-MM-DD',
+      'uang-jalan.csv baris 2 kolom D "berlaku_mulai": "31/06/2026" bukan tanggal. Pakai YYYY-MM-DD, contoh 2026-03-01',
+      'uang-jalan.csv baris 3 kolom D "berlaku_mulai": "2026-06-31" bukan tanggal. Pakai YYYY-MM-DD, contoh 2026-03-01',
     ]);
   });
 
@@ -59,7 +59,7 @@ describe('bacaBerkas', () => {
       'jenis;tanggal;akun_kas;keterangan;akun;jumlah',
       'transfer;2026-04-01;1111;Pindah;5110;1000',
     ));
-    expect(h.galat).toEqual(['kas.csv baris 1: jenis "transfer" harus salah satu dari keluar, masuk']);
+    expect(h.galat).toEqual(['kas.csv baris 2 kolom B "jenis": "transfer" harus salah satu dari keluar, masuk']);
   });
 
   it('membaca ya/tidak menjadi boolean dan kosong menjadi null', () => {
@@ -81,7 +81,7 @@ describe('bacaBerkas', () => {
       ';2026-01-01;1000',
     ));
     expect(h.galat).toHaveLength(4);
-    expect(h.galat).toContain('uang-jalan.csv baris 3: rute wajib diisi');
+    expect(h.galat).toContain('uang-jalan.csv baris 4 kolom A "rute": wajib diisi');
   });
 
   it('membaca surat-jalan.csv lengkap dan menyimpan angka sebagai string', () => {
@@ -106,14 +106,14 @@ describe('bacaBerkas', () => {
     const kosong = bacaBerkas('surat-jalan.csv', csv(kolom, sj('9,5', '')));
     expect(kosong.baris).toEqual([]);
     expect(kosong.galat).toEqual([
-      'surat-jalan.csv baris 1: qty_bongkar diisi tetapi tanggal_selesai kosong, jadi qty_bongkar akan terbuang',
+      'surat-jalan.csv baris 2 (SJ-1) kolom N "qty_bongkar": diisi tetapi O "tanggal_selesai" kosong, jadi qty_bongkar akan terbuang',
     ]);
 
     // Penjaga membaca sel MENTAH. Kalau ia membaca hasil konversi, tanggal yang salah bentuk
     // muncul sebagai '' dan user diberi DUA galat untuk satu kesalahan, satu di antaranya bohong.
     const rusak = bacaBerkas('surat-jalan.csv', csv(kolom, sj('9,5', '32-13-2026')));
     expect(rusak.galat).toEqual([
-      'surat-jalan.csv baris 1: tanggal_selesai "32-13-2026" bukan tanggal YYYY-MM-DD',
+      'surat-jalan.csv baris 2 (SJ-1) kolom O "tanggal_selesai": "32-13-2026" bukan tanggal. Pakai YYYY-MM-DD, contoh 2026-03-01',
     ]);
 
     // qty_bongkar kosong tanpa tanggal selesai adalah SJ yang memang belum selesai, bukan galat.
@@ -167,10 +167,10 @@ describe('namaTakDikenal', () => {
       material: [{ lini: 'SJX', nama: 'Batu', satuan: 'm3' }],
     };
     expect(namaTakDikenal(kiriman, master)).toEqual([
-      'material.csv baris 1: lini "SJX" belum ada',
-      'surat-jalan.csv baris 1: pelanggan "PT Hantu" belum ada',
-      'surat-jalan.csv baris 2: supir "Sukirman" belum ada',
-      'kas.csv baris 1: akun "9999" belum ada',
+      'material.csv baris 1 kolom A "lini": "SJX" belum ada di master. Tambahkan lewat lini.csv pada kiriman yang sama, atau lewat layar masternya',
+      'surat-jalan.csv baris 1 (SJ-1) kolom D "pelanggan": "PT Hantu" belum ada di master. Tambahkan lewat pelanggan.csv pada kiriman yang sama, atau lewat layar masternya',
+      'surat-jalan.csv baris 2 (SJ-2) kolom J "supir": "Sukirman" belum ada di master. Tambahkan lewat supir.csv pada kiriman yang sama, atau lewat layar masternya',
+      'kas.csv baris 1 kolom F "akun": "9999" belum ada di master. Tambahkan lewat layar Akun pada kiriman yang sama, atau lewat layar masternya',
     ]);
   });
 
@@ -178,7 +178,7 @@ describe('namaTakDikenal', () => {
     const kiriman = {
       surat_jalan: [{ lini: 'SJT', nomor: 'SJ-1', pelanggan: 'PT Lama', rute: 'Rute Lama', material: 'Pasir', nopol: 'B 1 AA', supir: 'Budi' }],
     };
-    expect(namaTakDikenal(kiriman, master)).toEqual(['surat-jalan.csv baris 1: material "Pasir" belum ada']);
+    expect(namaTakDikenal(kiriman, master)).toEqual(['surat-jalan.csv baris 1 (SJ-1) kolom H "material": "Pasir" belum ada untuk lini "SJT". Material dicocokkan per lini, jadi nama yang sama di lini berbeda dianggap material berbeda']);
   });
 });
 
@@ -271,5 +271,54 @@ describe('peringatanImpor', () => {
     }, master)).toEqual([
       '1 surat jalan tidak menyebut pengurus, jadi tidak akan menghasilkan komisi pengurus',
     ]);
+  });
+});
+
+describe('pesan galat surat jalan', () => {
+  const def = BERKAS.find((b) => b.berkas === 'surat-jalan.csv');
+  const J = def.kolom.map((k) => k.nama).join(';');
+  const isi = (o = {}) => def.kolom.map((k) => o[k.nama] ?? ({
+    lini: 'SJP', nomor: 'SJ-001', tanggal: '2026-03-01', pelanggan: 'PT A', rute: 'R1',
+    rute_asal: 'Bogor', rute_tujuan: 'Jakarta', material: 'Pasir', nopol: 'B 1 AA',
+    supir: 'Budi', pengurus: 'Andi', qty_muat: '10', uang_jalan: '400000',
+  }[k.nama] ?? '')).join(';');
+
+  it('menunjuk baris berkas, bukan urutan sesudah baris kosong dibuang', () => {
+    // SJ-002 ada di baris 4 berkas. Sebelum perbaikan ini pesannya menyebut "baris 2",
+    // yang isinya justru SJ-001 yang tidak bermasalah.
+    const h = bacaBerkas('surat-jalan.csv', csv(J, isi({ nomor: 'SJ-001' }), '', isi({ nomor: 'SJ-002', qty_muat: 'xx' })));
+    expect(h.galat).toHaveLength(1);
+    expect(h.galat[0]).toContain('baris 4 (SJ-002)');
+    expect(h.galat[0]).not.toContain('baris 2');
+  });
+
+  it('menyebut huruf kolom sebagaimana terlihat di Excel', () => {
+    // 17 kolom, A sampai Q. qty_muat kolom ke-12 = L, tanggal ke-3 = C.
+    const h = bacaBerkas('surat-jalan.csv', csv(J, isi({ nomor: 'SJ-007', qty_muat: 'xx', tanggal: '01/03/2026' })));
+    expect(h.galat).toEqual([
+      'surat-jalan.csv baris 2 (SJ-007) kolom C "tanggal": "01/03/2026" bukan tanggal. Pakai YYYY-MM-DD, contoh 2026-03-01',
+      'surat-jalan.csv baris 2 (SJ-007) kolom L "qty_muat": "xx" bukan angka. Contoh yang benar: 10 atau 10,5 — pakai koma untuk desimal, tanpa titik ribuan dan tanpa "Rp"',
+    ]);
+  });
+
+  it('kolom wajib yang hilang menjadi satu pesan, bukan delapan', () => {
+    const h = bacaBerkas('surat-jalan.csv', csv('nomor;tanggal', 'SJ-1;2026-03-01'));
+    expect(h.galat).toHaveLength(1);
+    expect(h.galat[0]).toContain('8 kolom wajib tidak ada');
+    expect(h.galat[0]).toContain('baris pertama berkas adalah baris judul');
+  });
+
+  it('baris yang lolos membawa nomor barisnya untuk pemeriksaan berikutnya', () => {
+    const h = bacaBerkas('surat-jalan.csv', csv(J, '', isi({ nomor: 'SJ-005' })));
+    expect(h.baris[0].__baris).toBe(3);
+  });
+
+  it('namaTakDikenal memakai nomor baris dan huruf kolom yang sama', () => {
+    const master = { pelanggan: [], rute: ['R1'], truk: ['B 1 AA'], supir: ['Budi'],
+      pengurus: ['Andi'], material: ['SJP|Pasir'], lini: ['SJP'], tipe_rute: [], akun: [] };
+    const baris = { lini: 'SJP', nomor: 'SJ-009', pelanggan: 'PT B', rute: 'R1', rute_asal: 'Bogor',
+      rute_tujuan: 'Jakarta', material: 'Pasir', nopol: 'B 1 AA', supir: 'Budi', pengurus: 'Andi', __baris: 7 };
+    expect(namaTakDikenal({ surat_jalan: [baris] }, master)[0])
+      .toContain('surat-jalan.csv baris 7 (SJ-009) kolom D "pelanggan": "PT B" belum ada di master');
   });
 });
