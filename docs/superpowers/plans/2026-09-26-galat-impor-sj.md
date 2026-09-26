@@ -173,11 +173,25 @@ const HURUF = (i) => {
 // Satu tempat untuk menyebut LETAK kesalahan: berkas, baris sebagaimana terlihat di Excel,
 // pengenal baris kalau berkasnya punya, dan huruf kolom. Semua pesan memakainya supaya
 // bentuknya tidak pernah berbeda antar-cabang.
+// Berkas impor diturunkan dari BERKAS itu sendiri, bukan dari daftar terpisah, supaya saran
+// ini tidak pernah bisa menyebut berkas yang tidak ada di templat. lini, akun, dan tipe_rute
+// memang tidak punya berkas impor dan hanya bisa ditambah lewat layar masternya.
+const LAYAR_MASTER = { lini: 'Lini', akun: 'Akun', tipe_rute: 'Tipe Rute' };
+function saranTambah(jenis) {
+  const berkas = BERKAS.find((b) => b.kunci === jenis)?.berkas;
+  return berkas
+    ? `Tambahkan lewat ${berkas} pada kiriman yang sama, atau lewat layar masternya`
+    : `${jenis} tidak punya berkas impor — tambahkan lewat layar ${LAYAR_MASTER[jenis] ?? jenis}`;
+}
+
+// Label kolom dipakai dua kali: oleh tempat(), dan oleh pesan yang perlu menyebut kolom
+// LAIN pada baris yang sama.
+const kolomLabel = (def, nama) => `kolom ${HURUF(def.kolom.findIndex((k) => k.nama === nama))} \"${nama}\"`;
 function tempat(def, no, m, kolom) {
   const penanda = def.penanda ? String(m?.[def.penanda] ?? '').trim() : '';
   const dasar = `${def.berkas} baris ${no}${penanda ? ` (${penanda})` : ''}`;
   if (!kolom) return dasar;
-  return `${dasar} kolom ${HURUF(def.kolom.findIndex((k) => k.nama === kolom))} "${kolom}"`;
+  return `${dasar} ${kolomLabel(def, kolom)}`;
 }
 ```
 
@@ -249,7 +263,7 @@ Tiga perubahan di dalam `bacaBerkas`:
 ```javascript
     if (def.kunci === 'surat_jalan' && keluar.qty_bongkar !== ''
         && (m.tanggal_selesai ?? '').trim() === '') {
-      galat.push(`${tempat(def, no, m, 'qty_bongkar')}: diisi tetapi ${tempat(def, no, m, 'tanggal_selesai').split('kolom ')[1]} kosong, jadi qty_bongkar akan terbuang`);
+      galat.push(`${tempat(def, no, m, 'qty_bongkar')}: diisi tetapi ${kolomLabel(def, 'tanggal_selesai')} kosong, jadi qty_bongkar akan terbuang`);
       rusak = true;
     }
 ```
@@ -274,7 +288,7 @@ Di dalam `namaTakDikenal`, ganti penyusunan pesannya:
       for (const [nama, jenis] of Object.entries(kolom)) {
         const v = (b[nama] ?? '').trim();
         if (v && !ada[jenis].has(v)) {
-          galat.push(`${tempat(def, no, b, nama)}: "${v}" belum ada di master. Tambahkan lewat ${kunci === 'kas' ? 'layar Akun' : `${jenis}.csv`} pada kiriman yang sama, atau lewat layar masternya`);
+          galat.push(`${tempat(def, no, b, nama)}: "${v}" belum ada di master. ${saranTambah(jenis)}`);
         }
       }
       if (PUNYA_MATERIAL.includes(kunci)) {
@@ -412,7 +426,7 @@ Di dalam pemeriksaannya, sebelum melaporkan "belum ada":
 cd C:/Project/.worktrees/bul/galat-sj/apps/bul/web && npx vitest run
 ```
 
-Diharapkan: **88 tes / 16 berkas** lulus.
+Diharapkan: **90 tes / 16 berkas** lulus (termasuk dua tes penjaga saran master).
 
 ```bash
 cd C:/Project/.worktrees/bul/galat-sj/apps/bul/web && npm run build
