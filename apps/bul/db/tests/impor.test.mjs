@@ -235,7 +235,10 @@ describe('impor_surat_jalan', () => {
       tanggal_selesai: '2026-03-11', upah: '150000',
     }));
 
-    await expect(imporSj(owner, baris)).rejects.toThrow(/Baris 4: supir "SUPIR HANTU" tidak ditemukan/);
+    await expect(imporSj(owner, baris)).rejects.toMatchObject({
+      code: 'P0001',
+      message: `surat-jalan.csv baris 4 (${nomor}-4): supir "SUPIR HANTU" tidak ditemukan atau tidak aktif`,
+    });
 
     // Dibaca dari koneksi terpisah: tidak boleh ada sisa apa pun.
     expect((await sql('select count(*)::int as n from public.surat_jalan'))[0].n).toBe(awalSj);

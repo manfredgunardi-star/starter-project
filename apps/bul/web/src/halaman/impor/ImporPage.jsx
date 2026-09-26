@@ -20,12 +20,12 @@ export default function ImporPage() {
   const [sibuk, setSibuk] = useState(false);
 
   const kunci = useDaftar('kunci_periode');
-  const pelanggan = useDaftar('pelanggan', { select: 'nama' });
-  const rute = useDaftar('rute', { select: 'nama,tipe_rute_id' });
-  const truk = useDaftar('truk', { select: 'nopol' });
-  const supir = useDaftar('supir', { select: 'nama' });
-  const pengurus = useDaftar('pengurus', { select: 'nama' });
-  const material = useDaftar('material', { select: 'lini_kode,nama' });
+  const pelanggan = useDaftar('pelanggan', { select: 'nama,aktif' });
+  const rute = useDaftar('rute', { select: 'nama,tipe_rute_id,aktif' });
+  const truk = useDaftar('truk', { select: 'nopol,aktif' });
+  const supir = useDaftar('supir', { select: 'nama,aktif' });
+  const pengurus = useDaftar('pengurus', { select: 'nama,aktif' });
+  const material = useDaftar('material', { select: 'lini_kode,nama,aktif' });
   const lini = useDaftar('lini', { select: 'kode' });
   const tipeRute = useDaftar('tipe_rute', { select: 'id,nama' });
   // aktif = true supaya cocok dengan syarat komisi_berlaku, yang hanya melihat aturan aktif.
@@ -49,19 +49,27 @@ export default function ImporPage() {
       if (hasil.kunci && hasil.baris.length) baru[hasil.kunci] = hasil.baris;
     }
     const master = {
-      pelanggan: (pelanggan.data ?? []).map((r) => r.nama),
-      rute: (rute.data ?? []).map((r) => r.nama),
-      truk: (truk.data ?? []).map((r) => r.nopol),
-      supir: (supir.data ?? []).map((r) => r.nama),
-      pengurus: (pengurus.data ?? []).map((r) => r.nama),
-      material: (material.data ?? []).map((r) => `${r.lini_kode}|${r.nama}`),
+      pelanggan: (pelanggan.data ?? []).filter((r) => r.aktif).map((r) => r.nama),
+      rute: (rute.data ?? []).filter((r) => r.aktif).map((r) => r.nama),
+      truk: (truk.data ?? []).filter((r) => r.aktif).map((r) => r.nopol),
+      supir: (supir.data ?? []).filter((r) => r.aktif).map((r) => r.nama),
+      pengurus: (pengurus.data ?? []).filter((r) => r.aktif).map((r) => r.nama),
+      material: (material.data ?? []).filter((r) => r.aktif).map((r) => `${r.lini_kode}|${r.nama}`),
       lini: (lini.data ?? []).map((r) => r.kode),
       tipe_rute: (tipeRute.data ?? []).map((r) => r.nama),
       akun: (akun.data ?? []).map((r) => r.kode),
     };
+    const takAktif = {
+      pelanggan: (pelanggan.data ?? []).filter((r) => !r.aktif).map((r) => r.nama),
+      rute: (rute.data ?? []).filter((r) => !r.aktif).map((r) => r.nama),
+      truk: (truk.data ?? []).filter((r) => !r.aktif).map((r) => r.nopol),
+      supir: (supir.data ?? []).filter((r) => !r.aktif).map((r) => r.nama),
+      pengurus: (pengurus.data ?? []).filter((r) => !r.aktif).map((r) => r.nama),
+      material: (material.data ?? []).filter((r) => !r.aktif).map((r) => `${r.lini_kode}|${r.nama}`),
+    };
     const berkomisi = new Set((aturanKomisi.data ?? []).map((r) => r.tipe_rute_id));
     setKiriman(baru);
-    setGalat([...semuaGalat, ...namaTakDikenal(baru, master)]);
+    setGalat([...semuaGalat, ...namaTakDikenal(baru, master, takAktif)]);
     setAkui(false);
     setPeringatan(peringatanImpor(baru, {
       tipeRuteBerkomisi: (tipeRute.data ?? []).filter((r) => berkomisi.has(r.id)).map((r) => r.nama),
