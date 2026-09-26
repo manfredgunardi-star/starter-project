@@ -23,7 +23,7 @@ const jurnalManual = (uid, tanggal, baris, ket = 'Uji jurnal') =>
 describe('seed akuntansi', () => {
   it('COA bul-accounting + 6251 tersedia', async () => {
     const [{ n }] = await sql('select count(*)::int as n from public.akun');
-    expect(n).toBe(161);
+    expect(n).toBe(163);
     const [a] = await sql("select nama, tipe, saldo_normal from public.akun where kode = '6251'");
     expect(a).toEqual({ nama: 'Beban PPh Final UMKM (PP 55)', tipe: 'detail', saldo_normal: 'debit' });
     const kas = await sql('select kode from public.akun where kas_bank order by kode');
@@ -32,10 +32,12 @@ describe('seed akuntansi', () => {
   it('pengaturan posting default', async () => {
     const rows = await sql('select kunci, akun_kode from public.pengaturan_posting order by kunci');
     expect(rows).toEqual([
+      { kunci: 'beban_bonus', akun_kode: '5135' },
       { kunci: 'beban_komisi_pengurus', akun_kode: '5180' },
       { kunci: 'beban_pph_final', akun_kode: '6251' },
       { kunci: 'beban_uang_jalan', akun_kode: '5150' },
       { kunci: 'beban_upah_sopir', akun_kode: '5130' },
+      { kunci: 'hutang_bonus', akun_kode: '2126' },
       { kunci: 'hutang_komisi_pengurus', akun_kode: '2125' },
       { kunci: 'hutang_upah_sopir', akun_kode: '2121' },
       { kunci: 'pendapatan_jasa', akun_kode: '4100' },

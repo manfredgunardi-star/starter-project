@@ -10,6 +10,8 @@ export const HAK = {
   'invoice.tulis': ['owner', 'keuangan'],
   'pembayaran.tulis': ['owner', 'keuangan'],
   'kas.tulis': ['owner', 'keuangan'],
+  'bonus.tulis': ['owner', 'keuangan'],
+  impor: ['owner'],
   'jurnal.manual': ['owner', 'keuangan'],
   'akuntansi.pengaturan': ['owner'],
 };
@@ -30,7 +32,9 @@ export const MENU = [
   { key: 'buku-besar', label: 'Buku Besar', path: '/buku-besar', lihat: SEMUA },
   { key: 'akun', label: 'Daftar Akun', path: '/akun', lihat: SEMUA },
   { key: 'laporan', label: 'Laporan', path: '/laporan', lihat: SEMUA },
+  { key: 'bonus', label: 'Bonus', path: '/bonus', lihat: ['owner', 'keuangan'] },
   { key: 'saldo-awal', label: 'Saldo Awal', path: '/saldo-awal', lihat: ['owner', 'keuangan'] },
+  { key: 'impor', label: 'Impor', path: '/impor', lihat: ['owner'] },
   { key: 'pengaturan', label: 'Pengaturan', path: '/pengaturan', lihat: ['owner'] },
   { key: 'pengguna', label: 'Pengguna', path: '/pengguna', lihat: ['owner'] },
 ];
