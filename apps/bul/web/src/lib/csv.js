@@ -19,7 +19,10 @@ export function unduhCsv(namaFile, teks) {
   a.href = url;
   a.download = namaFile;
   a.click();
-  URL.revokeObjectURL(url);
+  // click() memicu unduhan secara asinkron. Mencabut URL-nya di tick yang sama, seperti
+  // sebelumnya, kadang membuat browser belum sempat membaca blob-nya — terasa saat 11 unduhan
+  // ditembak beruntun (templat impor) dan salah satu berkas hilang tanpa galat sama sekali.
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 // Pembaca untuk berkas impor. Konvensinya sama persis dengan keCsv di atas:

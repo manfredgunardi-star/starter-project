@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
-import { dariCsv, dariCsvBernomor, keCsv } from './csv.js';
+import { describe, it, expect, vi } from 'vitest';
+import { dariCsv, dariCsvBernomor, keCsv, unduhCsv } from './csv.js';
 
 describe('keCsv', () => {
   it('pemisah titik koma, angka desimal koma, kutip untuk teks berisi ;', () => {
@@ -8,6 +8,28 @@ describe('keCsv', () => {
       [{ nama: 'Beban; lain', jumlah: '1417500.00' }, { nama: 'Kas "kecil"', jumlah: '-5.50' }],
     );
     expect(teks).toBe('﻿Akun;Jumlah\r\n"Beban; lain";1417500,00\r\n"Kas ""kecil""";-5,50\r\n');
+  });
+});
+
+describe('unduhCsv', () => {
+  it('tidak mencabut object URL pada tick yang sama dengan click() — 11 unduhan beruntun tak boleh kehilangan satu pun', () => {
+    // Sebelum perbaikan ini, revoke terjadi persis sesudah click(), sebelum browser sempat
+    // membaca blob-nya; kelihatan sesekali kalau banyak unduhan ditembak beruntun tanpa jeda.
+    vi.useFakeTimers();
+    const url = 'blob:mock-url';
+    const asli = { createObjectURL: URL.createObjectURL, revokeObjectURL: URL.revokeObjectURL };
+    URL.createObjectURL = vi.fn(() => url);
+    URL.revokeObjectURL = vi.fn();
+    try {
+      unduhCsv('a.csv', 'isi');
+      expect(URL.revokeObjectURL).not.toHaveBeenCalled();
+      vi.runAllTimers();
+      expect(URL.revokeObjectURL).toHaveBeenCalledWith(url);
+    } finally {
+      URL.createObjectURL = asli.createObjectURL;
+      URL.revokeObjectURL = asli.revokeObjectURL;
+      vi.useRealTimers();
+    }
   });
 });
 
