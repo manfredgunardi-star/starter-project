@@ -18,10 +18,14 @@ export function unduhCsv(namaFile, teks) {
   const a = document.createElement('a');
   a.href = url;
   a.download = namaFile;
+  // Chrome pernah diam-diam tidak mendaftarkan klik pada <a> yang belum terpasang ke DOM,
+  // kentara justru saat 11 unduhan ditembak beruntun (templat impor) — satu berkas hilang
+  // tanpa galat dan tanpa tercatat di chrome://downloads sama sekali, bukan cuma gagal.
+  document.body.appendChild(a);
   a.click();
-  // click() memicu unduhan secara asinkron. Mencabut URL-nya di tick yang sama, seperti
-  // sebelumnya, kadang membuat browser belum sempat membaca blob-nya — terasa saat 11 unduhan
-  // ditembak beruntun (templat impor) dan salah satu berkas hilang tanpa galat sama sekali.
+  document.body.removeChild(a);
+  // click() memicu unduhan secara asinkron; mencabut URL-nya di tick yang sama kadang membuat
+  // browser belum sempat membaca blob-nya.
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 

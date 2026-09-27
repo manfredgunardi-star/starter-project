@@ -31,6 +31,21 @@ describe('unduhCsv', () => {
       vi.useRealTimers();
     }
   });
+
+  it('memasang <a> ke DOM sebelum click() — Chrome pernah diam-diam mengabaikan klik pada elemen lepas', () => {
+    const asliClick = HTMLAnchorElement.prototype.click;
+    let terpasangSaatKlik = false;
+    HTMLAnchorElement.prototype.click = function click() {
+      terpasangSaatKlik = document.body.contains(this);
+    };
+    try {
+      unduhCsv('a.csv', 'isi');
+      expect(terpasangSaatKlik).toBe(true);
+      expect(document.querySelector('a[download="a.csv"]')).toBeNull();
+    } finally {
+      HTMLAnchorElement.prototype.click = asliClick;
+    }
+  });
 });
 
 describe('dariCsv', () => {
