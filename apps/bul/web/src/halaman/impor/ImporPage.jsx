@@ -110,7 +110,7 @@ export default function ImporPage() {
 
       <Card>
         <Flex gap={12} wrap align="center">
-          <Button onClick={() => templatCsv().forEach((t) => unduhCsv(t.berkas, t.teks))}>
+          <Button onClick={() => templatCsv().forEach((t, i) => setTimeout(() => unduhCsv(t.berkas, t.teks), i * 250))}>
             Unduh templat ({BERKAS.length} berkas)
           </Button>
           <Upload multiple accept=".csv" showUploadList={false} beforeUpload={() => false} disabled={masterBelumSiap}
