@@ -184,11 +184,14 @@ function saranTambah(jenis) {
     : `${jenis} tidak punya berkas impor — tambahkan lewat layar ${LAYAR_MASTER[jenis] ?? jenis}`;
 }
 
+// Label kolom dipakai dua kali: oleh tempat(), dan oleh pesan yang perlu menyebut kolom
+// LAIN pada baris yang sama.
+const kolomLabel = (def, nama) => `kolom ${HURUF(def.kolom.findIndex((k) => k.nama === nama))} \"${nama}\"`;
 function tempat(def, no, m, kolom) {
   const penanda = def.penanda ? String(m?.[def.penanda] ?? '').trim() : '';
   const dasar = `${def.berkas} baris ${no}${penanda ? ` (${penanda})` : ''}`;
   if (!kolom) return dasar;
-  return `${dasar} kolom ${HURUF(def.kolom.findIndex((k) => k.nama === kolom))} "${kolom}"`;
+  return `${dasar} ${kolomLabel(def, kolom)}`;
 }
 ```
 
@@ -260,7 +263,7 @@ Tiga perubahan di dalam `bacaBerkas`:
 ```javascript
     if (def.kunci === 'surat_jalan' && keluar.qty_bongkar !== ''
         && (m.tanggal_selesai ?? '').trim() === '') {
-      galat.push(`${tempat(def, no, m, 'qty_bongkar')}: diisi tetapi ${tempat(def, no, m, 'tanggal_selesai').split('kolom ')[1]} kosong, jadi qty_bongkar akan terbuang`);
+      galat.push(`${tempat(def, no, m, 'qty_bongkar')}: diisi tetapi ${kolomLabel(def, 'tanggal_selesai')} kosong, jadi qty_bongkar akan terbuang`);
       rusak = true;
     }
 ```
