@@ -2,7 +2,9 @@ import { dariCsvBernomor, keCsv } from '../../lib/csv.js';
 import { dariSen, jumlahkan } from '../../lib/uang.js';
 
 const T = (nama, wajib = false) => ({ nama, jenis: 'teks', wajib });
-const A = (nama, wajib = false) => ({ nama, jenis: 'angka', wajib });
+// syarat cermin persis check constraint kolomnya di database (lihat migrasi terkait), supaya
+// nilai yang lolos di sini juga pasti lolos di RPC — bukan ditolak dengan pesan SQL mentah.
+const A = (nama, wajib = false, syarat = null) => ({ nama, jenis: 'angka', wajib, syarat });
 const D = (nama, wajib = false) => ({ nama, jenis: 'tanggal', wajib });
 const B = (nama) => ({ nama, jenis: 'boolean', wajib: false });
 const P = (nama, pilihan, wajib = false) => ({ nama, jenis: 'pilihan', pilihan, wajib });
@@ -13,16 +15,16 @@ const RUTE_RUJUK = [T('rute', true), T('rute_asal'), T('rute_tujuan')];
 
 export const BERKAS = [
   { berkas: 'rute.csv', kunci: 'rute', kolom: [T('nama', true), T('asal'), T('tujuan'), T('tipe_rute')] },
-  { berkas: 'material.csv', kunci: 'material', kolom: [T('lini', true), T('nama', true), T('satuan', true), A('standar_bongkar')] },
+  { berkas: 'material.csv', kunci: 'material', kolom: [T('lini', true), T('nama', true), T('satuan', true), A('standar_bongkar', false, '>0')] },
   { berkas: 'pelanggan.csv', kunci: 'pelanggan', kolom: [T('nama', true), T('alamat'), T('npwp'), B('pemotong_pph'), T('catatan')] },
   { berkas: 'truk.csv', kunci: 'truk', kolom: [T('nopol', true), T('jenis')] },
   { berkas: 'supir.csv', kunci: 'supir', kolom: [T('nama', true), T('telepon')] },
   { berkas: 'pengurus.csv', kunci: 'pengurus', kolom: [T('nama', true), T('telepon')] },
-  { berkas: 'uang-jalan.csv', kunci: 'uang_jalan', kolom: [...RUTE_RUJUK, D('berlaku_mulai', true), A('nominal', true)] },
-  { berkas: 'tarif.csv', kunci: 'tarif', kolom: [T('pelanggan', true), ...RUTE_RUJUK, T('lini', true), T('material', true), D('berlaku_mulai', true), A('harga_satuan', true)] },
-  { berkas: 'aturan-upah.csv', kunci: 'aturan_upah', kolom: [T('nama', true), T('rute'), T('rute_asal'), T('rute_tujuan'), T('lini'), T('material'), D('berlaku_mulai', true), P('basis', ['per_sj', 'per_satuan'], true), A('nominal', true)] },
-  { berkas: 'surat-jalan.csv', kunci: 'surat_jalan', penanda: 'nomor', kolom: [T('lini', true), T('nomor', true), D('tanggal', true), T('pelanggan', true), ...RUTE_RUJUK, T('material', true), T('nopol', true), T('supir', true), T('pengurus'), A('qty_muat', true), A('uang_jalan', true), A('qty_bongkar'), D('tanggal_selesai'), A('upah'), T('keterangan')] },
-  { berkas: 'kas.csv', kunci: 'kas', kolom: [T('ref'), P('jenis', ['keluar', 'masuk'], true), D('tanggal', true), T('akun_kas', true), T('keterangan', true), T('akun', true), A('jumlah', true), T('keterangan_baris'), T('lini'), T('nopol'), T('supir'), T('pengurus')] },
+  { berkas: 'uang-jalan.csv', kunci: 'uang_jalan', kolom: [...RUTE_RUJUK, D('berlaku_mulai', true), A('nominal', true, '>=0')] },
+  { berkas: 'tarif.csv', kunci: 'tarif', kolom: [T('pelanggan', true), ...RUTE_RUJUK, T('lini', true), T('material', true), D('berlaku_mulai', true), A('harga_satuan', true, '>=0')] },
+  { berkas: 'aturan-upah.csv', kunci: 'aturan_upah', kolom: [T('nama', true), T('rute'), T('rute_asal'), T('rute_tujuan'), T('lini'), T('material'), D('berlaku_mulai', true), P('basis', ['per_sj', 'per_satuan'], true), A('nominal', true, '>=0')] },
+  { berkas: 'surat-jalan.csv', kunci: 'surat_jalan', penanda: 'nomor', kolom: [T('lini', true), T('nomor', true), D('tanggal', true), T('pelanggan', true), ...RUTE_RUJUK, T('material', true), T('nopol', true), T('supir', true), T('pengurus'), A('qty_muat', true, '>0'), A('uang_jalan', true, '>=0'), A('qty_bongkar', false, '>0'), D('tanggal_selesai'), A('upah', false, '>=0'), T('keterangan')] },
+  { berkas: 'kas.csv', kunci: 'kas', kolom: [T('ref'), P('jenis', ['keluar', 'masuk'], true), D('tanggal', true), T('akun_kas', true), T('keterangan', true), T('akun', true), A('jumlah', true, '>0'), T('keterangan_baris'), T('lini'), T('nopol'), T('supir'), T('pengurus')] },
 ];
 
 function keAngka(v) {
@@ -94,6 +96,14 @@ export function bacaBerkas(namaBerkas, teks) {
         const a = keAngka(v);
         if (a === null) {
           galat.push(`${tempat(def, no, m, k.nama)}: "${v}" bukan angka. Contoh yang benar: 10 atau 10,5 — pakai koma untuk desimal, tanpa titik ribuan dan tanpa "Rp"`);
+          rusak = true;
+        } else if (k.syarat === '>0' && Number(a) <= 0) {
+          // Kolomnya benar-benar angka, tapi database akan menolaknya lewat check constraint
+          // (lihat definisi A() di atas) dengan pesan SQL mentah kalau tidak ditangkap di sini.
+          galat.push(`${tempat(def, no, m, k.nama)}: "${v}" harus lebih besar dari 0`);
+          rusak = true;
+        } else if (k.syarat === '>=0' && Number(a) < 0) {
+          galat.push(`${tempat(def, no, m, k.nama)}: "${v}" tidak boleh negatif`);
           rusak = true;
         }
         keluar[k.nama] = a ?? '';

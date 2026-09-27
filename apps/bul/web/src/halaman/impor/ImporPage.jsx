@@ -39,6 +39,11 @@ export default function ImporPage() {
   const terkunci = kunci.data?.[0]?.terkunci_sampai ?? null;
   const ring = ringkasan(kiriman);
   const adaIsi = Object.keys(ring.jumlah).length > 0;
+  // Tepat sesudah reload, query React Query di atas belum resolve dan .data masih undefined;
+  // pilihBerkas() membacanya sebagai [] lalu menuduh SETIAP nama di berkas "belum ada di master".
+  // Kunci pemilihan berkas sampai semuanya termuat, supaya galat itu tidak pernah muncul palsu.
+  const masterBelumSiap = [kunci, pelanggan, rute, truk, supir, pengurus, material, lini, tipeRute, aturanKomisi, akun]
+    .some((q) => q.isLoading);
 
   async function pilihBerkas(berkasList) {
     const baru = {};
@@ -105,12 +110,14 @@ export default function ImporPage() {
 
       <Card>
         <Flex gap={12} wrap align="center">
-          <Button onClick={() => templatCsv().forEach((t) => unduhCsv(t.berkas, t.teks))}>
+          <Button onClick={() => templatCsv().forEach((t, i) => setTimeout(() => unduhCsv(t.berkas, t.teks), i * 250))}>
             Unduh templat ({BERKAS.length} berkas)
           </Button>
-          <Upload multiple accept=".csv" showUploadList={false} beforeUpload={() => false}
+          <Upload multiple accept=".csv" showUploadList={false} beforeUpload={() => false} disabled={masterBelumSiap}
             onChange={({ fileList }) => pilihBerkas(fileList.map((f) => f.originFileObj ?? f))}>
-            <Button type="primary">Pilih berkas CSV</Button>
+            <Button type="primary" disabled={masterBelumSiap} loading={masterBelumSiap}>
+              {masterBelumSiap ? 'Memuat master data…' : 'Pilih berkas CSV'}
+            </Button>
           </Upload>
           <Button danger loading={sibuk} onClick={jalankan}
             disabled={!adaIsi || galat.length > 0 || sibuk || (peringatan.length > 0 && !akui)}>

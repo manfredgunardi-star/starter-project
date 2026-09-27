@@ -40,6 +40,25 @@ describe('bacaBerkas', () => {
     expect(h.galat).toEqual(['uang-jalan.csv baris 4 kolom E "nominal": "Rp 1.500.000" bukan angka. Contoh yang benar: 10 atau 10,5 — pakai koma untuk desimal, tanpa titik ribuan dan tanpa "Rp"']);
   });
 
+  it('menolak angka yang melanggar check constraint kolomnya sebelum sampai ke RPC', () => {
+    // uang_jalan_rute.nominal >= 0 di database; 0 sendiri sah, negatif tidak.
+    const h = bacaBerkas('uang-jalan.csv', csv(
+      'rute;berlaku_mulai;nominal',
+      'Bogor-Jakarta;2026-01-01;-500',
+      'Bogor-Bekasi;2026-01-01;0',
+    ));
+    expect(h.galat).toEqual(['uang-jalan.csv baris 2 kolom E "nominal": "-500" tidak boleh negatif']);
+    expect(h.baris.map((b) => b.nominal)).toEqual(['0']);
+  });
+
+  it('material.standar_bongkar opsional tapi > 0 kalau diisi, sesuai check constraint-nya', () => {
+    const h = bacaBerkas('material.csv', csv(
+      'lini;nama;satuan;standar_bongkar',
+      'SJP;Pasir;m3;0',
+    ));
+    expect(h.galat).toEqual(['material.csv baris 2 kolom D "standar_bongkar": "0" harus lebih besar dari 0']);
+  });
+
   it('menolak tanggal yang salah bentuk maupun yang tidak ada di kalender', () => {
     const h = bacaBerkas('uang-jalan.csv', csv(
       'rute;berlaku_mulai;nominal',
@@ -336,6 +355,11 @@ describe('pesan galat surat jalan', () => {
       'surat-jalan.csv baris 2 (SJ-007) kolom C "tanggal": "01/03/2026" bukan tanggal. Pakai YYYY-MM-DD, contoh 2026-03-01',
       'surat-jalan.csv baris 2 (SJ-007) kolom L "qty_muat": "xx" bukan angka. Contoh yang benar: 10 atau 10,5 — pakai koma untuk desimal, tanpa titik ribuan dan tanpa "Rp"',
     ]);
+  });
+
+  it('qty_muat harus lebih besar dari 0, sesuai check constraint surat_jalan', () => {
+    const h = bacaBerkas('surat-jalan.csv', csv(J, isi({ nomor: 'SJ-008', qty_muat: '0' })));
+    expect(h.galat).toEqual(['surat-jalan.csv baris 2 (SJ-008) kolom L "qty_muat": "0" harus lebih besar dari 0']);
   });
 
   it('kolom wajib yang hilang menjadi satu pesan, bukan delapan', () => {
