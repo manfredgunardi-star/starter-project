@@ -1,4 +1,5 @@
-import { formatRupiah, formatRute, formatTanggal, keTanggalDb } from '../../lib/format.js';
+import { formatQty, formatRupiah, formatRute, formatTanggal, keTanggalDb } from '../../lib/format.js';
+
 
 const kosongNull = (v) => (v === undefined || v === '' ? null : v);
 const AKTIF = { name: 'aktif', label: 'Aktif', tipe: 'saklar', bawaan: true };
@@ -7,6 +8,15 @@ const OPSI_PELANGGAN = { tabel: 'pelanggan', label: 'nama' };
 const OPSI_RUTE = { tabel: 'rute', label: formatRute, order: 'nama' };
 const OPSI_MATERIAL = { tabel: 'material', label: (r) => `${r.lini_kode} · ${r.nama} (${r.satuan})`, order: 'nama' };
 const OPSI_TIPE_RUTE = { tabel: 'tipe_rute', label: 'nama' };
+// Dipakai ulang oleh halaman Bonus; satu sumber label supaya tidak berbeda antar layar.
+export const JENIS_BONUS = [
+  { value: 'rit_harian_supir', label: 'Supir — ritase per hari' },
+  { value: 'rit_bulanan_supir', label: 'Supir — ritase per bulan' },
+  { value: 'tonase_supir', label: 'Supir — bongkar melebihi standar material' },
+  { value: 'rit_bulanan_pengurus', label: 'Pengurus — ritase per bulan' },
+];
+export const labelJenisBonus = (v) => JENIS_BONUS.find((o) => o.value === v)?.label ?? v;
+
 
 export const KONFIG_MASTER = {
   pelanggan: {
@@ -73,15 +83,21 @@ export const KONFIG_MASTER = {
       { title: 'Lini', dataIndex: 'lini_kode' },
       { title: 'Nama', dataIndex: 'nama' },
       { title: 'Satuan', dataIndex: 'satuan' },
+      { title: 'Standar bongkar', dataIndex: 'standar_bongkar', align: 'right', render: (v) => (v ? formatQty(v) : '—') },
     ],
     field: [
       { name: 'lini_kode', label: 'Lini', tipe: 'pilihan', sumber: OPSI_LINI, wajib: true },
       { name: 'nama', label: 'Nama', tipe: 'teks', wajib: true },
       { name: 'satuan', label: 'Satuan (m3, ton, rit, …)', tipe: 'teks', wajib: true },
+      { name: 'standar_bongkar', label: 'Standar bongkar (dasar bonus tonase; boleh kosong)', tipe: 'qty' },
       AKTIF,
     ],
-    keArgs: (v, b) => ({ p_id: b?.id ?? null, p_lini_kode: v.lini_kode, p_nama: v.nama, p_satuan: v.satuan, p_aktif: v.aktif ?? true }),
+    keArgs: (v, b) => ({
+      p_id: b?.id ?? null, p_lini_kode: v.lini_kode, p_nama: v.nama, p_satuan: v.satuan,
+      p_aktif: v.aktif ?? true, p_standar_bongkar: kosongNull(v.standar_bongkar),
+    }),
   },
+
   truk: {
     kunci: 'truk', judul: 'Truk', tabel: 'truk', order: { kolom: 'nopol' },
     hak: 'master.operasional', rpc: 'simpan_truk',
@@ -195,6 +211,31 @@ export const KONFIG_MASTER = {
     keArgs: (v, b) => ({
       p_id: b?.id ?? null, p_nama: v.nama, p_rute_id: kosongNull(v.rute_id), p_material_id: kosongNull(v.material_id),
       p_berlaku_mulai: keTanggalDb(v.berlaku_mulai), p_basis: v.basis, p_nominal: v.nominal, p_aktif: v.aktif ?? true,
+    }),
+  },
+  'aturan-bonus': {
+    kunci: 'aturan-bonus', judul: 'Aturan Bonus', tabel: 'aturan_bonus',
+    order: { kolom: 'berlaku_mulai', naik: false },
+    hak: 'tarif.simpan', rpc: 'simpan_aturan_bonus',
+    kolom: [
+      { title: 'Nama', dataIndex: 'nama' },
+      { title: 'Jenis', dataIndex: 'jenis', render: labelJenisBonus },
+      { title: 'Ambang', dataIndex: 'ambang', align: 'right', render: (v) => (v == null ? 'Standar material' : `${v} rit`) },
+      { title: 'Berlaku mulai', dataIndex: 'berlaku_mulai', render: formatTanggal },
+      { title: 'Nominal', dataIndex: 'nominal', align: 'right', render: formatRupiah },
+    ],
+    field: [
+      { name: 'nama', label: 'Nama aturan', tipe: 'teks', wajib: true },
+      { name: 'jenis', label: 'Jenis bonus', tipe: 'pilihan', wajib: true, opsi: JENIS_BONUS },
+      { name: 'ambang', label: 'Ambang jumlah rit (kosongkan untuk bonus tonase)', tipe: 'angka' },
+      { name: 'berlaku_mulai', label: 'Berlaku mulai', tipe: 'tanggal', wajib: true, bawaan: 'hari_ini' },
+      { name: 'nominal', label: 'Nominal', tipe: 'uang', wajib: true },
+      AKTIF,
+    ],
+    keArgs: (v, b) => ({
+      p_id: b?.id ?? null, p_nama: v.nama, p_jenis: v.jenis,
+      p_ambang: v.jenis === 'tonase_supir' ? null : kosongNull(v.ambang),
+      p_nominal: v.nominal, p_berlaku_mulai: keTanggalDb(v.berlaku_mulai), p_aktif: v.aktif ?? true,
     }),
   },
   lini: {

@@ -37,4 +37,30 @@ describe('konfigurasi master', () => {
     expect(KONFIG_MASTER.rute.keArgs({ nama: 'X', asal: 'A', tujuan: 'B', tipe_rute_id: undefined, aktif: true }, null))
       .toEqual({ p_id: null, p_nama: 'X', p_asal: 'A', p_tujuan: 'B', p_aktif: true, p_tipe_rute_id: null });
   });
+  it('aturan bonus: ambang dikirim apa adanya untuk jenis rit', () => {
+    expect(KONFIG_MASTER['aturan-bonus'].keArgs({
+      nama: 'Rit harian', jenis: 'rit_harian_supir', ambang: '3', nominal: '30000',
+      berlaku_mulai: dayjs('2026-09-01'), aktif: true,
+    }, null)).toEqual({
+      p_id: null, p_nama: 'Rit harian', p_jenis: 'rit_harian_supir', p_ambang: '3',
+      p_nominal: '30000', p_berlaku_mulai: '2026-09-01', p_aktif: true,
+    });
+  });
+  it('aturan bonus: jenis tonase selalu mengirim ambang null', () => {
+    expect(KONFIG_MASTER['aturan-bonus'].keArgs({
+      nama: 'Tonase', jenis: 'tonase_supir', ambang: '5', nominal: '15000',
+      berlaku_mulai: dayjs('2026-09-01'), aktif: true,
+    }, null).p_ambang).toBe(null);
+  });
+  it('material: standar bongkar kosong jadi null', () => {
+    expect(KONFIG_MASTER.material.keArgs({
+      lini_kode: 'SJP', nama: 'Pasir', satuan: 'ton', standar_bongkar: undefined, aktif: true,
+    }, null)).toEqual({
+      p_id: null, p_lini_kode: 'SJP', p_nama: 'Pasir', p_satuan: 'ton', p_aktif: true, p_standar_bongkar: null,
+    });
+    expect(KONFIG_MASTER.material.keArgs({
+      lini_kode: 'SJP', nama: 'Pasir', satuan: 'ton', standar_bongkar: '20', aktif: true,
+    }, null).p_standar_bongkar).toBe('20');
+  });
+
 });
