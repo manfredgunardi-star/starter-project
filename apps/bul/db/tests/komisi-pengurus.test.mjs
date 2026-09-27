@@ -150,6 +150,19 @@ describe('selesaikan_sj memposting komisi pengurus', () => {
     const baris = await sql('select akun_kode from public.jurnal_baris where jurnal_id = $1', [sj.jurnal_upah_id]);
     expect(baris.map((b) => b.akun_kode).sort()).toEqual(['2121', '5130']);
   });
+  it('melewati komisi (SJ tetap selesai) kalau SJ tidak punya pengurus_id, walau tipe_rute aktif', async () => {
+    const lain = await siapkanMaster(owner);
+    await sql('update public.pengurus set aktif = false');
+    await buatPengurus(owner);
+    await buatPengurus(owner);
+    await tetapkanTipeRute(owner, lain.rute);
+    const id = await buatSjSelesai(ops, lain, { tanggalSelesai: '2026-03-09', tanggal: '2026-03-09' });
+    const sj = await ambilSj(id);
+    expect(sj.pengurus_id).toBeNull();
+    expect(sj.status).toBe('selesai');
+    const baris = await sql('select akun_kode from public.jurnal_baris where jurnal_id = $1', [sj.jurnal_upah_id]);
+    expect(baris.map((b) => b.akun_kode).sort()).toEqual(['2121', '5130']);
+  });
 });
 
 describe('batalkan_sj membalik komisi', () => {
