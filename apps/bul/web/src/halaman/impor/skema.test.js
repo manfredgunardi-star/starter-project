@@ -186,7 +186,7 @@ describe('namaTakDikenal', () => {
       material: [{ lini: 'SJX', nama: 'Batu', satuan: 'm3' }],
     };
     expect(namaTakDikenal(kiriman, master)).toEqual([
-      'material.csv baris 1 kolom A "lini": "SJX" belum ada di master. lini tidak punya berkas impor — tambahkan lewat layar Lini',
+      'material.csv baris 1 kolom A "lini": "SJX" belum ada di master. Isi KODE lini (2-5 huruf), bukan namanya. lini tidak punya berkas impor — tambahkan lewat layar Lini',
       'surat-jalan.csv baris 1 (SJ-1) kolom D "pelanggan": "PT Hantu" belum ada di master. Tambahkan lewat pelanggan.csv pada kiriman yang sama, atau lewat layar masternya',
       'surat-jalan.csv baris 2 (SJ-2) kolom J "supir": "Sukirman" belum ada di master. Tambahkan lewat supir.csv pada kiriman yang sama, atau lewat layar masternya',
       'kas.csv baris 1 kolom F "akun": "9999" belum ada di master. akun tidak punya berkas impor — tambahkan lewat layar Akun',

@@ -197,9 +197,11 @@ export function namaTakDikenal(kiriman, master, takAktif = {}) {
         const v = (b[nama] ?? '').trim();
         if (v && !ada[jenis].has(v)) {
           const mati = new Set(takAktif[jenis] ?? []).has(v);
+          // Kolom lini dicocokkan ke KODE-nya (mis. "SJP"), bukan namanya — user sering
+          // salah isi nama lini di CSV dan galatnya jadi membingungkan tanpa petunjuk ini.
           galat.push(mati
             ? `${tempat(def, no, b, nama)}: "${v}" ada di master tetapi statusnya TIDAK AKTIF, jadi impor akan menolaknya. Aktifkan kembali lewat layar masternya`
-            : `${tempat(def, no, b, nama)}: "${v}" belum ada di master. ${saranTambah(jenis)}`);
+            : `${tempat(def, no, b, nama)}: "${v}" belum ada di master.${jenis === 'lini' ? ' Isi KODE lini (2-5 huruf), bukan namanya.' : ''} ${saranTambah(jenis)}`);
         }
       }
       if (PUNYA_MATERIAL.includes(kunci)) {
