@@ -1,0 +1,9 @@
+node_modules/
+supabase/.temp/
+supabase/snippets/
+supabase/.branches/
+.env
+.env.*
+!.env.example
+web/dist/
+web/.env.local
