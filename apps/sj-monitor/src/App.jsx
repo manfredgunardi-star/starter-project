@@ -5,6 +5,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, Suspense } fr
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatCurrency } from './utils/currency.js';
 import { isSJBelumInvoice, mergeById } from './utils/sjHelpers.js';
+import { selectVisibleInvoices } from './utils/invoiceDedupe.js';
 import { computeInvoiceTotals } from './utils/invoiceTotals.js';
 import { calculateSJPenalty } from './utils/payslipHelpers.js';
 import { downloadSJRecapToExcel } from './utils/excel.js';
@@ -1760,21 +1761,7 @@ const normalizeInv = (row, docId) => {
 };
 
 const applyInv = () => {
-  const merged = mergeById(invPrimary, invLegacy).filter((x) => !x?.deletedAt && x?.isActive !== false);
-  const byInvoiceNumber = new Map();
-  merged.forEach((inv) => {
-    const key = String(inv?.noInvoice || inv?.id || '').trim();
-    if (!key) return;
-    const prev = byInvoiceNumber.get(key);
-    if (!prev) {
-      byInvoiceNumber.set(key, inv);
-      return;
-    }
-    const prevTs = String(prev?.updatedAt || prev?.createdAt || '');
-    const nextTs = String(inv?.updatedAt || inv?.createdAt || '');
-    if (nextTs >= prevTs) byInvoiceNumber.set(key, inv);
-  });
-  const normalized = Array.from(byInvoiceNumber.values());
+  const normalized = selectVisibleInvoices(invPrimary, invLegacy);
   normalized.sort((a, b) => (new Date(b?.tglInvoice).getTime() || 0) - (new Date(a?.tglInvoice).getTime() || 0));
   setInvoiceList(normalized);
 };
