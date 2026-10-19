@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { CheckCircle, Clock, FileText, Package, Plus, XCircle } from 'lucide-react';
 import { exportLabaKotorToExcel } from '../utils/excel.js';
 import { isSJBelumInvoice, isSJTerinvoice } from '../utils/sjHelpers.js';
+import { filterInvoicesBySearch } from '../utils/invoiceSearch.js';
 import Pagination, { PAGE_SIZE, clampPage } from '../components/Pagination.jsx';
 import StatSummary from '../components/StatSummary.jsx';
 import { useSearchFilter } from '../hooks/useSearchFilter.js';
@@ -77,12 +78,18 @@ export default function InvoiceManagement({
   const { sorted: sortedSJ, sortConfig, toggleSort } = useSortableData(searchedSJ);
   const [invPage, setInvPage] = useState(1);
   const [invoicePage, setInvoicePage] = useState(1);
+  const [searchInvoice, setSearchInvoice] = useState('');
+  // Pencarian "dalam": cocok pada nomor invoice ATAU nomor SJ di dalamnya.
+  const searchedInvoices = useMemo(
+    () => filterInvoicesBySearch(invoiceList, searchInvoice),
+    [invoiceList, searchInvoice]
+  );
   // eslint-disable-next-line react-hooks/set-state-in-effect -- pre-existing: resets pagination to page 1 when filters change; behavioral change deferred, see lint triage notes
-  useEffect(() => { setInvPage(1); setInvoicePage(1); }, [activeFilter, searchSJ]);
+  useEffect(() => { setInvPage(1); setInvoicePage(1); }, [activeFilter, searchSJ, searchInvoice]);
   const safeInvPage = clampPage(invPage, sortedSJ.length);
-  const safeInvoicePage = clampPage(invoicePage, invoiceList.length);
+  const safeInvoicePage = clampPage(invoicePage, searchedInvoices.length);
   const pagedSJ = sortedSJ.slice((safeInvPage - 1) * PAGE_SIZE, safeInvPage * PAGE_SIZE);
-  const pagedInvoices = invoiceList.slice((safeInvoicePage - 1) * PAGE_SIZE, safeInvoicePage * PAGE_SIZE);
+  const pagedInvoices = searchedInvoices.slice((safeInvoicePage - 1) * PAGE_SIZE, safeInvoicePage * PAGE_SIZE);
 
   // Escape CSV cell values untuk mencegah CSV Injection (formula injection di Excel/Sheets)
   const escapeCsvValue = (val) => {
@@ -313,19 +320,34 @@ export default function InvoiceManagement({
         </div>
       ) : (
         <div className="space-y-4">
-          {invoiceList.length === 0 ? (
+          {invoiceList.length > 0 && (
+            <div className="mb-4">
+              <SearchInput
+                value={searchInvoice}
+                onChange={setSearchInvoice}
+                placeholder="Cari nomor invoice atau nomor SJ di dalamnya..."
+              />
+            </div>
+          )}
+          {searchedInvoices.length === 0 ? (
             <div className="bg-white rounded-lg shadow-md p-12 text-center">
-              <FileText className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-              <p className="text-lg font-semibold text-gray-600 mb-2">Belum Ada Invoice</p>
-              <p className="text-sm text-gray-500 mb-4">Buat invoice pertama untuk Surat Jalan yang sudah terkirim</p>
-              {canManageInvoice() && sjBelumTerinvoice.length > 0 && (
-                <button
-                  onClick={onAddInvoice}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg inline-flex items-center space-x-2 transition"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Buat Invoice Pertama</span>
-                </button>
+              {invoiceList.length === 0 ? (
+                <>
+                  <FileText className="w-16 h-16 mx-auto text-gray-300 mb-4" />
+                  <p className="text-lg font-semibold text-gray-600 mb-2">Belum Ada Invoice</p>
+                  <p className="text-sm text-gray-500 mb-4">Buat invoice pertama untuk Surat Jalan yang sudah terkirim</p>
+                  {canManageInvoice() && sjBelumTerinvoice.length > 0 && (
+                    <button
+                      onClick={onAddInvoice}
+                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg inline-flex items-center space-x-2 transition"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Buat Invoice Pertama</span>
+                    </button>
+                  )}
+                </>
+              ) : (
+                <p className="text-sm text-gray-500">Tidak ada invoice yang cocok dengan pencarian.</p>
               )}
             </div>
           ) : (
@@ -438,7 +460,7 @@ export default function InvoiceManagement({
               </div>
             ))
           )}
-          <Pagination total={invoiceList.length} page={safeInvoicePage} onChange={setInvoicePage} />
+          <Pagination total={searchedInvoices.length} page={safeInvoicePage} onChange={setInvoicePage} />
         </div>
       )}
     </div>
