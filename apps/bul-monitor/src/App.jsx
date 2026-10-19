@@ -15,6 +15,7 @@ import UsersManagement from './components/UsersManagement.jsx';
 import SettingsManagement from './components/SettingsManagement.jsx';
 import LoginScreen from './components/LoginScreen.jsx';
 import { buildUangJalanTransaksiId, generateSessionId, formatCurrency, downloadSJRecapToExcel, sanitizeForFirestore } from './utils/formatters.js';
+import { splitInvoiceSJIds } from './utils/invoiceSJPersist.js';
 import MasterDataManagement from './components/MasterDataManagement.jsx';
 import LaporanKas from './components/LaporanKas.jsx';
 import KeuanganManagement from './components/KeuanganManagement.jsx';
@@ -809,7 +810,7 @@ setConfirmDialog({ show: false, message: '', onConfirm: null });
     });
   };
 
-const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist = [] }) => {
+const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToAttach = [], sjIdsToDetach = [] }) => {
     await ensureAuthed();
     const nowIso = new Date().toISOString();
     const who = currentUser?.name || currentUser?.username || 'system';
@@ -818,24 +819,39 @@ const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist = [] }) =
     const invRef = doc(db, C("invoices"), invoiceDoc.id);
     await setDoc(invRef, sanitizeForFirestore(invoiceDoc), { merge: true });
 
-    // 2) Update semua SJ yang terkait SATU per SATU
+    // 2) Update semua SJ yang terkait SATU per SATU.
+    //    Patch dibedakan: yang masih tercentang distempel 'terinvoice', yang
+    //    dilepas dikembalikan ke 'belum' supaya tidak jadi SJ yatim.
+    const attachPatch = {
+      statusInvoice: 'terinvoice',
+      invoiceId: invoiceDoc.id,
+      invoiceNo: invoiceDoc.noInvoice,
+      invoiceTanggal: invoiceDoc.tglInvoice || null,
+      updatedAt: nowIso,
+      updatedBy: who,
+    };
+    const detachPatch = {
+      statusInvoice: 'belum',
+      invoiceId: null,
+      invoiceNo: null,
+      invoiceTanggal: null,
+      updatedAt: nowIso,
+      updatedBy: who,
+    };
+
     const resolved = await Promise.all(
-      sjIdsToPersist.map(async (sjId) => ({ sjId, ref: await resolveSuratJalanDocRef(sjId) }))
+      [
+        ...sjIdsToAttach.map((sjId) => ({ sjId, patch: attachPatch })),
+        ...sjIdsToDetach.map((sjId) => ({ sjId, patch: detachPatch })),
+      ].map(async ({ sjId, patch }) => ({ sjId, patch, ref: await resolveSuratJalanDocRef(sjId) }))
     );
 
-    for (const { sjId, ref } of resolved) {
+    for (const { sjId, patch, ref } of resolved) {
       if (!ref) {
         console.warn('[Invoice] Surat Jalan doc not found for id:', sjId);
         continue;
       }
-      await setDoc(ref, sanitizeForFirestore({
-        statusInvoice: 'terinvoice',
-        invoiceId: invoiceDoc.id,
-        invoiceNo: invoiceDoc.noInvoice,
-        invoiceTanggal: invoiceDoc.tglInvoice || null,
-        updatedAt: nowIso,
-        updatedBy: who,
-      }), { merge: true });
+      await setDoc(ref, sanitizeForFirestore(patch), { merge: true });
     }
 
     return 'invoices';
@@ -891,7 +907,8 @@ const persistInvoiceWithFallback = async ({ invoiceDoc, sjIdsToPersist = [] }) =
     try {
       await persistInvoiceWithFallback({
         invoiceDoc: newInvoice,
-        sjIdsToPersist: data.selectedSJIds,
+        // Invoice baru: tidak ada SJ lama yang perlu dilepas.
+        ...splitInvoiceSJIds([], data.selectedSJIds),
       });
 
       // Update UI only AFTER Firestore sukses (hindari UI kacau bila rules/permission error)
@@ -988,11 +1005,9 @@ setInvoiceList(updatedInvoiceList);
 
 // Persist ke Firestore (invoice + update SJ terkait)
 try {
-  const touchedIds = Array.from(new Set([...(oldSJIds || []), ...(newSJIds || [])]));
   await persistInvoiceWithFallback({
     invoiceDoc: updatedInvoice,
-    updatedSJList,
-    sjIdsToPersist: touchedIds,
+    ...splitInvoiceSJIds(oldSJIds, newSJIds),
   });
   setAlertMessage('✅ Invoice berhasil diupdate!');
 } catch (e) {
