@@ -1,0 +1,7 @@
+node_modules/
+.env
+# root .gitignore mengabaikan .env.*; template ini aman dan perlu ikut ter-commit
+!.env.example
+logs/
+# catatan discovery privat (repo publik) — simpan di C:/Project/_local/sj-tools/
+DISCOVERY.md
